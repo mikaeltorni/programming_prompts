@@ -1,6 +1,11 @@
 Add the prompt file `python_programming_claude-3.7-sonnet-thinking.xml` contents to the Cursor User Rules for the instructions to become effective inside the editor.
 This prompt is currently not optimized for agentic features inside Cursor.
 
+# TODO
+- When creating new files, automatically make a new class for the contents inside that file
+- Optimize the docstring generation for new files, especially that they are classes now, and the prompt is missing instructions for those
+- Automatic integration with the Cursor Agent feature to for example: write the requirements.txt file automatically
+
 ## Disclaimer
 
 This software is provided under the MIT License on an **“as is”** basis, without warranties of any kind. To the maximum extent permitted by applicable law, the authors and copyright holders shall not be liable for any claims, damages, losses, or other liability arising from the use of this software.
