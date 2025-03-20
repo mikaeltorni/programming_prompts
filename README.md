@@ -1,4 +1,4 @@
-# prompts
+Add the prompt file `python_programming_claude-3.7-sonnet-thinking.xml` contents to the Cursor User Rules for the instructions to become effective inside the editor.
 
 ## Disclaimer
 
