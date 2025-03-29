@@ -3,7 +3,7 @@ This prompt is currently not optimized for agentic features inside Cursor.
 
 # TODO
 - When creating new files, automatically make a new class for the contents inside that file
-- Optimize the docstring generation for new files, especially that they are classes now, and the prompt is missing instructions for those
+- Optimize docstring generation for the new files, especially that they are classes now, and the prompt is missing instructions for those
 - Automatic integration with the Cursor Agent feature to for example: write the requirements.txt file automatically
 
 ## Disclaimer
