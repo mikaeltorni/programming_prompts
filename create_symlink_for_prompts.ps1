@@ -36,6 +36,9 @@ foreach ($projectPath in $targetPaths) {
         continue
     }
 
+    # Trim any whitespace from the project path
+    $projectPath = $projectPath.Trim()
+    
     # Create parent directory path (.cursor\rules)
     $parentDir = Join-Path -Path $projectPath -ChildPath ".cursor\rules"
     
