@@ -207,10 +207,6 @@ alwaysApply: false
     ```
 </file_handling_instructions>
 
-<looping_of_the_program_instructions>
-    If the program is a command-line application, the execution should continue in a loop until the user decides to stop the program.
-</looping_of_the_program_instructions>
-
 <requirements_txt_file_and_instructions_how_to_run_the_code>
     After writing the code, the requirements.txt file should be written. The file will contain the packages required for the code to work properly. These newest versions of the packages were determined during the reasoning step-by-step process.
 
