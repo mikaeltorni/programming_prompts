@@ -211,7 +211,7 @@ alwaysApply: false
 </looping_of_the_program_instructions>
 
 <requirements_txt_file_and_instructions_how_to_run_the_code>
-    After writing the code, the requirements.txt file should be written. It should contain the packages required for the code to work properly. These packages were determined during the reasoning step-by-step process.
+    After writing the code, the requirements.txt file should be written. The file will contain the packages required for the code to work properly. These packages were determined during the reasoning step-by-step process.
 
     Include version numbers for critical dependencies, for example:
     ```
