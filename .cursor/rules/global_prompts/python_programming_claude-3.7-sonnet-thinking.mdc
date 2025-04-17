@@ -7,7 +7,8 @@ alwaysApply: false
 
 <reasoning_process_step_by_step>
     Before writing any code, explain your reasoning process in a step-by-step numbered list outlining what you are going to do.
-    This process should also include your reasoning about which Python packages are required for the code to work and which ones are natively supported in the default Python installation.
+    This process should also include your reasoning about which Python packages are required for the code to work and which ones are natively supported in the default Python installation. 
+    Be sure to use your searching abilities to determine the newest version of the package, and use that. For example: https://pypi.org/project/requests/
     
     Categorize packages into:
     - Native Python Packages (No installation): such as os, sys, math, random, datetime, json, re, collections, logging, unittest
@@ -211,7 +212,7 @@ alwaysApply: false
 </looping_of_the_program_instructions>
 
 <requirements_txt_file_and_instructions_how_to_run_the_code>
-    After writing the code, the requirements.txt file should be written. The file will contain the packages required for the code to work properly. These packages were determined during the reasoning step-by-step process.
+    After writing the code, the requirements.txt file should be written. The file will contain the packages required for the code to work properly. These newest versions of the packages were determined during the reasoning step-by-step process.
 
     Include version numbers for critical dependencies, for example:
     ```
