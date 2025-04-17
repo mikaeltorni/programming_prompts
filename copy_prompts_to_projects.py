@@ -95,9 +95,34 @@ def update_gitignore(project_path):
     return updated
 
 
+def has_git_changes(project_path):
+    """
+    Check if the repository has uncommitted changes.
+    
+    Parameters:
+        project_path (str): Path to the project directory
+        
+    Returns:
+        bool: True if there are uncommitted changes, False otherwise
+    """
+    try:
+        # Use git status --porcelain to get a machine-readable output
+        result = subprocess.run(
+            ['git', '-C', project_path, 'status', '--porcelain'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        # If the output is not empty, there are changes
+        return bool(result.stdout.strip())
+    except subprocess.CalledProcessError:
+        logger.error(f"Failed to check git status in {project_path}")
+        return False
+
+
 def create_git_commit(project_path, message):
     """
-    Create a git commit in the specified project directory.
+    Create a git commit in the specified project directory if there are changes.
     
     Parameters:
         project_path (str): Path to the project directory
@@ -107,8 +132,14 @@ def create_git_commit(project_path, message):
         bool: True if the commit was successful, False otherwise
     """
     logger.debug(f"Creating git commit in {project_path} with message: {message}")
+    
+    # Check if there are changes to commit
+    if not has_git_changes(project_path):
+        logger.info(f"No changes to commit in {project_path}")
+        return False
+    
     try:
-        subprocess.run(['git', '-C', project_path, 'add', '.'], check=True)
+        subprocess.run(['git', '-C', project_path, 'add', '.gitignore'], check=True)
         subprocess.run(['git', '-C', project_path, 'commit', '-m', message], check=True)
         logger.info(f"Git commit created successfully in {project_path}")
         return True
@@ -143,6 +174,18 @@ def copy_prompt_files(source_dir, dest_dir, prompt_files):
         if not source_file.exists():
             logger.warning(f"Source file not found: {source_file}")
             continue
+        
+        # Check if the file exists and is identical
+        if dest_file.exists():
+            try:
+                # Compare file contents to see if they are identical
+                with open(source_file, 'rb') as src, open(dest_file, 'rb') as dst:
+                    if src.read() == dst.read():
+                        logger.info(f"File already exists and is identical: {prompt_file}")
+                        continue
+            except Exception:
+                # If there's an error comparing, just copy the file
+                pass
             
         try:
             shutil.copy2(source_file, dest_file)
@@ -211,7 +254,7 @@ def main():
         gitignore_updated = False
         if not check_gitignore(repository_path):
             gitignore_updated = update_gitignore(repository_path)
-            if gitignore_updated:
+            if gitignore_updated and has_git_changes(repository_path):
                 create_git_commit(
                     repository_path, 
                     "chore: add .cursor/rules/global_prompts to .gitignore"
@@ -225,14 +268,13 @@ def main():
         # Copy specified prompt files
         copied_files = copy_prompt_files(source_dir, target_dir, prompt_files)
         
-        # Create commit if files were copied
+        # No need to commit the copied files since they're gitignored
+        # But we'll log the information about what was copied
         if copied_files:
             if len(copied_files) == 1:
-                commit_message = f"chore: add prompt file {copied_files[0]}"
+                logger.info(f"Added prompt file {copied_files[0]} to {repository_path}")
             else:
-                commit_message = f"chore: add {len(copied_files)} prompt files"
-            
-            create_git_commit(repository_path, commit_message)
+                logger.info(f"Added {len(copied_files)} prompt files to {repository_path}")
     
     logger.info("\nPrompt files have been copied to all specified projects.")
 
