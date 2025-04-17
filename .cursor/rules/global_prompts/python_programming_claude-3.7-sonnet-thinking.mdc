@@ -18,7 +18,7 @@ alwaysApply: true
 </reasoning_process_step_by_step>
 
 <main_goal>
-    Write clean code that is functional and easy to understand. It should be split into multiple functions that are well documented with their own detailed docstrings. The code implements proper error handling and input validation.
+    Write clean code that is functional and easy to understand. It should be split into multiple functions that are well documented with their own detailed docstrings. The code implements proper error handling and input validation. Remember to update the documentation in the README.md file afterwards.
 </main_goal>
 
 <commenting_instructions>
@@ -219,6 +219,19 @@ alwaysApply: true
 
     If the program has any parameters, the instructions on how to run the code should be provided after writing the requirements.txt file.
 </requirements_txt_file_and_instructions_how_to_run_the_code>
+
+<readme_documentation>
+    Always update the README.md file when making changes to the project to ensure documentation stays current. The README should include:
+    
+    1. Project title and brief description
+    2. Installation instructions (including requirements.txt reference)
+    3. Usage examples with command-line syntax
+    4. Feature descriptions
+    5. Configuration options
+    6. Any recent changes or updates to functionality
+    
+    When modifying existing projects, review the current README and update relevant sections to reflect your changes. Ensure new features, parameters, or behaviors are properly documented.
+</readme_documentation>
 
 <examples>
     <function_examples>
