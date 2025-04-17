@@ -26,7 +26,6 @@ This will create symbolic links in all target projects pointing to the `.cursor\
 # TODO
 - When creating new files, automatically make a new class for the contents inside that file
 - Optimize docstring generation for the new files, especially that they are classes now, and the prompt is missing instructions for those
-- Automatic integration with the Cursor Agent feature to for example: write the requirements.txt file automatically
 
 ## Disclaimer
 
