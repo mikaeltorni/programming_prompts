@@ -232,3 +232,57 @@ alwaysApply: true
     
     When modifying existing projects, review the current README and update relevant sections to reflect your changes. Ensure new features, parameters, or behaviors are properly documented.
 </readme_documentation>
+
+<code_refactoring_and_dependency_management>
+    After writing code, perform a thorough review as an additional step to identify refactoring opportunities and minimize dependencies. Continuously refactor to maintain clean, maintainable code that follows best practices.
+    
+    Always check your code against these refactoring criteria:
+    
+    1. Code organization:
+       - Are functions properly organized and separated by responsibility?
+       - Are related functions grouped together logically?
+       - Are longer scripts broken down into appropriate modules?
+    
+    2. Code duplication:
+       - Is there repeated code that could be extracted into helper functions?
+       - Are there patterns that could be abstracted into utility functions?
+    
+    3. Dependency management:
+       - Is the code using the minimum necessary external dependencies?
+       - Could any external dependencies be replaced with standard library modules?
+       - Are all imported modules actually used in the code?
+       - Have you considered using built-in alternatives before adding external dependencies?
+    
+    4. Function structure:
+       - Are functions following the single responsibility principle?
+       - Could large functions be split into smaller, more focused ones?
+       - Are function signatures well-defined with appropriate type hints?
+    
+    5. Performance:
+       - Are there inefficient algorithms or data structures that could be improved?
+       - Are expensive operations properly optimized or cached?
+       - Are there any unnecessary operations in loops?
+    
+    6. Code style:
+       - Is the code consistent with PEP 8 guidelines?
+       - Are naming conventions clear and consistent?
+       - Is the code properly indented and formatted?
+    
+    7. Error handling:
+       - Are errors properly caught and handled at appropriate levels?
+       - Is error reporting user-friendly and informative?
+       - Are appropriate custom exceptions defined for domain-specific errors?
+
+    8. Type hints:
+       - Are type hints used consistently throughout the code?
+       - Are complex types properly documented?
+
+    For dependency management, follow these specific guidelines:
+    - Always prefer Python standard library modules over external packages when possible
+    - If a dependency is only used for a single function, consider reimplementing that function using standard library
+    - Carefully evaluate each dependency - only include those that provide substantial value
+    - For each external package, document why it's needed and what core functionality it provides
+    - Keep the requirements.txt file minimal and focused on direct dependencies
+
+    When implementing larger features, include a dedicated refactoring pass after the initial implementation is complete. Document any technical debt that you're aware of but couldn't address immediately.
+</code_refactoring_and_dependency_management>

@@ -449,3 +449,48 @@ alwaysApply: true
     
     When modifying existing projects, review the current README and update relevant sections to reflect your changes. Ensure new features, parameters, or behaviors are properly documented.
 </readme_documentation>
+
+<code_refactoring_instructions>
+    After writing code, perform a thorough review as an additional step to identify refactoring opportunities. Continuously refactor to maintain clean, maintainable code that follows best practices.
+    
+    Always check your code against these refactoring criteria:
+    
+    1. Code organization:
+       - Are modules and components properly organized and separated?
+       - Are related functions grouped together logically?
+       - Is there a clear separation between UI components and business logic?
+    
+    2. Code duplication:
+       - Is there repeated code that could be extracted into helper functions?
+       - Are there patterns that could be abstracted into reusable components?
+    
+    3. Type safety:
+       - Are all types properly defined and used consistently?
+       - Are there any `any` types that could be replaced with more specific types?
+       - Are complex types properly documented with comments?
+    
+    4. Component structure:
+       - Are components following the single responsibility principle?
+       - Could large components be split into smaller, more focused ones?
+       - Are props interfaces well-defined and properly limited?
+    
+    5. Performance:
+       - Are there unnecessary re-renders that could be prevented?
+       - Are heavy computations properly memoized?
+       - Is state management appropriate for the component's needs?
+    
+    6. Code style:
+       - Is the code consistent with the project's style guide?
+       - Are naming conventions clear and consistent?
+       - Is the code properly indented and formatted?
+    
+    7. IPC communication:
+       - Are IPC channels properly typed and organized?
+       - Are error cases handled gracefully across processes?
+    
+    8. Error handling:
+       - Are errors properly caught and handled at appropriate levels?
+       - Is error reporting user-friendly and informative?
+
+    When implementing larger features, include a dedicated refactoring pass after the initial implementation is complete. Document any technical debt that you're aware of but couldn't address immediately.
+</code_refactoring_instructions>
