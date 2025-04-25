@@ -334,69 +334,55 @@ alwaysApply: true
 </project_dependencies_and_instructions_how_to_use_the_code>
 
 <code_refactoring_instructions>
-    After writing code, perform a thorough review as an additional step to identify refactoring opportunities specifically for Unity game development. Continuously refactor to maintain clean, maintainable code that follows game industry best practices and optimizes for both runtime performance and developer workflow.
+    After writing code, perform a thorough review as an additional step to identify refactoring opportunities. Continuously refactor to maintain clean, maintainable code that follows best practices in Unity and C# development.
     
-    Always check your Unity C# code against these game-specific refactoring criteria:
+    Always check your code against these refactoring criteria:
     
-    1. Game architecture patterns:
-       - Is the code following appropriate architecture patterns (MVC, ECS, component-based)?
-       - Are game systems properly decoupled using dependency injection or scriptable objects?
-       - Is the game state management handled appropriately (state machines, behavior trees)?
-       - Are you using the appropriate Unity-specific patterns (Command pattern for input, Observer for events)?
+    1. Code organization:
+       - Are scripts properly organized and separated by responsibility?
+       - Are related methods grouped together logically?
+       - Are components properly distributed across GameObjects according to their functionality?
     
-    2. Unity-specific optimizations:
-       - Are you properly caching component references in Awake/Start rather than GetComponent calls?
-       - Are physics and raycasting operations optimized and minimized?
-       - Are you using object pooling for frequently spawned/destroyed objects?
-       - Are you leveraging Unity's job system and burst compiler for performance-critical code?
+    2. Code duplication:
+       - Is there repeated code that could be extracted into helper methods?
+       - Are there patterns that could be abstracted into reusable components or ScriptableObjects?
+       - Could inheritance or composition be used to reduce duplication?
     
-    3. GameObject hierarchy and prefab structure:
-       - Are prefabs properly composable and reusable across the project?
-       - Is the GameObject hierarchy optimized for performance (minimal nesting)?
-       - Are you using prefab variants appropriately instead of duplicate prefabs?
-       - Are you leveraging nested prefabs effectively for complex objects?
+    3. Component architecture:
+       - Are MonoBehaviour components following the single responsibility principle?
+       - Could large scripts be split into smaller, more focused components?
+       - Are dependencies between components minimized and well-defined?
     
-    4. Asset and resource management:
-       - Are assets properly organized in addressable groups if using the Addressables system?
-       - Are you properly handling asset loading/unloading for scene transitions?
-       - Are you using appropriate compression settings for different asset types?
-       - Are materials and shaders optimized and shared where appropriate?
+    4. Method structure:
+       - Are methods properly scoped and focused on a single task?
+       - Could large methods be split into smaller, more maintainable pieces?
+       - Are private methods used appropriately to encapsulate implementation details?
     
-    5. Game-specific performance concerns:
-       - Is the render pipeline properly configured for the target platform?
-       - Are you batching draw calls appropriately with material sharing?
-       - Are you using LOD (Level of Detail) for complex objects?
-       - Are you implementing appropriate culling methods for off-screen objects?
+    5. Performance:
+       - Are there unnecessary operations in Update() or FixedUpdate() that could be optimized?
+       - Are expensive operations properly cached or optimized?
+       - Are physics operations used efficiently?
+       - Are you using appropriate data structures for the task?
     
-    6. Input handling and responsiveness:
-       - Is input handling code centralized and abstracted from game logic?
-       - Are you using the new Unity Input System effectively if applicable?
-       - Is input properly buffered for responsive controls?
-       - Is the game frame-rate independent for physics and movement?
+    6. Code style:
+       - Is the code consistent with C# and Unity coding conventions?
+       - Are naming conventions clear and consistent?
+       - Is the code properly indented and formatted?
     
-    7. Cross-platform considerations:
-       - Does the code properly handle platform-specific functionality?
-       - Are you using appropriate device-specific optimizations?
-       - Is the UI properly adapting to different screen sizes and aspect ratios?
-       - Are touch controls, keyboard/mouse, and gamepad inputs all properly supported?
+    7. Memory management:
+       - Are object instantiations and destructions handled efficiently?
+       - Are you properly managing references to avoid memory leaks?
+       - Are you using object pooling where appropriate?
+    
+    8. Error handling:
+       - Are null references properly checked and handled?
+       - Are errors properly caught and handled at appropriate levels?
+       - Is error reporting informative and useful for debugging?
 
-    8. Animation and state management:
-       - Are animation states properly organized in the Animator Controller?
-       - Are animation transitions smooth and logical?
-       - Are you using animation events appropriately rather than polling?
-       - Are you using Animation Rigging or IK where appropriate?
-    
-    9. Editor workflow and tools:
-       - Are you creating custom editor tools for designer workflow?
-       - Are you using custom property drawers for complex inspector fields?
-       - Are you using SerializeField and Range attributes appropriately?
-       - Are prefabs and scriptable objects properly exposed for designers?
+    9. Scene organization:
+       - Is the scene hierarchy well-organized and easy to navigate?
+       - Are prefabs used appropriately to encapsulate reusable components?
+       - Are GameObjects properly named and tagged?
 
-    10. Memory and garbage collection:
-       - Are you minimizing heap allocations in performance-critical code?
-       - Are you avoiding string operations in Update methods?
-       - Are you properly disposing of managed resources?
-       - Are you using structs appropriately for small, frequently used data types?
-
-    When implementing larger features, include a dedicated profiling pass using Unity's built-in profiler to identify and address performance bottlenecks. Document optimization strategies in the code comments to guide future development.
+    When implementing larger features, include a dedicated refactoring pass after the initial implementation is complete. Document any technical debt that you're aware of but couldn't address immediately.
 </code_refactoring_instructions>
