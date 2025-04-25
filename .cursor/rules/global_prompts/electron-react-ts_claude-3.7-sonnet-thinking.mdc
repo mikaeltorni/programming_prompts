@@ -451,57 +451,46 @@ alwaysApply: true
 </readme_documentation>
 
 <code_refactoring_instructions>
-    After writing code, perform a thorough review as an additional step to identify refactoring opportunities specifically for Electron-React-TypeScript applications. Continuously refactor to maintain clean, maintainable code that follows modern web application best practices.
+    After writing code, perform a thorough review as an additional step to identify refactoring opportunities. Continuously refactor to maintain clean, maintainable code that follows best practices.
     
-    Always check your Electron-React-TypeScript code against these specialized refactoring criteria:
+    Always check your code against these refactoring criteria:
     
-    1. Process separation concerns:
-       - Is there proper separation between main and renderer processes?
-       - Are IPC calls minimized and optimized for performance?
-       - Are window management operations properly isolated?
-       - Is native functionality properly abstracted from UI components?
+    1. Code organization:
+       - Are modules and components properly organized and separated?
+       - Are related functions grouped together logically?
+       - Is there a clear separation between UI components and business logic?
     
-    2. React component architecture:
-       - Are components properly structured following modern React patterns?
-       - Is state management appropriate (Context, hooks, prop drilling alternatives)?
-       - Are custom hooks used to abstract shared logic?
-       - Is React suspense and error boundaries used effectively?
+    2. Code duplication:
+       - Is there repeated code that could be extracted into helper functions?
+       - Are there patterns that could be abstracted into reusable components?
     
-    3. TypeScript type safety:
-       - Are all inter-process communication interfaces strictly typed?
-       - Are there proper type guards for runtime validation?
+    3. Type safety:
+       - Are all types properly defined and used consistently?
        - Are there any `any` types that could be replaced with more specific types?
-       - Are component props using interfaces with proper JSDoc documentation?
+       - Are complex types properly documented with comments?
     
-    4. Electron security best practices:
-       - Is the CSP properly configured in the HTML files?
-       - Is nodeIntegration disabled and contextIsolation enabled?
-       - Are remote content and shell operations properly sanitized?
-       - Is the preload script properly secured and minimized?
+    4. Component structure:
+       - Are components following the single responsibility principle?
+       - Could large components be split into smaller, more focused ones?
+       - Are props interfaces well-defined and properly limited?
     
-    5. Performance optimization:
-       - Are there unnecessary re-renders that could be prevented with memo or useMemo?
-       - Is electron-store or similar being used efficiently?
-       - Are expensive disk operations run in the main process?
-       - Are heavy computations properly offloaded or web workers considered?
+    5. Performance:
+       - Are there unnecessary re-renders that could be prevented?
+       - Are heavy computations properly memoized?
+       - Is state management appropriate for the component's needs?
     
-    6. Platform-specific considerations:
-       - Is the code properly handling platform differences (Windows/Mac/Linux)?
-       - Are platform-specific features properly abstracted?
-       - Is the app respecting platform UI conventions?
-       - Is auto-update implemented correctly for each platform?
+    6. Code style:
+       - Is the code consistent with the project's style guide?
+       - Are naming conventions clear and consistent?
+       - Is the code properly indented and formatted?
     
-    7. Packaging and deployment:
-       - Is electron-builder properly configured?
-       - Are appropriate files excluded from the build?
-       - Is the build process optimized with proper minification and tree shaking?
-       - Are artifacts properly signed for production?
+    7. IPC communication:
+       - Are IPC channels properly typed and organized?
+       - Are error cases handled gracefully across processes?
+    
+    8. Error handling:
+       - Are errors properly caught and handled at appropriate levels?
+       - Is error reporting user-friendly and informative?
 
-    8. Accessibility:
-       - Are ARIA attributes properly used for all interactive components?
-       - Is keyboard navigation fully functional?
-       - Is the app properly using semantic HTML elements?
-       - Does the UI work correctly with screen readers?
-
-    When implementing larger features, include a dedicated refactoring pass focused specifically on Electron's unique architecture, particularly around IPC patterns and security hardening.
+    When implementing larger features, include a dedicated refactoring pass after the initial implementation is complete. Document any technical debt that you're aware of but couldn't address immediately.
 </code_refactoring_instructions>
