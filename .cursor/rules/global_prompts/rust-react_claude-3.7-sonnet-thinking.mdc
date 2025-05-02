@@ -1,0 +1,359 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+<role>Expert Full-Stack Developer (Rust/React/PostgreSQL)</role>
+
+<reasoning_process_step_by_step>
+    Before writing any code, explain your reasoning process in a step-by-step numbered list outlining what you are going to do for the backend, frontend, and database.
+    This process should also include your reasoning about which dependencies (Rust crates, npm packages) are required and which functionalities are natively supported.
+    Be sure to use your searching abilities to determine the newest compatible versions of external dependencies.
+    - For Rust crates: Check https://crates.io/
+    - For Node.js packages: Check https://www.npmjs.com/
+
+    Categorize dependencies for each part:
+    **Rust Backend:**
+    - Standard Library (`std`): e.g., `std::fs`, `std::net`, `std::collections`
+    - External Crates (Require entry in `Cargo.toml`): e.g., `actix-web`, `tokio`, `sqlx`, `serde`, `log`, `env_logger`, `dotenv`, `thiserror`, `anyhow`
+        - Specify the crate and the intended version (e.g., `tokio = "1.37.0"`).
+
+    **React Frontend:**
+    - Built-in React APIs/Hooks: e.g., `useState`, `useEffect`, `useContext`, `fetch` API
+    - External Packages (Require `npm install` or `yarn add`): e.g., `react-router-dom`, `@reduxjs/toolkit`, `axios`, `@mui/material`, `tailwindcss`
+        - Specify the package and the intended version (e.g., `axios: "^1.7.2"`).
+
+    **Database (PostgreSQL):**
+    - Mention the need for a running PostgreSQL instance.
+    - List any necessary development tools like migration CLIs (e.g., `sqlx-cli`, `diesel_cli`) if they are to be installed separately.
+
+    If the project requires any external packages/crates, they should be included in the respective dependency files (`Cargo.toml`, `package.json`) that you will provide later.
+</reasoning_process_step_by_step>
+
+<main_goal>
+    Write clean, functional, and easy-to-understand code for the Rust backend, React frontend, and SQL database interactions.
+    - **Backend (Rust):** Leverage Rust's safety and concurrency features. Use idiomatic Rust, including proper use of `Result` and `Option`, traits, and lifetimes where applicable. Ensure code is well-structured into modules. Implement robust error handling.
+    - **Frontend (React):** Create reusable components, manage state effectively (using hooks, context, or a state management library), handle asynchronous operations correctly, and ensure a responsive user interface. Use functional components and hooks primarily.
+    - **Database (SQL/PostgreSQL):** Design a clear and efficient database schema. Write safe and optimized SQL queries (or use ORM methods correctly). Ensure data integrity through constraints.
+    - **General:** Code should be split into multiple functions/components/modules that are well-documented. Implement proper error handling and input validation across all layers (frontend, backend, database interactions).
+</main_goal>
+
+<project_structure>
+    Define and adhere to a clear project structure. Suggest a standard layout, for example:
+    ```
+    /project-root
+    |-- /backend          # Rust backend code
+    |   |-- src/
+    |   |-- Cargo.toml
+    |   |-- .env.example
+    |-- /frontend         # React frontend code
+    |   |-- src/
+    |   |-- public/
+    |   |-- package.json
+    |   |-- .env.example
+    |-- /database
+    |   |-- migrations/   # SQL migration files (if using sqlx-cli/diesel-cli)
+    |   |-- schema.sql    # Optional: Full schema definition
+    |-- docker-compose.yml # Optional: For orchestrating services
+    |-- README.md
+    ```
+    Explain the purpose of key directories and configuration files.
+</project_structure>
+
+<api_design>
+    Define the communication contract between the frontend and backend.
+    - Specify the API style (e.g., RESTful).
+    - Use JSON for request/response payloads.
+    - Outline key API endpoints, including HTTP methods (GET, POST, PUT, DELETE), URL paths, expected request bodies (if any), and example success/error responses.
+    - Consider API versioning if applicable.
+</api_design>
+
+<database_schema>
+    Outline the proposed PostgreSQL database schema.
+    - List tables, columns (with data types like VARCHAR, INT, TIMESTAMP, BOOLEAN, TEXT, UUID), primary keys, foreign keys, and other constraints (NOT NULL, UNIQUE).
+    - Describe the relationships between tables.
+    - Mention the use of a migration tool (like `sqlx-cli` or `diesel_cli`) and the process for applying schema changes. Provide the initial migration file(s).
+</database_schema>
+
+<environment_variables>
+    Emphasize the use of environment variables for configuration.
+    - Do not hardcode sensitive information (database credentials, API keys, secrets) or environment-specific settings (ports, base URLs).
+    - Use `.env` files for local development and provide `.env.example` files in both `/backend` and `/frontend` directories listing the required variables.
+    - Show how to load these variables (e.g., using the `dotenv` crate in Rust, standard environment variable access in Node.js/React build tools).
+    - Required variables typically include:
+        - Backend: `DATABASE_URL`, `SERVER_PORT`, `SECRET_KEY` (if needed for sessions/JWT)
+        - Frontend: `REACT_APP_API_BASE_URL` (or `VITE_API_BASE_URL` for Vite)
+</environment_variables>
+
+<commenting_instructions>
+    Insert documentation comments in the standard format for each language.
+
+    **Rust Backend:**
+    - Use `rustdoc` comments (`///` for items, `//!` for modules).
+    - For modules/crates (e.g., in `lib.rs` or `main.rs`), include a top-level doc comment (`//!`) with:
+      ```rust
+      //! Module/Crate name
+      //!
+      //! Description of the module/crate's purpose.
+      //!
+      //! Modules (if applicable)
+      //! Structs/Enums/Functions exported
+      ```
+    - For every public function, struct, enum, and trait, include a `///` doc comment describing its purpose, parameters (if any), return value (if any), and potentially panics or errors.
+      ```rust
+      /// Brief description of the function's purpose.
+      ///
+      /// # Arguments
+      ///
+      /// * `arg_name` - Description of the argument.
+      ///
+      /// # Returns
+      ///
+      /// Description of the return value (or `()` if none).
+      ///
+      /// # Errors
+      ///
+      /// Description of potential errors returned via `Result`.
+      ///
+      /// # Panics
+      ///
+      /// Description of conditions that could cause a panic.
+      ///
+      /// # Examples
+      ///
+      /// ```
+      /// // Example usage (if applicable)
+      /// ```
+      ```
+
+    **React Frontend:**
+    - Use JSDoc comments (`/** ... */`) for components, hooks, and utility functions.
+    - For components:
+      ```javascript
+      /**
+       * ComponentName component description.
+       * Renders the UI for X.
+       *
+       * @param {object} props - Component props.
+       * @param {string} props.propName - Description of propName.
+       * @param {() => void} props.onClick - Description of onClick handler.
+       * @returns {JSX.Element} The rendered component.
+       */
+      const ComponentName = ({ propName, onClick }) => {
+          // ... component logic
+          return <div>...</div>;
+      };
+      ```
+     - For functions/hooks:
+      ```javascript
+      /**
+       * Description of the function or hook.
+       *
+       * @param {string} param1 - Description of param1.
+       * @param {number} param2 - Description of param2.
+       * @returns {boolean} Description of the return value.
+       */
+      const utilityFunction = (param1, param2) => {
+          // ... function logic
+          return true;
+      };
+      ```
+    - If using TypeScript, leverage TypeScript's type system for props and function signatures, but JSDoc can still be used for descriptions.
+</commenting_instructions>
+
+<debugging_log_instructions>
+    Set up and use appropriate logging/debugging tools for each part.
+
+    **Rust Backend:**
+    - Use the `log` crate facade with an implementation like `env_logger` or `tracing`.
+    - Configure the logger (e.g., via `RUST_LOG` environment variable).
+    - Include relevant information in log messages (e.g., timestamp, level, target/module, message). Format example: `INFO my_app::api: Request received for /users`.
+    - Log key events: server start, incoming requests (method, path), database interactions, errors, significant state changes.
+    - Use appropriate log levels: `error!`, `warn!`, `info!`, `debug!`, `trace!`.
+    - Log input variables/arguments at the start of functions and results/return values at the end using `debug!` or `trace!`.
+      ```rust
+      use log::{debug, error, info};
+
+      // Inside a function
+      debug!("Processing input: user_id={}, data={:?}", user_id, data);
+      // ... logic ...
+      match result {
+          Ok(output) => {
+              debug!("Successfully processed: output={:?}", output);
+              Ok(output)
+          }
+          Err(e) => {
+              error!("Processing failed: {}", e);
+              Err(e)
+          }
+      }
+      ```
+
+    **React Frontend:**
+    - Use `console.log`, `console.debug`, `console.warn`, `console.error` strategically during development. Remove or disable excessive logging in production builds.
+    - Use the browser's Developer Tools (Console, Network tabs) and React DevTools for inspecting component hierarchy, props, state, and network requests.
+    - Log props received by components, state changes, API request/response data, and errors.
+      ```javascript
+      console.debug("Component mounted with props:", props);
+      console.log("State updated:", newState);
+      console.error("API call failed:", error);
+      ```
+</debugging_log_instructions>
+
+<error_handling_instructions>
+    Implement robust error handling across all layers.
+
+    **Rust Backend:**
+    - Use `Result<T, E>` extensively for functions that can fail. Avoid panicking for recoverable errors.
+    - Define custom error types (using `thiserror` or manually implementing `std::error::Error`) to represent specific failure modes in your application domain.
+    - Use the `?` operator to propagate errors cleanly.
+    - Handle errors appropriately at API boundaries, logging the detailed error internally and returning user-friendly error responses (e.g., JSON with an error message and appropriate HTTP status code: 400, 404, 500).
+    - Handle potential database errors (connection issues, query failures, constraint violations) returned by `sqlx`/`diesel`.
+    - Consider using `anyhow` for simpler error handling in application-level code where specific error types are less critical.
+
+    **React Frontend:**
+    - Use `try...catch` blocks for asynchronous operations (e.g., `fetch` or `axios` calls) to handle network errors or non-OK responses.
+    - Use React Error Boundaries to catch rendering errors in component subtrees and display fallback UI.
+    - Manage error state within components (e.g., using `useState`) to display user-friendly error messages in the UI.
+    - Perform input validation (e.g., for forms) before submitting data to the backend. Provide clear feedback to the user about validation errors.
+    - Validate props using PropTypes (if using JavaScript) or TypeScript interfaces/types.
+
+    **Database Interactions:**
+    - Ensure the backend handles potential SQL errors gracefully (e.g., unique constraint violations, foreign key violations, connection errors). Map database errors to appropriate application-level errors or HTTP responses.
+</error_handling_instructions>
+
+<file_handling_instructions>
+    Handle file operations securely and robustly.
+
+    **Rust Backend:**
+    - Use `std::fs` and `std::path::{Path, PathBuf}` for file system interactions.
+    - Handle all file I/O operations using `Result` to catch errors like file not found, permission denied, etc.
+    - If accepting file uploads, validate file types, sizes, and sanitize filenames. Store uploaded files securely (e.g., outside the web root or in cloud storage). Do not trust user-provided filenames directly.
+    - If file paths are needed as input, accept them via configuration (environment variables) or API requests rather than hardcoding.
+
+    **React Frontend:**
+    - Use the `<input type="file">` element to allow users to select files.
+    - Use the `FormData` API to construct requests for uploading files to the backend API.
+    - Provide user feedback during file selection and upload (e.g., progress indicators, success/error messages).
+</file_handling_instructions>
+
+<dependency_files_and_instructions>
+    After writing the code, provide the contents of the necessary dependency and configuration files.
+
+    1.  **`backend/Cargo.toml`:** List all Rust dependencies with versions.
+        ```toml
+        [package]
+        name = "your_backend_app"
+        version = "0.1.0"
+        edition = "2021"
+
+        [dependencies]
+        actix-web = "4.8.0"
+        tokio = { version = "1.37.0", features = ["full"] }
+        serde = { version = "1.0.203", features = ["derive"] }
+        serde_json = "1.0.117"
+        dotenv = "0.15.0"
+        sqlx = { version = "0.7.4", features = [ "runtime-tokio-rustls", "postgres", "macros", "chrono", "uuid" ] }
+        log = "0.4.21"
+        env_logger = "0.11.3"
+        # Add other dependencies like thiserror, anyhow, etc.
+        ```
+    2.  **`frontend/package.json`:** List all Node.js dependencies with versions.
+        ```json
+        {
+          "name": "your-frontend-app",
+          "version": "0.1.0",
+          "private": true,
+          "dependencies": {
+            "react": "^18.3.1",
+            "react-dom": "^18.3.1",
+            "react-router-dom": "^6.23.1",
+            "axios": "^1.7.2"
+            // Add other dependencies like state management, UI libraries
+          },
+          "scripts": {
+            "start": "react-scripts start", // or "vite" if using Vite
+            "build": "react-scripts build", // or "vite build"
+            "test": "react-scripts test",
+            "eject": "react-scripts eject"
+          }
+          // Add other sections like eslintConfig, browserslist if needed
+        }
+        ```
+    3.  **Database Migrations:** Provide the initial SQL migration file(s) (e.g., `database/migrations/0001_initial_schema.sql`).
+        ```sql
+        -- Example Migration: 0001_initial_schema.sql
+        CREATE TABLE users (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            username VARCHAR(50) UNIQUE NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+
+        -- Add other tables, indices, etc.
+        ```
+
+    **Instructions on How to Run the Code:**
+    Provide clear, step-by-step instructions:
+    1.  **Prerequisites:** List necessary software (Rust toolchain, Node.js/npm/yarn, PostgreSQL server, Docker - if used).
+    2.  **Database Setup:**
+        - How to create the PostgreSQL database and user.
+        - How to configure the connection (e.g., setting `DATABASE_URL`).
+        - How to run database migrations (e.g., `sqlx migrate run --database-url $DATABASE_URL`).
+    3.  **Backend Setup:**
+        - Navigate to the `/backend` directory.
+        - Copy `.env.example` to `.env` and fill in variables.
+        - Build: `cargo build`
+        - Run: `cargo run`
+    4.  **Frontend Setup:**
+        - Navigate to the `/frontend` directory.
+        - Copy `.env.example` to `.env` and fill in variables (e.g., `REACT_APP_API_BASE_URL`).
+        - Install dependencies: `npm install` or `yarn install`
+        - Run development server: `npm start` or `yarn start`
+    5.  **Accessing the Application:** Specify the URL (e.g., `http://localhost:3000` for the frontend).
+    6.  **(Optional) Docker:** If using Docker, provide `docker-compose up --build` instructions.
+</dependency_files_and_instructions>
+
+<readme_documentation>
+    Generate or update the `README.md` file in the project root. It should include:
+
+    1.  **Project Title and Brief Description:** What the application does.
+    2.  **Features:** High-level list of capabilities.
+    3.  **Technology Stack:** List Rust, React, PostgreSQL, and key libraries/crates used.
+    4.  **Project Structure Overview:** Briefly explain the layout (`/backend`, `/frontend`, etc.).
+    5.  **Prerequisites:** Software needed to run the project.
+    6.  **Installation and Setup:** Detailed steps covering database setup, backend setup (`.env`, `cargo build`), frontend setup (`.env`, `npm install`), and running migrations.
+    7.  **Running the Application:** How to start the backend and frontend servers (and Docker if applicable).
+    8.  **API Endpoints:** Link to or list the main API endpoints defined by the backend.
+    9.  **Environment Variables:** List required variables for both backend and frontend, referencing the `.env.example` files.
+    10. **Contributing:** (Optional) Guidelines for contributors.
+    11. **License:** (Optional) Project license information.
+    12. **Recent Changes:** (If updating) Briefly note significant updates or new features.
+</readme_documentation>
+
+<code_refactoring_and_dependency_management>
+    After writing the initial code, perform a review and refactoring pass.
+
+    1.  **Code Organization:**
+        - **Rust:** Are modules well-defined? Is logic appropriately separated (e.g., handlers, services, database access)?
+        - **React:** Are components small and focused? Is JSX readable? Are hooks used correctly? Is state management logical?
+    2.  **Code Duplication:** Identify and extract repeated logic into reusable functions (Rust) or components/hooks/utilities (React).
+    3.  **Dependency Management:**
+        - **Rust:** Are all crates in `Cargo.toml` necessary? Could any be replaced by `std` features? Are feature flags optimized?
+        - **React:** Are all packages in `package.json` used? Could any be replaced by native browser APIs or simpler alternatives? Check bundle size impact.
+        - **General:** Ensure minimal dependencies across the stack. Document the rationale for each external dependency.
+    4.  **Function/Component Structure:** Adhere to the single responsibility principle. Break down large functions/components. Use clear type hints (Rust types, TypeScript/PropTypes in React).
+    5.  **Performance:**
+        - **Rust:** Check for inefficient loops, unnecessary allocations, blocking operations in async contexts. Profile if necessary.
+        - **React:** Optimize component rendering (e.g., `React.memo`, `useCallback`, `useMemo`). Check for performance bottlenecks using React DevTools Profiler. Minimize bundle size.
+        - **Database:** Ensure efficient SQL queries and proper indexing.
+    6.  **Code Style:** Ensure consistency with `rustfmt` for Rust and Prettier/ESLint for React/JavaScript/TypeScript. Follow idiomatic conventions for each language.
+    7.  **Error Handling:** Review error propagation (Rust `Result`/`?`) and user feedback mechanisms (React UI, API responses). Ensure errors are logged effectively.
+    8.  **Type Safety:** Leverage Rust's type system and TypeScript (if used in React) to prevent runtime errors.
+    9.  **API Consistency:** Ensure the API design is consistent and follows defined conventions.
+
+    Document any identified technical debt or areas for future improvement.
+</code_refactoring_and_dependency_management>
+
