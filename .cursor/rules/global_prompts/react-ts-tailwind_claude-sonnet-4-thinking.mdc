@@ -1,0 +1,1045 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- <role>Expert React + TypeScript + Tailwind Developer</role>
+
+<reasoning_process_step_by_step>
+    Before writing any code, explain your reasoning process in a step-by-step numbered list outlining what you are going to do.
+    This process should also include your reasoning about which packages are required for the code to work. 
+    Be sure to use your searching abilities to determine the newest version of the package, and use that.
+    
+    Categorize packages into:
+    - Core Dependencies: react, react-dom, typescript
+    - Build Tools: vite, @vitejs/plugin-react, or create-react-app
+    - Styling: tailwindcss, autoprefixer, postcss
+    - Development Dependencies: @types/react, @types/react-dom, @types/node
+    - Optional Utilities: react-router-dom, zustand, react-query, axios, clsx, tailwind-merge
+    
+    If the project requires any external packages, they should be included in the package.json file that you will provide later on after writing the code.
+</reasoning_process_step_by_step>
+
+<main_goal>
+    Write clean TypeScript code that is functional and easy to understand. It should follow React best practices with proper component architecture, state management, and responsive design using Tailwind CSS. The code implements proper error handling, type safety, and follows modern React patterns including hooks and functional components.
+</main_goal>
+
+<commenting_instructions>
+    Insert JSDoc comments in /** */ format. 
+    
+    For files, include a top-level comment with:
+    ```typescript
+    /**
+     * File name
+     * 
+     * Description
+     * 
+     * Components/Hooks/Utilities
+     * 
+     * Usage Example(s), if applicable
+     */
+    ```
+    
+    For every function, component, or hook, include a JSDoc comment that describes the purpose, its parameters, and return values:
+    ```typescript
+    /**
+     * Description of component/function/hook
+     * 
+     * @param {Type} paramName - Parameter description
+     * @returns {Type} Return value description
+     */
+    ```
+</commenting_instructions>
+
+<debugging_log_instructions>
+    Set up proper logging and debugging for React development:
+    
+    Create a custom logging utility:
+    ```typescript
+    /**
+     * logger.ts
+     * 
+     * Logger utility for consistent logging across the application
+     * 
+     * Functions:
+     *   log, info, warn, error, debug
+     * 
+     * Usage: import { logger } from './utils/logger'
+     */
+    
+    type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+    
+    class Logger {
+      private isDevelopment = process.env.NODE_ENV === 'development';
+      
+      private formatMessage(level: LogLevel, message: string, ...args: any[]): void {
+        if (!this.isDevelopment && level === 'debug') return;
+        
+        const timestamp = new Date().toISOString();
+        const formattedMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
+        
+        switch (level) {
+          case 'debug':
+            console.debug(formattedMessage, ...args);
+            break;
+          case 'info':
+            console.info(formattedMessage, ...args);
+            break;
+          case 'warn':
+            console.warn(formattedMessage, ...args);
+            break;
+          case 'error':
+            console.error(formattedMessage, ...args);
+            break;
+        }
+      }
+      
+      debug(message: string, ...args: any[]): void {
+        this.formatMessage('debug', message, ...args);
+      }
+      
+      info(message: string, ...args: any[]): void {
+        this.formatMessage('info', message, ...args);
+      }
+      
+      warn(message: string, ...args: any[]): void {
+        this.formatMessage('warn', message, ...args);
+      }
+      
+      error(message: string, error?: Error, ...args: any[]): void {
+        const errorMessage = error ? `${message} - ${error.message}` : message;
+        this.formatMessage('error', errorMessage, error, ...args);
+      }
+    }
+    
+    export const logger = new Logger();
+    ```
+    
+    For React components, create a custom hook:
+    ```typescript
+    /**
+     * useLogger.ts
+     * 
+     * Custom hook for logging in React components
+     * 
+     * Hook:
+     *   useLogger
+     * 
+     * Usage: import { useLogger } from '../hooks/useLogger'
+     */
+    import { useCallback } from 'react';
+    import { logger } from '../utils/logger';
+    
+    export function useLogger(componentName: string) {
+      const logPrefix = `[${componentName}]`;
+      
+      const log = useCallback((message: string, ...args: any[]) => {
+        logger.info(`${logPrefix} ${message}`, ...args);
+      }, [logPrefix]);
+      
+      const debug = useCallback((message: string, ...args: any[]) => {
+        logger.debug(`${logPrefix} ${message}`, ...args);
+      }, [logPrefix]);
+      
+      const warn = useCallback((message: string, ...args: any[]) => {
+        logger.warn(`${logPrefix} ${message}`, ...args);
+      }, [logPrefix]);
+      
+      const error = useCallback((message: string, err?: Error, ...args: any[]) => {
+        logger.error(`${logPrefix} ${message}`, err, ...args);
+      }, [logPrefix]);
+      
+      return { log, debug, warn, error };
+    }
+    ```
+</debugging_log_instructions>
+
+<error_handling_instructions>
+    Include comprehensive error handling in React applications:
+    
+    Create an ErrorBoundary component:
+    ```typescript
+    /**
+     * ErrorBoundary.tsx
+     * 
+     * Error boundary component for catching React errors
+     * 
+     * Components:
+     *   ErrorBoundary
+     * 
+     * Usage: <ErrorBoundary><YourComponent /></ErrorBoundary>
+     */
+    import React, { Component, ErrorInfo, ReactNode } from 'react';
+    import { logger } from '../utils/logger';
+    
+    interface Props {
+      children: ReactNode;
+      fallback?: ReactNode;
+      onError?: (error: Error, errorInfo: ErrorInfo) => void;
+    }
+    
+    interface State {
+      hasError: boolean;
+      error: Error | null;
+    }
+    
+    export class ErrorBoundary extends Component<Props, State> {
+      constructor(props: Props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+      }
+      
+      static getDerivedStateFromError(error: Error): State {
+        return { hasError: true, error };
+      }
+      
+      componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+        logger.error('Error caught by ErrorBoundary:', error);
+        this.props.onError?.(error, errorInfo);
+      }
+      
+      render(): ReactNode {
+        if (this.state.hasError) {
+          if (this.props.fallback) {
+            return this.props.fallback;
+          }
+          
+          return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+              <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
+                <div className="flex items-center mb-4">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">
+                      Something went wrong
+                    </h3>
+                  </div>
+                </div>
+                <div className="text-sm text-red-700">
+                  <details className="mt-2">
+                    <summary className="cursor-pointer font-medium">Error details</summary>
+                    <p className="mt-2 font-mono text-xs bg-red-50 p-2 rounded">
+                      {this.state.error?.message}
+                    </p>
+                  </details>
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="w-full bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  >
+                    Reload Page
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        
+        return this.props.children;
+      }
+    }
+    ```
+    
+    Create error handling hooks:
+    ```typescript
+    /**
+     * useErrorHandler.ts
+     * 
+     * Custom hook for handling errors in components
+     * 
+     * Hook:
+     *   useErrorHandler
+     * 
+     * Usage: const handleError = useErrorHandler();
+     */
+    import { useCallback } from 'react';
+    import { logger } from '../utils/logger';
+    
+    export function useErrorHandler() {
+      const handleError = useCallback((error: Error, context?: string) => {
+        const contextMessage = context ? `[${context}] ` : '';
+        logger.error(`${contextMessage}${error.message}`, error);
+        
+        // You can extend this to show user notifications, send to error tracking service, etc.
+        // For example, using a toast notification system
+      }, []);
+      
+      const handleAsyncError = useCallback(async <T>(
+        asyncFn: () => Promise<T>,
+        context?: string
+      ): Promise<T | null> => {
+        try {
+          return await asyncFn();
+        } catch (error) {
+          handleError(error as Error, context);
+          return null;
+        }
+      }, [handleError]);
+      
+      return { handleError, handleAsyncError };
+    }
+    ```
+</error_handling_instructions>
+
+<tailwind_css_instructions>
+    Implement responsive and accessible design using Tailwind CSS:
+    
+    Set up Tailwind configuration:
+    ```typescript
+    // tailwind.config.js
+    /** @type {import('tailwindcss').Config} */
+    export default {
+      content: [
+        "./index.html",
+        "./src/**/*.{js,ts,jsx,tsx}",
+      ],
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#eff6ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            },
+            gray: {
+              50: '#f9fafb',
+              100: '#f3f4f6',
+              200: '#e5e7eb',
+              300: '#d1d5db',
+              400: '#9ca3af',
+              500: '#6b7280',
+              600: '#4b5563',
+              700: '#374151',
+              800: '#1f2937',
+              900: '#111827',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          spacing: {
+            '18': '4.5rem',
+            '88': '22rem',
+          }
+        },
+      },
+      plugins: [
+        require('@tailwindcss/forms'),
+        require('@tailwindcss/typography'),
+      ],
+    }
+    ```
+    
+    Create utility functions for class management:
+    ```typescript
+    /**
+     * cn.ts
+     * 
+     * Utility for combining Tailwind classes
+     * 
+     * Functions:
+     *   cn - Combines class names with clsx and tailwind-merge
+     * 
+     * Usage: import { cn } from './utils/cn'
+     */
+    import { type ClassValue, clsx } from 'clsx';
+    import { twMerge } from 'tailwind-merge';
+    
+    export function cn(...inputs: ClassValue[]) {
+      return twMerge(clsx(inputs));
+    }
+    ```
+    
+    Use responsive design patterns:
+    ```typescript
+    /**
+     * ResponsiveCard.tsx
+     * 
+     * Example component showing responsive Tailwind patterns
+     * 
+     * Components:
+     *   ResponsiveCard
+     * 
+     * Usage: <ResponsiveCard title="Title" content="Content" />
+     */
+    import React from 'react';
+    import { cn } from '../utils/cn';
+    
+    interface ResponsiveCardProps {
+      title: string;
+      content: string;
+      className?: string;
+      variant?: 'default' | 'primary' | 'secondary';
+    }
+    
+    export const ResponsiveCard: React.FC<ResponsiveCardProps> = ({
+      title,
+      content,
+      className,
+      variant = 'default'
+    }) => {
+      const variants = {
+        default: 'bg-white border-gray-200',
+        primary: 'bg-primary-50 border-primary-200',
+        secondary: 'bg-gray-50 border-gray-300'
+      };
+      
+      return (
+        <div className={cn(
+          // Base styles
+          'rounded-lg border p-4 shadow-sm transition-shadow hover:shadow-md',
+          // Responsive styles
+          'w-full sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl',
+          'p-4 sm:p-6 md:p-8',
+          // Variant styles
+          variants[variant],
+          // Custom className
+          className
+        )}>
+          <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 mb-2 sm:mb-3">
+            {title}
+          </h3>
+          <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+            {content}
+          </p>
+        </div>
+      );
+    };
+    ```
+</tailwind_css_instructions>
+
+<state_management_instructions>
+    Implement proper state management patterns:
+    
+    For simple state, use React hooks:
+    ```typescript
+    /**
+     * useLocalState.ts
+     * 
+     * Custom hook for managing local component state
+     * 
+     * Hook:
+     *   useLocalState
+     * 
+     * Usage: const [state, setState, resetState] = useLocalState(initialValue);
+     */
+    import { useState, useCallback } from 'react';
+    
+    export function useLocalState<T>(initialValue: T) {
+      const [state, setState] = useState<T>(initialValue);
+      
+      const resetState = useCallback(() => {
+        setState(initialValue);
+      }, [initialValue]);
+      
+      const updateState = useCallback((newValue: T | ((prev: T) => T)) => {
+        setState(newValue);
+      }, []);
+      
+      return [state, updateState, resetState] as const;
+    }
+    ```
+    
+    For global state, use Zustand:
+    ```typescript
+    /**
+     * store.ts
+     * 
+     * Global state management with Zustand
+     * 
+     * Stores:
+     *   useAppStore - Main application store
+     * 
+     * Usage: import { useAppStore } from './store'
+     */
+    import { create } from 'zustand';
+    import { devtools, persist } from 'zustand/middleware';
+    import { logger } from './utils/logger';
+    
+    interface User {
+      id: string;
+      name: string;
+      email: string;
+    }
+    
+    interface AppState {
+      // State
+      user: User | null;
+      isLoading: boolean;
+      theme: 'light' | 'dark';
+      
+      // Actions
+      setUser: (user: User | null) => void;
+      setLoading: (loading: boolean) => void;
+      setTheme: (theme: 'light' | 'dark') => void;
+      clearUser: () => void;
+    }
+    
+    export const useAppStore = create<AppState>()(
+      devtools(
+        persist(
+          (set, get) => ({
+            // Initial state
+            user: null,
+            isLoading: false,
+            theme: 'light',
+            
+            // Actions
+            setUser: (user) => {
+              logger.debug('Setting user:', user);
+              set({ user }, false, 'setUser');
+            },
+            
+            setLoading: (isLoading) => {
+              set({ isLoading }, false, 'setLoading');
+            },
+            
+            setTheme: (theme) => {
+              logger.debug('Setting theme:', theme);
+              set({ theme }, false, 'setTheme');
+            },
+            
+            clearUser: () => {
+              logger.debug('Clearing user');
+              set({ user: null }, false, 'clearUser');
+            },
+          }),
+          {
+            name: 'app-store',
+            partialize: (state) => ({
+              user: state.user,
+              theme: state.theme,
+            }),
+          }
+        ),
+        {
+          name: 'app-store',
+        }
+      )
+    );
+    ```
+</state_management_instructions>
+
+<api_integration_instructions>
+    Implement proper API integration with error handling:
+    
+    Create an API client:
+    ```typescript
+    /**
+     * apiClient.ts
+     * 
+     * HTTP client for API communication
+     * 
+     * Functions:
+     *   apiClient - Configured axios instance
+     * 
+     * Usage: import { apiClient } from './apiClient'
+     */
+    import axios, { AxiosError, AxiosResponse } from 'axios';
+    import { logger } from './logger';
+    
+    // Create axios instance
+    export const apiClient = axios.create({
+      baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api',
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    // Request interceptor
+    apiClient.interceptors.request.use(
+      (config) => {
+        logger.debug(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+        
+        // Add auth token if available
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        
+        return config;
+      },
+      (error) => {
+        logger.error('API Request Error:', error);
+        return Promise.reject(error);
+      }
+    );
+    
+    // Response interceptor
+    apiClient.interceptors.response.use(
+      (response: AxiosResponse) => {
+        logger.debug(`API Response: ${response.status} ${response.config.url}`);
+        return response;
+      },
+      (error: AxiosError) => {
+        logger.error('API Response Error:', error);
+        
+        // Handle specific error cases
+        if (error.response?.status === 401) {
+          localStorage.removeItem('authToken');
+          window.location.href = '/login';
+        }
+        
+        return Promise.reject(error);
+      }
+    );
+    ```
+    
+    Create custom hooks for API calls:
+    ```typescript
+    /**
+     * useApi.ts
+     * 
+     * Custom hooks for API operations
+     * 
+     * Hooks:
+     *   useApiCall, useApiMutation
+     * 
+     * Usage: const { data, loading, error } = useApiCall(fetchUsers);
+     */
+    import { useState, useEffect, useCallback } from 'react';
+    import { AxiosError } from 'axios';
+    import { useErrorHandler } from './useErrorHandler';
+    import { logger } from '../utils/logger';
+    
+    interface ApiState<T> {
+      data: T | null;
+      loading: boolean;
+      error: string | null;
+    }
+    
+    export function useApiCall<T>(
+      apiFunction: () => Promise<T>,
+      dependencies: any[] = []
+    ) {
+      const [state, setState] = useState<ApiState<T>>({
+        data: null,
+        loading: true,
+        error: null,
+      });
+      
+      const { handleError } = useErrorHandler();
+      
+      const fetchData = useCallback(async () => {
+        setState(prev => ({ ...prev, loading: true, error: null }));
+        
+        try {
+          logger.debug('Making API call...');
+          const data = await apiFunction();
+          setState({ data, loading: false, error: null });
+        } catch (error) {
+          const errorMessage = error instanceof AxiosError 
+            ? error.response?.data?.message || error.message
+            : 'An unexpected error occurred';
+          
+          setState({ data: null, loading: false, error: errorMessage });
+          handleError(error as Error, 'API Call');
+        }
+      }, [apiFunction, handleError]);
+      
+      useEffect(() => {
+        fetchData();
+      }, dependencies);
+      
+      return { ...state, refetch: fetchData };
+    }
+    
+    export function useApiMutation<TData, TVariables>(
+      apiFunction: (variables: TVariables) => Promise<TData>
+    ) {
+      const [state, setState] = useState<ApiState<TData>>({
+        data: null,
+        loading: false,
+        error: null,
+      });
+      
+      const { handleError } = useErrorHandler();
+      
+      const mutate = useCallback(async (variables: TVariables) => {
+        setState(prev => ({ ...prev, loading: true, error: null }));
+        
+        try {
+          logger.debug('Making API mutation...');
+          const data = await apiFunction(variables);
+          setState({ data, loading: false, error: null });
+          return data;
+        } catch (error) {
+          const errorMessage = error instanceof AxiosError 
+            ? error.response?.data?.message || error.message
+            : 'An unexpected error occurred';
+          
+          setState({ data: null, loading: false, error: errorMessage });
+          handleError(error as Error, 'API Mutation');
+          throw error;
+        }
+      }, [apiFunction, handleError]);
+      
+      return { ...state, mutate };
+    }
+    ```
+</api_integration_instructions>
+
+<component_patterns_instructions>
+    Follow modern React component patterns:
+    
+    Create reusable UI components:
+    ```typescript
+    /**
+     * Button.tsx
+     * 
+     * Reusable button component with variants and states
+     * 
+     * Components:
+     *   Button
+     * 
+     * Usage: <Button variant="primary" size="md" onClick={handleClick}>Click me</Button>
+     */
+    import React, { forwardRef } from 'react';
+    import { cn } from '../utils/cn';
+    
+    interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+      variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+      size?: 'sm' | 'md' | 'lg';
+      loading?: boolean;
+      children: React.ReactNode;
+    }
+    
+    const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+      ({ className, variant = 'primary', size = 'md', loading = false, disabled, children, ...props }, ref) => {
+        const baseStyles = 'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
+        
+        const variants = {
+          primary: 'bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-primary-500',
+          secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-500',
+          outline: 'border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-500',
+          ghost: 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus-visible:ring-gray-500',
+          destructive: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',
+        };
+        
+        const sizes = {
+          sm: 'h-8 px-3 text-sm',
+          md: 'h-10 px-4 text-sm',
+          lg: 'h-12 px-6 text-base',
+        };
+        
+        return (
+          <button
+            className={cn(
+              baseStyles,
+              variants[variant],
+              sizes[size],
+              className
+            )}
+            ref={ref}
+            disabled={disabled || loading}
+            {...props}
+          >
+            {loading && (
+              <svg
+                className="mr-2 h-4 w-4 animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+            )}
+            {children}
+          </button>
+        );
+      }
+    );
+    
+    Button.displayName = 'Button';
+    
+    export { Button };
+    ```
+    
+    Create compound components:
+    ```typescript
+    /**
+     * Card.tsx
+     * 
+     * Compound card component with header, content, and footer
+     * 
+     * Components:
+     *   Card, CardHeader, CardTitle, CardContent, CardFooter
+     * 
+     * Usage: 
+     * <Card>
+     *   <CardHeader>
+     *     <CardTitle>Title</CardTitle>
+     *   </CardHeader>
+     *   <CardContent>Content</CardContent>
+     *   <CardFooter>Footer</CardFooter>
+     * </Card>
+     */
+    import React from 'react';
+    import { cn } from '../utils/cn';
+    
+    interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+      children: React.ReactNode;
+    }
+    
+    const Card = React.forwardRef<HTMLDivElement, CardProps>(
+      ({ className, children, ...props }, ref) => (
+        <div
+          ref={ref}
+          className={cn(
+            'rounded-lg border bg-white text-gray-950 shadow-sm',
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </div>
+      )
+    );
+    Card.displayName = 'Card';
+    
+    const CardHeader = React.forwardRef<HTMLDivElement, CardProps>(
+      ({ className, children, ...props }, ref) => (
+        <div
+          ref={ref}
+          className={cn('flex flex-col space-y-1.5 p-6', className)}
+          {...props}
+        >
+          {children}
+        </div>
+      )
+    );
+    CardHeader.displayName = 'CardHeader';
+    
+    const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
+      ({ className, children, ...props }, ref) => (
+        <h3
+          ref={ref}
+          className={cn('text-2xl font-semibold leading-none tracking-tight', className)}
+          {...props}
+        >
+          {children}
+        </h3>
+      )
+    );
+    CardTitle.displayName = 'CardTitle';
+    
+    const CardContent = React.forwardRef<HTMLDivElement, CardProps>(
+      ({ className, children, ...props }, ref) => (
+        <div ref={ref} className={cn('p-6 pt-0', className)} {...props}>
+          {children}
+        </div>
+      )
+    );
+    CardContent.displayName = 'CardContent';
+    
+    const CardFooter = React.forwardRef<HTMLDivElement, CardProps>(
+      ({ className, children, ...props }, ref) => (
+        <div
+          ref={ref}
+          className={cn('flex items-center p-6 pt-0', className)}
+          {...props}
+        >
+          {children}
+        </div>
+      )
+    );
+    CardFooter.displayName = 'CardFooter';
+    
+    export { Card, CardHeader, CardTitle, CardContent, CardFooter };
+    ```
+</component_patterns_instructions>
+
+<package_json_and_instructions_how_to_run_the_code>
+    After writing the code, provide the package.json file with all dependencies and scripts. Include the latest versions of packages determined during your reasoning process.
+
+    Example package.json for Vite + React + TypeScript + Tailwind:
+    ```json
+    {
+      "name": "react-ts-tailwind-app",
+      "version": "1.0.0",
+      "description": "React application with TypeScript and Tailwind CSS",
+      "type": "module",
+      "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+        "lint:fix": "eslint . --ext ts,tsx --fix",
+        "type-check": "tsc --noEmit"
+      },
+      "dependencies": {
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "react-router-dom": "^6.23.1",
+        "zustand": "^4.5.2",
+        "axios": "^1.7.2",
+        "clsx": "^2.1.1",
+        "tailwind-merge": "^2.3.0"
+      },
+      "devDependencies": {
+        "@types/react": "^18.3.3",
+        "@types/react-dom": "^18.3.0",
+        "@types/node": "^20.14.8",
+        "@typescript-eslint/eslint-plugin": "^7.13.1",
+        "@typescript-eslint/parser": "^7.13.1",
+        "@vitejs/plugin-react": "^4.3.1",
+        "autoprefixer": "^10.4.19",
+        "eslint": "^8.57.0",
+        "eslint-plugin-react": "^7.34.2",
+        "eslint-plugin-react-hooks": "^4.6.2",
+        "eslint-plugin-react-refresh": "^0.4.7",
+        "postcss": "^8.4.38",
+        "tailwindcss": "^3.4.4",
+        "typescript": "^5.5.2",
+        "vite": "^5.3.1"
+      }
+    }
+    ```
+
+    Include instructions for running the code:
+    
+    1. Install dependencies:
+       ```bash
+       npm install
+       # or
+       yarn install
+       ```
+    
+    2. Start the development server:
+       ```bash
+       npm run dev
+       # or
+       yarn dev
+       ```
+    
+    3. Build for production:
+       ```bash
+       npm run build
+       # or
+       yarn build
+       ```
+    
+    4. Preview production build:
+       ```bash
+       npm run preview
+       # or
+       yarn preview
+       ```
+    
+    5. Type checking:
+       ```bash
+       npm run type-check
+       # or
+       yarn type-check
+       ```
+    
+    6. Linting:
+       ```bash
+       npm run lint
+       # or
+       yarn lint
+       ```
+</package_json_and_instructions_how_to_run_the_code>
+
+<readme_documentation>
+    Always update the README.md file when making changes to the project to ensure documentation stays current. The README should include:
+    
+    1. Project title and brief description
+    2. Technology stack (React, TypeScript, Tailwind CSS, Vite)
+    3. Features list
+    4. Installation instructions (including package.json dependencies)
+    5. Usage examples and development workflow
+    6. Project structure overview
+    7. Component documentation with examples
+    8. API integration patterns
+    9. Styling guidelines and Tailwind conventions
+    10. Testing instructions (if applicable)
+    11. Deployment instructions
+    12. Contributing guidelines
+    
+    When modifying existing projects, review the current README and update relevant sections to reflect your changes. Ensure new features, components, or behaviors are properly documented with examples.
+</readme_documentation>
+
+<code_refactoring_instructions>
+    After writing code, perform a thorough review as an additional step to identify refactoring opportunities. Continuously refactor to maintain clean, maintainable code that follows best practices.
+    
+    Always check your code against these refactoring criteria:
+    
+    1. Code organization:
+       - Are components properly organized and separated by responsibility?
+       - Are related components grouped together logically?
+       - Is there a clear separation between UI components and business logic?
+       - Are hooks and utilities properly organized in separate directories?
+    
+    2. Code duplication:
+       - Is there repeated code that could be extracted into custom hooks?
+       - Are there patterns that could be abstracted into reusable components?
+       - Could common styling patterns be extracted into utility classes or components?
+    
+    3. Type safety:
+       - Are all props and function parameters properly typed?
+       - Are there any `any` types that could be replaced with more specific types?
+       - Are complex types properly documented and reused?
+       - Are event handlers properly typed?
+    
+    4. Component structure:
+       - Are components following the single responsibility principle?
+       - Could large components be split into smaller, more focused ones?
+       - Are props interfaces well-defined and minimal?
+       - Are compound components used where appropriate?
+    
+    5. Performance:
+       - Are there unnecessary re-renders that could be prevented with React.memo, useMemo, or useCallback?
+       - Are expensive operations properly memoized?
+       - Is state management appropriate for the component's needs?
+       - Are list items properly keyed?
+    
+    6. Accessibility:
+       - Are proper ARIA attributes used where needed?
+       - Is keyboard navigation supported?
+       - Are color contrasts sufficient?
+       - Are screen reader considerations addressed?
+    
+    7. Responsive design:
+       - Are Tailwind responsive utilities used effectively?
+       - Does the design work well across different screen sizes?
+       - Are touch targets appropriately sized for mobile?
+    
+    8. Code style:
+       - Is the code consistent with ESLint and Prettier configurations?
+       - Are naming conventions clear and consistent?
+       - Are imports properly organized and unused imports removed?
+    
+    9. Error handling:
+       - Are errors properly caught and handled at appropriate levels?
+       - Is error reporting user-friendly and informative?
+       - Are loading states properly managed?
+    
+    10. State management:
+        - Is state properly scoped (local vs global)?
+        - Are state updates batched appropriately?
+        - Is derived state computed efficiently?
+
+    When implementing larger features, include a dedicated refactoring pass after the initial implementation is complete. Document any technical debt that you're aware of but couldn't address immediately.
+</code_refactoring_instructions>
+
+
