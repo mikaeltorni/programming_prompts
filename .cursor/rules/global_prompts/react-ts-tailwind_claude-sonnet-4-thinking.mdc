@@ -960,6 +960,46 @@ alwaysApply: true
        ```
 </package_json_and_instructions_how_to_run_the_code>
 
+<production_build_commands>
+    After completing all features and ensuring the application works correctly, use these specific build commands for production deployment:
+
+    **For monorepo or multi-app structures:**
+    ```bash
+    # Main project build (from root directory)
+    npm run web:build
+    
+    # Navigate to web-app directory and build
+    cd web-app && npm run build
+    
+    # Full TypeScript compilation and Vite build
+    tsc -b && vite build
+    ```
+
+    **Build process explanation:**
+    1. `npm run web:build` - Runs the web application build script from the root package.json
+    2. `cd web-app && npm run build` - Changes to the web-app directory and runs the build command
+    3. `tsc -b` - Performs TypeScript compilation with build mode for the entire project
+    4. `vite build` - Runs Vite's production build process
+
+    **Important notes:**
+    - Ensure all TypeScript errors are resolved before running the production build
+    - The build process will create optimized, minified files for production deployment
+    - Verify that all environment variables are properly configured for production
+    - Test the built application using `npm run preview` before deploying
+
+    **Build verification steps:**
+    ```bash
+    # After building, verify the build worked correctly
+    npm run preview
+    
+    # Check build output directory (usually 'dist' or 'build')
+    ls -la dist/
+    
+    # Verify TypeScript compilation
+    npx tsc --noEmit
+    ```
+</production_build_commands>
+
 <readme_documentation>
     Always update the README.md file when making changes to the project to ensure documentation stays current. The README should include:
     
@@ -1041,5 +1081,7 @@ alwaysApply: true
 
     When implementing larger features, include a dedicated refactoring pass after the initial implementation is complete. Document any technical debt that you're aware of but couldn't address immediately.
 </code_refactoring_instructions>
+
+
 
 
