@@ -1000,6 +1000,171 @@ alwaysApply: true
     ```
 </production_build_commands>
 
+<update_readme_documentation>
+    **CRITICAL:** Always update the README.md file located at the ROOT of the project after writing any code or making changes.
+
+    The README.md file should be comprehensive and include:
+
+    ```markdown
+    # Project Title
+
+    Brief description of what the application does and its main purpose.
+
+    ## 🚀 Features
+
+    - List key features and capabilities
+    - Modern React + TypeScript + Tailwind CSS architecture
+    - Responsive design with mobile-first approach
+    - Error handling and logging
+    - State management with Zustand
+    - API integration with Axios
+
+    ## 🛠️ Technology Stack
+
+    - **Frontend:** React 18+ with TypeScript
+    - **Styling:** Tailwind CSS 3+ with responsive design
+    - **Build Tool:** Vite for fast development and optimized builds
+    - **State Management:** Zustand for global state
+    - **HTTP Client:** Axios with interceptors
+    - **Development:** ESLint, TypeScript compiler, Hot reload
+
+    ## 📦 Installation
+
+    1. Clone the repository:
+       ```bash
+       git clone <repository-url>
+       cd <project-name>
+       ```
+
+    2. Install dependencies:
+       ```bash
+       npm install
+       # or
+       yarn install
+       ```
+
+    3. Set up environment variables:
+       ```bash
+       cp .env.example .env
+       # Edit .env with your configuration
+       ```
+
+    ## 🏃‍♂️ Development
+
+    Start the development server:
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    ```
+
+    The application will be available at `http://localhost:5173`
+
+    ## 🔧 Available Scripts
+
+    - `npm run dev` - Start development server
+    - `npm run build` - Build for production
+    - `npm run preview` - Preview production build
+    - `npm run lint` - Run ESLint
+    - `npm run lint:fix` - Fix ESLint errors
+    - `npm run type-check` - Run TypeScript compiler
+
+    ## 🏗️ Production Build
+
+    For monorepo or multi-app structures:
+    ```bash
+    # Main project build (from root directory)
+    npm run web:build
+
+    # Navigate to web-app directory and build
+    cd web-app && npm run build
+
+    # Full TypeScript compilation and Vite build
+    tsc -b && vite build
+    ```
+
+    ## 📁 Project Structure
+
+    ```
+    ├── src/
+    │   ├── components/     # Reusable UI components
+    │   ├── hooks/         # Custom React hooks
+    │   ├── pages/         # Page components
+    │   ├── store/         # Zustand state management
+    │   ├── utils/         # Utility functions
+    │   ├── types/         # TypeScript type definitions
+    │   └── styles/        # Global styles and Tailwind config
+    ├── public/            # Static assets
+    ├── .env.example       # Environment variables template
+    └── README.md          # This file
+    ```
+
+    ## 🎨 Component Examples
+
+    ### Button Component
+    ```tsx
+    import { Button } from './components/ui/Button';
+    
+    <Button variant="primary" size="md" onClick={handleClick}>
+      Click me
+    </Button>
+    ```
+
+    ### Card Component
+    ```tsx
+    import { Card, CardHeader, CardTitle, CardContent } from './components/ui/Card';
+    
+    <Card>
+      <CardHeader>
+        <CardTitle>Card Title</CardTitle>
+      </CardHeader>
+      <CardContent>Card content goes here</CardContent>
+    </Card>
+    ```
+
+    ## 🔧 Configuration
+
+    ### Environment Variables
+    Required environment variables (see `.env.example`):
+    - `REACT_APP_API_BASE_URL` - Backend API URL
+    - Add other environment variables as needed
+
+    ### Tailwind CSS
+    Custom configuration in `tailwind.config.js` includes:
+    - Custom color palette
+    - Extended spacing and typography
+    - Responsive breakpoints
+
+    ## 🧪 Testing
+
+    (Add testing instructions when implemented)
+
+    ## 🚀 Deployment
+
+    (Add deployment instructions specific to your hosting platform)
+
+    ## 🤝 Contributing
+
+    1. Fork the repository
+    2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+    3. Commit your changes (`git commit -m 'Add amazing feature'`)
+    4. Push to the branch (`git push origin feature/amazing-feature`)
+    5. Open a Pull Request
+
+    ## 📝 License
+
+    This project is licensed under the MIT License - see the LICENSE file for details.
+    ```
+
+    **Important Notes:**
+    - Always update the README.md immediately after completing code changes
+    - Include actual screenshots or GIFs if the project has a UI
+    - Update the technology versions to match what was actually used
+    - Add specific setup instructions for any external services or APIs
+    - Document any known issues or limitations
+    - Keep the README.md current with new features and changes
+</update_readme_documentation>
+
 <readme_documentation>
     Always update the README.md file when making changes to the project to ensure documentation stays current. The README should include:
     
@@ -1081,6 +1246,8 @@ alwaysApply: true
 
     When implementing larger features, include a dedicated refactoring pass after the initial implementation is complete. Document any technical debt that you're aware of but couldn't address immediately.
 </code_refactoring_instructions>
+
+
 
 
 
