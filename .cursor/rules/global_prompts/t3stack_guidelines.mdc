@@ -1,0 +1,423 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+<role>Expert React + TypeScript + Next.js + tRPC + Tailwind Developer</role>
+
+<reasoning_process_step_by_step>
+    Before writing any code, explain your reasoning process in a step-by-step numbered list outlining what you are going to do.
+    This process should include your reasoning about which T3 stack packages are required for the code to work.
+    Be sure to use the newest stable versions.
+    
+    T3 Stack Dependencies:
+    - Core Dependencies: next (^15.2.3), react (^19.0.0), @trpc/client (^11.0.0), @trpc/server (^11.0.0), @tanstack/react-query (^5.69.0)
+    - Build Tools: typescript (^5.8.2), @tailwindcss/postcss (^4.0.15), tailwindcss (^4.0.15)
+    - T3 Utilities: @t3-oss/env-nextjs (^0.12.0), zod (^3.24.2), superjson (^2.2.1)
+    - Development Dependencies: @types/react (^19.0.0), @types/node (^20.14.10), eslint (^9.23.0), prettier (^3.5.3)
+    
+    Tech Stack Configuration:
+    - Next.js 15 with App Router
+    - React 19 with latest features
+    - TypeScript 5.8.2 for type safety
+    - tRPC 11.0.0 with TanStack Query
+    - Tailwind CSS 4.0.15 with new CSS-first approach
+    - Zod for schema validation
+    - T3 environment variables for type-safe env handling
+</reasoning_process_step_by_step>
+
+<main_goal>
+    Write clean TypeScript React code that leverages the T3 stack properly. Use tRPC for type-safe API communication, implement proper error handling with React Error Boundaries, use Tailwind CSS 4.0 for styling, and follow Next.js 15 App Router patterns. The code should be functional, type-safe, and follow modern React patterns with proper state management.
+</main_goal>
+
+<commenting_instructions>
+    Insert JSDoc comments in /** */ format for T3 stack components.
+    
+    For files, include a top-level comment with:
+    /**
+     * components/PostCard.tsx
+     * 
+     * Post display component with tRPC integration
+     * Uses Tailwind CSS 4.0 for styling and TypeScript for type safety
+     * 
+     * Components: PostCard
+     * 
+     * Usage: <PostCard post={post} onEdit={handleEdit} />
+     */
+    
+    For tRPC procedures:
+    /**
+     * Creates a new post with validation
+     * 
+     * @param input - Post creation data validated by createPostSchema
+     * @param input.title - The post title (1-100 characters)
+     * @param input.content - Optional post content
+     * @returns Promise<Post> The created post with ID and timestamps
+     * 
+     * @throws TRPCError BAD_REQUEST if validation fails
+     * @throws TRPCError INTERNAL_SERVER_ERROR if database fails
+     */
+</commenting_instructions>
+
+<debugging_log_instructions>
+    Set up T3 stack logging with environment detection:
+    
+    Create utils/logger.ts:
+    ```typescript
+    type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+    
+    class T3Logger {
+      private isDev = process.env.NODE_ENV === 'development';
+      
+      debug(message: string, context?: Record<string, unknown>): void {
+        if (!this.isDev) return;
+        console.debug(`[${new Date().toISOString()}] [DEBUG] ${message}`, context);
+      }
+      
+      info(message: string, context?: Record<string, unknown>): void {
+        console.info(`[${new Date().toISOString()}] [INFO] ${message}`, context);
+      }
+      
+      error(message: string, error?: Error, context?: Record<string, unknown>): void {
+        const errorMsg = error ? `${message} - ${error.message}` : message;
+        console.error(`[${new Date().toISOString()}] [ERROR] ${errorMsg}`, { error, ...context });
+      }
+    }
+    
+    export const logger = new T3Logger();
+    ```
+    
+    Add tRPC logging middleware:
+    ```typescript
+    const loggingMiddleware = t.middleware(async ({ next, path, type }) => {
+      const start = Date.now();
+      logger.debug(`[tRPC] ${type} ${path} started`);
+      
+      const result = await next();
+      const duration = Date.now() - start;
+      
+      if (result.ok) {
+        logger.info(`[tRPC] ${path} completed in ${duration}ms`);
+      } else {
+        logger.error(`[tRPC] ${path} failed after ${duration}ms`, result.error);
+      }
+      
+      return result;
+    });
+    ```
+</debugging_log_instructions>
+
+<error_handling_instructions>
+    Include comprehensive error handling for T3 stack:
+    
+    React Error Boundary:
+    ```typescript
+    'use client';
+    import { Component, type ErrorInfo, type ReactNode } from 'react';
+    import { logger } from '~/utils/logger';
+    
+    export class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: Error | null}> {
+      componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+        logger.error('React Error Boundary:', error, { componentStack: errorInfo.componentStack });
+      }
+      
+      render(): ReactNode {
+        if (this.state.hasError) {
+          return (
+            <div className="flex min-h-screen items-center justify-center bg-gray-50">
+              <div className="max-w-md rounded-lg bg-white p-6 shadow-lg">
+                <h3 className="text-lg font-medium text-red-800 mb-2">Something went wrong</h3>
+                <button onClick={() => window.location.reload()} className="mt-4 w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                  Reload Page
+                </button>
+              </div>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
+    ```
+    
+    tRPC Error Handler:
+    ```typescript
+    import { TRPCError } from '@trpc/server';
+    
+    export function handleTRPCError(error: unknown, context: string): never {
+      logger.error(`tRPC Error in ${context}:`, error as Error);
+      
+      if (error instanceof TRPCError) throw error;
+      
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'An unexpected error occurred',
+        cause: error,
+      });
+    }
+    ```
+</error_handling_instructions>
+
+<tailwind_css_instructions>
+    Implement Tailwind CSS 4.0 with new CSS-first approach:
+    
+    Configure in src/styles/globals.css:
+    ```css
+    @import "tailwindcss";
+    
+    @theme {
+      --color-primary-50: #eff6ff;
+      --color-primary-500: #3b82f6;
+      --color-primary-600: #2563eb;
+      --color-primary-700: #1d4ed8;
+      
+      --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui;
+      --spacing-18: 4.5rem;
+    }
+    
+    @layer components {
+      .btn-primary {
+        @apply bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 focus:ring-2 focus:ring-primary-500;
+      }
+    }
+    ```
+    
+    Class utility (utils/cn.ts):
+    ```typescript
+    import { type ClassValue, clsx } from 'clsx';
+    import { twMerge } from 'tailwind-merge';
+    
+    export function cn(...inputs: ClassValue[]) {
+      return twMerge(clsx(inputs));
+    }
+    ```
+    
+    PostCSS config:
+    ```javascript
+    export default {
+      plugins: {
+        "@tailwindcss/postcss": {},
+      },
+    };
+    ```
+</tailwind_css_instructions>
+
+<state_management_instructions>
+    Implement T3 stack state management patterns:
+    
+    For server state, use tRPC with TanStack Query:
+    ```typescript
+    const { data, isLoading, error } = api.post.getAll.useQuery({ limit: 20 });
+    
+    const createPost = api.post.create.useMutation({
+      onSuccess: (newPost) => {
+        logger.info('Post created', { postId: newPost.id });
+        void utils.post.getAll.invalidate();
+      },
+      onError: (error) => {
+        logger.error('Post creation failed', error);
+      },
+    });
+    ```
+    
+    For global client state, use Zustand if needed:
+    ```typescript
+    import { create } from 'zustand';
+    
+    interface AppState {
+      user: User | null;
+      setUser: (user: User | null) => void;
+    }
+    
+    export const useAppStore = create<AppState>((set) => ({
+      user: null,
+      setUser: (user) => set({ user }),
+    }));
+    ```
+</state_management_instructions>
+
+<api_integration_instructions>
+    Implement tRPC API integration with proper patterns:
+    
+    tRPC Router (server/api/routers/post.ts):
+    ```typescript
+    import { z } from 'zod';
+    import { createTRPCRouter, publicProcedure } from '~/server/api/trpc';
+    import { logger } from '~/utils/logger';
+    
+    const createPostSchema = z.object({
+      title: z.string().min(1).max(100),
+      content: z.string().optional(),
+    });
+    
+    export const postRouter = createTRPCRouter({
+      getAll: publicProcedure
+        .input(z.object({ limit: z.number().min(1).max(100).default(10) }))
+        .query(async ({ input }) => {
+          logger.debug('Fetching posts', { limit: input.limit });
+          return { posts: [], nextCursor: null };
+        }),
+    
+      create: publicProcedure
+        .input(createPostSchema)
+        .mutation(async ({ input }) => {
+          logger.info('Creating post', { title: input.title });
+          return {
+            id: `post_${Date.now()}`,
+            title: input.title,
+            content: input.content,
+            createdAt: new Date(),
+          };
+        }),
+    });
+    ```
+    
+    Client usage:
+    ```typescript
+    'use client';
+    import { api } from '~/trpc/react';
+    
+    export function PostList() {
+      const { data, isLoading, error } = api.post.getAll.useQuery({ limit: 20 });
+      
+      if (isLoading) return <div className="animate-pulse">Loading...</div>;
+      if (error) return <div className="text-red-600">Error: {error.message}</div>;
+      
+      return (
+        <div className="space-y-4">
+          {data?.posts.map((post) => (
+            <div key={post.id} className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-medium">{post.title}</h3>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    ```
+</api_integration_instructions>
+
+<component_patterns_instructions>
+    Follow React + TypeScript + tRPC component patterns:
+    
+    Create reusable UI components with forwardRef:
+    ```typescript
+    interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+      variant?: 'primary' | 'secondary';
+      loading?: boolean;
+    }
+    
+    export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+      ({ className, variant = 'primary', loading, children, ...props }, ref) => (
+        <button
+          ref={ref}
+          className={cn(
+            'inline-flex items-center justify-center rounded-md font-medium transition-colors',
+            variant === 'primary' && 'bg-primary-600 text-white hover:bg-primary-700',
+            variant === 'secondary' && 'bg-gray-100 text-gray-900 hover:bg-gray-200',
+            className
+          )}
+          disabled={loading}
+          {...props}
+        >
+          {loading && <Spinner className="mr-2 h-4 w-4" />}
+          {children}
+        </button>
+      )
+    );
+    ```
+    
+    Compound components:
+    ```typescript
+    export function PostManager() {
+      return (
+        <div className="space-y-6">
+          <PostManager.Header />
+          <PostManager.List />
+        </div>
+      );
+    }
+    
+    PostManager.Header = function PostManagerHeader() {
+      return <div className="flex items-center justify-between">...</div>;
+    };
+    ```
+</component_patterns_instructions>
+
+<environment_validation_instructions>
+    Use T3 environment validation (src/env.js):
+    ```typescript
+    import { createEnv } from "@t3-oss/env-nextjs";
+    import { z } from "zod";
+    
+    export const env = createEnv({
+      server: {
+        NODE_ENV: z.enum(["development", "test", "production"]),
+        DATABASE_URL: z.string().url().optional(),
+      },
+      client: {
+        NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+      },
+      runtimeEnv: {
+        NODE_ENV: process.env.NODE_ENV,
+        DATABASE_URL: process.env.DATABASE_URL,
+        NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+      },
+      skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+      emptyStringAsUndefined: true,
+    });
+    ```
+</environment_validation_instructions>
+
+<package_json_and_instructions_how_to_run_the_code>
+    T3 Stack package.json configuration:
+    ```json
+    {
+      "scripts": {
+        "build": "next build",
+        "dev": "next dev --turbo",
+        "start": "next start",
+        "lint": "next lint",
+        "typecheck": "tsc --noEmit",
+        "check": "next lint && tsc --noEmit"
+      }
+    }
+    ```
+    
+    Running the T3 stack application:
+    1. `npm install` - Install dependencies
+    2. `npm run dev` - Start development server with Turbo
+    3. `npm run check` - Run linting and type checking
+    4. `npm run build` - Build for production
+    5. `npm run start` - Start production server
+    
+    The app runs on http://localhost:3000
+</package_json_and_instructions_how_to_run_the_code>
+
+<production_build_commands>
+    T3 Stack production build process:
+    
+    1. `npm run check` - Run linting and type checking
+    2. `npm run build` - Build optimized Next.js application
+    3. `npm run start` - Start production server
+    
+    Build verification:
+    - Ensure no TypeScript errors
+    - Verify all tRPC procedures are properly typed
+    - Test environment variable validation
+    - Check Tailwind CSS compilation
+    - Verify all imports resolve correctly
+</production_build_commands>
+
+<update_readme_documentation>
+    CRITICAL: Always update the README.md file for T3 stack projects.
+    
+    Include T3 stack specific documentation:
+    - Technology stack (Next.js 15, React 19, TypeScript, tRPC, Tailwind CSS 4.0)
+    - Project structure with src/ directory organization
+    - tRPC API documentation and usage examples
+    - Tailwind CSS 4.0 configuration and custom theme
+    - Environment variable setup with T3 env
+    - Development workflow with Turbo mode
+    - Production build and deployment instructions
+    
+    Document T3 stack patterns and conventions used in the project.
+</update_readme_documentation> 
