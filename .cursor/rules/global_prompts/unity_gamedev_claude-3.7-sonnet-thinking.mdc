@@ -333,6 +333,218 @@ alwaysApply: true
     If the script/prefab has any setup requirements, the instructions on how to use the code should be provided after listing the project dependencies.
 </project_dependencies_and_instructions_how_to_use_the_code>
 
+<update_readme_documentation>
+    **CRITICAL:** Always update the README.md file located at the ROOT of the project after writing any code or making changes.
+
+    The README.md file should be comprehensive and include:
+
+    ```markdown
+    # Game Title
+
+    Brief description of what the Unity game does and its main gameplay mechanics.
+
+    ## 🎮 Features
+
+    - List key gameplay features and mechanics
+    - Unity C# development with modular component architecture
+    - Object-oriented design with proper event systems
+    - Performance optimized with object pooling
+    - Comprehensive error handling and debug logging
+    - Scene management and state persistence
+
+    ## 🛠️ Technology Stack
+
+    - **Engine:** Unity 2021.3 LTS or newer
+    - **Programming:** C# with .NET Standard 2.1
+    - **UI:** Unity UI (uGUI) or UI Toolkit
+    - **Audio:** Unity Audio System with AudioSource/AudioMixer
+    - **Physics:** Unity Physics Engine (3D/2D)
+    - **Development:** Unity Editor, Visual Studio/VS Code
+
+    ## 📦 Unity Packages & Dependencies
+
+    ```
+    Unity 2021.3 LTS or newer
+    TextMeshPro 3.0.6
+    DOTween 1.2.420 (optional)
+    Cinemachine 2.8.9 (optional)
+    Unity Analytics 4.0.1 (optional)
+    Unity Addressables 1.19.19 (optional)
+    ```
+
+    ## 📁 Project Structure
+
+    ```
+    /Unity Project Root
+    ├── Assets/
+    │   ├── Scripts/
+    │   │   ├── Managers/      # Game managers and singletons
+    │   │   ├── Player/        # Player-related scripts
+    │   │   ├── UI/           # User interface scripts
+    │   │   ├── Gameplay/     # Core gameplay mechanics
+    │   │   └── Utils/        # Utility scripts and helpers
+    │   ├── Prefabs/          # Reusable game objects
+    │   ├── Scenes/           # Game scenes
+    │   ├── Materials/        # Materials and shaders
+    │   ├── Textures/         # Texture assets
+    │   ├── Audio/            # Sound effects and music
+    │   └── Animations/       # Animation clips and controllers
+    ├── Packages/             # Package Manager dependencies
+    ├── ProjectSettings/      # Unity project settings
+    └── README.md            # This file
+    ```
+
+    ## 🔧 Prerequisites
+
+    - **Unity Hub** (latest version)
+    - **Unity Editor** 2021.3 LTS or newer
+    - **Visual Studio** 2019/2022 or **Visual Studio Code**
+    - **Git** for version control
+    - **Git LFS** for large assets (recommended)
+
+    ## 📦 Installation & Setup
+
+    ### 1. Clone the repository:
+    ```bash
+    git clone <repository-url>
+    cd <project-name>
+    ```
+
+    ### 2. Open in Unity:
+    - Open Unity Hub
+    - Click "Open" and select the project folder
+    - Unity will automatically import all assets and packages
+
+    ### 3. Configure Project Settings:
+    - Set target platform (File → Build Settings)
+    - Configure input settings if using custom controls
+    - Set up audio settings and quality levels
+
+    ### 4. Install Required Packages:
+    - Open Package Manager (Window → Package Manager)
+    - Install required packages listed in dependencies
+    - Verify all scripts compile without errors
+
+    ## 🏃‍♂️ Running the Game
+
+    ### In Unity Editor:
+    1. Open the main scene (usually in `Assets/Scenes/`)
+    2. Click the Play button in the Unity Editor
+    3. Test gameplay mechanics in the Scene/Game view
+
+    ### Building the Game:
+    1. Go to File → Build Settings
+    2. Add scenes to the build (drag from Assets)
+    3. Select target platform
+    4. Click "Build" or "Build and Run"
+
+    ## 🎯 Core Components
+
+    ### Game Managers
+    - **GameManager**: Controls overall game state and flow
+    - **SceneManager**: Handles scene transitions and loading
+    - **AudioManager**: Manages background music and sound effects
+    - **InputManager**: Processes player input across different devices
+
+    ### Player Systems
+    - **PlayerController**: Handles player movement and physics
+    - **PlayerStats**: Manages player health, score, and progression
+    - **PlayerInput**: Processes and translates input to game actions
+
+    ### UI Systems
+    - **UIManager**: Controls UI panels and transitions
+    - **HUD**: Displays game information (health, score, etc.)
+    - **MenuSystem**: Main menu, pause menu, settings
+
+    ## 🔧 Configuration
+
+    ### Game Settings
+    - Configure gameplay parameters in ScriptableObjects
+    - Adjust physics settings in Project Settings
+    - Set up input mappings for different control schemes
+    - Configure audio mixer groups for sound management
+
+    ### Build Settings
+    - Platform-specific settings (resolution, graphics quality)
+    - Optimization settings for target devices
+    - Asset bundle configuration (if using)
+
+    ## 🎮 Controls
+
+    | Action | Key/Button | Controller |
+    |--------|------------|------------|
+    | Move | WASD / Arrow Keys | Left Stick |
+    | Jump | Spacebar | A Button |
+    | Interact | E | X Button |
+    | Pause | Escape | Start Button |
+
+    ## 🐛 Debug Features
+
+    - **Debug Logging**: Comprehensive logging with component names
+    - **Gizmos**: Visual debugging in Scene view
+    - **Debug UI**: In-game debug information overlay
+    - **Console Commands**: Runtime debugging commands
+
+    ## 🧪 Testing
+
+    ### Play Mode Testing:
+    - Test all gameplay mechanics in Unity Editor
+    - Verify UI responsiveness and functionality
+    - Check performance with Unity Profiler
+
+    ### Build Testing:
+    - Test builds on target platforms
+    - Verify asset loading and scene transitions
+    - Check memory usage and performance
+
+    ## 🚀 Deployment
+
+    ### Build Configuration:
+    ```
+    Development Build: OFF (for release)
+    Script Debugging: OFF (for release)
+    Compression Method: LZ4 (faster) or LZ4HC (smaller)
+    ```
+
+    ### Platform-Specific:
+    - **PC/Mac/Linux**: Standalone build
+    - **Mobile**: Configure for iOS/Android app stores
+    - **WebGL**: Optimize for web deployment
+    - **Console**: Platform-specific certification requirements
+
+    ## 🤝 Contributing
+
+    1. Fork the repository
+    2. Create a feature branch (`git checkout -b feature/new-mechanic`)
+    3. Follow Unity coding conventions
+    4. Test thoroughly in Editor and builds
+    5. Commit changes (`git commit -m 'Add new gameplay mechanic'`)
+    6. Push to branch (`git push origin feature/new-mechanic`)
+    7. Open a Pull Request
+
+    ## 📝 License
+
+    This project is licensed under the MIT License - see the LICENSE file for details.
+
+    ## 🔧 Development Notes
+
+    - Follow Unity's component-based architecture
+    - Use ScriptableObjects for game data and settings
+    - Implement proper object pooling for frequently spawned objects
+    - Use Unity's event system for decoupled communication
+    - Profile regularly to maintain target frame rates
+    - Comment code thoroughly for team collaboration
+    ```
+
+    **Important Notes:**
+    - Always update the README.md immediately after completing code changes
+    - Include screenshots or GIFs of gameplay mechanics
+    - Update Unity version requirements if changed
+    - Document any external plugins or assets used
+    - Provide troubleshooting section for common issues
+    - Keep build instructions current with latest Unity practices
+</update_readme_documentation>
+
 <code_refactoring_instructions>
     After writing code, perform a thorough review as an additional step to identify refactoring opportunities. Continuously refactor to maintain clean, maintainable code that follows best practices in Unity and C# development.
     

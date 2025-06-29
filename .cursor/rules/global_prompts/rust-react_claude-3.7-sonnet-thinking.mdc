@@ -316,6 +316,217 @@ alwaysApply: true
     6.  **(Optional) Docker:** If using Docker, provide `docker-compose up --build` instructions.
 </dependency_files_and_instructions>
 
+<update_readme_documentation>
+    **CRITICAL:** Always update the README.md file located at the ROOT of the project after writing any code or making changes.
+
+    The README.md file should be comprehensive and include:
+
+    ```markdown
+    # Project Title
+
+    Brief description of what the full-stack application does and its main purpose.
+
+    ## 🚀 Features
+
+    - List key features and capabilities
+    - Modern Rust backend with React frontend architecture
+    - RESTful API with PostgreSQL database
+    - Type-safe development with Rust and TypeScript
+    - Concurrent processing with async/await
+    - Error handling and logging across all layers
+
+    ## 🛠️ Technology Stack
+
+    - **Backend:** Rust with Actix-web framework
+    - **Frontend:** React 18+ with TypeScript/JavaScript
+    - **Database:** PostgreSQL with SQLx or Diesel ORM
+    - **Build Tools:** Cargo for Rust, Vite/Create React App for frontend
+    - **HTTP Client:** Axios for API communication
+    - **Development:** Rust analyzer, React DevTools, Hot reload
+
+    ## 📁 Project Structure
+
+    ```
+    /project-root
+    ├── /backend          # Rust backend code
+    │   ├── src/
+    │   │   ├── main.rs
+    │   │   ├── handlers/
+    │   │   ├── models/
+    │   │   └── services/
+    │   ├── Cargo.toml
+    │   └── .env.example
+    ├── /frontend         # React frontend code
+    │   ├── src/
+    │   │   ├── components/
+    │   │   ├── pages/
+    │   │   └── utils/
+    │   ├── package.json
+    │   └── .env.example
+    ├── /database
+    │   ├── migrations/   # SQL migration files
+    │   └── schema.sql    # Full schema definition
+    ├── docker-compose.yml # Optional: For orchestrating services
+    └── README.md         # This file
+    ```
+
+    ## 🔧 Prerequisites
+
+    - **Rust** 1.70+ with Cargo
+    - **Node.js** 18+ with npm/yarn
+    - **PostgreSQL** 14+ server
+    - **Git** for version control
+    - **Docker** (optional, for containerized development)
+
+    ## 📦 Installation
+
+    ### 1. Clone the repository:
+    ```bash
+    git clone <repository-url>
+    cd <project-name>
+    ```
+
+    ### 2. Database Setup:
+    ```bash
+    # Create PostgreSQL database
+    createdb your_database_name
+
+    # Run migrations (if using sqlx)
+    sqlx migrate run --database-url "postgresql://username:password@localhost/your_database_name"
+    ```
+
+    ### 3. Backend Setup:
+    ```bash
+    cd backend
+    cp .env.example .env
+    # Edit .env with your database credentials and configuration
+    
+    # Build and run
+    cargo build
+    cargo run
+    ```
+
+    ### 4. Frontend Setup:
+    ```bash
+    cd frontend
+    cp .env.example .env
+    # Edit .env with your API base URL
+    
+    # Install dependencies and start
+    npm install
+    npm start
+    # or with yarn
+    yarn install
+    yarn start
+    ```
+
+    ## 🏃‍♂️ Running the Application
+
+    1. **Start the backend server** (from `/backend` directory):
+       ```bash
+       cargo run
+       ```
+       Backend will be available at `http://localhost:8080`
+
+    2. **Start the frontend development server** (from `/frontend` directory):
+       ```bash
+       npm start
+       ```
+       Frontend will be available at `http://localhost:3000`
+
+    3. **Access the application**: Open `http://localhost:3000` in your browser
+
+    ## 🔌 API Endpoints
+
+    | Method | Endpoint | Description |
+    |--------|----------|-------------|
+    | GET | `/api/health` | Health check |
+    | GET | `/api/users` | Get all users |
+    | POST | `/api/users` | Create new user |
+    | GET | `/api/users/:id` | Get user by ID |
+    | PUT | `/api/users/:id` | Update user |
+    | DELETE | `/api/users/:id` | Delete user |
+
+    ## 🔐 Environment Variables
+
+    ### Backend (.env)
+    ```bash
+    DATABASE_URL=postgresql://username:password@localhost/database_name
+    SERVER_PORT=8080
+    RUST_LOG=debug
+    SECRET_KEY=your-secret-key-here
+    ```
+
+    ### Frontend (.env)
+    ```bash
+    REACT_APP_API_BASE_URL=http://localhost:8080/api
+    ```
+
+    ## 🐳 Docker (Optional)
+
+    Run the entire stack with Docker Compose:
+    ```bash
+    docker-compose up --build
+    ```
+
+    ## 🧪 Testing
+
+    ### Backend Tests:
+    ```bash
+    cd backend
+    cargo test
+    ```
+
+    ### Frontend Tests:
+    ```bash
+    cd frontend
+    npm test
+    ```
+
+    ## 🚀 Production Deployment
+
+    ### Backend Build:
+    ```bash
+    cd backend
+    cargo build --release
+    ```
+
+    ### Frontend Build:
+    ```bash
+    cd frontend
+    npm run build
+    ```
+
+    ## 🤝 Contributing
+
+    1. Fork the repository
+    2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+    3. Commit your changes (`git commit -m 'Add amazing feature'`)
+    4. Push to the branch (`git push origin feature/amazing-feature`)
+    5. Open a Pull Request
+
+    ## 📝 License
+
+    This project is licensed under the MIT License - see the LICENSE file for details.
+
+    ## 🔧 Development Notes
+
+    - Backend uses async/await with Tokio runtime
+    - Frontend follows React best practices with hooks
+    - Database migrations are managed with SQLx/Diesel
+    - Error handling uses Result types in Rust and try/catch in React
+    - Logging is configured for both development and production
+    ```
+
+    **Important Notes:**
+    - Always update the README.md immediately after completing code changes
+    - Include actual API endpoint documentation with examples
+    - Update the technology versions to match what was actually used
+    - Add specific database schema information if complex
+    - Document any external service integrations
+    - Keep the README.md current with new features and changes
+</update_readme_documentation>
+
 <readme_documentation>
     Generate or update the `README.md` file in the project root. It should include:
 

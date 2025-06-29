@@ -437,6 +437,282 @@ alwaysApply: true
        ```
 </package_json_and_instructions_how_to_run_the_code>
 
+<update_readme_documentation>
+    **CRITICAL:** Always update the README.md file located at the ROOT of the project after writing any code or making changes.
+
+    The README.md file should be comprehensive and include:
+
+    ```markdown
+    # Application Title
+
+    Brief description of what the Electron application does and its main functionality.
+
+    ## 🚀 Features
+
+    - List key features and capabilities
+    - Modern Electron + React + TypeScript architecture
+    - Cross-platform desktop application (Windows, macOS, Linux)
+    - Secure IPC communication between main and renderer processes
+    - Type-safe development with full TypeScript support
+    - Hot reload development environment
+    - Professional application packaging and distribution
+
+    ## 🛠️ Technology Stack
+
+    - **Framework:** Electron for cross-platform desktop apps
+    - **Frontend:** React 18+ with TypeScript
+    - **Build Tool:** Vite for fast development and optimized builds
+    - **Package Manager:** npm or yarn
+    - **Bundler:** Electron Builder for app packaging
+    - **Development:** ESLint, TypeScript compiler, Hot reload
+
+    ## 📁 Project Structure
+
+    ```
+    /electron-app
+    ├── src/
+    │   ├── main/             # Electron main process
+    │   │   ├── main.ts       # Main entry point
+    │   │   ├── preload.ts    # Preload script for secure IPC
+    │   │   └── utils/        # Main process utilities
+    │   ├── renderer/         # React renderer process
+    │   │   ├── components/   # React components
+    │   │   ├── pages/        # Application pages
+    │   │   ├── hooks/        # Custom React hooks
+    │   │   └── utils/        # Renderer utilities
+    │   └── shared/           # Shared types and utilities
+    ├── dist/                 # Built renderer files
+    ├── dist-electron/        # Built main process files
+    ├── release/              # Packaged applications
+    ├── package.json
+    └── README.md            # This file
+    ```
+
+    ## 🔧 Prerequisites
+
+    - **Node.js** 16+ with npm or yarn
+    - **Git** for version control
+    - **Python** 2.7 or 3.x (for native modules compilation)
+    - **Visual Studio Build Tools** (Windows) or **Xcode** (macOS)
+
+    ## 📦 Installation
+
+    ### 1. Clone the repository:
+    ```bash
+    git clone <repository-url>
+    cd <project-name>
+    ```
+
+    ### 2. Install dependencies:
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
+
+    ### 3. Set up environment (if needed):
+    ```bash
+    cp .env.example .env
+    # Edit .env with your configuration
+    ```
+
+    ## 🏃‍♂️ Development
+
+    ### Start Development Server:
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    ```
+
+    This will:
+    - Start the Vite development server for the renderer process
+    - Launch Electron with hot reload enabled
+    - Open the application window automatically
+
+    ### Development Features:
+    - **Hot Reload**: Changes to React components update instantly
+    - **DevTools**: Built-in Chrome DevTools for debugging
+    - **TypeScript**: Full type checking and IntelliSense
+    - **ESLint**: Code quality checking and auto-fixing
+
+    ## 🔧 Available Scripts
+
+    | Command | Description |
+    |---------|-------------|
+    | `npm run dev` | Start development with hot reload |
+    | `npm run build` | Build for production |
+    | `npm run preview` | Preview production build |
+    | `npm run lint` | Run ESLint |
+    | `npm run test` | Run tests |
+    | `npm run package` | Package app for current platform |
+    | `npm run dist` | Build and package for distribution |
+
+    ## 🏗️ Building for Production
+
+    ### Build the Application:
+    ```bash
+    npm run build
+    ```
+
+    ### Package for Distribution:
+    ```bash
+    # Package for current platform
+    npm run package
+
+    # Build distributables for all platforms
+    npm run dist
+    ```
+
+    ### Platform-Specific Builds:
+    ```bash
+    # Windows
+    npm run build:win
+
+    # macOS
+    npm run build:mac
+
+    # Linux
+    npm run build:linux
+    ```
+
+    ## 📱 IPC Communication
+
+    ### Type-Safe IPC Channels:
+    ```typescript
+    // Renderer to Main
+    window.electronAPI.invoke('app:minimize');
+    window.electronAPI.invoke('data:fetch', userId);
+
+    // Main to Renderer
+    mainWindow.webContents.send('notification', message);
+    ```
+
+    ### Available IPC Channels:
+    | Channel | Direction | Description |
+    |---------|-----------|-------------|
+    | `app:minimize` | Renderer → Main | Minimize window |
+    | `app:maximize` | Renderer → Main | Maximize/restore window |
+    | `app:quit` | Renderer → Main | Quit application |
+    | `data:fetch` | Renderer → Main | Fetch data from main process |
+    | `data:save` | Renderer → Main | Save data in main process |
+
+    ## ⚙️ Configuration
+
+    ### Electron Builder Configuration:
+    Located in `package.json` under the `"build"` section:
+    ```json
+    {
+      "build": {
+        "appId": "com.example.app",
+        "productName": "Your App Name",
+        "directories": {
+          "output": "release"
+        },
+        "files": ["dist/**/*", "dist-electron/**/*"],
+        "win": { "target": ["nsis"] },
+        "mac": { "target": ["dmg"] },
+        "linux": { "target": ["AppImage"] }
+      }
+    }
+    ```
+
+    ### Environment Variables:
+    ```bash
+    # Development
+    NODE_ENV=development
+    ELECTRON_IS_DEV=true
+
+    # Production
+    NODE_ENV=production
+    ELECTRON_IS_DEV=false
+    ```
+
+    ## 🧪 Testing
+
+    ### Unit Tests:
+    ```bash
+    npm run test
+    ```
+
+    ### End-to-End Testing:
+    ```bash
+    npm run test:e2e
+    ```
+
+    ## 📦 Distribution
+
+    ### Windows:
+    - **NSIS Installer**: `.exe` installer for easy installation
+    - **Portable**: Standalone executable
+
+    ### macOS:
+    - **DMG**: Disk image for drag-and-drop installation
+    - **PKG**: Installer package
+
+    ### Linux:
+    - **AppImage**: Portable Linux application
+    - **Snap**: Universal Linux package
+    - **DEB/RPM**: Distribution-specific packages
+
+    ## 🔒 Security
+
+    - **Context Isolation**: Enabled for secure renderer process
+    - **Node Integration**: Disabled in renderer for security
+    - **Preload Scripts**: Secure communication bridge
+    - **Content Security Policy**: Configured for web security
+
+    ## 🐛 Troubleshooting
+
+    ### Common Issues:
+
+    **Build Errors:**
+    - Ensure all dependencies are installed
+    - Clear `node_modules` and reinstall
+    - Check Node.js version compatibility
+
+    **Packaging Issues:**
+    - Verify Electron Builder configuration
+    - Check file paths in build configuration
+    - Ensure all assets are included in build files
+
+    **IPC Communication:**
+    - Verify preload script is loaded
+    - Check main process IPC handlers
+    - Ensure context isolation is properly configured
+
+    ## 🤝 Contributing
+
+    1. Fork the repository
+    2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+    3. Follow TypeScript and React best practices
+    4. Test on multiple platforms if possible
+    5. Commit changes (`git commit -m 'Add amazing feature'`)
+    6. Push to branch (`git push origin feature/amazing-feature`)
+    7. Open a Pull Request
+
+    ## 📝 License
+
+    This project is licensed under the MIT License - see the LICENSE file for details.
+
+    ## 🔧 Development Notes
+
+    - Main process runs Node.js with full system access
+    - Renderer process runs Chromium with restricted access
+    - IPC communication bridges the security gap
+    - TypeScript provides compile-time type safety
+    - Vite enables fast development with hot module replacement
+    ```
+
+    **Important Notes:**
+    - Always update the README.md immediately after completing code changes
+    - Include screenshots of the application interface
+    - Update Electron and dependency versions as needed
+    - Document any platform-specific requirements or limitations
+    - Provide clear troubleshooting steps for common issues
+    - Keep build and distribution instructions current
+</update_readme_documentation>
+
 <readme_documentation>
     Always update the README.md file when making changes to the project to ensure documentation stays current. The README should include:
     

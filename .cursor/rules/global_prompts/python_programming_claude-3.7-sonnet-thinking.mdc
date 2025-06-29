@@ -220,6 +220,271 @@ alwaysApply: true
     If the program has any parameters, the instructions on how to run the code should be provided after writing the requirements.txt file.
 </requirements_txt_file_and_instructions_how_to_run_the_code>
 
+<update_readme_documentation>
+    **CRITICAL:** Always update the README.md file located at the ROOT of the project after writing any code or making changes.
+
+    The README.md file should be comprehensive and include:
+
+    ```markdown
+    # Project Title
+
+    Brief description of what the Python application does and its main functionality.
+
+    ## 🚀 Features
+
+    - List key features and capabilities
+    - Clean Python development with proper error handling
+    - Modular function-based architecture
+    - Comprehensive logging and debugging
+    - Input validation and type hints
+    - Standards-compliant code following PEP 8
+    - Minimal dependencies using Python standard library
+
+    ## 🛠️ Technology Stack
+
+    - **Language:** Python 3.8+ with standard library
+    - **Logging:** Python's built-in logging module
+    - **File Handling:** pathlib for modern path operations
+    - **Error Handling:** Custom exceptions and proper error propagation
+    - **Testing:** unittest or pytest (if tests are included)
+    - **Code Quality:** PEP 8 compliance, type hints, docstrings
+
+    ## 📁 Project Structure
+
+    ```
+    /python-project
+    ├── src/                  # Source code directory
+    │   ├── main.py          # Main application entry point
+    │   ├── utils.py         # Utility functions
+    │   └── modules/         # Additional modules
+    ├── tests/               # Unit tests (if applicable)
+    ├── data/                # Sample data files (if applicable)
+    ├── requirements.txt     # Python dependencies
+    ├── .gitignore          # Git ignore rules
+    └── README.md           # This file
+    ```
+
+    ## 🔧 Prerequisites
+
+    - **Python** 3.8 or higher
+    - **pip** (Python package installer)
+    - **Git** for version control
+    - **Virtual environment** (recommended: venv, conda, or virtualenv)
+
+    ## 📦 Installation
+
+    ### 1. Clone the repository:
+    ```bash
+    git clone <repository-url>
+    cd <project-name>
+    ```
+
+    ### 2. Create and activate a virtual environment:
+    ```bash
+    # Using venv (recommended)
+    python -m venv venv
+
+    # Activate on Windows
+    venv\Scripts\activate
+
+    # Activate on macOS/Linux
+    source venv/bin/activate
+    ```
+
+    ### 3. Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+    ## 🏃‍♂️ Usage
+
+    ### Basic Usage:
+    ```bash
+    python main.py [arguments]
+    ```
+
+    ### Command Line Examples:
+    ```bash
+    # Basic execution
+    python main.py
+
+    # With arguments
+    python main.py --input data.txt --output results.txt
+
+    # With options
+    python main.py --verbose --log-level DEBUG
+
+    # Process specific file
+    python main.py /path/to/input/file.txt
+    ```
+
+    ### Function Usage (if library):
+    ```python
+    from src.main import main_function
+
+    # Example usage
+    result = main_function(input_data="example")
+    print(result)
+    ```
+
+    ## 🔧 Available Options
+
+    | Argument | Description | Example |
+    |----------|-------------|---------|
+    | `--input` / `-i` | Input file path | `-i data.txt` |
+    | `--output` / `-o` | Output file path | `-o results.txt` |
+    | `--verbose` / `-v` | Enable verbose logging | `-v` |
+    | `--log-level` | Set logging level | `--log-level DEBUG` |
+    | `--help` / `-h` | Show help message | `-h` |
+
+    ## 📊 Output Formats
+
+    ### Console Output:
+    ```
+    INFO:main_function: Processing input: example_data
+    INFO:main_function: Processing complete
+    INFO:main_function: output: processed_result
+    ```
+
+    ### File Output:
+    - **Text files**: `.txt`, `.csv`, `.json`
+    - **Log files**: Automatically generated in logs directory
+    - **Data files**: Processed results in specified format
+
+    ## 🔍 Logging
+
+    The application uses Python's built-in logging module with the following levels:
+    - **DEBUG**: Detailed information for diagnosing problems
+    - **INFO**: General information about program execution
+    - **WARNING**: Something unexpected happened
+    - **ERROR**: A serious problem occurred
+
+    ### Log Format:
+    ```
+    LEVEL:function_name: message
+    ```
+
+    ### Log Configuration:
+    ```python
+    import logging
+
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(levelname)s:%(funcName)s: %(message)s'
+    )
+    ```
+
+    ## 🧪 Testing
+
+    ### Run Tests:
+    ```bash
+    # Using unittest
+    python -m unittest discover tests
+
+    # Using pytest (if installed)
+    pytest tests/
+
+    # Run specific test file
+    python -m unittest tests/test_main.py
+    ```
+
+    ### Test Coverage:
+    ```bash
+    # Install coverage tool
+    pip install coverage
+
+    # Run tests with coverage
+    coverage run -m unittest discover
+    coverage report
+    coverage html
+    ```
+
+    ## 🐛 Error Handling
+
+    The application implements comprehensive error handling:
+    - **Input Validation**: Checks for valid arguments and file paths
+    - **File Operations**: Handles missing files, permission errors
+    - **Custom Exceptions**: Domain-specific error types
+    - **Graceful Degradation**: Continues processing when possible
+    - **Error Logging**: All errors are logged with context
+
+    ### Common Error Messages:
+    - `FileNotFoundError`: Input file does not exist
+    - `PermissionError`: Insufficient permissions to read/write files
+    - `ValueError`: Invalid input parameters or data format
+
+    ## 📈 Performance
+
+    ### Optimization Features:
+    - Efficient algorithms and data structures
+    - Memory-conscious file processing
+    - Minimal external dependencies
+    - Proper resource management with context managers
+
+    ### Performance Tips:
+    - Use appropriate data structures for your use case
+    - Process large files in chunks when possible
+    - Monitor memory usage with large datasets
+    - Consider multiprocessing for CPU-intensive tasks
+
+    ## 🤝 Contributing
+
+    1. Fork the repository
+    2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+    3. Follow PEP 8 coding standards
+    4. Add comprehensive docstrings and type hints
+    5. Include unit tests for new functionality
+    6. Commit changes (`git commit -m 'Add amazing feature'`)
+    7. Push to branch (`git push origin feature/amazing-feature`)
+    8. Open a Pull Request
+
+    ### Code Standards:
+    - Follow PEP 8 for code style
+    - Use type hints for function parameters and return values
+    - Write comprehensive docstrings for all functions
+    - Include error handling and input validation
+    - Add logging statements for debugging
+
+    ## 📝 License
+
+    This project is licensed under the MIT License - see the LICENSE file for details.
+
+    ## 🔧 Development Notes
+
+    - Functions follow single responsibility principle
+    - Comprehensive error handling with proper logging
+    - Type hints used throughout for better code clarity
+    - Minimal dependencies leveraging Python standard library
+    - Modular design for easy testing and maintenance
+    - Clear separation between business logic and I/O operations
+
+    ## 📚 Dependencies
+
+    ### Standard Library (No Installation Required):
+    - `os`, `sys` - System operations
+    - `pathlib` - Modern path handling
+    - `logging` - Structured logging
+    - `json`, `csv` - Data format handling
+    - `argparse` - Command-line argument parsing
+
+    ### External Dependencies (Listed in requirements.txt):
+    ```
+    # Example external dependencies
+    requests==2.31.0        # HTTP requests
+    pandas>=2.0.0          # Data manipulation
+    numpy>=1.24.0          # Numerical computing
+    ```
+    ```
+
+    **Important Notes:**
+    - Always update the README.md immediately after completing code changes
+    - Include actual command-line examples that work with your code
+    - Update Python version requirements if you use newer features
+    - Document any platform-specific requirements or limitations
+    - Provide clear error handling and troubleshooting information
+    - Keep dependency list minimal and well-justified
+</update_readme_documentation>
+
 <readme_documentation>
     Always update the README.md file when making changes to the project to ensure documentation stays current. The README should include:
     
