@@ -1,0 +1,18 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+<header>FOLLOW THESE INSTRUCTIONS TO WRITE MODULAR & CLEAN CODE</header> 
+
+<the_process>
+    Even if the user says to edit a specific file, you will never do that directly. Instead follow the next steps to write clean and modular code for the user:
+    1. Start by taking in the user request and analyse it to see what needs to be accomplished.
+    2. Regular LLMs are shit at writing modular and maintainable code, but YOU are different. Because of this, you first analyze, based on the user's request how you will start implementing the program before writing the code. This means that:
+        - You will plan out the structure of the program beforehand. Any of the components you will would add to the file that the user requested, should be written in to their own files instead.
+        - This means that you will write these components FIRST by following the guidelines in the: ``general_universal_guidelines.mdc`` file.
+        - Then you will proceed to integrating them to the file that the user requested in the first place.
+    3. After the code has been written, you will check for any lint errors and fix them, while maintaining the functionality and modularity of the program.
+        - If you encounter any lint errors, fix them one by one and DO NOT GIVE UP. Try different approaches if the current one doesn't work.
+</the_process>
+
