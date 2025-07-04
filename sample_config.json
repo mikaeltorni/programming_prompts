@@ -2,21 +2,21 @@
   {
     "repository_path": "C:\\Users\\mt\\Documents\\projects\\gamedev\\Some_unannounced_super_secret_project",
     "prompts": [
-      "unity_gamedev_claude-3.7-sonnet-thinking.mdc",
-      "rpg_systems_framework_instructions_claude-3.7-sonnet.mdc"
+      "stacks\\unity_gamedev_claude-3.7-sonnet-thinking.mdc",
+      "stacks\\rpg_systems_framework_instructions_claude-3.7-sonnet.mdc"
     ]
   },
   {
     "repository_path": "C:\\Users\\mt\\Documents\\projects\\coding_tools",
     "prompts": [
-      "python_programming_claude-3.7-sonnet-thinking.mdc"
+      "stacks\\python_programming_claude-3.7-sonnet-thinking.mdc"
     ]
   },
   {
     "repository_path": "C:\\Users\\mt\\Documents\\projects\\scripts",
     "prompts": [
-      "python_programming_claude-3.7-sonnet-thinking.mdc",
-      "bash_scripting.mdc"
+      "stacks\\python_programming_claude-3.7-sonnet-thinking.mdc",
+      "stacks\\bash_scripting.mdc"
     ]
   }
 ]
