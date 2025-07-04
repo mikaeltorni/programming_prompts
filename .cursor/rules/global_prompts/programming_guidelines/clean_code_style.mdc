@@ -1,0 +1,394 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+
+# Clean Code Guidelines: Avoiding Repetitive Patterns
+
+## 🚨 The Problem: Copy-Paste Code Anti-Pattern
+
+### Bad Example (What NOT to Do)
+```typescript
+// ❌ TERRIBLE: Copy-paste nightmare - 9 nearly identical functions
+const hotkeys = [
+  {
+    key: '1',
+    handler: (event) => {
+      if (isTypingInInputField(event)) return;
+      const sortedColumns = board.columns.sort((a, b) => a.order - b.order);
+      if (sortedColumns[0]) {
+        setSelectedColumnId(sortedColumns[0].id);
+        logger.debug('Column 1 selected via hotkey', { columnId: sortedColumns[0].id });
+      }
+    },
+    description: 'Select column 1',
+    preventDefault: true,
+  },
+  {
+    key: '2',
+    handler: (event) => {
+      if (isTypingInInputField(event)) return;
+      const sortedColumns = board.columns.sort((a, b) => a.order - b.order);
+      if (sortedColumns[1]) {
+        setSelectedColumnId(sortedColumns[1].id);
+        logger.debug('Column 2 selected via hotkey', { columnId: sortedColumns[1].id });
+      }
+    },
+    description: 'Select column 2',
+    preventDefault: true,
+  },
+  // ... 7 more identical blocks 🤮
+];
+```
+
+### Good Example (The Clean Solution)
+```typescript
+// ✅ EXCELLENT: DRY, maintainable, and extensible
+const createColumnSelectionHandler = useCallback((columnIndex: number) => {
+  return (event: KeyboardEvent) => {
+    if (isTypingInInputField(event)) return;
+    
+    const sortedColumns = board.columns.sort((a, b) => a.order - b.order);
+    const targetColumn = sortedColumns[columnIndex];
+    
+    if (targetColumn) {
+      setSelectedColumnId(targetColumn.id);
+      logger.debug(`Column ${columnIndex + 1} selected via hotkey`, { 
+        columnId: targetColumn.id,
+        columnTitle: targetColumn.title 
+      });
+    }
+  };
+}, [board.columns]);
+
+// Generate hotkeys dynamically
+const columnSelectionHotkeys = useMemo(() => {
+  const hotkeys = [];
+  const columnNumbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const;
+  
+  for (let i = 0; i < columnNumbers.length; i++) {
+    hotkeys.push({
+      key: columnNumbers[i],
+      handler: createColumnSelectionHandler(i),
+      description: `Select column ${i + 1}`,
+      preventDefault: true,
+    });
+  }
+  
+  return hotkeys;
+}, [createColumnSelectionHandler]);
+```
+
+## 🎯 Core Principles
+
+### 1. DRY Principle (Don't Repeat Yourself)
+If you find yourself copying and pasting code more than once, **STOP** and refactor immediately.
+
+**Signs of DRY violations:**
+- Identical or nearly identical functions/blocks
+- Same logic with only parameter differences
+- Repetitive constant definitions
+- Copy-paste with minor modifications
+
+### 2. Single Responsibility Functions
+Create small, focused functions that do one thing well.
+
+```typescript
+// ❌ Bad: Large function doing multiple things
+function handleAllUserActions(action: string, data: any) {
+  if (action === 'create') {
+    // 20 lines of creation logic
+  } else if (action === 'update') {
+    // 20 lines of update logic
+  } else if (action === 'delete') {
+    // 20 lines of deletion logic
+  }
+}
+
+// ✅ Good: Separate focused functions
+function createUser(userData: UserInput) { /* focused logic */ }
+function updateUser(id: string, updates: UserUpdates) { /* focused logic */ }
+function deleteUser(id: string) { /* focused logic */ }
+```
+
+### 3. Factory Functions and Higher-Order Functions
+Use factory functions to generate similar objects or functions.
+
+```typescript
+// ❌ Bad: Repetitive event handlers
+const handleButtonClick1 = () => navigate('/page1');
+const handleButtonClick2 = () => navigate('/page2');
+const handleButtonClick3 = () => navigate('/page3');
+
+// ✅ Good: Factory function
+const createNavigationHandler = (path: string) => () => navigate(path);
+const handleButtonClick1 = createNavigationHandler('/page1');
+const handleButtonClick2 = createNavigationHandler('/page2');
+const handleButtonClick3 = createNavigationHandler('/page3');
+```
+
+### 4. Dynamic Generation Patterns
+Use loops, maps, and array methods to generate repetitive structures.
+
+```typescript
+// ❌ Bad: Manual array creation
+const menuItems = [
+  { id: 1, label: 'Item 1', path: '/item1' },
+  { id: 2, label: 'Item 2', path: '/item2' },
+  { id: 3, label: 'Item 3', path: '/item3' },
+  // ... etc
+];
+
+// ✅ Good: Dynamic generation
+const menuItems = Array.from({ length: 10 }, (_, i) => ({
+  id: i + 1,
+  label: `Item ${i + 1}`,
+  path: `/item${i + 1}`,
+}));
+
+// ✅ Even better: Data-driven approach
+const itemNames = ['Dashboard', 'Users', 'Settings', 'Reports'];
+const menuItems = itemNames.map((name, index) => ({
+  id: index + 1,
+  label: name,
+  path: `/${name.toLowerCase()}`,
+}));
+```
+
+## 🛠️ Refactoring Strategies
+
+### Strategy 1: Extract Common Logic
+Identify the parts that change vs. the parts that stay the same.
+
+```typescript
+// Before: Repetitive validation functions
+function validateEmail(email: string) {
+  if (!email) return 'Email is required';
+  if (!email.includes('@')) return 'Invalid email format';
+  return null;
+}
+
+function validatePassword(password: string) {
+  if (!password) return 'Password is required';
+  if (password.length < 8) return 'Password too short';
+  return null;
+}
+
+// After: Generic validation with rules
+type ValidationRule = {
+  test: (value: string) => boolean;
+  message: string;
+};
+
+function createValidator(rules: ValidationRule[]) {
+  return (value: string) => {
+    for (const rule of rules) {
+      if (!rule.test(value)) return rule.message;
+    }
+    return null;
+  };
+}
+
+const validateEmail = createValidator([
+  { test: (v) => !!v, message: 'Email is required' },
+  { test: (v) => v.includes('@'), message: 'Invalid email format' },
+]);
+
+const validatePassword = createValidator([
+  { test: (v) => !!v, message: 'Password is required' },
+  { test: (v) => v.length >= 8, message: 'Password too short' },
+]);
+```
+
+### Strategy 2: Configuration-Driven Code
+Use configuration objects to drive behavior instead of hardcoding.
+
+```typescript
+// ❌ Bad: Hardcoded form fields
+function renderForm() {
+  return (
+    <form>
+      <input name="firstName" type="text" placeholder="First Name" required />
+      <input name="lastName" type="text" placeholder="Last Name" required />
+      <input name="email" type="email" placeholder="Email" required />
+      <input name="phone" type="tel" placeholder="Phone" />
+    </form>
+  );
+}
+
+// ✅ Good: Configuration-driven
+const formConfig = [
+  { name: 'firstName', type: 'text', placeholder: 'First Name', required: true },
+  { name: 'lastName', type: 'text', placeholder: 'Last Name', required: true },
+  { name: 'email', type: 'email', placeholder: 'Email', required: true },
+  { name: 'phone', type: 'tel', placeholder: 'Phone', required: false },
+];
+
+function renderForm() {
+  return (
+    <form>
+      {formConfig.map(field => (
+        <input
+          key={field.name}
+          name={field.name}
+          type={field.type}
+          placeholder={field.placeholder}
+          required={field.required}
+        />
+      ))}
+    </form>
+  );
+}
+```
+
+### Strategy 3: Template/Generic Functions
+Use generics and templates for type-safe reusability.
+
+```typescript
+// ❌ Bad: Type-specific CRUD operations
+function createUser(userData: User) {
+  return api.post('/users', userData);
+}
+
+function createProduct(productData: Product) {
+  return api.post('/products', productData);
+}
+
+function createOrder(orderData: Order) {
+  return api.post('/orders', orderData);
+}
+
+// ✅ Good: Generic CRUD operations
+function createEntity<T>(endpoint: string, data: T): Promise<T> {
+  return api.post(endpoint, data);
+}
+
+// Usage
+const newUser = await createEntity('/users', userData);
+const newProduct = await createEntity('/products', productData);
+const newOrder = await createEntity('/orders', orderData);
+```
+
+## 🚀 React-Specific Patterns
+
+### Custom Hooks for Repetitive Logic
+```typescript
+// ❌ Bad: Repetitive state management
+function UserProfile() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<User | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchUser()
+      .then(setData)
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // ... render logic
+}
+
+// ✅ Good: Reusable custom hook
+function useApi<T>(fetchFn: () => Promise<T>) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<T | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchFn()
+      .then(setData)
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [fetchFn]);
+
+  return { data, loading, error };
+}
+
+// Usage
+function UserProfile() {
+  const { data, loading, error } = useApi(fetchUser);
+  // ... render logic
+}
+```
+
+### Component Generation Patterns
+```typescript
+// ❌ Bad: Multiple similar components
+function RedButton({ children, onClick }: ButtonProps) {
+  return <button className="bg-red-500 text-white" onClick={onClick}>{children}</button>;
+}
+
+function BlueButton({ children, onClick }: ButtonProps) {
+  return <button className="bg-blue-500 text-white" onClick={onClick}>{children}</button>;
+}
+
+// ✅ Good: Configurable component
+function Button({ variant = 'primary', children, onClick }: ButtonProps & { variant?: string }) {
+  const variantClasses = {
+    primary: 'bg-blue-500 text-white',
+    danger: 'bg-red-500 text-white',
+    success: 'bg-green-500 text-white',
+  };
+
+  return (
+    <button 
+      className={variantClasses[variant]} 
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+```
+
+## 🔍 Warning Signs to Watch For
+
+### Immediate Red Flags
+1. **Copy-pasting code blocks** - If you're copying more than 2 lines, consider abstraction
+2. **Incrementing numbers in function names** - `handleClick1`, `handleClick2`, etc.
+3. **Similar conditional logic repeated** - Same if/else patterns everywhere
+4. **Hardcoded lists or arrays** - Magic numbers and strings scattered around
+5. **Functions that differ by only a parameter** - Perfect candidates for factory functions
+
+### Code Review Checklist
+- [ ] Can this repeated logic be extracted into a function?
+- [ ] Are there magic numbers/strings that should be constants?
+- [ ] Could this be generated dynamically instead of hardcoded?
+- [ ] Is there a pattern that can be abstracted?
+- [ ] Would future developers need to modify multiple places for one change?
+
+## 📚 When to Apply These Patterns
+
+### Always Refactor When:
+- You copy-paste code more than once
+- You see identical functions with only parameter differences
+- Adding a new item requires modifying multiple places
+- The code violates the "single source of truth" principle
+
+### Consider Refactoring When:
+- Similar patterns exist in 3+ places
+- The code would be hard to maintain or extend
+- New team members struggle to understand the pattern
+- You find yourself making the same change in multiple files
+
+### Don't Over-Engineer When:
+- The code is only used in one place
+- The similarity is superficial (looks same but serves different purposes)
+- The abstraction would be more complex than the original code
+- Performance is critical and abstraction adds overhead
+
+## 🎯 Key Takeaways
+
+1. **Think before you copy-paste** - Always ask "Can this be abstracted?"
+2. **Use factory functions** for creating similar objects/handlers
+3. **Leverage array methods** for generating repetitive structures
+4. **Create custom hooks** for repetitive React patterns
+5. **Configuration over hardcoding** - Use data to drive behavior
+6. **Single source of truth** - One place to change, everywhere updates
+7. **Readable abstractions** - Don't sacrifice clarity for brevity
+
+Remember: **Clean code is not just about working code, it's about maintainable, scalable, and readable code that your future self (and your teammates) will thank you for.** 
