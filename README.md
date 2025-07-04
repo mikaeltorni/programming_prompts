@@ -1,10 +1,11 @@
 # Copy Prompts To Projects
 
-This utility copies specific prompt files from a central global prompts directory to multiple projects based on a JSON configuration file. It also ensures each project's `.gitignore` contains the proper entry, and creates git commits as needed.
+This utility copies specific prompt files from a central global prompts directory to multiple projects based on a JSON configuration file. It also automatically copies the `programming_guidelines` folder to all projects, ensures each project's `.gitignore` contains the proper entry, and creates git commits as needed.
 
 ## Features
 
 - Copies specific prompt files to multiple repositories
+- **Always copies the `programming_guidelines` folder to all projects**
 - Updates `.gitignore` files to include `.cursor/rules/global_prompts`
 - Creates appropriate git commits for each repository
 - Provides detailed logging of operations
@@ -61,14 +62,21 @@ Example:
 1. For each repository in the configuration:
    - Checks if `.gitignore` already has the `.cursor/rules/global_prompts` entry
    - If not, adds it and creates a commit
+   - **Always copies the entire `programming_guidelines` folder** from the source directory
    - Copies each specified prompt file to the repository's `.cursor/rules/global_prompts` directory
-   - Creates a commit for the copied files
+   - Logs all operations performed
 
 2. Only performs operations when necessary:
    - Skips repositories with invalid paths
    - Skips repositories with no prompt files specified
    - Only updates `.gitignore` if needed
-   - Only commits changes when files are actually copied
+   - Always refreshes the `programming_guidelines` folder to ensure it's up to date
+   - Only copies prompt files that have changed or don't exist
+
+3. Directory Management:
+   - Creates the `.cursor/rules/global_prompts` directory if it doesn't exist
+   - Completely replaces the `programming_guidelines` folder to ensure consistency
+   - Compares file contents to avoid unnecessary file operations
 
 # TODO
 - When creating new files, automatically make a new class for the contents inside that file
