@@ -41,6 +41,10 @@ alwaysApply: true
     - Provide clear error messages with actionable information
 </debugging_log_instructions>
 
+<warning_handling_instructions>
+    By any means, do not create comments that hide warnings in the code. ALWAYS fix them by yourself, no slacking there!
+</warning_handling_instructions>
+
 <error_handling_instructions>
     Include comprehensive error handling:
     
