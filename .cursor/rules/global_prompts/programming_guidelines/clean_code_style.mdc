@@ -1,9 +1,7 @@
 ---
-description:
-globs:
+description: Writing code that might become easily duplicated.
 alwaysApply: false
 ---
-
 # Clean Code Guidelines: Avoiding Repetitive Patterns
 
 ## 🚨 The Problem: Copy-Paste Code Anti-Pattern
