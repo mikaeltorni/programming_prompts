@@ -15,4 +15,3 @@ alwaysApply: true
     3. After the code has been written, you will check for any lint errors and fix them, while maintaining the functionality and modularity of the program.
         - If you encounter any lint errors, fix them one by one and DO NOT GIVE UP. Try different approaches if the current one doesn't work.
 </the_process>
-
