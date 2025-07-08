@@ -370,3 +370,249 @@ alwaysApply: true
     
     Document T3 stack patterns and conventions used in the project.
 </update_readme_documentation> 
+
+<optimistic_updates_instructions>
+    Implement zero-latency optimistic updates for T3 stack with tRPC:
+    
+    Core Principles:
+    - Update UI instantly with temporary IDs
+    - Store optimistic data separately from server state
+    - Prevent server data from overwriting optimistic updates
+    - Handle failures with automatic rollback
+    - Clean up optimistic data after server response
+    
+    State Management Setup:
+    ```typescript
+    // Optimistic updates state for tracking pending operations
+    const [optimisticUpdates, setOptimisticUpdates] = useState<{
+      columns: Map<string, { tempId: string; originalId?: string; status: 'pending' | 'success' | 'error' }>;
+      cards: Map<string, { tempId: string; originalId?: string; status: 'pending' | 'success' | 'error' }>;
+    }>({
+      columns: new Map(),
+      cards: new Map(),
+    });
+
+    // Track optimistic data that should persist
+    const [optimisticData, setOptimisticData] = useState<{
+      columns: Map<string, ColumnType>;
+      cards: Map<string, CardType>;
+    }>({
+      columns: new Map(),
+      cards: new Map(),
+    });
+    ```
+    
+    tRPC Mutation with Optimistic Updates:
+    ```typescript
+    const createCardMutation = api.board.createCard.useMutation({
+      onMutate: async (input) => {
+        // Cancel any outgoing refetches
+        await utils.board.getAll.cancel();
+        
+        // Create optimistic card
+        const tempId = `temp_card_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const optimisticCard: CardType = {
+          id: tempId,
+          title: input.title,
+          columnId: input.columnId,
+          order: board.columns.find(col => col.id === input.columnId)?.cards.length || 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        // Update optimistic state
+        setOptimisticUpdates(prev => ({
+          ...prev,
+          cards: new Map(prev.cards).set(tempId, { tempId, status: 'pending' })
+        }));
+
+        // Store optimistic data
+        setOptimisticData(prev => ({
+          ...prev,
+          cards: new Map(prev.cards).set(tempId, optimisticCard)
+        }));
+
+        // Optimistically update the board
+        setBoard(prevBoard => ({
+          ...prevBoard,
+          columns: prevBoard.columns.map(col => 
+            col.id === input.columnId 
+              ? { ...col, cards: [...col.cards, optimisticCard], updatedAt: new Date() }
+              : col
+          ),
+          updatedAt: new Date(),
+        }));
+
+        logger.info('Optimistic card created', { 
+          tempId, 
+          title: input.title, 
+          columnId: input.columnId,
+          optimisticDataSize: optimisticData.cards.size
+        });
+        
+        return { optimisticCard, tempId };
+      },
+      onSuccess: (newCard, variables, context) => {
+        if (context) {
+          // Update optimistic state to success
+          setOptimisticUpdates(prev => ({
+            ...prev,
+            cards: new Map(prev.cards).set(context.tempId, { 
+              tempId: context.tempId, 
+              originalId: newCard.id, 
+              status: 'success' 
+            })
+          }));
+
+          // Get the optimistic card data
+          const optimisticCard = optimisticData.cards.get(context.tempId);
+          
+          if (optimisticCard) {
+            // Update board with real card ID and optimistic data
+            setBoard(prevBoard => ({
+              ...prevBoard,
+              columns: prevBoard.columns.map(col => ({
+                ...col,
+                cards: col.cards.map(card => 
+                  card.id === context.tempId ? { 
+                    ...optimisticCard, // Use optimistic data
+                    id: newCard.id, // But with real ID
+                    updatedAt: new Date()
+                  } : card
+                ),
+              })),
+            }));
+
+            // Clean up optimistic data
+            setOptimisticData(prev => {
+              const newCards = new Map(prev.cards);
+              newCards.delete(context.tempId);
+              return { ...prev, cards: newCards };
+            });
+          }
+
+          logger.info('Card created successfully', { 
+            tempId: context.tempId, 
+            realId: newCard.id,
+            optimisticCardFound: !!optimisticCard,
+            optimisticCardTitle: optimisticCard?.title
+          });
+        }
+      },
+      onError: (error, variables, context) => {
+        if (context) {
+          // Update optimistic state to error
+          setOptimisticUpdates(prev => ({
+            ...prev,
+            cards: new Map(prev.cards).set(context.tempId, { 
+              tempId: context.tempId, 
+              status: 'error' 
+            })
+          }));
+
+          // Rollback optimistic update
+          setBoard(prevBoard => ({
+            ...prevBoard,
+            columns: prevBoard.columns.map(col => ({
+              ...col,
+              cards: col.cards.filter(card => card.id !== context.tempId),
+            })),
+          }));
+
+          logger.error('Card creation failed, rolled back', new Error(error.message), { 
+            tempId: context.tempId 
+          });
+          showToast(`Failed to create card "${variables.title}". Please try again.`, 'error');
+        }
+      },
+      onSettled: () => {
+        // Clean up optimistic state after a delay
+        setTimeout(() => {
+          setOptimisticUpdates(prev => ({
+            ...prev,
+            cards: new Map()
+          }));
+          setOptimisticData(prev => ({
+            ...prev,
+            cards: new Map()
+          }));
+        }, 5000); // Extended delay to ensure server data has time to sync
+      },
+    });
+    ```
+    
+    Prevent Server Data Overwrite:
+    ```typescript
+    // Update board when data loads from server
+    useEffect(() => {
+      if (boards && boards.length > 0) {
+        const firstBoard = boards[0]!;
+        
+        // Only update board if we don't have any optimistic updates (pending or success)
+        const hasAnyOptimisticUpdates = optimisticUpdates.columns.size > 0 || optimisticUpdates.cards.size > 0;
+        
+        if (!hasAnyOptimisticUpdates) {
+          setBoard(firstBoard);
+          logger.info('Board loaded from server', { 
+            boardId: firstBoard.id,
+            columnCount: firstBoard.columns.length,
+            cardCount: firstBoard.columns.reduce((sum, col) => sum + col.cards.length, 0)
+          });
+        } else {
+          logger.debug('Skipping server data update due to optimistic updates', {
+            optimisticColumns: optimisticUpdates.columns.size,
+            optimisticCards: optimisticUpdates.cards.size
+          });
+        }
+      } else if (boards && boards.length === 0) {
+        // Create default board if no boards exist
+        logger.info('No boards found, creating default board');
+        createBoardMutation.mutate({
+          title: 'My Kanban Board',
+          description: 'A simple kanban board for task management',
+        });
+      }
+    }, [boards, createBoardMutation, utils.board.getAll, optimisticUpdates]);
+    ```
+    
+    Toast Notifications for User Feedback:
+    ```typescript
+    // Toast notifications state
+    const [toasts, setToasts] = useState<Array<{
+      id: string;
+      message: string;
+      type: 'error' | 'success';
+      timestamp: number;
+    }>>([]);
+
+    /**
+     * Shows a toast notification
+     */
+    const showToast = useCallback((message: string, type: 'error' | 'success') => {
+      const id = `toast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setToasts(prev => [...prev, { id, message, type, timestamp: Date.now() }]);
+      
+      // Auto-remove toast after 5 seconds
+      setTimeout(() => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
+      }, 5000);
+    }, []);
+    ```
+    
+    Key Implementation Rules:
+    1. **Instant UI Updates**: Always update UI immediately with temporary IDs
+    2. **Separate Data Storage**: Store optimistic data separately from server state
+    3. **Block Server Overwrites**: Prevent server data from overwriting optimistic updates
+    4. **Automatic Rollback**: Handle failures by reverting optimistic changes
+    5. **Delayed Cleanup**: Clean up optimistic data after extended delay (5+ seconds)
+    6. **User Feedback**: Show toast notifications for failed operations
+    7. **Debug Logging**: Log all optimistic operations for debugging
+    8. **Type Safety**: Ensure all optimistic data maintains proper TypeScript types
+    
+    Edge Cases Handled:
+    - Network disconnections during optimistic updates
+    - Multiple rapid operations
+    - Server errors and timeouts
+    - Data consistency between client and server
+    - Concurrent optimistic and server operations
+</optimistic_updates_instructions>
