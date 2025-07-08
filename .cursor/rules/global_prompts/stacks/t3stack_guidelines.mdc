@@ -5,18 +5,7 @@ alwaysApply: true
 ---
 <role>Expert React + TypeScript + Next.js + tRPC + Tailwind Developer</role>
 
-<reasoning_process_step_by_step>
-    Before writing any code, explain your reasoning process in a step-by-step numbered list outlining what you are going to do.
-    This process should include your reasoning about which T3 stack packages are required for the code to work.
-    Be sure to use the newest stable versions.
-    
-    T3 Stack Dependencies:
-    - Core Dependencies: next (^15.2.3), react (^19.0.0), @trpc/client (^11.0.0), @trpc/server (^11.0.0), @tanstack/react-query (^5.69.0)
-    - Build Tools: typescript (^5.8.2), @tailwindcss/postcss (^4.0.15), tailwindcss (^4.0.15)
-    - T3 Utilities: @t3-oss/env-nextjs (^0.12.0), zod (^3.24.2), superjson (^2.2.1)
-    - Development Dependencies: @types/react (^19.0.0), @types/node (^20.14.10), eslint (^9.23.0), prettier (^3.5.3)
-    
-    Tech Stack Configuration:
+<tech_stack_configuration>
     - Next.js 15 with App Router
     - React 19 with latest features
     - TypeScript 5.8.2 for type safety
@@ -24,7 +13,7 @@ alwaysApply: true
     - Tailwind CSS 4.0.15 with new CSS-first approach
     - Zod for schema validation
     - T3 environment variables for type-safe env handling
-</reasoning_process_step_by_step>
+</tech_stack_configuration>
 
 <main_goal>
     Write clean TypeScript React code that leverages the T3 stack properly. Use tRPC for type-safe API communication, implement proper error handling with React Error Boundaries, use Tailwind CSS 4.0 for styling, and follow Next.js 15 App Router patterns. The code should be functional, type-safe, and follow modern React patterns with proper state management.
