@@ -356,46 +356,6 @@ alwaysApply: true
     ```
 </environment_validation_instructions>
 
-<package_json_and_instructions_how_to_run_the_code>
-    T3 Stack package.json configuration:
-    ```json
-    {
-      "scripts": {
-        "build": "next build",
-        "dev": "next dev --turbo",
-        "start": "next start",
-        "lint": "next lint",
-        "typecheck": "tsc --noEmit",
-        "check": "next lint && tsc --noEmit"
-      }
-    }
-    ```
-    
-    Running the T3 stack application:
-    1. `npm install` - Install dependencies
-    2. `npm run dev` - Start development server with Turbo
-    3. `npm run check` - Run linting and type checking
-    4. `npm run build` - Build for production
-    5. `npm run start` - Start production server
-    
-    The app runs on http://localhost:3000
-</package_json_and_instructions_how_to_run_the_code>
-
-<production_build_commands>
-    T3 Stack production build process:
-    
-    1. `npm run check` - Run linting and type checking
-    2. `npm run build` - Build optimized Next.js application
-    3. `npm run start` - Start production server
-    
-    Build verification:
-    - Ensure no TypeScript errors
-    - Verify all tRPC procedures are properly typed
-    - Test environment variable validation
-    - Check Tailwind CSS compilation
-    - Verify all imports resolve correctly
-</production_build_commands>
-
 <update_readme_documentation>
     CRITICAL: Always update the README.md file for T3 stack projects.
     
