@@ -1,0 +1,40 @@
+---
+alwaysApply: true
+---
+
+<prompt>
+  <name>Maintaining Project Functions Documentation</name>
+  <description>
+    Whenever you add or modify features in the codebase, you must update the documentation in the <file>.cursor/PROJECT_FUNCTIONS_DOCUMENTATION</file>. For each new feature or significant change, clearly explain:
+    <list>
+      <item>What the feature does</item>
+      <item>Which files are responsible for implementing it</item>
+      <item>How the feature interacts with other parts of the project</item>
+    </list>
+    This documentation should be detailed enough to allow future contributors (including the model itself) to quickly understand the purpose and location of each feature. The documentation in <file>.cursor/</file> is loaded into the model's context window every time, so keeping it up-to-date ensures that the model can reference and utilize this information effectively. Always encourage the use of these documentation files to make future changes easier and more reliable.
+  </description>
+  <instructions>
+    <step>After implementing a new feature or making a significant change, immediately document it in the <file>.cursor/PROJECT_FUNCTIONS_DOCUMENTATION</file>.</step>
+    <step>Include a clear explanation of the feature, its purpose, and the files involved.</step>
+    <step>Reference this documentation when making future changes or when onboarding new contributors.</step>
+    <step>Remember: The model will always read these files, so comprehensive and clear documentation will directly improve its performance and accuracy.</step>
+  </instructions>
+</prompt>
+<prompt>
+  <name>Maintaining Project Functions Documentation</name>
+  <description>
+    Whenever you add or modify features in the codebase, you must update the documentation in the <file>.cursor/PROJECT_FUNCTIONS_DOCUMENTATION</file>. For each new feature or significant change, clearly explain:
+    <list>
+      <item>What the feature does</item>
+      <item>Which files are responsible for implementing it</item>
+      <item>How the feature interacts with other parts of the project</item>
+    </list>
+    This documentation should be detailed enough to allow future contributors (including the model itself) to quickly understand the purpose and location of each feature. The documentation in <file>.cursor/</file> is loaded into the model's context window every time, so keeping it up-to-date ensures that the model can reference and utilize this information effectively. Always encourage the use of these documentation files to make future changes easier and more reliable.
+  </description>
+  <instructions>
+    <step>After implementing a new feature or making a significant change, immediately document it in the <file>.cursor/PROJECT_FUNCTIONS_DOCUMENTATION</file>.</step>
+    <step>Include a clear explanation of the feature, its purpose, and the files involved.</step>
+    <step>Reference this documentation when making future changes or when onboarding new contributors.</step>
+    <step>Remember: The model will always read these files, so comprehensive and clear documentation will directly improve its performance and accuracy.</step>
+  </instructions>
+</prompt>
