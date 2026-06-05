@@ -3,3 +3,5 @@ project_paths.txt
 
 config.json
 .log/
+
+tests/__pycache__/
