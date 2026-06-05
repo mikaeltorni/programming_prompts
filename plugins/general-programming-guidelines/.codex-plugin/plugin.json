@@ -1,0 +1,29 @@
+{
+  "name": "general-programming-guidelines",
+  "version": "1.0.0",
+  "description": "Shared engineering workflow and coding standards for Codex agents.",
+  "author": {
+    "name": "Mikael Torni"
+  },
+  "license": "MIT",
+  "keywords": [
+    "programming",
+    "testing",
+    "engineering",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "General Programming Guidelines",
+    "shortDescription": "Shared coding, testing, and engineering rules.",
+    "longDescription": "Keeps the canonical programming prompt available as a reusable Codex skill.",
+    "developerName": "Mikael Torni",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Instructions"
+    ],
+    "defaultPrompt": [
+      "Apply the general programming guidelines to this task."
+    ]
+  }
+}
