@@ -43,6 +43,11 @@ Create a centralized logging utility with:
 - Separate development and production logging behavior
 - Helper functions for consistent logging across the application
 - Structured, searchable log formats
+- Store every repository-generated log file under the repository root `.log/`
+  directory. Logging code must create `.log/` before writing and must not place
+  logs in the repository root, `data/`, `/tmp`, or scattered component folders.
+- Add `.log/` to every repository's `.gitignore`; log files are runtime
+  artifacts and must not be committed.
 
 For development:
 - Include detailed debugging information

@@ -12,7 +12,7 @@ This utility copies specific prompt files from a central global prompts director
 - **Always copies the `programming_guidelines` folder to all projects**
 - Updates `.gitignore` files to include `.cursor/rules/global_prompts`
 - Creates appropriate git commits for each repository
-- Provides detailed logging of operations
+- Provides detailed logging under the repository-local `.log/` directory
 - Supports custom configuration through JSON
 
 ## Requirements
@@ -48,6 +48,9 @@ python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py plugin
 The personal Codex marketplace installs these as
 `general-programming-guidelines@personal` and `commit-guidelines@personal`.
 Confirm their status with `codex plugin list`.
+
+The programming guidelines require every repository-generated file log to live
+under `.log/`, and every repository must ignore `.log/`.
 
 ## Configuration File Format
 

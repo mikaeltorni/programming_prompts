@@ -32,10 +32,18 @@ from pathlib import Path
 import logging
 
 
+LOG_DIR = Path(__file__).resolve().parent / ".log"
+LOG_FILE = LOG_DIR / "copy_prompts_to_projects.log"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(levelname)s: %(message)s'
+    format='%(asctime)s %(levelname)s: %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(LOG_FILE, encoding="utf-8"),
+    ],
 )
 logger = logging.getLogger(__name__)
 
