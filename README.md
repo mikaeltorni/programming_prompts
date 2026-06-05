@@ -5,6 +5,10 @@ This utility copies specific prompt files from a central global prompts director
 ## Features
 
 - Copies specific prompt files to multiple repositories
+- Provides reusable Codex plugins under `plugins/`:
+  - `general-programming-guidelines` packages the canonical `programming.md`.
+  - `commit-guidelines` packages the cautious Git commit workflow from
+    `skills/commit/SKILL.md`.
 - **Always copies the `programming_guidelines` folder to all projects**
 - Updates `.gitignore` files to include `.cursor/rules/global_prompts`
 - Creates appropriate git commits for each repository
@@ -31,6 +35,19 @@ This utility copies specific prompt files from a central global prompts director
    ```
    python copy_prompts_to_projects.py your_config.json
    ```
+
+## Codex Plugins
+
+Validate the plugins before installation:
+
+```bash
+python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py plugins/general-programming-guidelines
+python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py plugins/commit-guidelines
+```
+
+The personal Codex marketplace installs these as
+`general-programming-guidelines@personal` and `commit-guidelines@personal`.
+Confirm their status with `codex plugin list`.
 
 ## Configuration File Format
 

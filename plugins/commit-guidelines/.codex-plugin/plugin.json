@@ -1,0 +1,29 @@
+{
+  "name": "commit-guidelines",
+  "version": "1.0.0",
+  "description": "Cautious workflow for creating clean, reviewable Git commits.",
+  "author": {
+    "name": "Mikael Torni"
+  },
+  "license": "MIT",
+  "keywords": [
+    "git",
+    "commits",
+    "staging",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Commit Guidelines",
+    "shortDescription": "Plan, stage, verify, and commit changes safely.",
+    "longDescription": "Packages the shared commit-composer workflow as a reusable Codex plugin skill.",
+    "developerName": "Mikael Torni",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Instructions"
+    ],
+    "defaultPrompt": [
+      "Inspect my changes and create clean commits."
+    ]
+  }
+}
