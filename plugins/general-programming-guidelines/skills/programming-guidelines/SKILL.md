@@ -23,6 +23,25 @@ description: >-
     3.3. When all the tests are passing, implement the code in to the program itself.
     3.4. Then you can test the program yourself too if possible. 
 
+## Planning and Execution Strategy
+
+Before taking ANY action, create a clear execution plan:
+
+1. **Analyze** the user's request and codebase to understand the scope
+2. **Plan** the specific steps needed - list them as a numbered plan
+3. **Execute** the plan step by step, verifying each step completes before moving to the next
+4. **Stop** and reassess if you find yourself repeating tool calls without progress
+
+Your plan must be explicit. Example plan format:
+```
+1. Read file A to understand current state
+2. Read file B for context on X
+3. Modify file A with changes Y
+4. Verify changes work with test Z
+```
+
+**Stop immediately** and reconsider your approach if you're about to make a tool call you've already made in this session. Document what you learned from previous calls to avoid redundant exploration.
+
 ## UNIVERSAL PROGRAMMING GUIDELINES
 
 ### Main Goal
