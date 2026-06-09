@@ -34,7 +34,7 @@ programming_prompts/
 
 ### general-programming-guidelines
 
-Packages the canonical programming guidelines as a Codex plugin. Provides shared engineering workflow and coding standards that apply to every software task — implementation, debugging, review, testing, and refactoring.
+Packages the canonical programming guidelines as a Codex plugin. Provides shared engineering workflow and coding standards that apply to every software task — implementation, debugging, review, testing, and refactoring. New projects and projects adding Python for the first time must also implement a rolling 24-hour package-release delay with `uv`; plain `pip` installs must consume a hash-locked export rather than resolve dependencies directly.
 
 **Install:** The personal marketplace installs this as `general-programming-guidelines@personal`. Confirm with:
 ```bash
@@ -77,7 +77,7 @@ The repository uses a standardized `.log/` directory for runtime logs from utili
 Run the test suite with pytest:
 
 ```bash
-cd tests && python -m pytest test_logging.py -v
+python3 -m pytest tests -v
 ```
 
 ## License

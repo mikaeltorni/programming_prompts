@@ -156,6 +156,39 @@ Implement comprehensive testing. Create testable code with:
 - Performance tests for expensive operations
 - Clear test descriptions and assertions
 
+### Python Dependency Supply-Chain Protection
+
+Apply this policy whenever creating a new project from zero or adding Python to
+an existing project for the first time. Implement the protection in repository
+code and documented setup commands so clean installations and CI use it by
+default; do not rely on an agent remembering an optional flag.
+
+- Delay newly published Python distributions for at least 24 hours. Every
+  dependency resolution must calculate a rolling cutoff equal to the current
+  UTC time minus 24 hours and pass it to `uv` with `--exclude-newer` or the
+  equivalent `UV_EXCLUDE_NEWER` environment variable.
+- Add a project-local wrapper or task that calculates the cutoff and is the
+  documented entry point for `uv add`, lock, sync, install, update, and CI
+  dependency operations. A fixed timestamp committed to `pyproject.toml` is
+  insufficient because it does not remain a rolling 24-hour delay.
+- Generate and commit `uv.lock`. Re-resolve an existing lock under the cutoff
+  before treating the project as protected, and test that the wrapper supplies
+  the cutoff to every command that can resolve or update packages.
+- If regular Python tooling uses `pip`, pip must not resolve dependencies
+  directly because it does not enforce this rolling publication-age policy.
+  Produce a hash-bearing requirements file with `uv export` from the protected
+  lock, then install it with `python -m pip install --require-hashes -r
+  <requirements-file>`. Regenerate the export whenever the lock changes.
+- Pin build-system requirements and all transitive dependencies through the
+  same protected lock/export flow. Do not leave unconstrained bootstrap,
+  development, test, lint, or build dependencies outside the policy.
+- Bootstrap `uv` itself from a pinned release that has been public for at least
+  24 hours, using an official distribution channel and checksum or signature
+  verification where available. Do not execute an unpinned latest-release
+  installer directly from the network.
+- Document the emergency override, if one is added, as an explicit,
+  auditable, opt-in action. It must never be the default local or CI path.
+
 ### Package JSON and Instructions for Running the Code
 
 After writing the code, provide the `package.json` file with all dependencies and scripts. Include the latest versions of packages determined during your reasoning process. Include instructions for running the code:
