@@ -4,11 +4,12 @@ Central repository for Codex agent programming guidelines, commit workflows, and
 
 ## Overview
 
-This repository maintains the canonical engineering standards used across all development projects in this workspace. It packages three core capabilities as installable Codex plugins and skills:
+This repository maintains the canonical engineering standards used across all development projects in this workspace. It packages four core capabilities as installable Codex plugins and skills:
 
 - **General Programming Guidelines** — Shared coding, testing, and engineering workflow rules for all agent tasks.
 - **Commit Guidelines** — Cautious Git commit workflow (inspect → plan → stage hunks → verify → compose).
 - **Refactoring Skill** — Test-driven refactoring methodology for restructuring monolithic codebases into clean modules.
+- **Init Project Skill** — Auto-triggered secure project initialization with UV + supply-chain protection.
 
 ## Repository Structure
 
@@ -17,11 +18,18 @@ programming_prompts/
 ├── plugins/
 │   ├── general-programming-guidelines/    # Codex plugin: engineering workflow & coding standards
 │   │   └── .codex-plugin/plugin.json
-│   └── commit-guidelines/                 # Codex plugin: cautious Git commit workflow
+│   ├── commit-guidelines/                 # Codex plugin: cautious Git commit workflow
+│   │   └── .codex-plugin/plugin.json
+│   └── init-project/                      # Codex plugin: secure init with UV + supply-chain protection
 │       └── .codex-plugin/plugin.json
 ├── skills/
 │   └── refactoring/                       # Standalone SKILL.md for test-driven refactoring
 │       └── SKILL.md
+├── .kilo/
+│   ├── skill/                             # Auto-loaded skills for project initialization
+│   │   └── init-project.md
+│   └── command/                           # Command triggers for skill auto-detection
+│       └── init-project.md
 ├── tests/
 │   └── test_logging.py                    # Tests for logging utility assertions
 ├── .log/                                  # Runtime logs (gitignored)
@@ -50,6 +58,16 @@ Packages the cautious Git commit workflow as a Codex plugin. Guides agents to in
 codex plugin list
 ```
 
+### init-project
+
+Packages secure project initialization as a Codex plugin. Guides agents to set up new projects with UV by Astral as the required package manager, implementing a rolling 24-hour publication delay via uv's native `[tool.uv] exclude-newer = "24 hours"` setting to protect against supply-chain attacks.
+
+**Install:** The personal marketplace installs this as `init-project@personal`. Confirm with:
+```bash
+codex plugin list
+```
+
+
 ## Skills
 
 ### refactoring
@@ -62,6 +80,14 @@ Key principles:
 3. Write tests for existing functionality before extracting anything.
 4. Extract one module at a time, verify, and commit separately.
 5. Update imports, documentation, and project tree after each extraction.
+
+### init-project (auto-triggered)
+
+An auto-loaded skill triggered on project initialization. Implements supply-chain
+protection for Python with UV by Astral and rolling 24-hour publication delay.
+Located in `.kilo/skill/init-project.md` — no manual invocation needed when
+creating Python projects.
+
 
 ## Logging
 

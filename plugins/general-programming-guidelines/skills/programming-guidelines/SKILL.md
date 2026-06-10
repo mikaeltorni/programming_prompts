@@ -11,6 +11,9 @@ description: >-
 # AGENT (Codex) Instructions
 
 ## THE MAIN AGENTIC WORK LOOP - FOLLOW THIS ALWAYS FROM RECEIVING THE PROMPT UNTIL THE LAST TOKEN YOU PRODUCE
+
+**EMPHASIS:** When pursuing a goal, do NOT end the agentic coding loop until the goal is fully achieved. If tests fail, fix them. If code has issues, resolve them. Keep iterating until the implementation is complete and working.
+
 1. Analyze the users request carefully and start analyzing the codebase. With this information, reason about creating a proper plan to achieve the end goal. Plan out the structure of the program, or edits in to it beforehand.
 2. Do not edit the codebase itself yet. Start by creating tests on the requested functions, such as it is the the Test Driven Development (TDD) paradigm.
 3. FOLLOW THESE INSTRUCTIONS TO WRITE MODULAR & CLEAN CODE:
@@ -78,12 +81,17 @@ Create a centralized logging utility with:
 - Add `.log/` to every repository's `.gitignore`; log files are runtime
   artifacts and must not be committed.
 
+When diagnosing an issue:
+1. **Check application logs first** — read `.log/` files under the repository root for the relevant component
+2. **Check systemd journal** — use `journalctl --user -u <service-name>` for services like `codex-agent-tracker-tmux.service`
+3. **Check tracker voice/log files** — these contain TTS announcements and session tracking information
+4. **Review logs before making assumptions** — the project has comprehensive log coverage; use it to understand actual behavior
+
 For development:
 - Include detailed debugging information
 - Add performance timing for expensive operations
 - Log state changes and user interactions
 - Provide clear error messages with actionable information
-- **Always check logs when debugging.** The project has comprehensive log coverage — review application logs, systemd journal entries, and tracker voice/log files before making assumptions about behavior.
 
 ### Warning Handling Instructions
 
@@ -156,38 +164,20 @@ Implement comprehensive testing. Create testable code with:
 - Performance tests for expensive operations
 - Clear test descriptions and assertions
 
-### Python Dependency Supply-Chain Protection
+### Python Supply-Chain Protection
 
-Apply this policy whenever creating a new project from zero or adding Python to
-an existing project for the first time. Implement the protection in repository
-code and documented setup commands so clean installations and CI use it by
-default; do not rely on an agent remembering an optional flag.
+When adding Python or initializing a new project, invoke the `init-project`
+skill to apply supply-chain protection with UV by Astral. See that skill for
+complete implementation details.
 
-- Delay newly published Python distributions for at least 24 hours. Every
-  dependency resolution must calculate a rolling cutoff equal to the current
-  UTC time minus 24 hours and pass it to `uv` with `--exclude-newer` or the
-  equivalent `UV_EXCLUDE_NEWER` environment variable.
-- Add a project-local wrapper or task that calculates the cutoff and is the
-  documented entry point for `uv add`, lock, sync, install, update, and CI
-  dependency operations. A fixed timestamp committed to `pyproject.toml` is
-  insufficient because it does not remain a rolling 24-hour delay.
-- Generate and commit `uv.lock`. Re-resolve an existing lock under the cutoff
-  before treating the project as protected, and test that the wrapper supplies
-  the cutoff to every command that can resolve or update packages.
-- If regular Python tooling uses `pip`, pip must not resolve dependencies
-  directly because it does not enforce this rolling publication-age policy.
-  Produce a hash-bearing requirements file with `uv export` from the protected
-  lock, then install it with `python -m pip install --require-hashes -r
-  <requirements-file>`. Regenerate the export whenever the lock changes.
-- Pin build-system requirements and all transitive dependencies through the
-  same protected lock/export flow. Do not leave unconstrained bootstrap,
-  development, test, lint, or build dependencies outside the policy.
-- Bootstrap `uv` itself from a pinned release that has been public for at least
-  24 hours, using an official distribution channel and checksum or signature
-  verification where available. Do not execute an unpinned latest-release
-  installer directly from the network.
-- Document the emergency override, if one is added, as an explicit,
-  auditable, opt-in action. It must never be the default local or CI path.
+- Set `exclude-newer = "24 hours"` in `[tool.uv]` — uv enforces this rolling cutoff
+  natively at every invocation; no wrapper script is needed
+- Never let plain `pip` resolve dependencies directly — only install hash-locked exports
+- Document emergency overrides as explicit, auditable, opt-in actions
+
+Verify the `init-project` skill's generated config includes these safeguards;
+do not accept a template that omits them.
+
 
 ### Package JSON and Instructions for Running the Code
 
@@ -199,6 +189,7 @@ After writing the code, provide the `package.json` file with all dependencies an
 5. Type checking and linting
 
 Provide clear setup instructions and any environment variables needed.
+Ensure dependency installation follows the supply-chain policy above before or alongside these scripts; never bypass it to satisfy a “latest version” preference.
 
 ### Production Build Commands
 
