@@ -31,7 +31,7 @@ programming_prompts/
 │   └── command/                           # Command triggers for skill auto-detection
 │       └── init-project.md
 ├── tests/
-│   └── test_logging.py                    # Tests for logging utility assertions
+│   └── test_python_supply_chain_policy.py # Tests for the supply-chain policy guidance
 ├── .log/                                  # Runtime logs (gitignored)
 ├── AGENTS.md                              # Agent instructions for this repo
 ├── LICENSE.md                             # MIT License
@@ -91,11 +91,14 @@ creating Python projects.
 
 ## Logging
 
-The repository uses a standardized `.log/` directory for runtime logs from utilities such as `copy_prompts_to_projects`. These are gitignored to keep the working tree clean:
+Per the programming guidelines, any repository-generated log files must be
+written under the repository-root `.log/` directory (created on demand) and are
+gitignored to keep the working tree clean. No runtime utilities currently ship
+in this repository, but the convention is reserved for any that are added later:
 
 ```bash
-# Log output lives here (gitignored)
-.log/copy_prompts_to_projects.log
+# Repository-generated logs live here (gitignored)
+.log/<component>.log
 ```
 
 ## Testing
