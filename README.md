@@ -4,10 +4,11 @@ Central repository for Codex agent programming guidelines, commit workflows, and
 
 ## Overview
 
-This repository maintains the canonical engineering standards used across all development projects in this workspace. It packages four core capabilities as installable Codex plugins and skills:
+This repository maintains the canonical engineering standards used across all development projects in this workspace. It packages five core capabilities as installable Codex plugins and skills:
 
 - **General Programming Guidelines** — Shared coding, testing, and engineering workflow rules for all agent tasks.
 - **Commit Guidelines** — Cautious Git commit workflow (inspect → plan → stage hunks → verify → compose).
+- **Linux Desktop Configuration** — Shared GNOME/Ubuntu desktop rules: safe in-place GNOME Shell reloads (the X11-exclusive `Alt+F2 r` xdotool sequence), Wayland restrictions, clean-install compatibility, and root-optional (sudo-free) installer patterns.
 - **Refactoring Skill** — Test-driven refactoring methodology for restructuring monolithic codebases into clean modules.
 - **Init Project Skill** — Auto-triggered secure project initialization with UV + supply-chain protection.
 
@@ -20,7 +21,9 @@ programming_prompts/
 │   │   └── .codex-plugin/plugin.json
 │   ├── commit-guidelines/                 # Codex plugin: cautious Git commit workflow
 │   │   └── .codex-plugin/plugin.json
-│   └── init-project/                      # Codex plugin: secure init with UV + supply-chain protection
+│   ├── init-project/                      # Codex plugin: secure init with UV + supply-chain protection
+│   │   └── .codex-plugin/plugin.json
+│   └── linux-desktop-configuration/       # Codex plugin: GNOME reload safety + sudo-free installer rules
 │       └── .codex-plugin/plugin.json
 ├── skills/
 │   └── refactoring/                       # Standalone SKILL.md for test-driven refactoring
@@ -63,6 +66,19 @@ codex plugin list
 Packages secure project initialization as a Codex plugin. Guides agents to set up new projects with UV by Astral as the required package manager, implementing a rolling 24-hour publication delay via uv's native `[tool.uv] exclude-newer = "24 hours"` setting to protect against supply-chain attacks.
 
 **Install:** The personal marketplace installs this as `init-project@personal`. Confirm with:
+```bash
+codex plugin list
+```
+
+### linux-desktop-configuration
+
+Packages the shared Linux desktop configuration rules as a Codex plugin (skill name: `linux-configuration`). Applies to any task touching GNOME Shell extensions, gsettings, themes, hotkeys, systemd user services, or repository installers:
+
+- **GNOME Shell reload:** in-place reload is X11-exclusive — run the complete sequence `xdotool key Alt+F2; sleep 1; xdotool type r; xdotool key Return`; on Wayland ask the user to log out/in. Never terminate the session or run `gnome-shell --replace`.
+- **Clean installation compatibility:** every change must reproduce on a fresh checkout via `installation_scripts/install.sh`; installers stay idempotent.
+- **Root-optional installers:** all project `install.sh` scripts run sudo-free in user mode (root-only steps are skipped and reported via `SUDO_REQUIRED_STEPS`); only `linux_installations_setup` hard-requires root.
+
+**Install:** The agent_command_center installer copies it to `~/.claude/skills/linux-desktop-configuration`; the personal marketplace installs it as `linux-desktop-configuration@personal`. Confirm with:
 ```bash
 codex plugin list
 ```
