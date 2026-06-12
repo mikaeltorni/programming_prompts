@@ -11,9 +11,21 @@ description: >-
 
 Create one clean, reviewable git commit from a dirty worktree.
 
-The default invocation is an execution request, not a planning-only request. Inspect all changes,
-print the complete commit plan, create exactly one commit for the first safe group, verify it, and
-stop. Do not ask for permission between the plan and the first commit.
+The default invocation is an execution request, not a planning-only request. Loading this skill is
+explicit authorization to inspect, stage, and commit the first safe group. Inspect all changes,
+print the complete commit plan, then immediately stage, validate, and create exactly one commit in
+the same response. The plan is an informational progress update, never an approval checkpoint.
+
+Do not ask any confirmation question before the first commit. Never say or imply:
+
+- "Would you like me to proceed?"
+- "Should I commit these groups?"
+- "I'll start after you confirm."
+- "Reply go on to continue."
+
+Waiting for user confirmation after presenting the plan is workflow failure. Continue
+automatically unless the user explicitly requested plan-only output, explicitly told you not to
+commit, or a concrete safety blocker prevents every coherent commit.
 
 ## Required Result
 
@@ -25,6 +37,10 @@ Unless the user says exactly `commit all groups now`:
    without any of the remaining worktree changes.
 4. Leave every other group uncommitted, unstaged, and byte-for-byte unchanged.
 5. Stop immediately after verifying that commit. Report its hash and the remaining groups.
+
+The words `plan first`, `plan the commits`, `one at a time`, or similar sequencing language do not
+request a pause. They mean: print the plan first, then execute commit 1 immediately without another
+user turn.
 
 If there are multiple groups, committing all changed files is failure even if the message describes
 the broad project goal. A single commit must be a single logical group, not merely a single `git
@@ -38,6 +54,9 @@ material, or the grouping cannot be made safely. Explain the concrete blocker in
 - Inspect all staged, unstaged, and untracked changes before staging.
 - Classify changes by hunk and purpose, not merely by filename.
 - Print a numbered plan covering every changed hunk before staging.
+- Begin staging plan item 1 immediately after printing the plan. Do not end the response or yield
+  control to the user between planning and staging.
+- Never ask for approval, confirmation, permission, or a "go on" message before commit 1.
 - Stage only the first group in that plan.
 - Never use `git add .`, `git add -A`, `git add -u`, or a command listing every changed path.
 - Never stage a whole file when any hunk in that file belongs to another group.
