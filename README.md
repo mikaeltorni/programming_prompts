@@ -36,7 +36,6 @@ programming_prompts/
 ├── tests/
 │   └── test_python_supply_chain_policy.py # Tests for the supply-chain policy guidance
 ├── .log/                                  # Runtime logs (gitignored)
-├── AGENTS.md                              # Agent instructions for this repo
 ├── LICENSE.md                             # MIT License
 └── README.md                              # This file
 ```
