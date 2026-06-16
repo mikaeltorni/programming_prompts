@@ -232,6 +232,17 @@ After writing code, perform a thorough review to identify refactoring opportunit
 
 When implementing larger features, include a dedicated refactoring pass after initial implementation.
 
+### Change Scope and Commit Discipline
+
+Stay strictly within the change you were asked to make. While working on a feature — when the chat is about implementing something, not specifically about committing — do NOT touch, "fix", reformat, or otherwise modify parts of the code you did not write as part of this task. Leave unrelated files and pre-existing local changes exactly as you found them, even if you notice they could be improved; surface them to the user instead of silently editing them.
+
+When you commit, commit ONLY the changes you actually wrote for the current task:
+- Identify which files and hunks are yours for this feature, and stage just those.
+- Never blanket-stage the worktree (`git add .` / `-A` / `-u`) when other, unrelated changes are present. Those belong to a separate concern and must stay uncommitted and untouched.
+- If the worktree already contained modifications you did not make, do not fold them into your commit.
+
+The exception is an explicit request to commit everything (for example, on a fresh context window where multiple features are already present). In that case, do not lump it all into one commit: inspect the changes, separate them into properly scoped logical commits — one feature/fix/concern per commit — and message each one accurately.
+
 ## CRITICAL: Important Tool-calling Instructions.
 - When a terminal command is needed to answer the user's request, you MUST execute the command using your tool capabilities immediately. Never print terminal commands inside code blocks or text chat.
 - **Never repeat the same terminal command more than once** without a clear reason to re-run it (e.g., verifying an idempotent install). If you have already run a command and seen its output, do NOT run it again.
