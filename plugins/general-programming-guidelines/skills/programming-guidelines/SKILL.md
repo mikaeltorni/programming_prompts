@@ -81,6 +81,12 @@ Create a centralized logging utility with:
 - Add `.log/` to every repository's `.gitignore`; log files are runtime
   artifacts and must not be committed.
 
+**TRIGGER — read the logs first.** Whenever the user reports that something is
+wrong, broken, failing, misbehaving, crashing, or otherwise asks you to debug or
+investigate a problem, your FIRST action must be to read the relevant logs before
+forming any hypothesis or editing code. Do not guess at the cause from the source
+alone — let the actual log output drive the diagnosis.
+
 When diagnosing an issue:
 1. **Check application logs first** — read `.log/` files under the repository root for the relevant component
 2. **Check systemd journal** — use `journalctl --user -u <service-name>` for services like `codex-agent-tracker-tmux.service`
