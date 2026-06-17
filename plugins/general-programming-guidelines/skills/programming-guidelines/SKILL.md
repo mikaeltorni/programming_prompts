@@ -14,21 +14,45 @@ description: >-
 
 **EMPHASIS:** When pursuing a goal, do NOT end the agentic coding loop until the goal is fully achieved. If tests fail, fix them. If code has issues, resolve them. Keep iterating until the implementation is complete and working.
 
-1. Analyze the users request carefully and start analyzing the codebase. With this information, reason about creating a proper plan to achieve the end goal. Plan out the structure of the program, or edits in to it beforehand.
-2. Do not edit the codebase itself yet. Start by creating tests on the requested functions, such as it is the the Test Driven Development (TDD) paradigm.
+1. Analyze the user's request exactly as written and start analyzing the codebase. Preserve the user's wording, scope, paths, data, and stated constraints; do not summarize, "clean up", translate, reinterpret, or replace their input unless they explicitly ask you to do that.
+2. Plan the specific code or configuration changes before editing. For behavior changes, bug fixes, shared helpers, installer logic, and regressions, add or update focused tests first when the codebase has a practical test path. For tiny documentation-only edits or changes where no useful automated test exists, state the verification you will run instead of inventing noisy tests.
 3. FOLLOW THESE INSTRUCTIONS TO WRITE MODULAR & CLEAN CODE:
     3.1. Regular LLMs are bad at writing modular and maintainable code, but YOU are different. This means that:
         - Any of the components you will would add to the file that the user requested, should be written in to their own functions instead. These form Classes, that are in their own files.
         - This means that you will write these components FIRST by following the guidelines in the: UNIVERSAL PROGRAMMING GUIDELINES SECTION below.
         - Then you will proceed to integrating them to the file that the user requested in the first place.
-    3.2. After the tests has been written, you will run them one by one:
+    3.2. After the tests have been written, you will run them one by one:
         - If you encounter any errors, fix them one by one and DO NOT GIVE UP. Try different approaches if the current one doesn't work.
     3.3. When all the tests are passing, implement the code in to the program itself.
     3.4. Then you can test the program yourself too if possible. 
 
+## User Input, State, and Deployment Safety
+
+Treat the human's current input, files, desktop session, shell state, secrets,
+and personal configuration as production data.
+
+- Do not destroy, overwrite, normalize, truncate, reorder, or otherwise "fix"
+  user input unless the user explicitly requested that transformation.
+- Do not reset configuration values to placeholder defaults such as `0`, empty
+  strings, or generic fallback models when an existing user value or canonical project default can be preserved.
+- Before changing user-global state, generated wrappers, installed skills,
+  desktop configuration, systemd user services, or installer output, test the change in a sandbox or temporary home directory when the repository provides a
+  feasible way to do so. Deploy to the user's real environment only after the
+  sandbox path and focused tests pass.
+- Keep installers, migrations, and generators idempotent and non-destructive.
+  Existing user configuration, credentials, enabled plugins, trusted projects,
+  sessions, and history must survive a rerun unless the user specifically asked
+  for a reset.
+- For GUI/session changes, preserve open windows and running applications. On
+  GNOME X11, if a Shell reload is required, use the complete in-place reload
+  command `xdotool key Alt+F2; sleep 1; xdotool type r; xdotool key Return`.
+  On Wayland, do not force a reload; ask the user to log out and back in.
+  Never use logout, session termination, `gnome-shell --replace`, or shell-kill
+  commands to push a change through.
+
 ## Planning and Execution Strategy
 
-Before taking ANY action, create a clear execution plan:
+Before taking code-changing or state-changing action, create a clear execution plan:
 
 1. **Analyze** the user's request and codebase to understand the scope
 2. **Plan** the specific steps needed - list them as a numbered plan
