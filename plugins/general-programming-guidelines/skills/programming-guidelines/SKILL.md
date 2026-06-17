@@ -77,14 +77,15 @@ Your plan must be explicit. Example plan format:
 
 ### Commenting Instructions
 
-Insert comprehensive documentation comments in the appropriate format for your language.
+Add documentation comments in the appropriate format for your language when they
+clarify a public API, non-obvious behavior, or a complex implementation.
 
-For files, include a top-level comment with:
+For new files that introduce reusable modules or scripts, include a top-level comment with:
 - File name and description
 - Components/Functions/Classes included
 - Usage examples if applicable
 
-For every function, component, class, or method, include documentation that describes:
+For exported functions, components, classes, or methods, include documentation when it helps future maintainers understand:
 - Purpose and functionality
 - Parameters with types and descriptions
 - Return values with types and descriptions
@@ -236,7 +237,12 @@ Important notes:
 
 ### Update README Documentation
 
-**CRITICAL:** Always update the `README.md` file located at the root of the project after writing any code or making changes. The `README.md` file should be comprehensive and include:
+Update the root `README.md` when your change affects installation, setup,
+commands, user-visible behavior, architecture, configuration, troubleshooting,
+or other information a future user needs. Do not churn README files for private
+implementation details, tests-only changes, or narrowly scoped fixes that do
+not change how the project is used. When a README update is needed, keep it
+accurate and include:
 - Project title and description
 - Technology stack and architecture overview
 - Installation and setup instructions
