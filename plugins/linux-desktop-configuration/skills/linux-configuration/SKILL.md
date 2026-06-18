@@ -1,23 +1,67 @@
 ---
 name: linux-configuration
 description: >-
-  Mandatory rules for any task that touches Linux desktop configuration on
-  this machine: GNOME Shell extensions, gsettings, themes, hotkeys, systemd
-  user services, or repository installers. Covers safe in-place GNOME Shell
-  reloads (X11 Alt+F2 r), Wayland restrictions, clean installation
+  Mandatory rules for any task on this machine that touches Linux desktop
+  configuration: GNOME Shell extensions, gsettings, themes, hotkeys, systemd
+  user services, or a repository install.sh. Invoke this BEFORE you reload or
+  restart GNOME Shell, deploy or enable a GNOME extension, run `gnome-shell
+  --replace`, log the user out, or write/run any installer. Covers the safe
+  X11-only in-place reload (Alt+F2 r), Wayland restrictions, the
+  session-terminating commands that are always forbidden, clean-install
   compatibility, and the root-optional (sudo-free) installer pattern.
 ---
 
 # Linux Desktop Configuration Guidelines
 
 These rules apply whenever a change touches GNOME Shell, desktop settings,
-hotkeys, systemd user services, or any repository `install.sh`.
+hotkeys, systemd user services, or any repository `install.sh`. They are
+mandatory, not advisory: follow them exactly even when the user's prompt does
+not restate them, and never reach for a faster shortcut (session logout,
+`gnome-shell --replace`, killing the Shell) to "just make it apply."
 
-## Reloading GNOME Shell
+## Applying changes silently (prefer this — no GUI interruption)
 
-When a change needs GNOME Shell to reload (extensions, themes, shell-side
-configuration), reload it in place — never log the user out or terminate the
-session.
+Most desktop changes do NOT need a GNOME Shell reload. Reloading the Shell
+(even the in-place `Alt+F2 r`) flashes the panel, resets the overview/
+animations, and steals focus, so it interrupts the human's active work.
+Before reaching for any reload, apply the change with the narrowest
+command-line mechanism that takes effect live, in place, with no visible
+disruption:
+
+- **gsettings / dconf** (hotkeys, `org.gnome.desktop.*`, `org.gnome.shell.*`
+  keys, themes, app behavior): `gsettings set …` takes effect immediately in
+  the running session. No reload.
+- **An extension's own settings** (keys in its GSettings schema, read at
+  runtime by the extension): `gsettings set` (or `dconf write`) on that
+  schema applies live. No reload.
+- **systemd user service** (trackers, daemons, helpers): restart only that
+  unit — `systemctl --user restart <unit>`. No Shell reload, no GUI flash.
+- **Enabling/disabling an extension** (toggling its on/off state, not
+  changing its code): `gnome-extensions enable <uuid>` /
+  `gnome-extensions disable <uuid>` runs the extension's own enable/disable
+  in place without restarting the Shell.
+
+Always state the exact silent command you ran to apply the change, and verify
+it took effect (e.g. read the gsettings key back, `systemctl --user status`,
+`gnome-extensions info <uuid>`).
+
+## Reloading GNOME Shell (only for extension *code* changes)
+
+The ONE case that needs the Shell itself to reload is changing the **code** of
+a loaded extension (its `extension.js` / installed files), because the Shell
+imports each extension's JS once per shell-process lifetime and caches the
+module. There is no sanctioned, non-disruptive command-line hot-reload for
+edited extension source:
+
+- `gnome-extensions disable && enable` calls the *cached* module's
+  disable/enable — it does NOT re-read the edited source.
+- The `org.gnome.Shell.Extensions.ReloadExtension` D-Bus method is locked down
+  (same restriction as `Eval`) and refuses external calls.
+- A newly added extension directory is not detected by the running Shell at
+  all until it reloads.
+
+So for extension code changes only: deploy the files first, then reload the
+Shell in place — never log the user out or terminate the session.
 
 - **X11 session (the in-place reload is X11-exclusive):** run the complete
   command
