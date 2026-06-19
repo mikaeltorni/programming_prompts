@@ -44,17 +44,16 @@ and personal configuration as production data.
   sessions, and history must survive a rerun unless the user specifically asked
   for a reset.
 - For GUI/session changes, preserve open windows and running applications.
-  Prefer applying changes silently from the command line with no Shell reload:
-  `gsettings set` (hotkeys, themes, shell keys, an extension's own settings)
-  takes effect live; restart only the affected `systemctl --user` unit; toggle
-  extension state with `gnome-extensions enable/disable`. Only a change to an
-  extension's *code* needs the Shell to reload (it caches each extension's JS
-  for the process lifetime; disable/enable does not re-read edited source). In
-  that case only, on GNOME X11 use the complete in-place reload command
-  `xdotool key Alt+F2; sleep 1; xdotool type r; xdotool key Return`; on Wayland
-  do not force a reload, ask the user to log out and back in. Never use logout,
-  session termination, `gnome-shell --replace`, or shell-kill commands to push
-  a change through.
+  Apply changes silently from the command line with no Shell reload: `gsettings
+  set` (hotkeys, themes, shell keys, an extension's own settings) takes effect
+  live; restart only the affected `systemctl --user` unit; toggle extension
+  state with `gnome-extensions enable/disable`. For extension *code* changes,
+  deploy the files and verify them, then report that the user must start a
+  fresh GNOME Shell session before the running desktop can execute the edited
+  source. Never automate Shell reloads or GUI resets, including run-dialog
+  reloads, `xdotool` key/type sequences, logout, session termination,
+  `gnome-shell --replace`, reboot, or shell-kill commands to push a change
+  through.
 
 ## Planning and Execution Strategy
 

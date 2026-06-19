@@ -16,16 +16,16 @@ These rules apply whenever a change touches GNOME Shell, desktop settings,
 hotkeys, systemd user services, or any repository `install.sh`. They are
 mandatory, not advisory: follow them exactly even when the user's prompt does
 not restate them, and never reach for a faster shortcut (session logout,
-`gnome-shell --replace`, killing the Shell) to "just make it apply."
+`gnome-shell --replace`, killing the Shell, or automating a GUI Shell reload)
+to "just make it apply."
 
-## Applying changes silently (prefer this — no GUI interruption)
+## Applying changes silently (required default)
 
 Most desktop changes do NOT need a GNOME Shell reload. Reloading the Shell
-(even the in-place `Alt+F2 r`) flashes the panel, resets the overview/
-animations, and steals focus, so it interrupts the human's active work.
-Before reaching for any reload, apply the change with the narrowest
-command-line mechanism that takes effect live, in place, with no visible
-disruption:
+flashes the panel, resets the overview/animations, and steals focus, so it
+interrupts the human's active work. Do not automate Shell reloads or GUI
+resets. Apply changes with the narrowest command-line mechanism that takes
+effect live, in place, with no visible disruption:
 
 - **gsettings / dconf** (hotkeys, `org.gnome.desktop.*`, `org.gnome.shell.*`
   keys, themes, app behavior): `gsettings set …` takes effect immediately in
@@ -44,13 +44,13 @@ Always state the exact silent command you ran to apply the change, and verify
 it took effect (e.g. read the gsettings key back, `systemctl --user status`,
 `gnome-extensions info <uuid>`).
 
-## Reloading GNOME Shell (only for extension *code* changes)
+## Extension code changes (deploy, do not reload)
 
-The ONE case that needs the Shell itself to reload is changing the **code** of
-a loaded extension (its `extension.js` / installed files), because the Shell
-imports each extension's JS once per shell-process lifetime and caches the
-module. There is no sanctioned, non-disruptive command-line hot-reload for
-edited extension source:
+Changing the **code** of a loaded extension (its `extension.js` / installed
+files) still needs a fresh Shell process before the running desktop will execute
+the edited source, because the Shell imports each extension's JS once per
+shell-process lifetime and caches the module. There is no sanctioned,
+non-disruptive command-line hot-reload for edited extension source:
 
 - `gnome-extensions disable && enable` calls the *cached* module's
   disable/enable — it does NOT re-read the edited source.
@@ -59,23 +59,17 @@ edited extension source:
 - A newly added extension directory is not detected by the running Shell at
   all until it reloads.
 
-So for extension code changes only: deploy the files first, then reload the
-Shell in place — never log the user out or terminate the session.
-
-- **X11 session (the in-place reload is X11-exclusive):** run the complete
-  command
-  `xdotool key Alt+F2; sleep 1; xdotool type r; xdotool key Return`.
-  This opens the GNOME run dialog, enters its internal `r` command, and
-  submits it, restarting gnome-shell while preserving open windows and
-  applications. Do not open Alt+F2 by itself to test or inspect the dialog;
-  that interrupts the human's active work. Always run the complete sequence
-  when a reload is required.
-- **Wayland session:** there is no in-place reload. Ask the user to log out
-  and back in themselves. Do NOT initiate it.
+For extension code changes: deploy the files from the console, verify the
+installed files and settings, then report that activation requires the user to
+start a fresh GNOME Shell session themselves. Do not automate the run dialog,
+do not send key events to trigger a Shell reload, and do not initiate logout,
+reboot, or session restart.
 
 Never use any of the following to force changes through, regardless of
 session type:
 
+- GNOME run-dialog reload automation, including `Alt+F2 r` or `xdotool`
+  key/type sequences that trigger it
 - `gnome-session-quit` / `--logout` / `--force`
 - `loginctl terminate-session …` / `loginctl kill-user …`
 - `systemctl --user stop gnome-session*` or similar unit stops
@@ -92,8 +86,8 @@ disable-user-extensions` is `false` and previously enabled extensions are
 still active.
 
 A Shell reload is NOT needed when the change only affects a systemd user
-service or installer-side gsettings; restart the service instead
-(`systemctl --user restart <unit>`).
+service or installer-side gsettings. Restart only the affected service instead
+(`systemctl --user restart <unit>`), and do not reset the GUI.
 
 ## Clean Installation Compatibility
 
