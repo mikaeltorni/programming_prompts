@@ -3,12 +3,11 @@ name: linux-configuration
 description: >-
   Mandatory rules for any task on this machine that touches Linux desktop
   configuration: GNOME Shell extensions, gsettings, themes, hotkeys, systemd
-  user services, or a repository install.sh. Invoke this BEFORE you reload or
-  restart GNOME Shell, deploy or enable a GNOME extension, run `gnome-shell
-  --replace`, log the user out, or write/run any installer. Covers the safe
-  X11-only in-place reload (Alt+F2 r), Wayland restrictions, the
-  session-terminating commands that are always forbidden, clean-install
-  compatibility, and the root-optional (sudo-free) installer pattern.
+  user services, or a repository install.sh. Requires console-only, silent
+  deployment paths and forbids agent-initiated GNOME Shell reloads, GUI resets,
+  session restarts, logout, `gnome-shell --replace`, and shell-kill commands.
+  Covers clean-install compatibility and the root-optional (sudo-free)
+  installer pattern.
 ---
 
 # Linux Desktop Configuration Guidelines

@@ -23,7 +23,7 @@ programming_prompts/
 │   │   └── .codex-plugin/plugin.json
 │   ├── init-project/                      # Codex plugin: secure init with UV + supply-chain protection
 │   │   └── .codex-plugin/plugin.json
-│   └── linux-desktop-configuration/       # Codex plugin: GNOME reload safety + sudo-free installer rules
+│   └── linux-desktop-configuration/       # Codex plugin: console-only desktop deployment + sudo-free installer rules
 │       └── .codex-plugin/plugin.json
 ├── skills/
 │   └── refactoring/                       # Standalone SKILL.md for test-driven refactoring

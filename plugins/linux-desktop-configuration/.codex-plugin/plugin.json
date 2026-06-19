@@ -15,8 +15,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Linux Desktop Configuration",
-    "shortDescription": "GNOME Shell reload safety, clean-install rules, and sudo-free installer patterns.",
-    "longDescription": "Keeps the shared Linux desktop configuration guidance available as a reusable Codex skill: in-place GNOME Shell reloads (X11 Alt+F2 r), Wayland restrictions, forbidden session-terminating commands, clean installation compatibility, and the root-optional installer pattern that avoids sudo wherever possible.",
+    "shortDescription": "Console-only desktop deployment, clean-install rules, and sudo-free installer patterns.",
+    "longDescription": "Keeps the shared Linux desktop configuration guidance available as a reusable Codex skill: apply desktop changes silently from the command line, never automate GNOME Shell reloads or GUI resets, report manual activation when extension code needs a fresh Shell session, preserve user sessions, maintain clean installation compatibility, and avoid sudo wherever possible.",
     "developerName": "Mikael Torni",
     "category": "Developer Tools",
     "capabilities": [
