@@ -8,7 +8,7 @@ This repository maintains the canonical engineering standards used across all de
 
 - **General Programming Guidelines** — Shared coding, testing, and engineering workflow rules for all agent tasks.
 - **Commit Guidelines** — Cautious Git commit workflow (inspect → plan → stage hunks → verify → compose).
-- **Linux Desktop Configuration** — Shared GNOME/Ubuntu desktop rules: applying changes silently from the command line (gsettings/dconf live, `systemctl --user restart`, `gnome-extensions enable/disable`) so most changes need no Shell reload, the X11-exclusive in-place reload reserved for extension *code* changes, Wayland restrictions, clean-install compatibility, and root-optional (sudo-free) installer patterns.
+- **Linux Desktop Configuration** — Shared GNOME/Ubuntu desktop rules: applying changes silently from the command line (gsettings/dconf live, `systemctl --user restart`, `gnome-extensions enable/disable`), never automating GNOME Shell reloads or GUI resets, reporting manual activation when extension code needs a fresh Shell session, preserving user sessions, maintaining clean-install compatibility, and using root-optional (sudo-free) installer patterns.
 - **Refactoring Skill** — Test-driven refactoring methodology for restructuring monolithic codebases into clean modules.
 - **Init Project Skill** — Auto-triggered secure project initialization with UV + supply-chain protection.
 
@@ -73,7 +73,7 @@ codex plugin list
 
 Packages the shared Linux desktop configuration rules as a Codex plugin (skill name: `linux-configuration`). Applies to any task touching GNOME Shell extensions, gsettings, themes, hotkeys, systemd user services, or repository installers:
 
-- **Apply changes silently first:** most changes need no Shell reload — `gsettings set` (hotkeys/themes/shell keys/an extension's own settings) applies live, `systemctl --user restart <unit>` for services, `gnome-extensions enable/disable` toggles extension state, all without a GUI flash. Only an extension *code* change needs the Shell to reload (it caches each extension's JS for the process lifetime); for that, the in-place reload is X11-exclusive — run the complete sequence `xdotool key Alt+F2; sleep 1; xdotool type r; xdotool key Return`; on Wayland ask the user to log out/in. Never terminate the session or run `gnome-shell --replace`.
+- **Apply changes silently from the console:** most changes need no Shell reload — `gsettings set` (hotkeys/themes/shell keys/an extension's own settings) applies live, `systemctl --user restart <unit>` restarts only the affected service, and `gnome-extensions enable/disable` toggles extension state without a GUI flash. For extension *code* changes, deploy and verify the files, then report that the user must start a fresh GNOME Shell session before the running desktop can execute the edited source. Never automate GNOME Shell reloads, run-dialog reloads, logout, reboot, `gnome-shell --replace`, or shell-kill commands.
 - **Clean installation compatibility:** every change must reproduce on a fresh checkout via `installation_scripts/install.sh`; installers stay idempotent.
 - **Root-optional installers:** all project `install.sh` scripts run sudo-free in user mode (root-only steps are skipped and reported via `SUDO_REQUIRED_STEPS`); only `linux_installations_setup` hard-requires root.
 
