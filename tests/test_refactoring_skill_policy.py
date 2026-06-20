@@ -10,6 +10,10 @@ def skill_text() -> str:
     return SKILL_PATH.read_text(encoding="utf-8")
 
 
+def normalized_skill_text() -> str:
+    return " ".join(skill_text().split())
+
+
 def test_refactoring_skill_supports_multi_repository_audits():
     content = skill_text()
 
@@ -36,3 +40,19 @@ def test_refactoring_skill_requires_explicit_commit_request():
     content = skill_text()
 
     assert "Do not commit changes unless the user explicitly asks for commits" in content
+
+
+def test_refactoring_skill_handles_completeness_challenges_with_audit():
+    content = normalized_skill_text()
+
+    assert "challenges completeness" in content
+    assert "concrete compliance audit" in content
+    assert "Do not merely answer that compliance is unproven" in content
+
+
+def test_refactoring_skill_checks_installed_import_copy_lists():
+    content = normalized_skill_text()
+
+    assert "project-local imports" in content
+    assert "copied helper modules or package manifests" in content
+    assert "missing deployed modules" in content

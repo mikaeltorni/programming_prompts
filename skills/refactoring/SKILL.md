@@ -29,6 +29,11 @@ Use tests as the safety rail: characterize first, extract, integrate, verify.
   be correct as-is.
 - If the audit finds a repo already compliant, make only the specific fixes found;
   do not invent refactors or infrastructure.
+- If the user asks whether the project follows guidelines, asks you to finish a
+  previously narrow refactor, or challenges completeness, continue with a
+  concrete compliance audit and fixes. Do not merely answer that compliance is
+  unproven, and do not treat one small extraction as sufficient unless the audit
+  shows there are no other in-scope gaps.
 - Never leave real dead code, unused imports, duplicate helpers, or orphaned
   internal functions. Keep external compatibility surfaces until proven unused.
 - Update documentation comments when moving public or non-obvious code.
@@ -61,6 +66,9 @@ Identify:
    calls, and meaningful decisions.
 7. Deployment risks: install copy lists, package data, service units, APT source
    filenames, desktop entries, shell helper names, and required env/config.
+   For installed Python entrypoints, compare project-local imports against copied
+   helper modules or package manifests and add a regression test when gaps could
+   break clean installs.
 8. Static content where code rules should not be applied, such as prompt files,
    generated data, string constants, docs, or vendored code.
 9. Misleading formatting or illogical code shape: stray indentation, duplicated
@@ -170,6 +178,8 @@ Also verify:
 - Output formats and externally documented behavior are unchanged.
 - Installer and service changes still work in the repo's tested root/non-root or
   user/system modes.
+- For broad compliance work, explicitly say which checks were run and which
+  residual risks remain; avoid claiming certainty beyond the evidence.
 
 ## Step 7: Update Documentation
 
