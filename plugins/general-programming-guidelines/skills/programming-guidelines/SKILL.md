@@ -20,6 +20,10 @@ description: >-
   state and run direct verification instead of inventing noisy tests.
 - Finish the requested work end to end: implement, verify, fix failures, and
   report what changed. Do not stop at a proposal unless the user asked for one.
+- When the user challenges completeness or asks whether a repository follows
+  these guidelines, do not stop after saying the claim is unproven. Run a
+  bounded compliance audit, fix concrete gaps that are in scope, and report the
+  evidence and any remaining risks.
 
 ## Scope and Safety
 
@@ -116,6 +120,9 @@ description: >-
 
 - Add focused tests for bugs, validation guards, logging utilities, deployment
   copy lists, manifest changes, and refactoring extractions.
+- For installed Python entrypoints or helper modules, add a deployment contract
+  test that verifies project-local imports are included in installer copy lists
+  or package manifests.
 - When tests already exist, run relevant tests before and after risky refactors
   or behavior changes to prove behavior was preserved.
 - If adding a shared dependency such as `log` to a sourced shell module, update
