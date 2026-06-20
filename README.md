@@ -2,6 +2,16 @@
 
 Central repository for Codex agent programming guidelines, commit workflows, and refactoring skills — packaged as reusable plugins and skills.
 
+## Repository dependencies
+
+This repository has **no** dependency on any other setup repository — it is a
+pure content repository (plugins and skills). Its skills are *consumed by*
+`agent_command_center`, which resolves them from this checkout when present; that
+is a one-way relationship and does not create a dependency in this direction.
+
+See the full cross-repository map in
+[installation_scripts/DEPENDENCIES.md](https://github.com/mikaeltorni/installation_scripts/blob/master/DEPENDENCIES.md).
+
 ## Overview
 
 This repository maintains the canonical engineering standards used across all development projects in this workspace. It packages five core capabilities as installable Codex plugins and skills:
