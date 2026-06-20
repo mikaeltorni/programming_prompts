@@ -1,5 +1,4 @@
-linux_configuration_setup
-
+PROJECT: linux_configuration_setup
 Done — logging coverage is now literally complete
 
 I addressed the hook feedback by making logging coverage 100% real, not interpretive:
@@ -29,6 +28,7 @@ remain uncommitted — tell me if you'd like a commit.
 
 -----
 
+PROJECT: installation_scripts
 Every function is referenced — no dead code. The audit is complete. Here's my report.
 
 Summary
@@ -59,14 +59,9 @@ The one gap against the guidelines was the commenting standard: four small cs_* 
 
 One thing outside the source I could not act on
 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+-----
 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  Opus 4.8 · low | installation_scripts | 52.7k/1.0M (5%) | 5h:4% (~7m) | wk:90% (Sun 17:00) | +39/-1 | $1.04
-  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
-
-  -----
-
+PROJECT: claude_code_status_bar
 Everything passes and parses. The work is complete.
 
 Summary
@@ -93,15 +88,9 @@ Note: status_bar_logging.py and tests/test_logging.py are new and untracked. I h
 
 ※ recap: Goal: make the status-bar repo follow the refactoring/programming guidelines with full logging and parameter docs. Done: added centralized logging, full docstrings, tests, README/install updates; all 16 tests pass and installed copy synced. Next: commit the changes if you want. (disable recaps in /config)
 
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-❯
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  Opus 4.8 · low | claude_code_status_bar | 50.3k/1.0M (5%) | 5h:75% (~4h54m) | wk:86% (Sun 17:00) | +327/-43 | $1.35
-  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+-----
 
-  -----
-
-
+PROJECT: gpt_projects_system_prompts
 Everything is in place. .log/ is correctly ignored; the new tests/lib/ modules, the modified test runner, and the README are the only changes. I did not commit (you didn't ask) and I did not touch any programming-prompts folder — only this repository.
 
 What I did
@@ -130,15 +119,10 @@ No commit was made and the parallel programming-prompts folder was untouched.
   ⎿  Stop hook error: Hook evaluator API error: You've hit your session limit · resets 1pm (Europe/Helsinki)
 
 ✻ Crunched for 2m 35s
-                                                                                                                          ◎ /goal active (1h)
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-❯
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  Opus 4.8 · low | gpt_projects_system_prompts | 40.1k/1.0M (4%) | 5h:-10% (~now) | wk:89% (Sun 17:00) | +281/-21 | $0.81
-  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents)
 
-  -----
+-----
 
+PROJECT: linux_programming_setup
 All syntax checks and tests pass (7 pytest + 5 bash, including the new test_cursor_install.sh). I left the programming_prompts folder untouched — there isn't one in this repo, and I confined all edits to this repository.
 
 Audit result: how the codebase measured against the guidelines
@@ -166,14 +150,9 @@ I did not commit (you didn't ask). Changed files: 6 lib/ modules, 1 test updated
 
 ※ recap: Goal was auditing this repo against the programming guidelines: I fixed a missing CURSOR_DEB_URL guard, added structured logging and parameter docs across the lib modules, and all 12 tests pass. Next action is committing the changes if you want them saved. (disable recaps in /config)
 
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-❯
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  Opus 4.8 · low | linux_programming_setup | 55.7k/1.0M (6%) | 5h:77% (~4h54m) | wk:86% (Sun 17:00) | +101/-7 | $1.42
-  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+-----
 
-  -----
-
+PROJECT: linux_taskbar_window_count
 ll suites pass (11 node, 3 pytest, 11 install) and both shell scripts pass bash -n. The work is complete. Here's my report.
 
 What I changed
@@ -214,14 +193,9 @@ I did not touch the programming-prompts/skills folder, as instructed.
 
 ※ recap: Goal was making the codebase follow the guidelines with full logging and parameter docs. Done: added logging and docstrings to the Python helper, badge teardown logging, a test, and README updates; all 25 tests pass. Next: commit if you want. (disable recaps in /config)
 
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-❯
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  Opus 4.8 · low | linux_taskbar_window_count | 58.0k/1.0M (6%) | 5h:72% (~4h54m) | wk:86% (Sun 17:00) | +154/-11 | $1.52
-  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+-----
 
-  -----
-
+PROJECT: linux_workspaces_setup
 The logging requirement is now satisfied. Here's the updated, complete report.
 
 Summary
@@ -251,15 +225,9 @@ Plus the earlier fixes (still in place)
 
 Verification
 
+-----
 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Opus 4.8 · low | linux_workspaces_setup | 91.5k/1.0M (9%) | 5h:39% (~4h50m) | wk:82% (Sun 17:00) | +327/-28 | $3.32
-⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
-
-  -----
-
+PROJECT: agent_command_center
 All work complete and verified: 225 tests pass, installer re-ran cleanly, and the tracker service restarted healthy. I did not touch the programming prompts folder.
 
 What I changed
@@ -288,14 +256,9 @@ Guideline-adherence report (where the codebase was not following the prompts)
 3. API integration had zero logging despite the guideline's explicit request/response-logging requirement — fixed.
 4. Silently swallowed exceptions in several boundary fuxed.
 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+-----
 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Opus 4.8 · low | agent_command_center | 127.4k/1.0M (13%) | 5h:12% (~4h44m) | wk:80% (Sun 17:00) | +399/-67 | $6.65
-⏵⏵ bypass permissions on
-
-  -----
-
+PROJECT: linux_kitty_terminal_description
 The refactoring pass is complete. All 9 tests pass (1 new), Python and bash syntax check clean, and the CLI verified end-to-end writing structured logs.
 
 What I changed
@@ -319,14 +282,9 @@ Notes
 
 - No README change: edits are internal (logging/commentsible or install-behavior change — per the guideline,
 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+-----
 
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  Opus 4.8 · low | linux_kitty_terminal_description | 77.2k/1.0M (8%) | 5h:34% (~4h50m) | wk:82% (Sun 17:00) | +530/-66 | $3.08
-  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
-
-  -----
-
+PROJECT: linux_installations_setup
 Everything passes and the debug logging works. The audit and refactor are complete. Here's my report.
 
 Summary of changes
@@ -357,14 +315,9 @@ Two minor things worth flagging (left as-is intentionally, not bugs):
 1. Pure predicate/query functions (need_cmd, nvidia_gpu_detected, detect_albert_obs_series) deliberately don't log — they return via command substitution/exit code and logging them would be noise. I judged "100% logging coverage" to mean every action-performing function logs, which now holds.
 2. lib/system_services.sh is named generically but only(). Not worth a rename churn given it's referenced by
 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+-----
 
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  Opus 4.8 · low | linux_installations_setup | 46.8k/1.0M (5%) | 5h:100% (~4h55m) | wk:89% (Sun 17:00) | +76/-1 | $1.00
-  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
-
-  -----
-
+PROJECT: ubuntu_2404_taskbar_system_status_monitor
 All checks pass. Here's the final report.
 
 Summary
@@ -398,14 +351,9 @@ No commit was made (you didn't ask). Want me to commit these as a refactor(scrip
 
 ✻ Brewed for 2m 55s
 
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-❯
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  Opus 4.8 · low | ubuntu_2404_taskbar_system_status_monitor | 97.1k/1.0M (10%) | 5h:15% (~4h45m) | wk:80% (Sun 17:00) | +255/-28 | $2.47
-  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+-----
 
-  -----
-
+PROJECT: linux_codex_claude_code_tts_announcements
 All changes are in place and verified. Here's my report.
 
 What I did
@@ -434,14 +382,9 @@ Verification: all 11 tests pass (was 6); shell bash -n clean; py_compile clean; 
 
 Where guidelines weren't fully met (intentional / noted
 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+-----
 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Opus 4.8 · low | linux_codex_claude_code_tts_announcements | 62.4k/1.0M (6%) | 5h:62% (~4h53m) | wk:85% (Sun 17:00) | +518/-50 | $1.77
-⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
-
-  -----
-
+PROJECT: linux_hotkey_window_tools
 Everything passes: 10/10 tests, all three JS modules pass ESM syntax checks, CLI stdout stays clean. The refactoring is complete and behavior-preserving. Here's my report.
 
 Summary of changes
@@ -466,14 +409,9 @@ Where guidelines could not be fully literal (and why)
 
 1. .log/ for the extension — the programming guidelines say repo-generated logs go under .log/. A GNOME Shell extension runs inside the gnome-shell process and legitimately cannot write into r.js routes to the journal instead. The .log/ rule is
 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+-----
 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Opus 4.8 · low | linux_hotkey_window_tools | 81.0k/1.0M (8%) | 5h:36% (~4h50m) | wk:82% (Sun 17:00) | +748/-252 | $2.58
-⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
-
-  -----
-
+PROJECT: linux_installation_scripts_functions
 Summary of work
 
 I refactored the repository to follow the programming-prompts guidelines, staying strictly within this repo (I did not touch the programming prompts folder).
@@ -498,15 +436,9 @@ Guideline-compliance notes
 - Dead code / illogical code: I reviewed all four scripts and found none — the codebase was already clean and well-factored, so there was nothing to delete or restructure beyond the additions above.
 - No-dependency / fresh-Ubuntu constraint: preserved (only date + coreutils, which are always present; bash 4+ already required by the existing declare -gA).
 
+-----
 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-Opus 4.8 · low | linux_installation_scripts_functions | 68.6k/1.0M (7%) | 5h:54% (~4h52m) | wk:84% (Sun 17:00) | +345/-15 | $2.53
-⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
-
-  -----
-
+PROJECT: linux_automatic_window_tiling
 The work is complete. Here's my assessment and report.
 
 What I changed
@@ -523,15 +455,10 @@ Compliance findings (the rest of the codebase already conformed)
 - No dead code, illogical code, orphaned functions, or stray TODO/FIXME markers found. The recent chooseGrid perfect-square handling is consistent across both the preferred-width and balanced-grid branches.
 
 Tests: all 21 pass before and after. As instructed, I dprompts folder. Changes are uncommitted (only
-                                                                                                                        ◎ /goal active (1h)
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-❯
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  Opus 4.8 · low | linux_automatic_window_tiling | 47.9k/1.0M (5%) | 5h:0% (~15m) | wk:90% (Sun 17:00) | +128/-6 | $0.77
-  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
 
-  -----
+-----
 
+PROJECT: linux_hotkey_setup
 Done. Here's the completion report.
 
 What I changed
@@ -561,10 +488,4 @@ One deliberate deviation from the "100% logging coverage / centralized .log/ fil
 
 Everything else now conforms. I stayed strictly inside ouch the programming-prompts folder.
 
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-❯
-──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  Opus 4.8 · low | linux_hotkey_setup | 90.0k/1.0M (9%) | 5h:53% (~4h52m) | wk:84% (Sun 17:00) | +124/-16 | $2.86
-  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
-
-  -----
+-----
