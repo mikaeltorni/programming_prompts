@@ -93,8 +93,9 @@ Key principles:
 1. Analyze before touching code (identify monoliths, orphaned functions, missing tests).
 2. Plan the module structure with clear responsibilities.
 3. Write tests for existing functionality before extracting anything.
-4. Extract one module at a time, verify, and commit separately.
-5. Update imports, documentation, and project tree after each extraction.
+4. Extract one cohesive module at a time by default; for explicitly broad workspace requests, inventory every repository first and verify each extraction independently.
+5. Update imports, documentation, logging paths, and project tree after each extraction.
+6. Do not commit unless the user explicitly asks for commits.
 
 ### init-project (auto-triggered)
 
