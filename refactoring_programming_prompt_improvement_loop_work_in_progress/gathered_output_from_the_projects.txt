@@ -1,0 +1,570 @@
+linux_configuration_setup
+
+Done — logging coverage is now literally complete
+
+I addressed the hook feedback by making logging coverage 100% real, not interpretive:
+
+What I added since the last report:
+- lib/helpers.sh now self-sources lib/logging.sh (idempotent guard), so log is defined in every context that loads helpers — including tests run standalone.
+- Added silent debug-level trace logging to every previously-uninstrumented sourced function:
+  - helpers.sh: need_cmd, is_root, run_as_target, find_desktop_file_path, find_desktop_entry
+  - gsettings_helpers.sh: user_gsettings, gsettings_key_exists, user_gsettings_set_if_key_exists, join_as_gsettings_array
+  - gnome_desktop.sh: detect_terminal_desktop, first_existing_desktop
+  - autostart.sh: configure_autostart_entry
+  - cursor_theme.sh: link_purple_cross_cursor_aliases, write_purple_cross_cursor_index
+
+Why debug level: these are pure/value-returning helpers. log writes to stderr, so it never corrupts captured
+stdout, and debug sits below the default INFO thresholdsertions see zero added output, while the
+instrumentation is genuinely present and fires the momelowered.
+Verified:- Default threshold → 0 debug lines emitted (no noise).- Lowered threshold → traces appear correctly (e.g. [DEbash').
+- All shell test suites pass (cursor 19, gnome 12, pwa 6, shell_helpers 9, autostart + log_location exit 0).                              - Automated audit confirms every sourced function emits are the two logging primitives themselves (msg, log)and the generated-user-script launch_if_exists (which her by design).
+
+Combined with the earlier work (dead-code chain removedtation on every function, illogical tests removed), the
+repository now fully follows the refactoring and progra programming prompts folder was not touched. Changes
+remain uncommitted — tell me if you'd like a commit.
+
+✔ Goal achieved (34m · 2 turns · 37.3k tokens)
+
+✻ Worked for 6m 21s
+
+-----
+
+Every function is referenced — no dead code. The audit is complete. Here's my report.
+
+Summary
+
+I audited and refactored only the installation_scripts repository against the refactoring and programming-guidelines skills. The repository was already in strong shape; I closed the remaining gaps.
+
+Changes made
+
+- Completed parameter/return documentation in scripts/component_selection.sh for the five helpers that had only one-line comments, bringing them to the repo's standard Arguments:/Returns: format:
+  - cs_repo_enabled, cs_repo_aware, cs_selected_ids, cs_print_summary — added full Arguments/Returns blocks.
+  - _cs_load_repo — added a behavior description and a Returns: line (it was missing both).
+
+Verification
+
+- bash -n syntax check passes on all scripts.
+- Full test suite: 4/4 passing (tests/run_tests.sh).
+- Dead-code sweep: every defined function (msg, run_as_target, clone_repo, run_repo_installer, all cs_*/_cs_*) is referenced — no orphans.
+
+How well the guidelines were already followed (and what they were not)
+
+The codebase already complied with the bulk of the guidelines, so little needed changing:
+- Modularity / single responsibility — already done: install.sh (186 lines) is a thin orchestrator sourcing four focused modules (repository_manifest.sh, installer_helpers.sh, repository_operations.sh, component_selection.sh). No monolith remained to split.
+- Logging — centralized through the msg helper; every phase and operation logs. This is a clone/orchestration installer with no .log/-writing runtime, and .log/ is already in .gitignore. Coverage is effectively 100% for the operations performed.
+- Tests-first / coverage — comprehensive isolated-Bash tests already exist (helpers, manifest, master installer, component contract).
+- Config-over-hardcoding — repository membership/order lives in the data arrays of repository_manifest.sh, not baked into logic.
+
+The one gap against the guidelines was the commenting standard: four small cs_* helpers and _cs_load_repo lacked the explicit Arguments:/Returns: documentation that the guidelines require for every exported function and that the rest of the repo consistently uses. That is now fixed.
+
+One thing outside the source I could not act on
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Opus 4.8 · low | installation_scripts | 52.7k/1.0M (5%) | 5h:4% (~7m) | wk:90% (Sun 17:00) | +39/-1 | $1.04
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+  -----
+
+Everything passes and parses. The work is complete.
+
+Summary
+
+I refactored the repository to fully follow the programming-prompts guidelines (without touching the programming_prompts folder). All 16 tests pass, syntax is clean, and the installed copy at ~/.claude/ was synced via install.sh.
+
+What I changed:
+
+1. Centralized logging (new status_bar_logging.py) — followed TDD: wrote tests/test_logging.py first, then the module. It provides a single get_logger() utility that is opt-in (CLAUDE_STATUS_BAR_DEBUG=1), file-only (<module-dir>/.log/status-bar.log), timestamped, and silent by default — never touching stdout/stderr, which the bar requires.
+2. 100% logging coverage — status_bar_format.py and status_bar_render.py previously had zero logging; now both log through the shared utility. claude-status-bar had a private, duplicated _log() helper — removed it and routed through the central logger. status_bar_install.py already used stdlib logging (kept, since installer output is meant to be user-visible on stderr).
+3. Full parameter documentation — the format_tokens/format_reset/format_reset_day functions had no Args/Returns and untyped ts params; now fully documented and typed. Completed Args/Returns for all status_bar_install.py functions and main().
+4. File-header docstrings — added the guideline-required header blocks (filename, description, Components) to status_bar_format.py, status_bar_render.py, and the new logging module.
+5. install.sh — added status_bar_logging.py to the copy + existence-check lists (otherwise the installed render/format imports would break).
+6. README — documented the two previously-undocumented modules in the project structure.
+
+How the guidelines were already followed / no issues found:
+- The codebase was already well-modularized (single-responsibility files, tests per module, idempotent installer) — no monoliths, no dead code, and no illogical code to remove. The main genuine gaps were the non-centralized/incomplete logging and missing parameter docstrings, both now fixed.
+
+Note: status_bar_logging.py and tests/test_logging.py are new and untracked. I have not committed anything (you didn't ask me to).
+
+✔ Goal achieved (29m · 1 turn · 17.4k tokens)
+
+✻ Cogitated for 1m 46s
+
+※ recap: Goal: make the status-bar repo follow the refactoring/programming guidelines with full logging and parameter docs. Done: added centralized logging, full docstrings, tests, README/install updates; all 16 tests pass and installed copy synced. Next: commit the changes if you want. (disable recaps in /config)
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Opus 4.8 · low | claude_code_status_bar | 50.3k/1.0M (5%) | 5h:75% (~4h54m) | wk:86% (Sun 17:00) | +327/-43 | $1.35
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+  -----
+
+
+Everything is in place. .log/ is correctly ignored; the new tests/lib/ modules, the modified test runner, and the README are the only changes. I did not commit (you didn't ask) and I did not touch any programming-prompts folder — only this repository.
+
+What I did
+
+This repo is a collection of GPT system-prompt text files (chess, league, linux, etc.) plus one bash test harness. The only actual code is tests/, so that's where the refactoring/logging/commenting guidelines genuinely apply.
+
+Refactored the test harness into single-responsibility modules (behavior unchanged, still passes):
+- tests/lib/logging.sh — centralized logging utility: levels verbose/debug/info/warn/error, ISO-8601 timestamps, structured lines, writes to repository-root .log/ (creates it first), double-source guard, full header + per-function param/return docs.
+- tests/lib/assertions.sh — reusable assert_contains / assert_not_contains, each logging its outcome; fully documented.
+- tests/test_chess_prompts.sh — now sources the libs, logs every step, and uses assert_not_contains instead of two ad-hoc inline if grep … exit 1 blocks (that was duplicated, slightly illogical code — now unified).
+
+Verified: bash -n syntax-clean on all three; test run exits 0, prints the same Chess prompt module checks passed., and produces a timestamped log in .log/.
+
+README: documented the previously-undocumented prompt files (keyboards, league, linux, music, photography, prompting), added a repo-structure tree and a "Running the tests" section.
+
+Where the guidelines do NOT cleanly apply (as requested, reporting at the end)
+
+1. "100% logging coverage" and "commenting including all parameters" on the content files is not meaningful. chess, league, linux, etc. are plain markdown/text prompts — they have no functions, parameters, runtime, or execution path to log or document. Forcing logging/parameter-doc blocks into them would corrupt the prompt content (the guidelines themselves warn against destroying user content). So I applied 100% logging + full parameter commenting to the actual code (tests/), and left the prompt text intact. Logging coverage of the executable surface is now complete.
+2. No Python / package.json / build / styling / state-management / API sections apply — there is no application code, only bash tests and text. Those guideline sections are inapplicable here, not skipped.
+3. No dead code found in the prompt files. The one redundant pattern (duplicated leak-check logic) was the inline grep … exit 1 blocks, now consolidated into the logged assert_not_contains helper.
+4. TDD note: the guideline is "write tests before extracting." Here the tests already existed and are the asset being refactored; I preserved them as the behavioral contract and confirmed green before and after each change, which satisfies the intent.
+
+No commit was made and the parallel programming-prompts folder was untouched.
+
+● Ran 3 stop hooks
+  ⎿  Stop hook error: Hook evaluator API error: You've hit your session limit · resets 1pm (Europe/Helsinki)
+
+✻ Crunched for 2m 35s
+                                                                                                                          ◎ /goal active (1h)
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Opus 4.8 · low | gpt_projects_system_prompts | 40.1k/1.0M (4%) | 5h:-10% (~now) | wk:89% (Sun 17:00) | +281/-21 | $0.81
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents)
+
+  -----
+
+All syntax checks and tests pass (7 pytest + 5 bash, including the new test_cursor_install.sh). I left the programming_prompts folder untouched — there isn't one in this repo, and I confined all edits to this repository.
+
+Audit result: how the codebase measured against the guidelines
+
+Already compliant (no changes needed):
+- Modular structure — install.sh is a thin orchestrator; every concern is a focused lib/*.sh module under 110 lines with single responsibility. Fully aligned with the refactoring skill; no monoliths, no extraction needed.
+- Centralized logging infra — log() in helpers.sh already provides the required verbose/debug/info/warn/error levels with ISO-8601 timestamps and correct stdout/stderr routing.
+- .log/ policy — run output is tee'd to repo-local .log/, .log/ is gitignored, and test_log_location.sh guards it. Compliant.
+- Tests-first — every module already had a regression test.
+- Supply chain — UV exclude-newer = "24h" config is deployed; compliant.
+
+Gaps I found and fixed:
+1. Illogical path / missing validation (real bug) — install_cursor ran apt_install curl wget and then curl -fL "$CURSOR_DEB_URL" even when CURSOR_DEB_URL was empty (its default), producing an obscure failure after doing work. README marks the var "required." Added an up-front guard that aborts with a clear logged error before any installs. Covered by the new tests/test_cursor_install.sh (already-installed / non-root defer / empty-URL abort cases).
+2. Logging coverage gaps — several deploy functions announced via msg (untimestamped banner) but emitted no structured log entry, so the timestamped .log file lacked source→dest paths and per-step traceability. Added log "info" lines to install_cursor, install_cursor_extensions, configure_continue/install_continue_config/install_lmstudio_autocomplete_profile, configure_uv_supply_chain, configure_cursor_autostart, and configure_claude_status_bar. Every action-taking function now logs through the centralized logger.
+3. Parameter documentation gaps — run_as_target, ensure_session_bus (helpers.sh), and install_cursor/install_cursor_extensions had module-header mentions but no per-function Arguments/Returns docblocks. Added full Arguments/Requires/Returns docs to each.
+4. Test dependency fix — test_continue_setup.py stubbed msg/run_as_target but not log, a documented dependency; it would have broken once logging was added. Added the log stub.
+
+No dead code found — ensure_root() was already removed in an earlier commit; no orphaned functions or unused imports remain.
+
+I did not commit (you didn't ask). Changed files: 6 lib/ modules, 1 test updated, 1 test added.
+
+✔ Goal achieved (29m · 1 turn · 15.4k tokens)
+
+✻ Cogitated for 1m 39s
+
+※ recap: Goal was auditing this repo against the programming guidelines: I fixed a missing CURSOR_DEB_URL guard, added structured logging and parameter docs across the lib modules, and all 12 tests pass. Next action is committing the changes if you want them saved. (disable recaps in /config)
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Opus 4.8 · low | linux_programming_setup | 55.7k/1.0M (6%) | 5h:77% (~4h54m) | wk:86% (Sun 17:00) | +101/-7 | $1.42
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+  -----
+
+ll suites pass (11 node, 3 pytest, 11 install) and both shell scripts pass bash -n. The work is complete. Here's my report.
+
+What I changed
+
+lib/gsettings_strv.py — biggest gap. Was missing parameter documentation and had zero logging.
+- Added full Args:/Returns: docstrings to every function (parse_strv, append_strv, format_strv, main) matching the Python format the guidelines mandate.
+- Added centralized, timestamped, level-aware logging written to the repository-root .log/gsettings_strv.log (created on demand, never the repo root or /tmp), per the logging policy. Logs go to file only, so the installer's stdout contract is unchanged.
+
+workspace-window-count@local/badgeLifecycle.js
+- destroyBadge had no logging. Added an optional log parameter (defaults to a no-op to keep the dependency-injection pattern and not force tests/the icon-destroy path to thread a logger) and a verbose teardown line.
+
+workspace-window-count@local/extension.js
+- _refresh now logs per-app window counts (verbose) and a per-refresh summary (debug), giving logging coverage of the discovery results.
+- Passes log to destroyBadge at both call sites.
+
+tests/test_badge_lifecycle.mjs — added a test for the new destroyBadge logging.
+
+README.md — documented the installer helper module, the logging behavior, and added the pytest command to the test section.
+
+Guideline-compliance assessment
+
+Followed well already (no change needed):
+- Modularity / single responsibility — already cleanly split: lifecycle (extension.js), badge actors (badgeLifecycle.js), discovery (windowDiscovery.js), installer helper (lib/). No monoliths (largest file ~250 lines).
+- Root-optional/idempotent installer — install.sh already implements run_as_target, sudo-free user-level paths, and de-duplicating gsettings appends; verified by the install test.
+- .log/ git-ignored — already present in .gitignore.
+
+Where it deviated, now fixed: Python parameter docstrings and the missing logging described above.
+
+One deliberate non-change worth flagging: the three windowDiscovery.js functions (countWindowsOnWorkspace, isAppIconDelegate, iterAppIconDelegates) remain pure, logger-free traversal helpers. Threading a logger through a recursive generator and predicate would harm purity and spam the journal on every refresh; instead their results are logged by the caller in _refresh. So discovery is covered at the call site rather than inside the hot-path primitives.
+
+No dead code or illogical code was found — the codebase was already in good shape, so this was a documentation/logging-coverage pass rather than a structural refactor.
+
+I did not touch the programming-prompts/skills folder, as instructed.
+
+✔ Goal achieved (29m · 1 turn · 14.7k tokens)
+
+✻ Churned for 1m 50s
+
+※ recap: Goal was making the codebase follow the guidelines with full logging and parameter docs. Done: added logging and docstrings to the Python helper, badge teardown logging, a test, and README updates; all 25 tests pass. Next: commit if you want. (disable recaps in /config)
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Opus 4.8 · low | linux_taskbar_window_count | 58.0k/1.0M (6%) | 5h:72% (~4h54m) | wk:86% (Sun 17:00) | +154/-11 | $1.52
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+  -----
+
+The logging requirement is now satisfied. Here's the updated, complete report.
+
+Summary
+
+I addressed the Stop-hook feedback by implementing the centralized .log/ logging that was missing, and re-verified everything. All work is confined to this repository — the programming-prompts folder was not touched.
+
+Centralized logging — now 100% covered
+
+Python (configs/window-hotkeys/) — created logging_setup.py, a single logging factory used by every helper:
+- Levels verbose / debug / info / warn / error (registered a custom VERBOSE=5 level), timestamps + [name] context, structured format.
+- Writes to a .log/<name>.log file (directory created on demand) and mirrors to stderr, so journald still captures the systemd service while the repo .log/ requirement is met.
+- Configured once per name; no duplicate handlers on re-fetch.
+- Added tests/test_logging_setup.py (file creation, write, reuse) — passes.
+
+Wired it through ctrl_back_tile_right.py and tile_right_client.py, replacing every ad-hoc print(..., flush=True)/sys.stderr call with _log.info/warning/error. Removed the now-unused import sys from both.
+
+Bash (lib/workspace_setup.sh) — added log_line() and routed msg() through it, so every installer banner is appended (timestamped, with level) to the repo-root .log/install.log. Console output is preserved for interactive/master-installer runs. Verified the file is written and is .gitignore-d.
+
+Deployment — registered logging_setup.py in the installer's configure_ctrl_back_window_tiler_service copy list (both root and non-root paths); without it the service would fail on import. (Pure-logic modules ctrl_back_event_state.py / input_device_paths.py do no I/O and correctly need no logger. The CLI print() in gsettings_strv.py / the extension's gsettings-strv.py is program output captured by the shell — not logging — and was correctly left intact.)
+
+Plus the earlier fixes (still in place)
+
+- Real bug: select_input_device imported non-existent event_sort_key / stable_device_path, so it silently failed and never selected the Ctrl+Back device. Added a documented, tested stable_device_path() to input_device_paths.py and corrected the import.
+- Dead code: removed unused import Meta from app-rules extension.
+- Illogical formatting: de-indented the mis-grouped tiling-assistant enable in apply-system-bindings.sh.
+- Commenting: full JSDoc (purpose + every @param/@returns) on the app-rules extension; expanded module headers.
+
+Verification
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Opus 4.8 · low | linux_workspaces_setup | 91.5k/1.0M (9%) | 5h:39% (~4h50m) | wk:82% (Sun 17:00) | +327/-28 | $3.32
+⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+  -----
+
+All work complete and verified: 225 tests pass, installer re-ran cleanly, and the tracker service restarted healthy. I did not touch the programming prompts folder.
+
+What I changed
+
+New centralized logging utility (scripts/logging_utils.py + tests/test_logging_utils.py, TDD-first)
+- get_logger(name, level) — idempotent, per-component log files under repo-root .log/, timestamped/level-tagged/structured format, file + stderr handlers, propagate=False.
+- log_leveled(logger, level, msg) — shared replacement for the textual-level helpers.
+
+100% logging coverage wired into every Python script:
+- Replaced 7 duplicated, ad-hoc _log/log helpers that printed [LEVEL] straight to stderr (in generate_codex_wrappers, generate_qwen_wrappers, setup_codex_config, wrapper_template, generate_model_catalog, lmstudio_model_selector, update_codex_config) — now all route through the centralized utility into .log/.
+- installer_config.py: dropped logging.basicConfig (stderr-only) → centralized .log/ routing.
+- Added meaningful logging to the previously silent API integration layer openrouter_summarizer.py (request start, cache hits, every HTTP/network/parse failure — never logs the key).
+- Filled silently-swallowed exception gaps in tracker_project_context.py, agent_command_center_activation.py, load_project_agents.py.
+- Added module loggers + decision-point debug logs to the pure helpers agent_model_catalog.py, toml_helpers.py.
+
+Dead code / duplication removed:
+- Deleted the byte-identical duplicate validate_count in generate_codex_wrappers.py; it now imports the single-sourced one from wrapper_template.py (matching how generate_qwen_wrappers already does it).
+- Removed now-unused import sys from three files after delinting.
+
+Parameters/comments: every function I touched documents all params/returns; the enforced test_function_documentation suite stays green.
+
+Guideline-adherence report (where the codebase was not following the prompts)
+
+1. No centralized logging utility — the biggest gap. Most scripts imported logging but never configured or used it; the few that logged used basicConfig/bare print to stderr, not the mandated repo-root .log/. Fixed.
+2. Logging helper duplicated 7× (DRY violation) — fixed via the shared utility.
+3. API integration had zero logging despite the guideline's explicit request/response-logging requirement — fixed.
+4. Silently swallowed exceptions in several boundary fuxed.
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Opus 4.8 · low | agent_command_center | 127.4k/1.0M (13%) | 5h:12% (~4h44m) | wk:80% (Sun 17:00) | +399/-67 | $6.65
+⏵⏵ bypass permissions on
+
+  -----
+
+The refactoring pass is complete. All 9 tests pass (1 new), Python and bash syntax check clean, and the CLI verified end-to-end writing structured logs.
+
+What I changed
+
+scripts/kitty_terminal_description.py
+- Centralized logging — replaced the ad-hoc append_log (raw file writes, only 2 call sites) with a logging-based configure_logging() that attaches a timestamped, level-tagged file handler to .log/events.log, falls back to NullHandler on a read-only target, and is idempotent. Added debug/info/warning coverage across every function — cache hits/misses, env loading, API requests, all failure branches, title application, and command dispatch.
+- Full docstrings — every function now documents purpose, all parameters with types, and return values (Google style), including SummaryResult attributes.
+- Dead code removed — deleted the now-unused append_log wrapper; documented the intentionally-ignored --codex-home/--kitty-listen-on/--kitty-pid args (kept for external-caller compatibility) with an inline comment + parser docstring note.
+
+scripts/claude_hook_config.py — added complete Args/Returns docstrings to all functions and a debug/warning log line in the read path and arg-validation path.
+
+scripts/install_standalone.sh — added function-header comments (matching the existing install_cli style) to the 6 functions that lacked them.
+
+Tests — added test_configure_logging_writes_to_repo_local_log.
+
+Where the refactoring guideline was not followed, and why
+
+The refactoring skill says to split files >200 lines into separate importable modules. I deliberately did not split kitty_terminal_description.py (≈600 lines). It is deployed by install_standalone.sh as a single-file copy (install -D ... kitty_terminal_description.py "$bin_dir/kitty-terminal-description") into ~/.local/bin — there is no package on the target's path, so extracting sibling modules would break the standalone install. The guideline's higher rule ("never change behavior during refactoring") wins, so I improved it in place instead. I saved this constraint to project memory.
+
+Notes
+
+- No README change: edits are internal (logging/commentsible or install-behavior change — per the guideline,
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Opus 4.8 · low | linux_kitty_terminal_description | 77.2k/1.0M (8%) | 5h:34% (~4h50m) | wk:82% (Sun 17:00) | +530/-66 | $3.08
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+  -----
+
+Everything passes and the debug logging works. The audit and refactor are complete. Here's my report.
+
+Summary of changes
+
+Real bug fixed (illogical/broken code):
+- lib/app_installer.sh:70 — the GitHub CLI APT source was written to /etc/apt/sources.list.d/github-cli-list. APT only reads files ending in .list (or .sources), so that source file was being silently ignored and apt install gh would fail on a clean machine. Fixed to github-cli.list. Added a regression test (tests/test_app_installer.sh) that pins the .list extension and fails if the extensionless name ever returns.
+
+Logging coverage:
+- lib/apt_packages.sh — apt_install() now emits a debug log of the exact packages being installed (previously it ran fully silently at debug level).
+- lib/hardware.sh — install_nvidia_drivers() now logs the selected driver package decision before acting on it.
+
+Parameter documentation (per-function):
+- lib/logging.sh — added a full parameter/behavior/return doc block above log().
+- lib/apt_packages.sh — documented apt_install()'s $@ packages parameter.
+- lib/helpers.sh — added per-function parameter docs for msg(), need_cmd(), and run_as_target().
+
+Verification: bash -n syntax check on all 11 shell files passes; all shell tests pass (4 suites incl. the new one); pytest 18/18 passes; debug logging confirmed emitting at runtime. No edits were made to the programming prompts folder.
+
+Guideline-compliance assessment
+
+The repository was already in good shape against the refactoring + programming guidelines — this was mostly an audit with a few targeted fixes, not a large refactor:
+
+- Refactoring guidelines — followed. Every file is small and single-responsibility (largest is 109 lines, well under the 200-line monolith threshold). Clean source chain (install.sh → apt_helpers.sh shim → apt_packages.sh + app_installer.sh → albert_installer.sh + snap_installer.sh), proper module headers listing components, no dead code or orphaned functions found, tests-first pattern already present.
+- Centralized logging — followed. lib/logging.sh provides leveled (debug/info/warn/error), timestamped, dev/prod (JSON) logging into the repo-root .log/ dir, which is gitignored. Closed the two silent-path gaps noted above.
+- Commenting/parameters — now complete. Every module has a top-level header; every function taking arguments now has explicit parameter documentation.
+
+Two minor things worth flagging (left as-is intentionally, not bugs):
+1. Pure predicate/query functions (need_cmd, nvidia_gpu_detected, detect_albert_obs_series) deliberately don't log — they return via command substitution/exit code and logging them would be noise. I judged "100% logging coverage" to mean every action-performing function logs, which now holds.
+2. lib/system_services.sh is named generically but only(). Not worth a rename churn given it's referenced by
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Opus 4.8 · low | linux_installations_setup | 46.8k/1.0M (5%) | 5h:100% (~4h55m) | wk:89% (Sun 17:00) | +76/-1 | $1.00
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+  -----
+
+All checks pass. Here's the final report.
+
+Summary
+
+I audited the entire repository against the programming-prompts guidelines (refactoring skill + general-programming-guidelines) without touching the programming prompts folder. The codebase was already in very good shape — 133 passing tests, modular files (largest is the 800-line disk patcher, which is inherently single-concern string constants), consistent headers, and full Args/Returns docstrings in most modules. I fixed the concrete gaps below. Tests now: 137 passing (133 + 4 new); JS/bash syntax and all Python imports verified clean.
+
+Changes made
+
+1. Logging — eliminated a duplicated logger (DRY / "centralized logging utility")
+- The log() function was defined twice — in resource_monitor_settings.py and resource_monitor_disks.py. A direct shared import was impossible (settings already imports from disks → circular), so I created scripts/rm_logging.py as the single source of truth, with LOG_LEVELS (verbose/debug/info/warn/error) and a fully documented log().
+- resource_monitor_settings.py now imports and re-exports log (so from resource_monitor_settings import log keeps working for report_cuda_devices.py/configure_resource_monitor.py — no churn). resource_monitor_disks.py imports the shared log.
+- Removed the now-unused import sys from both modules. Added tests/test_rm_logging.py (4 tests) asserting format, all levels, and that both modules use the same shared function. Format preserved exactly ([LEVEL] message to stderr) because a test documents it as installer-compatible.
+
+2. Commenting — full parameter docs where they were missing
+- resource_monitor_disks.py: expanded all six one-line docstrings to full Args/Returns, and gave the module a proper Components header.
+- gsettings_strv.py: expanded parse_strv, unique_values, append_strv, remove_strv, format_strv, and main to document every parameter and return.
+- patch_resource_monitor_colors.js: added the missing JSDoc block on migrateGreenYellowRedGradient (the only undocumented function in that file).
+- patch_resource_monitor_vram.js: upgraded the one-line header to the standard file/description/usage block used everywhere else.
+
+3. Dead / illogical code
+- None found. The hidden --disk-space-perc alias and its disk_space_perc parameter are intentional backward-compat, not dead. Exported JS helpers (gradientGetUsageColor, getDiskUsagePercentStyle) are all exercised by tests. No unused imports remain after the logging refactor (verified).
+
+Where guidelines were not fully followed (and my judgment)
+
+- .log/ file logging: the guidelines describe a .log/-based file logger. These are short-lived CLI installer scripts, where stderr ([LEVEL] …) is the correct sink and is what the bash installer consumes. .log/ is already in .gitignore. I deliberately did not force file logging — it would break the installer-compatible contract a test pins. Flagging it as a conscious deviation rather than an oversight.
+- lib/extension_installation.sh:106 uses a raw echo … >&2 for one warning while the sibling branch uses msg. Both paths do log, so coverage is fine; I left it to avoid an unrelated cosmetic change (and msg may reformat). Noting it for your awareness.
+
+No commit was made (you didn't ask). Want me to commit these as a refactor(scripts): centralize logging + complete docstrings change?
+
+✔ Goal achieved (38m · 1 turn · 18.7k tokens)
+
+✻ Brewed for 2m 55s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Opus 4.8 · low | ubuntu_2404_taskbar_system_status_monitor | 97.1k/1.0M (10%) | 5h:15% (~4h45m) | wk:80% (Sun 17:00) | +255/-28 | $2.47
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+  -----
+
+All changes are in place and verified. Here's my report.
+
+What I did
+
+Refactored the repository to follow the refactoring + programming-prompts guidelines, without touching programming_prompts/ (no such folder exists here anyway — I stayed entirely within this repo).
+
+1. Centralized logging utility (new lib/tts_announcements/logging_utils.py)
+The repo previously had only a single best-effort append_log() with no levels. I created a proper centralized logger per the guidelines: LogLevel enum (VERBOSE/DEBUG/INFO/WARN/ERROR), ISO-8601 timestamps, component context tags ([notify]/[install]), single searchable log file, and a never-raises guarantee so logging can't break a blocking hook. Written TDD-first (tests/test_logging_utils.py, 5 tests).
+
+2. 100% logging coverage
+- notify.py now logs through the central utility at appropriate levels: tracker launch failures (ERROR), non-zero exits (WARN), successes (DEBUG), invalid/empty payloads, transcript read failures, destructive-command detection, and event routing (INFO). append_log is kept as a thin backward-compatible wrapper.
+- install_hooks.py had zero logging before — now logs every config mutation, plus distinct messages for missing vs. corrupt vs. unreadable settings files.
+
+3. Full parameter/return documentation
+Every function in notify.py and install_hooks.py now has Args/Returns docstrings; module headers list components; regex/voice module constants are documented; RuntimeContext attributes documented; notify_agent.py and __init__.py got proper headers with usage examples.
+
+4. Illogical/dead code fixes
+- _read_settings used a bare except Exception: pass (swallowed everything silently) — replaced with specific FileNotFoundError / ValueError / OSError handling, each logged.
+- Split the dense double-Path() codex_home expression in context_for into a readable default_home step.
+- No dead code/orphaned functions found (all functions are referenced).
+
+5. Critical install fix
+notify.py now imports the new logging_utils module, so the installer would have shipped a broken runtime. I added logging_utils.py to install_hooks.sh's copy list and a regression test asserting it's installed.
+
+Verification: all 11 tests pass (was 6); shell bash -n clean; py_compile clean; end-to-end smoke run confirms the entrypoint imports the new module, emits leveled/tagged log lines, and drives the tracker successfully.
+
+Where guidelines weren't fully met (intentional / noted
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Opus 4.8 · low | linux_codex_claude_code_tts_announcements | 62.4k/1.0M (6%) | 5h:62% (~4h53m) | wk:85% (Sun 17:00) | +518/-50 | $1.77
+⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+  -----
+
+Everything passes: 10/10 tests, all three JS modules pass ESM syntax checks, CLI stdout stays clean. The refactoring is complete and behavior-preserving. Here's my report.
+
+Summary of changes
+
+Refactoring (modularization per the refactoring skill)
+- Extracted the pure, version-spanning window/pointer helpers out of the 652-line extension.js into a new single-responsibility module windowUtils.js (getFocusWindow, canMove*, prepareWindowForMoveResize, raiseWindow, getWindowWorkArea, warpPointer, gesture-end predicates). extension.js now owns only the gesture state machines + lifecycle.
+- install.sh updated to copy the new JS modules into the extension dir.
+- Behavior preserved — verified via gjs (resolved the ./logger.js + gi:// import wiring) and ESM syntax checks on all three files. No logic in any gesture path changed.
+
+100% logging coverage (centralized, leveled)
+- logger.js — new centralized leveled logger for the extension (ERROR/WARN/INFO/DEBUG/VERBOSE, timestamped, prefixed, threshold-tunable). Routes to the systemd journal, which is the correct sink for a process running inside gnome-shell (it cannot write the repo .log/). Replaced the scattered raw console.error calls and added INFO logging on every lifecycle/gesture transition (enable/disable, drag/scale start/stop/end) and DEBUG on every early-return decision point. Deliberately no logging inside the 8 ms poll tick — logging each tick would flood the journal; that would have been illogical.
+- lib/log_utils.py — new centralized file logger for the installer-side Python, writing timestamped leveled records to the repo .log/ directory (per the logging policy), best-effort with a NullHandler fallback, propagate=False so it never corrupts the stdout install.sh captures. Integrated into gsettings_strv.py (every function now logs).
+
+Commenting / full parameter docs
+- Every Python function in gsettings_strv.py now has complete Args:/Returns: docstrings (previously one-line summaries). New modules have file-level headers (name, description, components, usage) and full param/return docs on every function.
+
+Tests (TDD) — Added tests/test_log_utils.py (4 tests: writes to .log/, singleton/no-duplicate-handlers, no stdout/stderr propagation, graceful degradation) and tests/conftest.py to mirror the runtime sys.path. Suite is green: 10 passed.
+
+Dead/illogical code — None found. The codebase was already clean; the existing unmaximizeWindow/resolveWindowMonitor cross-version fallbacks are intentional, not dead. No dead code, unused imports, or orphaned definitions were left behind.
+
+Where guidelines could not be fully literal (and why)
+
+1. .log/ for the extension — the programming guidelines say repo-generated logs go under .log/. A GNOME Shell extension runs inside the gnome-shell process and legitimately cannot write into r.js routes to the journal instead. The .log/ rule is
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Opus 4.8 · low | linux_hotkey_window_tools | 81.0k/1.0M (8%) | 5h:36% (~4h50m) | wk:82% (Sun 17:00) | +748/-252 | $2.58
+⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+  -----
+
+Summary of work
+
+I refactored the repository to follow the programming-prompts guidelines, staying strictly within this repo (I did not touch the programming prompts folder).
+
+What I changed
+
+1. Added centralized logging (the one major guideline gap)
+- New module component_logging.sh: dependency-free, leveled logging (verbose/debug/info/warn/error) with timestamps and a context tag, written to .log/ (per the guideline: created on demand, never to /tmp/data/root, already git-ignored). Best-effort — it can never abort an installer.
+- Integrated it into component_loader.sh, component_runtime.sh, and component_menu.sh. Each sources the module if present and otherwise defines silent no-op stubs, so every isc_log* call is always safe (important: logs go to a file, never the terminal, so the pure-Bash TUI is never corrupted).
+- Added log calls across all state-change and error paths: library resolution, downloads (curl/wget failures), runtime activation, component_main invocation/mode resolution, per-component install/success/failure, preflight/postflight, menu load failures, interactive accept/cancel, and aggregate-menu accept/cancel. This gives full logging coverage of the framework's behavior.
+
+2. Parameter/commenting completeness
+- Added explicit Arguments:/Returns: doc blocks to functions that were missing them: _isc_field, _isc_all_ids, _isc_default_ids, _isc_list_components, cm_repo_on_count, cm_repo_total_count, plus full headers on every new logging function.
+
+3. Tests (TDD) — added 2 logging tests (file output with level/tag, and level-threshold filtering), extended the existence + sibling-checkout tests to include the new module, and added it to the syntax-check list. All 11 tests pass.
+
+4. README — documented the logging module (table row + a Logging section with the env-var contract).
+
+Guideline-compliance notes
+
+- Refactoring skill (TDD, one module, no behavior change, no dead code): followed. Existing behavior is unchanged — the runtime/menu/loader public contracts are identical; logging is purely additive and silent by default.
+- Dead code / illogical code: I reviewed all four scripts and found none — the codebase was already clean and well-factored, so there was nothing to delete or restructure beyond the additions above.
+- No-dependency / fresh-Ubuntu constraint: preserved (only date + coreutils, which are always present; bash 4+ already required by the existing declare -gA).
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Opus 4.8 · low | linux_installation_scripts_functions | 68.6k/1.0M (7%) | 5h:54% (~4h52m) | wk:84% (Sun 17:00) | +345/-15 | $2.53
+⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+  -----
+
+The work is complete. Here's my assessment and report.
+
+What I changed
+
+lib/gsettings_strv.py — the one file that fell short of the guidelines:
+- Full parameter/return documentation added to every function (parse_strv, append_strv, format_strv, main) — each now has Args: with descriptions and Returns: with types, plus an expanded module header listing all components and a usage example.
+- Centralized logging coverage added: a configure_logging() helper creates .log/ (per the repo's "logs under .log/" rule, already gitignored) and returns a timestamped, level-tagged logger writing to .log/gsettings_strv.log and stderr. Every function now logs at appropriate levels (debug for parse/format, info for appends, warning for malformed input, error for bad CLI usage). Logging degrades to stderr-only if .log/ can't be created, so it never breaks the installer. Crucially, stdout stays clean so install.sh's command substitution is unaffected (verified).
+
+Compliance findings (the rest of the codebase already conformed)
+
+- extension.js — already exemplary: centralized log helper with consistent prefix, full JSDoc with @param/@returns on every function, try/catch so a failure never crashes the Shell. No changes needed.
+- windows.js / layout.js — pure, single-responsibility modules, fully documented with typed @param/@returns. I deliberately did not add logging here: these are pure predicates/geometry functions invoked in tight filter loops, and the Python test harness extracts each function by name and runs it standalone in Node without the logger — adding log calls would both create log noise and break the test extraction. This is a justified deviation from literal "100% logging," not a gap.
+- install.sh — well-commented (every function documents Arguments/Returns), idempotent, sudo-optional, no hard-coded paths. It uses printf for user-facing status. I left its file-logging absent intentionally: it's a short, interactive installer that already surfaces status, and its only nontrivial logic (the strv helper) now logs to .log/. Worth flagging as the one place where, if you want strict file-logging everywhere, a .log/install.log tee could be added — but it would be borderline over-engineering for an installer that runs once.
+- No dead code, illogical code, orphaned functions, or stray TODO/FIXME markers found. The recent chooseGrid perfect-square handling is consistent across both the preferred-width and balanced-grid branches.
+
+Tests: all 21 pass before and after. As instructed, I dprompts folder. Changes are uncommitted (only
+                                                                                                                        ◎ /goal active (1h)
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Opus 4.8 · low | linux_automatic_window_tiling | 47.9k/1.0M (5%) | 5h:0% (~15m) | wk:90% (Sun 17:00) | +128/-6 | $0.77
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+  -----
+
+Done. Here's the completion report.
+
+What I changed
+
+Dead code removed
+- configure_ubuntu_hotkeys() in lib/hotkeys_setup.sh — the legacy install orchestrator. Installation is now driven entirely by the component manifest (installer/components.sh + component_main), so nothing called it. Removed it and updated tests/test_hotkeys_setup.py to assert the live component functions instead — which also closed a gap: configure_hotkey_window_tools was a real exported component but had no test coverage; it now does.
+
+Illogical formatting fixed
+- apply-system-bindings.sh had a stray-indented append_strv_value … tiling-assistant@ubuntu.com line dangling under ensure_enabled_extension, reading as if nested. Fixed the indentation and added a comment explaining why Tiling Assistant is kept enabled.
+
+Commenting coverage (purpose + all parameters)
+Added doc comments to every previously-undocumented function:
+- lib/hotkeys_setup.sh: msg, log, need_cmd, run_as_target, apt_update_once, apt_install, reload_systemd_daemon, enable_systemd_service, and all six configure_*/audit_keybindings functions.
+- lib/gsettings_helpers.sh: all 10 functions (none had comments).
+- lib/ctrl_back_tiler.sh, lib/workspace_popup.sh: the public installer functions.
+- apply-system-bindings.sh: file header + all 9 helper functions.
+
+Verification: bash -n clean on all 8 shell scripts; full suite 21/21 passing (run with /usr/bin/python3, which has gi/evdev).
+
+Guideline compliance assessment
+
+Already compliant before this pass: modular single-responsibility lib/ split, TDD test coverage, .log/ in .gitignore, idempotent/sudo-optional installer, no agent-initiated GNOME reloads. The Python tiler and extension.js were already thoroughly documented.
+
+One deliberate deviation from the "100% logging coverage / centralized .log/ file logging" rule — flagging it as you asked rather than silently "fixing" it:
+
+- ctrl_back_tile_right.py and the two gsettings-strv.py helpers log via print() to stdout/stderr, not a centralized logger writing into .log/. This is intentional and correct here: the tiler runs as a systemd --user service, so its stdout/stderr is captured by journald (journalctl --user -u ctrl-back-window-tiler.service) — which your own AGENTS.md documents as the place to read its logs. Forcing it to write files under ~/.log/ would fragment the log trail away from where systemd/journald expects it and contradict the service model. The strv helpers are short-lived CLI filters invoked from shell heredocs; structured file logging there would be noise. I did not change these, on the principle of not "fixing" working, idiomatic code into worse code.
+
+Everything else now conforms. I stayed strictly inside ouch the programming-prompts folder.
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Opus 4.8 · low | linux_hotkey_setup | 90.0k/1.0M (9%) | 5h:53% (~4h52m) | wk:84% (Sun 17:00) | +124/-16 | $2.86
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+  -----
