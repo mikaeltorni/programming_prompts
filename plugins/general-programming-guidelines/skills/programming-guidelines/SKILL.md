@@ -190,6 +190,25 @@ Follow modern component/module patterns. Create reusable, well-structured compon
 - Separate concerns between UI and business logic
 - Make components testable with clear interfaces
 
+### Configuration Over Hardcoding Instructions
+
+Keep data that describes *what* the program operates on out of the code that
+decides *how*. When a list, ordering, mapping, or set of entries already lives
+in (or naturally belongs in) a configuration file, data file, or manifest, the
+code must read it from there rather than embedding a duplicate copy.
+
+- Do not hardcode a list/order/lookup in code when the same information is
+  expressed in a config or data file. Duplicated lists silently drift apart and
+  force an edit in two places for every change.
+- Make presentation and ordering data-driven: derive grouping, sort order, and
+  membership from fields on the data (e.g. a `group` attribute and the config's
+  own ordering) instead of a literal list baked into a formatter or handler.
+- Keep the rendering/processing code generic so adding, removing, or reordering
+  entries only requires editing the config — never the code.
+- A constant in code is appropriate only for a true invariant of the logic
+  itself (a label, a fallback bucket name, a threshold), not for the catalog of
+  domain entries the logic happens to act on.
+
 ### Testing Strategy Instructions
 
 Implement comprehensive testing. Create testable code with:
