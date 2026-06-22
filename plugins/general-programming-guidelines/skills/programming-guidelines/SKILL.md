@@ -10,20 +10,61 @@ description: >-
 
 ## Work Loop
 
-- Preserve the user's exact scope, paths, data, wording, and constraints. Do not
-  normalize, reorder, truncate, or reinterpret input unless asked.
-- Inspect the codebase before editing. Prefer `rg`/`rg --files`; understand
-  existing patterns, tests, manifests, and deployment flow.
-- Plan before changing code. For behavior changes, shared helpers, installers,
-  regressions, refactors, and logging changes, add or update focused tests first
-  when the repo has a practical test path. For docs-only or prompt-only edits,
-  state and run direct verification instead of inventing noisy tests.
-- Finish the requested work end to end: implement, verify, fix failures, and
-  report what changed. Do not stop at a proposal unless the user asked for one.
-- When the user challenges completeness or asks whether a repository follows
-  these guidelines, do not stop after saying the claim is unproven. Run a
-  bounded compliance audit, fix concrete gaps that are in scope, and report the
-  evidence and any remaining risks.
+Run every software task through these numbered steps in order. Do not skip a
+step, and do not report the task as done until Step 7 passes.
+
+1. **Capture scope.** Preserve the user's exact scope, paths, data, wording, and
+   constraints. Do not normalize, reorder, truncate, or reinterpret input unless
+   asked.
+2. **Inspect first.** Read the codebase before editing. Prefer `rg`/`rg --files`;
+   understand existing patterns, the logging utility, tests, manifests, and the
+   deployment flow you will have to match.
+3. **Plan and write tests first.** For behavior changes, shared helpers,
+   installers, regressions, refactors, and logging changes, add or update focused
+   tests before changing code when the repo has a practical test path. For
+   docs-only or prompt-only edits, state and run direct verification instead of
+   inventing noisy tests.
+4. **Implement.** Write or edit the code to satisfy the requested scope, reusing
+   project-local helpers and conventions.
+5. **Instrument and document the code you just wrote.** Adding logging (see
+   `Logging and Diagnostics`) and comments/docstrings (see `Documentation`) is
+   part of completing the change, not optional polish. Cover the new action
+   paths, state transitions, boundary failures, and external calls with logs, and
+   document new public functions, helpers, and non-obvious behavior including
+   their parameters. If doing all of Steps 4 and 5 in one pass is error-prone,
+   use the fallback order — (a) make it work, (b) add logging, (c) add comments
+   and docstrings — but do not declare the task done until logging and
+   documentation exist for the changed code.
+6. **Verify.** Run the relevant tests, plus configured lint/type/build, read the
+   logs the change should now emit, fix every failure, and iterate until clean.
+7. **Self-check and report.** Walk the `Definition of Done` checklist below;
+   reopen and finish any unchecked item, then report what changed and how it was
+   verified. Do not stop at a proposal unless the user asked for one.
+
+When the user challenges completeness or asks whether a repository follows
+these guidelines, do not stop after saying the claim is unproven. Run a
+bounded compliance audit, fix concrete gaps that are in scope, and report the
+evidence and any remaining risks.
+
+## Definition of Done
+
+Before reporting a software task complete, confirm every item. If any item is
+unchecked, return to the relevant Work Loop step and finish it — an incomplete
+checklist is not done.
+
+- [ ] The code implements the exact requested scope, with no unrelated edits.
+- [ ] New or changed action paths, state transitions, boundary failures, and
+      external calls are logged through the existing centralized logger, honoring
+      the stdout/stderr and spam exceptions in `Logging and Diagnostics`.
+- [ ] New or changed public functions, reusable helpers, scripts, and non-obvious
+      behavior are documented including their parameters, honoring the
+      static-file and compatibility exceptions in `Documentation`.
+- [ ] Tests were added or updated for the change and pass; existing relevant
+      tests still pass.
+- [ ] The diff was reviewed for duplication, dead code, unused imports, debug
+      spam, and accidental behavior changes.
+- [ ] The final report states what changed, how it was verified, and any
+      remaining risks.
 
 ## Scope and Safety
 
@@ -64,6 +105,8 @@ description: >-
 
 ## Documentation
 
+- Treat documenting the code you add or change as part of the change, not a
+  later pass; the Work Loop self-check does not pass without it.
 - Document public/exported functions, reusable helpers, scripts, non-obvious
   behavior, and compatibility surfaces when that helps maintainers.
 - New reusable modules or scripts should have a concise top-level comment naming
@@ -79,6 +122,10 @@ description: >-
 
 ## Logging and Diagnostics
 
+- Treat logging the code you add or change as part of the change, not a later
+  pass; the Work Loop self-check does not pass without it. The exceptions below
+  (pure predicates, hot loops, stdout/stderr contracts, log spam) bound where
+  coverage is unnecessary — they do not license skipping it elsewhere.
 - When the user reports broken, failing, crashing, or misbehaving software, read
   relevant logs before forming a hypothesis: repo `.log/`, journald/systemd
   units, tracker logs, or the app's documented log sink.
