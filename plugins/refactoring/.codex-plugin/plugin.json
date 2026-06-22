@@ -1,0 +1,18 @@
+{
+  "name": "refactoring",
+  "version": "1.0.0",
+  "description": "Test-driven refactoring workflow for restructuring existing codebases without changing behavior.",
+  "author": {
+    "name": "Mikael Torni"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Refactoring",
+    "shortDescription": "Analyze and restructure code safely with tests first.",
+    "longDescription": "Provides a test-driven workflow for auditing, modularizing, documenting, and verifying refactors across single- and multi-repository codebases.",
+    "developerName": "Mikael Torni",
+    "category": "Developer Tools",
+    "capabilities": ["Instructions"],
+    "defaultPrompt": ["Apply the refactoring workflow to this codebase."]
+  }
+}

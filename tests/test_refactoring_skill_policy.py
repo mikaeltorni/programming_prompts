@@ -3,7 +3,14 @@
 from pathlib import Path
 
 
-SKILL_PATH = Path(__file__).resolve().parents[1] / "skills" / "refactoring" / "SKILL.md"
+SKILL_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "plugins"
+    / "refactoring"
+    / "skills"
+    / "refactoring"
+    / "SKILL.md"
+)
 
 
 def skill_text() -> str:
