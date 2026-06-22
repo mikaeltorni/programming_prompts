@@ -1,0 +1,6 @@
+{
+  "name": "general-programming-guidelines",
+  "version": "1.1.0",
+  "description": "Shared engineering workflow and coding standards for coding agents.",
+  "author": {"name": "Mikael Torni"}
+}
