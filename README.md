@@ -4,51 +4,54 @@ Central repository for Codex agent programming guidelines, commit workflows, and
 
 ## Repository dependencies
 
-This repository has **no** dependency on any other setup repository — it is a
-pure content repository (plugins and skills). Its skills are *consumed by*
-`agent_command_center`, which resolves them from this checkout when present; that
-is a one-way relationship and does not create a dependency in this direction.
+This repository has no runtime dependency. It is the content source consumed by
+`linux_codex_claude_code_setup`, which owns CLI, marketplace, and plugin
+installation.
 
 See the full cross-repository map in
 [installation_scripts/DEPENDENCIES.md](https://github.com/mikaeltorni/installation_scripts/blob/master/DEPENDENCIES.md).
 
 ## Overview
 
-This repository maintains the canonical engineering standards used across all development projects in this workspace. It packages five core capabilities as installable Codex plugins and skills:
+This repository maintains the canonical engineering standards used across all development projects in this workspace. Every plugin packages exactly one skill and carries manifests for both Codex and Claude Code.
 
 - **General Programming Guidelines** — Shared coding, testing, and engineering workflow rules for all agent tasks.
 - **Commit Guidelines** — Cautious Git commit workflow (inspect → plan → stage hunks → verify → compose).
 - **Linux Desktop Configuration** — Shared GNOME/Ubuntu desktop rules: applying changes silently from the command line (gsettings/dconf live, `systemctl --user restart`, `gnome-extensions enable/disable`), never automating GNOME Shell reloads or GUI resets, reporting manual activation when extension code needs a fresh Shell session, preserving user sessions, maintaining clean-install compatibility, and using root-optional (sudo-free) installer patterns.
 - **Refactoring Skill** — Test-driven refactoring methodology for restructuring monolithic codebases into clean modules.
 - **Init Project Skill** — Auto-triggered secure project initialization with UV + supply-chain protection.
+- **Setup Repository Guidelines** — Dynamic repository-family routing and installer integration based on the orchestration manifest.
 
 ## Repository Structure
 
 ```
 programming_prompts/
-├── plugins/
-│   ├── general-programming-guidelines/    # Codex plugin: engineering workflow & coding standards
-│   │   └── .codex-plugin/plugin.json
-│   ├── commit-guidelines/                 # Codex plugin: cautious Git commit workflow
-│   │   └── .codex-plugin/plugin.json
-│   ├── init-project/                      # Codex plugin: secure init with UV + supply-chain protection
-│   │   └── .codex-plugin/plugin.json
-│   └── linux-desktop-configuration/       # Codex plugin: console-only desktop deployment + sudo-free installer rules
-│       └── .codex-plugin/plugin.json
-├── skills/
-│   └── refactoring/                       # Standalone SKILL.md for test-driven refactoring
-│       └── SKILL.md
-├── .kilo/
-│   ├── skill/                             # Auto-loaded skills for project initialization
-│   │   └── init-project.md
-│   └── command/                           # Command triggers for skill auto-detection
-│       └── init-project.md
-├── tests/
-│   └── test_python_supply_chain_policy.py # Tests for the supply-chain policy guidance
+├── AGENTS.md                               # Rule: no marketplace files in this repo
+├── plugins/                                # One directory per plugin; each has
+│   │                                       #   .codex-plugin/ + .claude-plugin/ manifests
+│   │                                       #   and exactly one skills/<name>/SKILL.md
+│   ├── general-programming-guidelines/    # Engineering workflow & coding standards
+│   ├── commit-guidelines/                 # Cautious Git commit workflow
+│   ├── init-project/                      # Secure init with UV + supply-chain protection
+│   ├── linux-desktop-configuration/       # Console-only desktop deployment + sudo-free installers
+│   ├── refactoring/                        # Test-driven refactoring workflow
+│   └── setup-repository-guidelines/       # Setup-family routing and install policy
+├── tests/                                  # pytest policy tests for the plugin prompts
 ├── .log/                                  # Runtime logs (gitignored)
 ├── LICENSE.md                             # MIT License
 └── README.md                              # This file
 ```
+
+## Installation
+
+Installation belongs to the sibling
+[`linux_codex_claude_code_setup`](https://github.com/mikaeltorni/linux_codex_claude_code_setup)
+repository. Its committed `default.json` maps each plugin to its skill and
+controls default selection. This repository intentionally contains no
+`install.sh`, installer libraries, or marketplace catalogs — marketplace
+generation is owned entirely by the installer repository (see `AGENTS.md`). Each
+`plugins/<name>` directory stays standalone-installable via its own Codex and
+Claude manifests plus its single skill.
 
 ## Plugins
 
@@ -56,7 +59,7 @@ programming_prompts/
 
 Packages the canonical programming guidelines as a Codex plugin. Provides shared engineering workflow and coding standards that apply to every software task — implementation, debugging, review, testing, and refactoring. The prompt requires agents to preserve the user's wording and local state, avoid clobbering existing configuration with placeholder defaults such as `0`, and sandbox-test user-global installers, wrapper generation, and config deployment before applying them to the real environment. New projects and projects adding Python for the first time must also implement a rolling 24-hour package-release delay with `uv`; plain `pip` installs must consume a hash-locked export rather than resolve dependencies directly.
 
-**Install:** The personal marketplace installs this as `general-programming-guidelines@personal`. Confirm with:
+**Install:** The programming-prompts marketplace installs this as `general-programming-guidelines@programming-prompts`. Confirm with:
 ```bash
 codex plugin list
 ```
@@ -65,7 +68,7 @@ codex plugin list
 
 Packages the cautious Git commit workflow as a Codex plugin. Guides agents to inspect all changes (staged + unstaged), split diffs into logical commits, stage exact hunks, and compose clean conventional commits — one at a time, with verification.
 
-**Install:** The personal marketplace installs this as `commit-guidelines@personal`. Confirm with:
+**Install:** The programming-prompts marketplace installs this as `commit-guidelines@programming-prompts`. Confirm with:
 ```bash
 codex plugin list
 ```
@@ -74,7 +77,7 @@ codex plugin list
 
 Packages secure project initialization as a Codex plugin. Guides agents to set up new projects with UV by Astral as the required package manager, implementing a rolling 24-hour publication delay via uv's native `[tool.uv] exclude-newer = "24 hours"` setting to protect against supply-chain attacks.
 
-**Install:** The personal marketplace installs this as `init-project@personal`. Confirm with:
+**Install:** The programming-prompts marketplace installs this as `init-project@programming-prompts`. Confirm with:
 ```bash
 codex plugin list
 ```
@@ -87,17 +90,22 @@ Packages the shared Linux desktop configuration rules as a Codex plugin (skill n
 - **Clean installation compatibility:** every change must reproduce on a fresh checkout via `installation_scripts/install.sh`; installers stay idempotent.
 - **Root-optional installers:** all project `install.sh` scripts run sudo-free in user mode (root-only steps are skipped and reported via `SUDO_REQUIRED_STEPS`); only `linux_installations_setup` hard-requires root.
 
-**Install:** The agent_command_center installer copies it to `~/.claude/skills/linux-desktop-configuration`; the personal marketplace installs it as `linux-desktop-configuration@personal`. Confirm with:
+**Install:** The programming-prompts marketplace installs it as `linux-desktop-configuration@programming-prompts`. Confirm with:
 ```bash
 codex plugin list
 ```
 
+### setup-repository-guidelines
 
-## Skills
+Applies owner routing, component selection, clean-install, deployment, and
+prompt-free keyring requirements to every repository discovered from the
+sibling `installation_scripts` manifest. Both agents receive a managed global
+conditional that reads `CLONE_REPOS` at task start, so newly added repositories
+enter scope without changing this plugin.
 
 ### refactoring
 
-A standalone skill that implements the **Test-Driven Refactoring** paradigm. Guides agents to restructure monolithic codebases into well-organized, single-responsibility modules without changing behavior — tests first, then extraction, then integration.
+An installable per-skill plugin that implements the **Test-Driven Refactoring** paradigm. Guides agents to restructure monolithic codebases into well-organized, single-responsibility modules without changing behavior — tests first, then extraction, then integration.
 
 Key principles:
 1. Analyze before touching code (identify monoliths, orphaned functions, missing tests).
@@ -106,14 +114,6 @@ Key principles:
 4. Extract one cohesive module at a time by default; for explicitly broad workspace requests, inventory every repository first and verify each extraction independently.
 5. Update imports, documentation, logging paths, and project tree after each extraction.
 6. Do not commit unless the user explicitly asks for commits.
-
-### init-project (auto-triggered)
-
-An auto-loaded skill triggered on project initialization. Implements supply-chain
-protection for Python with UV by Astral and rolling 24-hour publication delay.
-Located in `.kilo/skill/init-project.md` — no manual invocation needed when
-creating Python projects.
-
 
 ## Logging
 
@@ -133,6 +133,14 @@ Run the test suite with pytest:
 
 ```bash
 python3 -m pytest tests -v
+```
+
+Each plugin is standalone-installable and can be validated directly:
+
+```bash
+claude plugin validate --strict plugins/<name>
+codex plugin list
+claude plugin list --json
 ```
 
 ## License
