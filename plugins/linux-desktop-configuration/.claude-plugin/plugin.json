@@ -1,0 +1,6 @@
+{
+  "name": "linux-desktop-configuration",
+  "version": "1.0.0",
+  "description": "Safe GNOME and Ubuntu desktop configuration and installer rules.",
+  "author": {"name": "Mikael Torni"}
+}
