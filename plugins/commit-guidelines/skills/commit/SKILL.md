@@ -3,18 +3,19 @@ name: "commit"
 description: >-
   Use when the user asks to inspect staged or unstaged git changes, split mixed work into logical
   commits, stage exact files or hunks, compose conventional commit messages, or create a commit.
-  A normal invocation plans every change but creates exactly one clean commit for the first
-  self-contained group, leaving all other groups untouched for later invocations.
+  A normal invocation plans every change and creates one clean commit per self-contained group
+  across every repository the user explicitly requested, completing the full commit run at once.
 ---
 
 # Commit Composer
 
-Create one clean, reviewable git commit from a dirty worktree.
+Create clean, reviewable git commits from the requested worktree or repositories.
 
 The default invocation is an execution request, not a planning-only request. Loading this skill is
-explicit authorization to inspect, stage, and commit the first safe group. Inspect all changes,
-print the complete commit plan, then immediately stage, validate, and create exactly one commit in
-the same response. The plan is an informational progress update, never an approval checkpoint.
+explicit authorization to inspect, stage, validate, and commit every safe group in the repositories
+the user named. Inspect all changes, print the complete cross-repository commit plan, then execute
+the plan one group at a time in the same response. The plan is an informational progress update,
+never an approval checkpoint.
 
 Do not ask any confirmation question before the first commit. Never say or imply:
 
@@ -29,22 +30,21 @@ commit, or a concrete safety blocker prevents every coherent commit.
 
 ## Required Result
 
-Unless the user says exactly `commit all groups now`:
-
-1. Create exactly one new commit when at least one safe, coherent group exists.
-2. Put exactly one feature, fix, refactor, documentation concern, or maintenance concern in it.
-3. Make the commit self-contained: its implementation and included tests must work when checked out
-   without any of the remaining worktree changes.
-4. Leave every other group uncommitted, unstaged, and byte-for-byte unchanged.
-5. Stop immediately after verifying that commit. Report its hash and the remaining groups.
+1. Cover every repository explicitly named by the user. Do not silently stop after the first repo.
+2. Split the requested changes into self-contained groups and create one commit per group.
+3. Keep each commit limited to one feature, fix, refactor, documentation concern, or maintenance
+   concern.
+4. Make every commit self-contained: its implementation and included tests must work when checked
+   out without later commits or remaining worktree changes.
+5. Continue through the complete plan in the same invocation, stopping only for a concrete safety
+   blocker. Report every created hash and anything intentionally left uncommitted.
 
 The words `plan first`, `plan the commits`, `one at a time`, or similar sequencing language do not
 request a pause. They mean: print the plan first, then execute commit 1 immediately without another
 user turn.
 
-If there are multiple groups, committing all changed files is failure even if the message describes
-the broad project goal. A single commit must be a single logical group, not merely a single `git
-commit` command.
+If there are multiple groups, committing all changed files together is failure even if the message
+describes the broad project goal. Create multiple commits in the same run instead.
 
 Do not create a commit only when there are no changes, every possible group contains unsafe
 material, or the grouping cannot be made safely. Explain the concrete blocker in that case.
@@ -57,7 +57,7 @@ material, or the grouping cannot be made safely. Explain the concrete blocker in
 - Begin staging plan item 1 immediately after printing the plan. Do not end the response or yield
   control to the user between planning and staging.
 - Never ask for approval, confirmation, permission, or a "go on" message before commit 1.
-- Stage only the first group in that plan.
+- Stage only the current group in that plan; after committing it, rebuild the index for the next.
 - Never use `git add .`, `git add -A`, `git add -u`, or a command listing every changed path.
 - Never stage a whole file when any hunk in that file belongs to another group.
 - Never modify source files while composing commits. This workflow stages existing changes only.
@@ -196,13 +196,12 @@ git status --short
 
 Verify all of these statements:
 
-- Every staged hunk belongs to plan item 1.
-- Every required implementation and test hunk for plan item 1 is staged.
+- Every staged hunk belongs to the current plan item.
+- Every required implementation and test hunk for the current plan item is staged.
 - Every staged test depends only on staged implementation or unchanged `HEAD` code.
 - No hunk from plan items 2 or later is staged.
-- If the plan has multiple groups, at least one intended change remains unstaged.
-- The staged paths and hunks are a strict subset of the original changes when the plan has
-  multiple groups.
+- If the plan has multiple groups, later groups remain unstaged until their turn.
+- The staged paths and hunks are a strict subset of the remaining changes when later groups exist.
 
 If the plan has multiple groups but all original changes are staged, do not commit. Clear the
 index, choose a narrower first group, and stage again.
@@ -237,7 +236,7 @@ fixes are:
 Running the same command successfully in the original dirty worktree does not override a failure
 in the staged-only worktree.
 
-## Step 6: Commit Once
+## Step 6: Commit Each Group
 
 Use a conventional commit:
 
@@ -248,7 +247,8 @@ git commit -m "type(scope): short description" \
 
 Allowed types: `feat`, `fix`, `refactor`, `chore`, `docs`, `style`, `test`, `perf`.
 
-Do not mention changes that remain unstaged. Do not run a second commit.
+Do not mention later groups in the current commit message. After verifying the commit, clear the
+index if needed and repeat Steps 3–6 for the next planned group or repository.
 
 ## Step 7: Verify and Stop
 
@@ -259,15 +259,12 @@ git show --stat --oneline HEAD
 git status --short
 ```
 
-Compare `HEAD` with the starting commit and confirm exactly one new commit exists. Confirm the
-remaining plan items are still present and unstaged. The successful isolated verification from
-Step 5 is required evidence that the commit is self-contained.
+After each commit, compare `HEAD` with the repository's pre-group commit and confirm exactly one new
+commit was added for that group. Confirm later plan items remain unstaged. The successful isolated
+verification from Step 5 is required evidence that each commit is self-contained.
 
-Then stop. Report:
+After all requested groups are complete, report:
 
-- the new commit hash and subject;
-- the files or hunks included;
-- the numbered groups still uncommitted.
-
-Do not proceed to group 2 unless the user starts another invocation or explicitly said
-`commit all groups now`.
+- every new commit hash and subject;
+- the files or hunks included in each;
+- any groups intentionally left uncommitted and the concrete reason.
