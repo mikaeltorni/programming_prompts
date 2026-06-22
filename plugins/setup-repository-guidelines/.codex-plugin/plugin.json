@@ -1,0 +1,18 @@
+{
+  "name": "setup-repository-guidelines",
+  "version": "0.1.0",
+  "description": "Repository-family routing, installer integration, and clean-deployment rules for the linked Linux setup repositories.",
+  "author": {
+    "name": "Mikael Torni"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Setup Repository Guidelines",
+    "shortDescription": "Route and deploy changes across the Linux setup repository family.",
+    "longDescription": "Discovers repository-family membership from installation_scripts, routes each concern to its owner, requires component-based clean-install integration, and verifies deployment without disrupting the desktop session.",
+    "developerName": "Mikael Torni",
+    "category": "Developer Tools",
+    "capabilities": ["Instructions"],
+    "defaultPrompt": ["Apply the setup repository guidelines to this task."]
+  }
+}

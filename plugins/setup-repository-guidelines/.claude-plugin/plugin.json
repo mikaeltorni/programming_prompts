@@ -1,0 +1,6 @@
+{
+  "name": "setup-repository-guidelines",
+  "version": "0.1.0",
+  "description": "Repository-family routing and clean installation rules for linked Linux setup repositories.",
+  "author": {"name": "Mikael Torni"}
+}
