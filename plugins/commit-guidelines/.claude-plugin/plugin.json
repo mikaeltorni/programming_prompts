@@ -1,6 +1,6 @@
 {
   "name": "commit-guidelines",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cautious workflow for creating clean, reviewable Git commits.",
   "author": {"name": "Mikael Torni"}
 }
