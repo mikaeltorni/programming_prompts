@@ -64,6 +64,14 @@ material, or the grouping cannot be made safely. Explain the concrete blocker in
 - Never run `git stash`, `git stash apply`, `git stash pop`, or `git stash drop`.
 - Never amend, rebase, reset the worktree, force-push, delete branches, or skip hooks.
 - Never use `--no-verify`.
+- Always commit with the repository's own configured git identity. Never override the author or
+  committer with `git -c user.email=...`, `git -c user.name=...`, `--author=...`,
+  `GIT_AUTHOR_EMAIL`/`GIT_COMMITTER_EMAIL`, or any other identity flag or environment variable.
+  Run plain `git commit`; let it read `user.name`/`user.email` from the local then global git
+  config. If no identity is configured, stop and report it as a safety blocker — never guess,
+  invent, or hardcode an email address.
+- Never add a `Co-Authored-By:` trailer (or any other email) that is not the user's own configured
+  git identity. Do not paste a remembered or assistant email into a commit message.
 - Never commit secrets, credentials, `.env` files, logs, caches, editor state, build output, or
   accidental generated files.
 - Treat user instruction files, installer changes, tests, documentation, and runtime changes as
@@ -246,6 +254,9 @@ git commit -m "type(scope): short description" \
 ```
 
 Allowed types: `feat`, `fix`, `refactor`, `chore`, `docs`, `style`, `test`, `perf`.
+
+Run `git commit` with no identity overrides so the commit uses the repository's configured
+`user.name`/`user.email`. Do not add `-c user.*`, `--author`, or a `Co-Authored-By:` trailer.
 
 Do not mention later groups in the current commit message. After verifying the commit, clear the
 index if needed and repeat Steps 3–6 for the next planned group or repository.
