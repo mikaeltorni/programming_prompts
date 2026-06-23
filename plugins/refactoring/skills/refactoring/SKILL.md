@@ -139,21 +139,26 @@ When refactoring touches runtime code:
    logging through one centralized logging module; for Python projects, invoke
    the `python-logging` skill and use its standard `log_call` decorator instead
    of inventing per-file helpers.
-2. Repository-generated file logs belong under repo-root `.log/`, and `.log/`
+2. Bash and shell scripts use one sourced logging helper from the project or
+   installer framework. During cleanup, remove old hardcoded log functions from
+   feature scripts, route call sites through the shared helper, and update
+   installer copy lists or package manifests whenever the helper must be present
+   in an installed copy.
+3. Repository-generated file logs belong under repo-root `.log/`, and `.log/`
    must be gitignored.
-3. Preserve stdout/stderr contracts for status bars, command substitution, CLI
+4. Preserve stdout/stderr contracts for status bars, command substitution, CLI
    filters, probes, TUIs, and installer-compatible formats.
-4. Use environment-appropriate sinks: journald/systemd or GNOME Shell logging for
+5. Use environment-appropriate sinks: journald/systemd or GNOME Shell logging for
    services/extensions; stderr for installer contracts; file-only logging for
    TUIs when terminal output would corrupt the interface.
-5. Logging coverage means action paths, state changes, external calls, boundary
+6. Logging coverage means action paths, state changes, external calls, boundary
    failures, and meaningful decisions are observable. Pure helpers, parsers,
    formatters, recursive generators, hot loops, logging primitives, and generated
    shims may be covered by caller-level logs.
-6. Avoid high-frequency log spam. Log summaries and decisions around hot paths.
-7. Logging in hooks and installers must be best-effort and never abort the user
+7. Avoid high-frequency log spam. Log summaries and decisions around hot paths.
+8. Logging in hooks and installers must be best-effort and never abort the user
    workflow.
-8. API logging must capture lifecycle/failures without secrets or sensitive
+9. API logging must capture lifecycle/failures without secrets or sensitive
    payloads.
 
 ## Step 6: Verify

@@ -63,3 +63,11 @@ def test_refactoring_skill_checks_installed_import_copy_lists():
     assert "project-local imports" in content
     assert "copied helper modules or package manifests" in content
     assert "missing deployed modules" in content
+
+
+def test_refactoring_skill_requires_shell_logging_cleanup():
+    content = normalized_skill_text()
+
+    assert "Bash and shell scripts use one sourced logging helper" in content
+    assert "remove old hardcoded log functions" in content
+    assert "update installer copy lists or package manifests" in content
