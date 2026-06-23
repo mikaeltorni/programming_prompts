@@ -2,9 +2,11 @@
 
 ## Never generate or commit marketplace files here
 
-This repository is the **content source** only. It packages each workflow as a
-standalone plugin (one `plugins/<name>/` directory with `.codex-plugin/plugin.json`,
-`.claude-plugin/plugin.json`, and exactly one `skills/*/SKILL.md`).
+This repository is the **content source** only. Most workflows are standalone
+plugins (one `plugins/<name>/` directory with `.codex-plugin/plugin.json`,
+`.claude-plugin/plugin.json`, and exactly one `skills/*/SKILL.md`). Prompt-only
+workflows live under top-level `skills/<name>/` and must not carry plugin
+manifests.
 
 Do **not** create, regenerate, or commit any marketplace catalog in this
 repository — neither `.claude-plugin/marketplace.json` nor
@@ -14,7 +16,7 @@ generation and plugin/CLI installation are owned exclusively by the sibling
 repository, which reads these plugins from source. Adding marketplace files here
 duplicates that ownership and drifts out of sync.
 
-The plugins remain fully functional standalone: each `plugins/<name>` carries its
-own Codex and Claude manifests plus its single skill, so the installer (or a
-manual `claude plugin`/`codex plugin` install pointed at a plugin directory) can
-consume them without any repo-level marketplace catalog.
+The plugin prompts remain fully functional standalone: each `plugins/<name>`
+carries its own Codex and Claude manifests plus its single skill, so the
+installer (or a manual `claude plugin`/`codex plugin` install pointed at a
+plugin directory) can consume them without any repo-level marketplace catalog.

@@ -13,7 +13,10 @@ See the full cross-repository map in
 
 ## Overview
 
-This repository maintains the canonical engineering standards used across all development projects in this workspace. Every plugin packages exactly one skill and carries manifests for both Codex and Claude Code.
+This repository maintains the canonical engineering standards used across all
+development projects in this workspace. Plugin prompts package exactly one skill
+and carry manifests for both Codex and Claude Code; direct skills carry only
+`SKILL.md` content.
 
 - **General Programming Guidelines** — Shared coding, testing, and engineering workflow rules for all agent tasks.
 - **Commit Guidelines** — Cautious Git commit workflow (inspect → plan → stage hunks → verify → compose).
@@ -32,12 +35,14 @@ programming_prompts/
 │   │                                       #   .codex-plugin/ + .claude-plugin/ manifests
 │   │                                       #   and exactly one skills/<name>/SKILL.md
 │   ├── general-programming-guidelines/    # Engineering workflow & coding standards
-│   ├── commit-guidelines/                 # Cautious Git commit workflow
 │   ├── init-project/                      # Secure init with UV + supply-chain protection
 │   ├── linux-desktop-configuration/       # Console-only desktop deployment + sudo-free installers
 │   ├── python-logging/                     # Centralized logging module + call-tracing decorator
-│   ├── refactoring/                        # Test-driven refactoring workflow
-│   └── setup-repository-guidelines/       # Setup-family routing and install policy
+│   └── refactoring/                        # Test-driven refactoring workflow
+├── skills/                                 # Direct skills, not plugins
+│   ├── commit/                             # Cautious Git commit workflow
+│   └── setup-repository-guidelines/        # Setup-family routing and install policy
+├── global-instructions/                    # Managed global instruction blocks
 ├── tests/                                  # pytest policy tests for the plugin prompts
 ├── .log/                                  # Runtime logs (gitignored)
 ├── LICENSE.md                             # MIT License
@@ -48,12 +53,13 @@ programming_prompts/
 
 Installation belongs to the sibling
 [`linux_codex_claude_code_setup`](https://github.com/mikaeltorni/linux_codex_claude_code_setup)
-repository. Its committed `default.json` maps each plugin to its skill and
-controls default selection. This repository intentionally contains no
-`install.sh`, installer libraries, or marketplace catalogs — marketplace
+repository. Its committed `default.json` maps each prompt to either a plugin or
+a direct skill and controls default selection. This repository intentionally
+contains no `install.sh`, installer libraries, or marketplace catalogs — marketplace
 generation is owned entirely by the installer repository (see `AGENTS.md`). Each
 `plugins/<name>` directory stays standalone-installable via its own Codex and
-Claude manifests plus its single skill.
+Claude manifests plus its single skill. Top-level `skills/<name>` directories
+are installed directly as skills and do not appear in plugin marketplaces.
 
 ## Plugins
 
@@ -62,15 +68,6 @@ Claude manifests plus its single skill.
 Packages the canonical programming guidelines as a Codex plugin. Provides shared engineering workflow and coding standards that apply to every software task — implementation, debugging, review, testing, and refactoring. The prompt requires agents to preserve the user's wording and local state, avoid clobbering existing configuration with placeholder defaults such as `0`, and sandbox-test user-global installers, wrapper generation, and config deployment before applying them to the real environment. New projects and projects adding Python for the first time must also implement a rolling 24-hour package-release delay with `uv`; plain `pip` installs must consume a hash-locked export rather than resolve dependencies directly.
 
 **Install:** The programming-prompts marketplace installs this as `general-programming-guidelines@programming-prompts`. Confirm with:
-```bash
-codex plugin list
-```
-
-### commit-guidelines
-
-Packages the cautious Git commit workflow as a Codex plugin. Guides agents to inspect all changes (staged + unstaged), split diffs into logical commits, stage exact hunks, and compose clean conventional commits — one at a time, with verification.
-
-**Install:** The programming-prompts marketplace installs this as `commit-guidelines@programming-prompts`. Confirm with:
 ```bash
 codex plugin list
 ```
@@ -115,14 +112,6 @@ so it never aborts the program. Services swap the file sink for stderr
 codex plugin list
 ```
 
-### setup-repository-guidelines
-
-Applies owner routing, component selection, clean-install, deployment, and
-prompt-free keyring requirements to every repository discovered from the
-sibling `installation_scripts` manifest. Both agents receive a managed global
-conditional that reads `CLONE_REPOS` at task start, so newly added repositories
-enter scope without changing this plugin.
-
 ### refactoring
 
 An installable per-skill plugin that implements the **Test-Driven Refactoring** paradigm. Guides agents to restructure monolithic codebases into well-organized, single-responsibility modules without changing behavior — tests first, then extraction, then integration.
@@ -134,6 +123,22 @@ Key principles:
 4. Extract one cohesive module at a time by default; for explicitly broad workspace requests, inventory every repository first and verify each extraction independently.
 5. Update imports, documentation, logging paths, and project tree after each extraction.
 6. Do not commit unless the user explicitly asks for commits.
+
+## Direct Skills
+
+### commit
+
+Guides agents to inspect all changes (staged + unstaged), split diffs into
+logical commits, stage exact hunks, and compose clean conventional commits. It
+is installed as a direct skill, not as `commit-guidelines@programming-prompts`.
+
+### setup-repository-guidelines
+
+Applies owner routing, component selection, clean-install, deployment, and
+prompt-free keyring requirements to every repository discovered from the
+sibling `installation_scripts` manifest. Both agents receive a managed global
+conditional that reads `CLONE_REPOS` at task start, so newly added repositories
+enter scope without changing this direct skill.
 
 ## Logging
 
