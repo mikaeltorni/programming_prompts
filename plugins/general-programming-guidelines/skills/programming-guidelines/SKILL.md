@@ -80,8 +80,9 @@ checklist is not done.
   home when feasible. Deploy to the real environment only after focused tests
   pass.
 - For GUI/session changes, use command-line live settings where possible and do
-  not automate shell reloads, logout, reboot, `gnome-shell --replace`, or
-  shell-kill commands.
+  not automate logout, reboot, `gnome-shell --replace`, or shell-kill commands;
+  the only sanctioned Shell reload is the in-place X11 run-dialog reload
+  (`xdotool` `Alt+F2 r`) used to activate edited extension code.
 - Do not commit unless explicitly asked. If committing is requested, stage only
   your own logical hunks and keep unrelated local changes out of the commit.
 

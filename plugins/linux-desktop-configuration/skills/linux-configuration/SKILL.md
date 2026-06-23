@@ -4,10 +4,11 @@ description: >-
   Mandatory rules for any task on this machine that touches Linux desktop
   configuration: GNOME Shell extensions, gsettings, themes, hotkeys, systemd
   user services, or a repository install.sh. Requires console-only, silent
-  deployment paths and forbids agent-initiated GNOME Shell reloads, GUI resets,
-  session restarts, logout, `gnome-shell --replace`, and shell-kill commands.
-  Covers clean-install compatibility and the root-optional (sudo-free)
-  installer pattern.
+  deployment paths; activates edited extension code via the sanctioned in-place
+  X11 run-dialog reload (`xdotool` `Alt+F2 r`) and forbids destructive session
+  restarts, logout, `gnome-shell --replace`, and shell-kill commands. Covers
+  clean-install compatibility and the root-optional (sudo-free) installer
+  pattern.
 ---
 
 # Linux Desktop Configuration Guidelines
@@ -15,16 +16,18 @@ description: >-
 These rules apply whenever a change touches GNOME Shell, desktop settings,
 hotkeys, systemd user services, or any repository `install.sh`. They are
 mandatory, not advisory: follow them exactly even when the user's prompt does
-not restate them, and never reach for a faster shortcut (session logout,
-`gnome-shell --replace`, killing the Shell, or automating a GUI Shell reload)
-to "just make it apply."
+not restate them, and never reach for a destructive shortcut (session logout,
+`gnome-shell --replace`, or killing the Shell) to "just make it apply." When a
+reload is genuinely required, use only the in-place X11 run-dialog reload
+described below, which preserves the running session.
 
 ## Applying changes silently (required default)
 
 Most desktop changes do NOT need a GNOME Shell reload. Reloading the Shell
 flashes the panel, resets the overview/animations, and steals focus, so it
-interrupts the human's active work. Do not automate Shell reloads or GUI
-resets. Apply changes with the narrowest command-line mechanism that takes
+briefly interrupts the human's active work — only edited extension *code*
+actually requires it (see below). For everything else, do not reload or reset
+the GUI; apply changes with the narrowest command-line mechanism that takes
 effect live, in place, with no visible disruption:
 
 - **gsettings / dconf** (hotkeys, `org.gnome.desktop.*`, `org.gnome.shell.*`
@@ -44,7 +47,7 @@ Always state the exact silent command you ran to apply the change, and verify
 it took effect (e.g. read the gsettings key back, `systemctl --user status`,
 `gnome-extensions info <uuid>`).
 
-## Extension code changes (deploy, do not reload)
+## Extension code changes (deploy, then in-place reload)
 
 Changing the **code** of a loaded extension (its `extension.js` / installed
 files) still needs a fresh Shell process before the running desktop will execute
@@ -59,27 +62,42 @@ non-disruptive command-line hot-reload for edited extension source:
 - A newly added extension directory is not detected by the running Shell at
   all until it reloads.
 
-For extension code changes: deploy the files from the console, verify the
-installed files and settings, then report that activation requires the user to
-start a fresh GNOME Shell session themselves. Do not automate the run dialog,
-do not send key events to trigger a Shell reload, and do not initiate logout,
-reboot, or session restart.
+For extension code changes: deploy the files from the console and verify the
+installed files and settings. Then activate the new code with the **in-place
+reload that matches the session type** — read it from
+`echo "$XDG_SESSION_TYPE"` (or `loginctl show-session`):
 
-Never use any of the following to force changes through, regardless of
-session type:
+- **X11:** trigger GNOME's own run-dialog reload, which restarts the Shell in
+  place while preserving the session, open windows, and enabled extensions.
+  Drive it through the run dialog with `xdotool`:
 
-- GNOME run-dialog reload automation, including `Alt+F2 r` or `xdotool`
-  key/type sequences that trigger it
+  ```sh
+  xdotool key --clearmodifiers alt+F2
+  sleep 0.5
+  xdotool type 'r'
+  xdotool key Return
+  ```
+
+  This is the same `Alt+F2 r` reload a human would type and is the only
+  sanctioned automated reload. After it runs, verify the result (see below).
+- **Wayland:** there is no in-place run-dialog Shell reload. Do NOT force one.
+  Deploy and verify the files, then ask the user to log out and back in.
+
+Even when automating the X11 reload, never use any of the following to force
+changes through, regardless of session type — they end or replace the session
+and can lose the user's open work:
+
 - `gnome-session-quit` / `--logout` / `--force`
 - `loginctl terminate-session …` / `loginctl kill-user …`
 - `systemctl --user stop gnome-session*` or similar unit stops
 - `pkill -HUP gnome-shell`, `killall gnome-shell`, or any signal that ends
-  the shell process on Wayland
+  the shell process
 - `gnome-shell --replace` — it can disrupt the current session and leave
   user extensions globally disabled
 
-Losing the user's open work is a worse outcome than waiting for them to
-reload manually.
+The in-place run-dialog reload is the only Shell reload an agent may perform,
+and only on X11; on Wayland, waiting for the user to reload is better than
+losing their open work.
 
 After extension work, verify `gsettings get org.gnome.shell
 disable-user-extensions` is `false` and previously enabled extensions are
