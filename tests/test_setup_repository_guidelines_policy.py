@@ -6,18 +6,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SKILL_PATH = (
     ROOT
-    / "plugins"
-    / "setup-repository-guidelines"
     / "skills"
     / "setup-repository-guidelines"
     / "SKILL.md"
 )
 GLOBAL_INSTRUCTIONS_PATH = (
     ROOT
-    / "plugins"
-    / "setup-repository-guidelines"
-    / "install"
-    / "global-instructions.md"
+    / "global-instructions"
+    / "setup-repository-guidelines.md"
 )
 
 
