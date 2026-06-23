@@ -20,6 +20,13 @@ def plugin_names() -> set[str]:
     }
 
 
+def direct_skill_names() -> set[str]:
+    return {
+        path.parent.name
+        for path in ROOT.glob("skills/*/SKILL.md")
+    }
+
+
 def test_every_plugin_has_codex_claude_manifests_and_one_skill() -> None:
     """Each installable unit should expose one skill to both products."""
     names = plugin_names()
@@ -32,6 +39,13 @@ def test_every_plugin_has_codex_claude_manifests_and_one_skill() -> None:
         assert codex["name"] == name
         assert claude["name"] == name
         assert len(skills) == 1, f"{name} must package exactly one skill"
+
+
+def test_direct_skills_have_no_plugin_manifests() -> None:
+    """Prompt-only skills should not appear as standalone plugins."""
+    assert {"commit", "setup-repository-guidelines"} <= direct_skill_names()
+    assert not (ROOT / "plugins" / "commit-guidelines").exists()
+    assert not (ROOT / "plugins" / "setup-repository-guidelines").exists()
 
 
 def test_repository_contains_no_marketplace_catalogs() -> None:
