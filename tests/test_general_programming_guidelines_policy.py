@@ -67,3 +67,15 @@ def test_general_guidelines_exempt_static_prompt_files_from_forced_instrumentati
 
     assert "Do not force function-doc, logging, or API-style comments" in content
     assert "static prompt\n  files" in content
+
+
+def test_general_guidelines_define_shell_logging_contracts():
+    """Bash scripts should centralize logging without breaking output contracts."""
+    content = skill_text()
+
+    assert "For Bash and other shell scripts" in content
+    assert "one sourced logging helper" in content
+    assert "do not hardcode ad-hoc log helpers" in content
+    assert "source the shared helper" in content
+    assert "installer-compatible status and errors on stderr" in content
+    assert "stdout must remain reserved for machine-readable output" in content

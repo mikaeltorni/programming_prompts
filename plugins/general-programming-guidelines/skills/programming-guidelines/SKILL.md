@@ -134,6 +134,13 @@ checklist is not done.
   the `python-logging` skill: it establishes that single module and the standard
   call-tracing decorator (each record carries the function's file and name, logs
   every argument on entry, and logs the return value on exit).
+- For Bash and other shell scripts, centralization means one sourced logging helper
+  from the project or installer framework. Feature
+  scripts source the shared helper and do not hardcode ad-hoc log helpers such as local `log()`,
+  `log_info()`, `info()`, `warn()`, or `err()` implementations unless that file
+  is the centralized helper. Keep installer-compatible status and errors on stderr;
+  stdout must remain reserved for machine-readable output, shell
+  command substitution, filters, probes, and documented CLI output.
 - When the user reports broken, failing, crashing, or misbehaving software, read
   relevant logs before forming a hypothesis: repo `.log/`, journald/systemd
   units, tracker logs, or the app's documented log sink.
