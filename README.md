@@ -20,6 +20,7 @@ This repository maintains the canonical engineering standards used across all de
 - **Linux Desktop Configuration** — Shared GNOME/Ubuntu desktop rules: applying changes silently from the command line (gsettings/dconf live, `systemctl --user restart`, `gnome-extensions enable/disable`), never automating GNOME Shell reloads or GUI resets, reporting manual activation when extension code needs a fresh Shell session, preserving user sessions, maintaining clean-install compatibility, and using root-optional (sudo-free) installer patterns.
 - **Refactoring Skill** — Test-driven refactoring methodology for restructuring monolithic codebases into clean modules.
 - **Init Project Skill** — Auto-triggered secure project initialization with UV + supply-chain protection.
+- **Python Logging** — One centralized logging module per project plus a standard call-tracing decorator that logs each function's file and name, its arguments on entry, and its return value on exit.
 - **Setup Repository Guidelines** — Dynamic repository-family routing and installer integration based on the orchestration manifest.
 
 ## Repository Structure
@@ -34,6 +35,7 @@ programming_prompts/
 │   ├── commit-guidelines/                 # Cautious Git commit workflow
 │   ├── init-project/                      # Secure init with UV + supply-chain protection
 │   ├── linux-desktop-configuration/       # Console-only desktop deployment + sudo-free installers
+│   ├── python-logging/                     # Centralized logging module + call-tracing decorator
 │   ├── refactoring/                        # Test-driven refactoring workflow
 │   └── setup-repository-guidelines/       # Setup-family routing and install policy
 ├── tests/                                  # pytest policy tests for the plugin prompts
@@ -91,6 +93,24 @@ Packages the shared Linux desktop configuration rules as a Codex plugin (skill n
 - **Root-optional installers:** all project `install.sh` scripts run sudo-free in user mode (root-only steps are skipped and reported via `SUDO_REQUIRED_STEPS`); only `linux_installations_setup` hard-requires root.
 
 **Install:** The programming-prompts marketplace installs it as `linux-desktop-configuration@programming-prompts`. Confirm with:
+```bash
+codex plugin list
+```
+
+### python-logging
+
+Packages the centralized Python logging model as a Codex/Claude plugin (skill
+name: `python-logging`). Establishes a single logging module per project that
+every other module imports, and forbids ad-hoc `log()` / `log_info()` /
+`log_warning()` / `log_error()` helpers redefined in the middle of feature files.
+The standard `@log_call` decorator stamps each record with the wrapped function's
+file and qualified name, logs every bound argument on entry, and logs the return
+value on exit — and nothing else. Logging is best-effort and idempotent, writes
+to the repository `.log/` directory by default, and falls back to a null handler
+so it never aborts the program. Services swap the file sink for stderr
+(journald); TUIs stay file-only — all through the one module.
+
+**Install:** The programming-prompts marketplace installs it as `python-logging@programming-prompts`. Confirm with:
 ```bash
 codex plugin list
 ```

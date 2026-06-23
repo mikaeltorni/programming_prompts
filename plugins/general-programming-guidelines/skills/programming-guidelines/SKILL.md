@@ -122,24 +122,29 @@ checklist is not done.
 
 ## Logging and Diagnostics
 
-- Treat logging the code you add or change as part of the change, not a later
-  pass; the Work Loop self-check does not pass without it. The exceptions below
-  (pure predicates, hot loops, stdout/stderr contracts, log spam) bound where
-  coverage is unnecessary — they do not license skipping it elsewhere.
+- Logging the code you add or change is part of the workflow, not a later pass —
+  the same standing as tests and docs; the Work Loop self-check does not pass
+  without it. The exceptions below (pure predicates, hot loops, stdout/stderr
+  contracts, log spam) bound where coverage is unnecessary — they do not license
+  skipping it elsewhere.
+- Every project routes through **one centralized logging module**. Reuse the
+  existing centralized logger before adding any new one, and never redefine
+  `log()` / `log_info()` / `log_warning()` / `log_error()` helpers in the middle
+  of a feature file — that logic belongs in the one module. For Python, invoke
+  the `python-logging` skill: it establishes that single module and the standard
+  call-tracing decorator (each record carries the function's file and name, logs
+  every argument on entry, and logs the return value on exit).
 - When the user reports broken, failing, crashing, or misbehaving software, read
   relevant logs before forming a hypothesis: repo `.log/`, journald/systemd
   units, tracker logs, or the app's documented log sink.
-- Prefer the existing centralized logger. If missing and runtime logging is
-  needed, add the smallest shared utility with `verbose`, `debug`, `info`,
-  `warn`, and `error` levels, timestamps, context, idempotent setup, and no
-  duplicate handlers.
 - Store repository-generated file logs under repo-root `.log/` and ensure
   `.log/` is gitignored. Do not scatter log files into the repo root, `data/`,
   `/tmp`, or component folders.
-- Make sinks environment-aware: use journald/systemd or GNOME Shell logging for
-  services/extensions when that is the canonical sink; use stderr for
-  installer-compatible contracts; use file-only logging for TUIs where terminal
-  output would corrupt the UI; mirror to `.log/` only when useful and safe.
+- Make sinks environment-aware but still routed through the one module: use
+  journald/systemd or GNOME Shell logging for services/extensions when that is
+  the canonical sink; use stderr for installer-compatible contracts; use
+  file-only logging for TUIs where terminal output would corrupt the UI; mirror
+  to `.log/` only when useful and safe.
 - Preserve stdout/stderr contracts for status bars, command-substitution helpers,
   CLI filters, shell heredocs, probes, and installers. Logging must not change
   externally observed output unless that behavior change is intentional and
@@ -148,12 +153,10 @@ checklist is not done.
   external calls, and meaningful decisions are observable. Pure predicates,
   parsers, formatters, recursive generators, hot loops, logging primitives, and
   generated shims may be covered by caller-level logs instead.
-- Avoid log spam in polling ticks, tight filters, and recursive traversal.
+- Avoid log spam in polling ticks, tight filters, and recursive traversal, and
+  never log secrets, tokens, or sensitive payloads.
 - Logging in hooks, installers, and setup scripts must be best-effort and never
   abort user workflows; fall back to stderr, a null handler, or no-op stubs.
-- API clients should log request lifecycle, cache hits, retries, response/failure
-  classes, parse errors, and network errors, while never logging secrets, tokens,
-  or sensitive payloads.
 
 ## Errors and Warnings
 
