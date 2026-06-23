@@ -135,8 +135,10 @@ For each extraction:
 ## Step 5: Logging During Refactors
 
 When refactoring touches runtime code:
-1. Prefer the repository's existing centralized logger. Add a small shared logger
-   only when needed.
+1. Prefer the repository's existing centralized logger. Every project routes
+   logging through one centralized logging module; for Python projects, invoke
+   the `python-logging` skill and use its standard `log_call` decorator instead
+   of inventing per-file helpers.
 2. Repository-generated file logs belong under repo-root `.log/`, and `.log/`
    must be gitignored.
 3. Preserve stdout/stderr contracts for status bars, command substitution, CLI

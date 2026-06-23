@@ -70,3 +70,26 @@ def test_general_guidelines_delegate_python_logging_to_skill():
 
     assert "python-logging" in content
     assert "centralized logging module" in content
+
+
+def test_refactoring_guidelines_delegate_python_logging_to_skill():
+    """Refactoring work should not invent separate Python logging rules."""
+    content = (
+        ROOT
+        / "plugins"
+        / "refactoring"
+        / "skills"
+        / "refactoring"
+        / "SKILL.md"
+    ).read_text(encoding="utf-8")
+
+    assert "python-logging" in content
+    assert "one centralized logging module" in content
+    assert "log_call" in content
+
+
+def test_repository_gitignores_log_directory():
+    """The repo-local log sink required by the prompts must not dirty git."""
+    content = (ROOT / ".gitignore").read_text(encoding="utf-8")
+
+    assert ".log/" in content.splitlines()
