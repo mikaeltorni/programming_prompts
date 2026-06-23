@@ -1,6 +1,6 @@
 {
   "name": "linux-desktop-configuration",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared Linux desktop (GNOME/Ubuntu) configuration rules for Codex agents: safe GNOME Shell reloads, clean-install compatibility, and root-optional installers.",
   "author": {
     "name": "Mikael Torni"
