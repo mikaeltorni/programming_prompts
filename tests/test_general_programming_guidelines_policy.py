@@ -34,3 +34,36 @@ def test_general_guidelines_require_installed_import_contract_tests():
     assert "installed Python entrypoints or helper modules" in content
     assert "project-local imports" in content
     assert "installer copy lists" in content
+
+
+def test_general_guidelines_require_numbered_work_loop():
+    """Software work should run through the full ordered work loop."""
+    content = skill_text()
+
+    assert "Run every software task through these numbered steps in order" in content
+    assert "1. **Capture scope.**" in content
+    assert "2. **Inspect first.**" in content
+    assert "3. **Plan and write tests first.**" in content
+    assert "4. **Implement.**" in content
+    assert "5. **Instrument and document the code you just wrote.**" in content
+    assert "6. **Verify.**" in content
+    assert "7. **Self-check and report.**" in content
+
+
+def test_general_guidelines_definition_of_done_requires_logging_and_docs():
+    """The done checklist should require logging and documentation coverage."""
+    content = skill_text()
+
+    assert "## Definition of Done" in content
+    assert "New or changed action paths" in content
+    assert "external calls are logged through the existing centralized logger" in content
+    assert "New or changed public functions" in content
+    assert "non-obvious\n      behavior are documented including their parameters" in content
+
+
+def test_general_guidelines_exempt_static_prompt_files_from_forced_instrumentation():
+    """Prompt content should not be treated like runtime code."""
+    content = skill_text()
+
+    assert "Do not force function-doc, logging, or API-style comments" in content
+    assert "static prompt\n  files" in content
