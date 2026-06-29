@@ -10,11 +10,6 @@ SKILL_PATH = (
     / "setup-repository-guidelines"
     / "SKILL.md"
 )
-GLOBAL_INSTRUCTIONS_PATH = (
-    ROOT
-    / "global-instructions"
-    / "setup-repository-guidelines.md"
-)
 
 
 def test_setup_guidelines_scope_comes_from_manifest_clone_repos() -> None:
@@ -26,12 +21,23 @@ def test_setup_guidelines_scope_comes_from_manifest_clone_repos() -> None:
     assert "New repositories\n   added to `CLONE_REPOS`" in content
 
 
-def test_global_instructions_trigger_setup_guidelines_for_manifest_members() -> None:
-    """Global agent instructions should invoke setup guidance for each member."""
-    content = GLOBAL_INSTRUCTIONS_PATH.read_text(encoding="utf-8")
+def test_setup_guidelines_invoked_only_on_request_or_new_project() -> None:
+    """The skill must not auto-trigger on every task; only on request or a new project."""
+    content = SKILL_PATH.read_text(encoding="utf-8")
 
-    assert "At the start of a software task" in content
-    assert "installation_scripts/scripts/repository_manifest.sh" in content
-    assert "`CLONE_REPOS` array" in content
-    assert "invoke the `setup-repository-guidelines` skill before editing" in content
-    assert "do not use a copied repository list" in content
+    assert "Mandatory for every software task" not in content
+    assert "mandatory for every task" in content
+    assert "completely new project" in content
+    assert "explicitly requests" in content
+
+
+def test_setup_guidelines_no_managed_global_instruction_block() -> None:
+    """The auto-trigger global-instruction file must be gone (skill-only now)."""
+    global_instructions = (
+        ROOT
+        / "global-instructions"
+        / "setup-repository-guidelines.md"
+    )
+
+    assert not global_instructions.exists()
+    assert not (ROOT / "global-instructions").exists()

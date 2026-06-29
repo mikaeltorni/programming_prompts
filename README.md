@@ -24,7 +24,7 @@ and carry manifests for both Codex and Claude Code; direct skills carry only
 - **Refactoring Skill** — Test-driven refactoring methodology for restructuring monolithic codebases into clean modules.
 - **Init Project Skill** — Auto-triggered secure project initialization with UV + supply-chain protection.
 - **Python Logging** — One centralized logging module per project plus a standard call-tracing decorator that logs each function's file and name, its arguments on entry, and its return value on exit.
-- **Setup Repository Guidelines** — Dynamic repository-family routing and installer integration based on the orchestration manifest.
+- **Setup Repository Guidelines** — On-request (or new-project) repository-family routing and installer integration based on the orchestration manifest; no longer auto-triggered on every task.
 
 ## Repository Structure
 
@@ -41,8 +41,7 @@ programming_prompts/
 │   └── refactoring/                        # Test-driven refactoring workflow
 ├── skills/                                 # Direct skills, not plugins
 │   ├── commit/                             # Cautious Git commit workflow
-│   └── setup-repository-guidelines/        # Setup-family routing and install policy
-├── global-instructions/                    # Managed global instruction blocks
+│   └── setup-repository-guidelines/        # On-request setup-family routing & install policy
 ├── tests/                                  # pytest policy tests for the plugin prompts
 ├── .log/                                  # Runtime logs (gitignored)
 ├── LICENSE.md                             # MIT License
@@ -134,11 +133,15 @@ is installed as a direct skill, not as `commit-guidelines@programming-prompts`.
 
 ### setup-repository-guidelines
 
-Applies owner routing, component selection, clean-install, deployment, and
-prompt-free keyring requirements to every repository discovered from the
-sibling `installation_scripts` manifest. Both agents receive a managed global
-conditional that reads `CLONE_REPOS` at task start, so newly added repositories
-enter scope without changing this direct skill.
+A direct skill (not an auto-applied global instruction) that applies owner
+routing, component selection, clean-install, deployment, and prompt-free
+keyring requirements to the repository family discovered from the sibling
+`installation_scripts` manifest. It is invoked only on explicit user request or
+when starting a completely new project that has no existing repository
+guidelines; it is no longer merged into `AGENTS.md`/`CLAUDE.md` as a managed
+global conditional that fires at the start of every task. Membership is still
+read dynamically from `CLONE_REPOS`, so newly added repositories enter scope
+without changing this skill.
 
 ## Logging
 

@@ -1,11 +1,18 @@
 ---
 name: setup-repository-guidelines
-description: Mandatory for every software task in the installation_scripts Linux setup repository family; dynamically detects membership from scripts/repository_manifest.sh and enforces owner routing, selectable installer integration, clean-install compatibility, safe deployment, and prompt-free keyring handling.
+description: Invoked only on explicit user request, or when beginning work on a completely new project that has no existing repository guidelines. Detects membership from scripts/repository_manifest.sh and enforces owner routing, selectable installer integration, clean-install compatibility, safe deployment, and prompt-free keyring handling. Do not invoke it for routine tasks in repositories that already have guidelines.
 ---
 
 # Setup Repository Guidelines
 
-Use this skill for any task in the linked Linux setup repository family.
+This skill is **not** mandatory for every task. Invoke it only when:
+
+- the user explicitly requests repository-guideline setup, or
+- you are starting work on a completely new project that has no existing
+  `AGENTS.md` or repository guidelines.
+
+Do not invoke it for ordinary software tasks in repositories that already have
+guidelines in place.
 
 ## Determine scope dynamically
 
