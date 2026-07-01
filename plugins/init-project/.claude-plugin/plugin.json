@@ -1,6 +1,0 @@
-{
-  "name": "init-project",
-  "version": "1.0.0",
-  "description": "Secure project initialization with UV and supply-chain protection.",
-  "author": {"name": "Mikael Torni"}
-}

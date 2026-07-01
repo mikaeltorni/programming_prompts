@@ -41,10 +41,10 @@ def test_every_plugin_has_codex_claude_manifests_and_one_skill() -> None:
         assert len(skills) == 1, f"{name} must package exactly one skill"
 
 
-def test_direct_skills_have_no_plugin_manifests() -> None:
-    """Prompt-only skills should not appear as standalone plugins."""
-    assert {"commit", "setup-repository-guidelines"} <= direct_skill_names()
-    assert not (ROOT / "plugins" / "commit-guidelines").exists()
+def test_requested_plugin_and_direct_skill_boundaries() -> None:
+    """Commit is a plugin; init/refactoring/setup are direct skills."""
+    assert {"init-project", "refactoring", "setup-repository-guidelines"} <= direct_skill_names()
+    assert (ROOT / "plugins" / "commit-guidelines" / ".codex-plugin" / "plugin.json").is_file()
     assert not (ROOT / "plugins" / "setup-repository-guidelines").exists()
 
 

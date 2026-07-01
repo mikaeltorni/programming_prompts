@@ -1,5 +1,11 @@
 # Programming Prompts
 
+The install catalog intentionally distinguishes plugins from direct skills:
+
+- Plugins: Commit Guidelines, General Programming Guidelines, and Linux Desktop Configuration.
+- Direct skills: Init Project, Refactoring, and Setup Repository Guidelines.
+- Python Logging is retired and is not published or installed.
+
 Central repository for Codex agent programming guidelines, commit workflows, and refactoring skills — packaged as reusable plugins and skills.
 
 ## Repository dependencies
