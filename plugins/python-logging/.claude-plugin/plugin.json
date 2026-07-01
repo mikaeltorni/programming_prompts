@@ -1,6 +1,0 @@
-{
-  "name": "python-logging",
-  "version": "1.0.0",
-  "description": "Centralized Python logging: one logging module per project with a call-tracing decorator that logs arguments on entry and the return value on exit.",
-  "author": {"name": "Mikael Torni"}
-}
