@@ -47,6 +47,25 @@ Always state the exact silent command you ran to apply the change, and verify
 it took effect (e.g. read the gsettings key back, `systemctl --user status`,
 `gnome-extensions info <uuid>`).
 
+## Reboot and poweroff safety
+
+Never invoke `reboot`, `shutdown`, `poweroff`, `halt`, `systemctl reboot`,
+`systemctl poweroff`, or their `loginctl` equivalents directly. When the user
+explicitly authorizes a reboot or poweroff and it is genuinely required, route
+it through the setup framework's `safe_system_action.sh reboot|poweroff`. That
+helper must retain an audible countdown from 10 through 1, an extended alert at
+0, and a Ctrl+C/SIGTERM cancellation path before it requests the system action.
+
+Installer code must call the shared `safe_system_action` wrapper supplied by
+`linux_installation_scripts_functions/installer_helpers.sh`; do not recreate a
+local `sleep 10` implementation. Runtime programs must install and invoke the
+same helper as `~/.local/bin/safe-system-action`. Refuse the destructive action
+when the shared helper is unavailable.
+
+Do not execute the helper while developing, testing, deploying, or validating
+a change. Verify it with static source checks, shell syntax checks, and mocked
+call-site tests only. A test must never reach a real reboot or poweroff command.
+
 ## Extension code changes (deploy, then in-place reload)
 
 Changing the **code** of a loaded extension (its `extension.js` / installed
