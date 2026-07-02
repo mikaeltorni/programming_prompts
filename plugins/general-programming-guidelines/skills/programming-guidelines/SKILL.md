@@ -85,6 +85,9 @@ checklist is not done.
   (`xdotool` `Alt+F2 r`) used to activate edited extension code.
 - Do not commit unless explicitly asked. If committing is requested, stage only
   your own logical hunks and keep unrelated local changes out of the commit.
+- Work only in the currently checked-out working tree and branch. Never create,
+  switch, or use another branch or Git worktree unless the user explicitly
+  requests it.
 
 ## Design and Structure
 

@@ -1,5 +1,11 @@
 # Agent guidance for programming_prompts
 
+## Stay in the current Git checkout
+
+All programming agents must work only in the currently checked-out working tree
+and branch. Never create, switch, or use another branch or Git worktree unless
+the user explicitly requests it.
+
 ## Never generate or commit marketplace files here
 
 This repository is the **content source** only. Most workflows are standalone
