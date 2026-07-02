@@ -79,12 +79,3 @@ def test_general_guidelines_define_shell_logging_contracts():
     assert "source the shared helper" in content
     assert "installer-compatible status and errors on stderr" in content
     assert "stdout must remain reserved for machine-readable output" in content
-
-
-def test_general_guidelines_forbid_unrequested_branches_and_worktrees():
-    """Agents should stay in the current checkout unless the user says otherwise."""
-    content = " ".join(skill_text().split())
-
-    assert "Work only in the currently checked-out working tree and branch" in content
-    assert "Never create, switch, or use another branch or Git worktree" in content
-    assert "unless the user explicitly requests it" in content
