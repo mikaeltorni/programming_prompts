@@ -1,1 +1,5 @@
-{"name":"commit-guidelines","version":"1.0.0","description":"Create clean, scoped conventional commits."}
+{
+  "name": "commit-guidelines",
+  "version": "1.0.1",
+  "description": "Create clean, scoped conventional commits."
+}
