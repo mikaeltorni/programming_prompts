@@ -4,8 +4,8 @@ description: >-
   Mandatory rules for any task on this machine that touches Linux desktop
   configuration: GNOME Shell extensions, gsettings, themes, hotkeys, systemd
   user services, or a repository install.sh. Requires console-only, silent
-  deployment paths; activates edited extension code via the sanctioned in-place
-  X11 run-dialog reload (`xdotool` `Alt+F2 r`) and forbids destructive session
+  deployment; activates edited extension code via the sanctioned in-place X11
+  run-dialog reload (`xdotool` `Alt+F2 r`) and forbids destructive session
   restarts, logout, `gnome-shell --replace`, and shell-kill commands. Covers
   clean-install compatibility and the root-optional (sudo-free) installer
   pattern.
@@ -13,130 +13,113 @@ description: >-
 
 # Linux Desktop Configuration Guidelines
 
-These rules apply whenever a change touches GNOME Shell, desktop settings,
-hotkeys, systemd user services, or any repository `install.sh`. They are
-mandatory, not advisory: follow them exactly even when the user's prompt does
-not restate them, and never reach for a destructive shortcut (session logout,
-`gnome-shell --replace`, or killing the Shell) to "just make it apply." When a
-reload is genuinely required, use only the in-place X11 run-dialog reload
-described below, which preserves the running session.
+These rules bind every change that touches GNOME Shell, desktop settings,
+hotkeys, systemd user services, or any repository `install.sh`. Follow them
+exactly even when the user's prompt does not restate them. Never reach for a
+destructive shortcut — logout, `gnome-shell --replace`, killing the Shell — to
+"just make it apply". When a reload is genuinely required, use only the
+in-place X11 run-dialog reload described below, which preserves the running
+session.
 
-## Applying changes silently (required default)
+## Apply Changes Silently (required default)
 
-Most desktop changes do NOT need a GNOME Shell reload. Reloading the Shell
-flashes the panel, resets the overview/animations, and steals focus, so it
-briefly interrupts the human's active work — only edited extension *code*
-actually requires it (see below). For everything else, do not reload or reset
-the GUI; apply changes with the narrowest command-line mechanism that takes
-effect live, in place, with no visible disruption:
+Most desktop changes need **no** GNOME Shell reload. Reloading flashes the
+panel, resets the overview and animations, and steals focus — it interrupts the
+human's active work. Only edited extension *code* requires it (next section).
+For everything else, use the narrowest command-line mechanism that takes effect
+live, in place, with no visible disruption:
 
-- **gsettings / dconf** (hotkeys, `org.gnome.desktop.*`, `org.gnome.shell.*`
-  keys, themes, app behavior): `gsettings set …` takes effect immediately in
-  the running session. No reload.
-- **An extension's own settings** (keys in its GSettings schema, read at
-  runtime by the extension): `gsettings set` (or `dconf write`) on that
-  schema applies live. No reload.
-- **systemd user service** (trackers, daemons, helpers): restart only that
-  unit — `systemctl --user restart <unit>`. No Shell reload, no GUI flash.
-- **Enabling/disabling an extension** (toggling its on/off state, not
-  changing its code): `gnome-extensions enable <uuid>` /
-  `gnome-extensions disable <uuid>` runs the extension's own enable/disable
-  in place without restarting the Shell.
+| Change | Silent live mechanism |
+|---|---|
+| Hotkeys, `org.gnome.desktop.*` / `org.gnome.shell.*` keys, themes, app behavior | `gsettings set …` — immediate in the running session |
+| An extension's own settings (its GSettings schema, read at runtime) | `gsettings set` / `dconf write` on that schema — applies live |
+| systemd user service (trackers, daemons, helpers) | `systemctl --user restart <unit>` — that unit only, no GUI flash |
+| Enabling/disabling an extension (state, not code) | `gnome-extensions enable/disable <uuid>` — runs in place |
 
-Always state the exact silent command you ran to apply the change, and verify
-it took effect (e.g. read the gsettings key back, `systemctl --user status`,
-`gnome-extensions info <uuid>`).
+Always state the exact silent command you ran, and verify it took effect —
+read the gsettings key back, `systemctl --user status`,
+`gnome-extensions info <uuid>`.
 
-## Reboot and poweroff safety
+## Reboot and Poweroff Safety
 
-Never invoke `reboot`, `shutdown`, `poweroff`, `halt`, `systemctl reboot`,
-`systemctl poweroff`, or their `loginctl` equivalents directly. When the user
-explicitly authorizes a reboot or poweroff and it is genuinely required, route
-it through the setup framework's `safe_system_action.sh reboot|poweroff`. That
-helper must retain an audible countdown from 10 through 1, an extended alert at
-0, and a Ctrl+C/SIGTERM cancellation path before it requests the system action.
+Never invoke `reboot`, `shutdown`, `poweroff`, `halt`, `systemctl
+reboot|poweroff`, or their `loginctl` equivalents directly. When the user
+explicitly authorizes a genuinely required reboot or poweroff, route it through
+the setup framework's `safe_system_action.sh reboot|poweroff`, which must keep
+its audible 10→1 countdown, extended alert at 0, and a Ctrl+C/SIGTERM
+cancellation path before requesting the action.
 
-Installer code must call the shared `safe_system_action` wrapper supplied by
-`linux_installation_scripts_functions/installer_helpers.sh`; do not recreate a
-local `sleep 10` implementation. Runtime programs must install and invoke the
-same helper as `~/.local/bin/safe-system-action`. Refuse the destructive action
-when the shared helper is unavailable.
+- Installer code calls the shared `safe_system_action` wrapper from
+  `linux_installation_scripts_functions/installer_helpers.sh` — never a local
+  `sleep 10` reimplementation.
+- Runtime programs install and invoke the same helper as
+  `~/.local/bin/safe-system-action`.
+- Refuse the destructive action when the shared helper is unavailable.
+- Never execute the helper while developing, testing, deploying, or validating
+  a change. Verify with static source checks, shell syntax checks, and mocked
+  call-site tests only — a test must never reach a real reboot or poweroff.
 
-Do not execute the helper while developing, testing, deploying, or validating
-a change. Verify it with static source checks, shell syntax checks, and mocked
-call-site tests only. A test must never reach a real reboot or poweroff command.
+## Extension Code Changes (deploy, then in-place reload)
 
-## Extension code changes (deploy, then in-place reload)
-
-Changing the **code** of a loaded extension (its `extension.js` / installed
-files) still needs a fresh Shell process before the running desktop will execute
-the edited source, because the Shell imports each extension's JS once per
-shell-process lifetime and caches the module. There is no sanctioned,
-non-disruptive command-line hot-reload for edited extension source:
+Editing a loaded extension's **code** (`extension.js` / installed files) still
+needs a fresh Shell process: the Shell imports each extension's JS once per
+process lifetime and caches the module. There is no sanctioned, non-disruptive
+hot-reload for edited source —
 
 - `gnome-extensions disable && enable` calls the *cached* module's
-  disable/enable — it does NOT re-read the edited source.
+  disable/enable; it does not re-read the edited source.
 - The `org.gnome.Shell.Extensions.ReloadExtension` D-Bus method is locked down
-  (same restriction as `Eval`) and refuses external calls.
-- A newly added extension directory is not detected by the running Shell at
-  all until it reloads.
+  (like `Eval`) and refuses external calls.
+- A newly added extension directory is invisible to the running Shell until it
+  reloads.
 
-For extension code changes: deploy the files from the console and verify the
-installed files and settings. Then activate the new code with the **in-place
-reload that matches the session type** — read it from
-`echo "$XDG_SESSION_TYPE"` (or `loginctl show-session`):
+So: deploy the files from the console, verify the installed files and settings,
+then activate the new code with the reload that matches the session type —
+check `echo "$XDG_SESSION_TYPE"` (or `loginctl show-session`):
 
-- **X11:** trigger GNOME's own run-dialog reload, which restarts the Shell in
-  place while preserving the session, open windows, and enabled extensions.
-  Drive it through the run dialog with `xdotool`:
+**X11** — trigger GNOME's own run-dialog reload, which restarts the Shell in
+place while preserving the session, open windows, and enabled extensions:
 
-  ```sh
-  xdotool key --clearmodifiers alt+F2
-  sleep 0.5
-  xdotool type 'r'
-  xdotool key Return
-  ```
+```sh
+xdotool key --clearmodifiers alt+F2
+sleep 0.5
+xdotool type 'r'
+xdotool key Return
+```
 
-  This is the same `Alt+F2 r` reload a human would type and is the only
-  sanctioned automated reload. After it runs, verify the result (see below).
-- **Wayland:** there is no in-place run-dialog Shell reload. Do NOT force one.
-  Deploy and verify the files, then ask the user to log out and back in.
+This is the same `Alt+F2 r` a human would type and the only sanctioned
+automated reload. Verify the result afterwards (below).
 
-Even when automating the X11 reload, never use any of the following to force
-changes through, regardless of session type — they end or replace the session
-and can lose the user's open work:
+**Wayland** — there is no in-place run-dialog reload. Do NOT force one. Deploy
+and verify the files, then ask the user to log out and back in. Waiting for the
+user is always better than losing their open work.
+
+Regardless of session type, never force changes through with any of:
 
 - `gnome-session-quit` / `--logout` / `--force`
 - `loginctl terminate-session …` / `loginctl kill-user …`
 - `systemctl --user stop gnome-session*` or similar unit stops
-- `pkill -HUP gnome-shell`, `killall gnome-shell`, or any signal that ends
-  the shell process
-- `gnome-shell --replace` — it can disrupt the current session and leave
-  user extensions globally disabled
-
-The in-place run-dialog reload is the only Shell reload an agent may perform,
-and only on X11; on Wayland, waiting for the user to reload is better than
-losing their open work.
+- `pkill -HUP gnome-shell`, `killall gnome-shell`, or any Shell-ending signal
+- `gnome-shell --replace` — it can disrupt the session and leave user
+  extensions globally disabled
 
 After extension work, verify `gsettings get org.gnome.shell
-disable-user-extensions` is `false` and previously enabled extensions are
-still active.
+disable-user-extensions` is `false` and previously enabled extensions are still
+active.
 
-A Shell reload is NOT needed when the change only affects a systemd user
-service or installer-side gsettings. Restart only the affected service instead
-(`systemctl --user restart <unit>`), and do not reset the GUI.
+A Shell reload is never needed when the change only affects a systemd user
+service or installer-side gsettings — restart just the affected unit and leave
+the GUI alone.
 
 ## Clean Installation Compatibility
 
-All repository changes must remain compatible with a clean installation run
-through `installation_scripts/install.sh` and the repository's own
-`install.sh`. Do not rely on packages, files, settings, or manual steps that
-exist only on the current machine. Add every required dependency, asset,
-configuration step, and migration to the installer so a fresh checkout can
-reproduce the complete setup.
-
-Keep installation steps idempotent and verify the clean-install path for
-every change.
+Every repository change must stay compatible with a clean installation through
+`installation_scripts/install.sh` and the repository's own `install.sh`. Do not
+rely on packages, files, settings, or manual steps that exist only on the
+current machine — add every required dependency, asset, configuration step, and
+migration to the installer so a fresh checkout reproduces the complete setup.
+Keep installation steps idempotent and verify the clean-install path for every
+change.
 
 ## Root-Optional Installers (avoid sudo)
 
@@ -145,21 +128,19 @@ All project `install.sh` scripts must run sudo-free in user mode; only
 installers:
 
 - Default invocation is `bash install.sh` with no sudo. Root-only steps
-  (e.g. `apt install`, udev rules, files under `/etc` or `/usr`) are
-  skipped, collected in a `SUDO_REQUIRED_STEPS` list, and reported at the
-  end with the exact `sudo` command to apply them.
+  (`apt install`, udev rules, files under `/etc` or `/usr`) are skipped,
+  collected in a `SUDO_REQUIRED_STEPS` list, and reported at the end with the
+  exact `sudo` command to apply them.
 - When invoked via sudo (clean-install chain), use a `run_as_target` helper
-  (`sudo -H -u "$TARGET_USER" env …`) so user-level work still lands in the
-  desktop user's session, never in root's home.
-- Prefer user-level mechanisms that need no root at all:
-  - `gsettings` — always works as the logged-in user.
-  - GNOME extensions in `~/.local/share/gnome-shell/extensions/` —
-    user-owned; patch and reconfigure without root.
-  - `gnome-extensions enable/disable` — user-level.
-  - `systemctl --user` units instead of system units.
-  - Files under `$HOME` (`~/.claude`, `~/.config`, `~/.local`).
-- sudo is genuinely required only for: package management (`apt`),
-  system-wide extension dirs (`/usr/share/gnome-shell/extensions/`), and
-  root-owned paths (`/etc`, `/usr/lib`, udev rules).
-- Never bake an unconditional `sudo` into a script step that a non-root run
-  will hit; it stalls unattended/agent runs on a password prompt.
+  (`sudo -H -u "$TARGET_USER" env …`) so user-level work lands in the desktop
+  user's session, never in root's home.
+- Prefer user-level mechanisms that need no root at all: `gsettings`; GNOME
+  extensions in `~/.local/share/gnome-shell/extensions/` (user-owned — patch
+  and reconfigure without root); `gnome-extensions enable/disable`;
+  `systemctl --user` units; files under `$HOME` (`~/.claude`, `~/.config`,
+  `~/.local`).
+- sudo is genuinely required only for package management (`apt`), system-wide
+  extension dirs (`/usr/share/gnome-shell/extensions/`), and root-owned paths
+  (`/etc`, `/usr/lib`, udev rules).
+- Never bake an unconditional `sudo` into a step that a non-root run will hit;
+  it stalls unattended/agent runs on a password prompt.
