@@ -136,9 +136,9 @@ For each extraction:
 
 When refactoring touches runtime code:
 1. Prefer the repository's existing centralized logger. Every project routes
-   logging through one centralized logging module; for Python projects, invoke
-   the `python-logging` skill and use its standard `log_call` decorator instead
-   of inventing per-file helpers.
+   logging through one centralized logging module; for Python projects, use
+   that module's standard call-tracing (`log_call`) decorator instead of
+   inventing per-file helpers.
 2. Bash and shell scripts use one sourced logging helper from the project or
    installer framework. During cleanup, remove old hardcoded log functions from
    feature scripts, route call sites through the shared helper, and update

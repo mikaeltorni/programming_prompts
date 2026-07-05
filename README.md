@@ -4,7 +4,7 @@ The install catalog intentionally distinguishes plugins from direct skills:
 
 - Plugins: Commit Guidelines, General Programming Guidelines, and Linux Desktop Configuration.
 - Direct skills: Init Project, Refactoring, and Setup Repository Guidelines.
-- Python Logging is retired and is not published or installed.
+- Python Logging is retired and has been removed from this repository.
 
 Central repository for Codex agent programming guidelines, commit workflows, and refactoring skills — packaged as reusable plugins and skills.
 
@@ -29,7 +29,6 @@ and carry manifests for both Codex and Claude Code; direct skills carry only
 - **Linux Desktop Configuration** — Shared GNOME/Ubuntu desktop rules: applying changes silently from the command line (gsettings/dconf live, `systemctl --user restart`, `gnome-extensions enable/disable`), activating edited extension code with the sanctioned in-place X11 run-dialog reload (`xdotool` `Alt+F2 r`) while still forbidding destructive session restarts, asking for manual logout to activate extension code on Wayland, preserving user sessions, maintaining clean-install compatibility, and using root-optional (sudo-free) installer patterns.
 - **Refactoring Skill** — Test-driven refactoring methodology for restructuring monolithic codebases into clean modules.
 - **Init Project Skill** — Auto-triggered secure project initialization with UV + supply-chain protection.
-- **Python Logging** — One centralized logging module per project plus a standard call-tracing decorator that logs each function's file and name, its arguments on entry, and its return value on exit.
 - **Setup Repository Guidelines** — On-request (or new-project) repository-family routing and installer integration based on the orchestration manifest; no longer auto-triggered on every task.
 
 ## Repository Structure
@@ -40,13 +39,12 @@ programming_prompts/
 ├── plugins/                                # One directory per plugin; each has
 │   │                                       #   .codex-plugin/ + .claude-plugin/ manifests
 │   │                                       #   and exactly one skills/<name>/SKILL.md
-│   ├── general-programming-guidelines/    # Engineering workflow & coding standards
-│   ├── init-project/                      # Secure init with UV + supply-chain protection
-│   ├── linux-desktop-configuration/       # Console-only desktop deployment + sudo-free installers
-│   ├── python-logging/                     # Centralized logging module + call-tracing decorator
-│   └── refactoring/                        # Test-driven refactoring workflow
+│   ├── commit-guidelines/                  # Cautious Git commit workflow
+│   ├── general-programming-guidelines/     # Engineering workflow & coding standards
+│   └── linux-desktop-configuration/        # Console-only desktop deployment + sudo-free installers
 ├── skills/                                 # Direct skills, not plugins
-│   ├── commit/                             # Cautious Git commit workflow
+│   ├── init-project/                       # Secure init with UV + supply-chain protection
+│   ├── refactoring/                        # Test-driven refactoring workflow
 │   └── setup-repository-guidelines/        # On-request setup-family routing & install policy
 ├── tests/                                  # pytest policy tests for the plugin prompts
 ├── .log/                                  # Runtime logs (gitignored)
@@ -77,11 +75,14 @@ Packages the canonical programming guidelines as a Codex plugin. Provides shared
 codex plugin list
 ```
 
-### init-project
+### commit-guidelines
 
-Packages secure project initialization as a Codex plugin. Guides agents to set up new projects with UV by Astral as the required package manager, implementing a rolling 24-hour publication delay via uv's native `[tool.uv] exclude-newer = "24 hours"` setting to protect against supply-chain attacks.
+Packages the cautious Git commit workflow as a Codex/Claude plugin (skill name:
+`commit`). Guides agents to inspect all changes (staged + unstaged), split diffs
+into logical commits, stage exact hunks, and compose clean conventional commits,
+executing the complete cross-repository commit plan in one run.
 
-**Install:** The programming-prompts marketplace installs this as `init-project@programming-prompts`. Confirm with:
+**Install:** The programming-prompts marketplace installs this as `commit-guidelines@programming-prompts`. Confirm with:
 ```bash
 codex plugin list
 ```
@@ -99,27 +100,15 @@ Packages the shared Linux desktop configuration rules as a Codex plugin (skill n
 codex plugin list
 ```
 
-### python-logging
+## Direct Skills
 
-Packages the centralized Python logging model as a Codex/Claude plugin (skill
-name: `python-logging`). Establishes a single logging module per project that
-every other module imports, and forbids ad-hoc `log()` / `log_info()` /
-`log_warning()` / `log_error()` helpers redefined in the middle of feature files.
-The standard `@log_call` decorator stamps each record with the wrapped function's
-file and qualified name, logs every bound argument on entry, and logs the return
-value on exit — and nothing else. Logging is best-effort and idempotent, writes
-to the repository `.log/` directory by default, and falls back to a null handler
-so it never aborts the program. Services swap the file sink for stderr
-(journald); TUIs stay file-only — all through the one module.
+### init-project
 
-**Install:** The programming-prompts marketplace installs it as `python-logging@programming-prompts`. Confirm with:
-```bash
-codex plugin list
-```
+Secure project initialization as a direct skill. Guides agents to set up new projects with UV by Astral as the required package manager, implementing a rolling 24-hour publication delay via uv's native `[tool.uv] exclude-newer = "24 hours"` setting to protect against supply-chain attacks. Plain `pip` installs must consume a hash-locked `uv export` rather than resolve dependencies directly.
 
 ### refactoring
 
-An installable per-skill plugin that implements the **Test-Driven Refactoring** paradigm. Guides agents to restructure monolithic codebases into well-organized, single-responsibility modules without changing behavior — tests first, then extraction, then integration.
+A direct skill that implements the **Test-Driven Refactoring** paradigm. Guides agents to restructure monolithic codebases into well-organized, single-responsibility modules without changing behavior — tests first, then extraction, then integration.
 
 Key principles:
 1. Analyze before touching code (identify monoliths, orphaned functions, missing tests).
@@ -128,14 +117,6 @@ Key principles:
 4. Extract one cohesive module at a time by default; for explicitly broad workspace requests, inventory every repository first and verify each extraction independently.
 5. Update imports, documentation, logging paths, and project tree after each extraction.
 6. Do not commit unless the user explicitly asks for commits.
-
-## Direct Skills
-
-### commit
-
-Guides agents to inspect all changes (staged + unstaged), split diffs into
-logical commits, stage exact hunks, and compose clean conventional commits. It
-is installed as a direct skill, not as `commit-guidelines@programming-prompts`.
 
 ### setup-repository-guidelines
 

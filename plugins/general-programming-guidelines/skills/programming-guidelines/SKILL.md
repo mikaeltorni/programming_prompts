@@ -134,8 +134,8 @@ checklist is not done.
 - Every project routes through **one centralized logging module**. Reuse the
   existing centralized logger before adding any new one, and never redefine
   `log()` / `log_info()` / `log_warning()` / `log_error()` helpers in the middle
-  of a feature file — that logic belongs in the one module. For Python, invoke
-  the `python-logging` skill: it establishes that single module and the standard
+  of a feature file — that logic belongs in the one module. For Python, keep one
+  logging module per project that every other module imports, with a standard
   call-tracing decorator (each record carries the function's file and name, logs
   every argument on entry, and logs the return value on exit).
 - For Bash and other shell scripts, centralization means one sourced logging helper

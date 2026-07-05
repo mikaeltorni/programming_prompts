@@ -5,8 +5,6 @@ from pathlib import Path
 
 SKILL_PATH = (
     Path(__file__).resolve().parents[1]
-    / "plugins"
-    / "refactoring"
     / "skills"
     / "refactoring"
     / "SKILL.md"

@@ -14,8 +14,6 @@ PROGRAMMING_GUIDELINES_PATH = (
 
 INIT_PROJECT_PATH = (
     Path(__file__).resolve().parents[1]
-    / "plugins"
-    / "init-project"
     / "skills"
     / "init-project"
     / "SKILL.md"
