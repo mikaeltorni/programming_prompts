@@ -2,97 +2,74 @@
 name: "commit"
 description: >-
   Use when the user asks to inspect staged or unstaged git changes, split mixed work into logical
-  commits, stage exact files or hunks, compose conventional commit messages, or create a commit.
-  A normal invocation plans every change and creates one clean commit per self-contained group
-  across every repository the user explicitly requested, completing the full commit run at once.
+  commits, stage exact files or hunks, compose conventional commit messages, or create commits.
+  Invocation authorizes full execution: plan every change, then create one clean commit per
+  self-contained group across every requested repository in the same run.
 ---
 
 # Commit Composer
 
-Create clean, reviewable git commits from the requested worktree or repositories.
+Turn the requested worktree changes into clean, reviewable, self-contained commits — planned at
+hunk level, validated in isolation, and executed without pausing.
 
-The default invocation is an execution request, not a planning-only request. Loading this skill is
-explicit authorization to inspect, stage, validate, and commit every safe group in the repositories
-the user named. Inspect all changes, print the complete cross-repository commit plan, then execute
-the plan one group at a time in the same response. The plan is an informational progress update,
-never an approval checkpoint.
+## Execution Contract
 
-Do not ask any confirmation question before the first commit. Never say or imply:
+Loading this skill is authorization to inspect, stage, validate, and commit. It is an execution
+request, not a planning request:
 
-- "Would you like me to proceed?"
-- "Should I commit these groups?"
-- "I'll start after you confirm."
-- "Reply go on to continue."
+1. Inspect all changes, print the complete numbered commit plan, then **immediately** execute it
+   group by group in the same response. The plan is a progress report, not an approval checkpoint.
+2. Never ask "Should I proceed?", "Want me to commit these?", or wait for a "go on". Pausing after
+   the plan is workflow failure.
+3. Phrases like *plan first*, *plan the commits*, or *one at a time* set ordering, not pauses:
+   print the plan, then start commit 1 without another user turn.
+4. Cover **every** repository the user named; never stop silently after the first one.
+5. Stop without committing only when there are no changes, the user explicitly asked for plan-only
+   output or forbade committing, or a concrete safety blocker taints every coherent group — and
+   then name the blocker.
 
-Waiting for user confirmation after presenting the plan is workflow failure. Continue
-automatically unless the user explicitly requested plan-only output, explicitly told you not to
-commit, or a concrete safety blocker prevents every coherent commit.
+When groups exist, one bulk commit of everything is failure even if the message describes the
+project goal. Finish by reporting every new hash, its contents, and anything intentionally left
+uncommitted.
 
-## Required Result
+## Hard Rules
 
-1. Cover every repository explicitly named by the user. Do not silently stop after the first repo.
-2. Split the requested changes into self-contained groups and create one commit per group.
-3. Keep each commit limited to one feature, fix, refactor, documentation concern, or maintenance
-   concern.
-4. Make every commit self-contained: its implementation and included tests must work when checked
-   out without later commits or remaining worktree changes.
-5. Continue through the complete plan in the same invocation, stopping only for a concrete safety
-   blocker. Report every created hash and anything intentionally left uncommitted.
+**Scope and separation**
 
-The words `plan first`, `plan the commits`, `one at a time`, or similar sequencing language do not
-request a pause. They mean: print the plan first, then execute commit 1 immediately without another
-user turn.
+- Inspect all staged, unstaged, and untracked changes before staging anything.
+- Classify by hunk and purpose, never by filename alone. One commit covers exactly one feature,
+  fix, refactor, docs, or maintenance concern.
+- Stage only the current group; never `git add .`, `git add -A`, `git add -u`, or any command that
+  lists every changed path.
+- Never stage a whole file when any of its hunks belongs to another group.
+- Each commit must stand alone: its implementation and tests must work when checked out without
+  later commits or leftover worktree changes.
+- A test belongs to a group only if the implementation it exercises is staged in that group. Tests
+  that pass only because of unstaged worktree code invalidate the group.
+- Keep instruction files, installers, tests, docs, and runtime changes in separate groups unless
+  their actual hunks implement or verify the same feature.
 
-If there are multiple groups, committing all changed files together is failure even if the message
-describes the broad project goal. Create multiple commits in the same run instead.
+**Worktree safety**
 
-Do not create a commit only when there are no changes, every possible group contains unsafe
-material, or the grouping cannot be made safely. Explain the concrete blocker in that case.
+- Never modify source files while composing commits; this workflow stages existing changes only.
+- Never run `git stash` (in any form), amend, rebase, reset the worktree, force-push, delete
+  branches, skip hooks, or use `--no-verify`.
 
-## Absolute Rules
+**Identity and content**
 
-- Inspect all staged, unstaged, and untracked changes before staging.
-- Classify changes by hunk and purpose, not merely by filename.
-- Print a numbered plan covering every changed hunk before staging.
-- Begin staging plan item 1 immediately after printing the plan. Do not end the response or yield
-  control to the user between planning and staging.
-- Never ask for approval, confirmation, permission, or a "go on" message before commit 1.
-- Stage only the current group in that plan; after committing it, rebuild the index for the next.
-- Never use `git add .`, `git add -A`, `git add -u`, or a command listing every changed path.
-- Never stage a whole file when any hunk in that file belongs to another group.
-- Never modify source files while composing commits. This workflow stages existing changes only.
-- Never run `git stash`, `git stash apply`, `git stash pop`, or `git stash drop`.
-- Never amend, rebase, reset the worktree, force-push, delete branches, or skip hooks.
-- Never use `--no-verify`.
-- Always commit with the repository's own configured git identity. Never override the author or
-  committer with `git -c user.email=...`, `git -c user.name=...`, `--author=...`,
-  `GIT_AUTHOR_EMAIL`/`GIT_COMMITTER_EMAIL`, or any other identity flag or environment variable.
-  Run plain `git commit`; let it read `user.name`/`user.email` from the local then global git
-  config. If no identity is configured, stop and report it as a safety blocker — never guess,
-  invent, or hardcode an email address.
-- Never add a `Co-Authored-By:` trailer (or any other email) that is not the user's own configured
-  git identity. Do not paste a remembered or assistant email into a commit message.
+- Commit with the repository's own configured identity: run plain `git commit` and let it read
+  `user.name`/`user.email` from local then global config. Never override identity via
+  `git -c user.*`, `--author`, `GIT_AUTHOR_EMAIL`/`GIT_COMMITTER_EMAIL`, or any flag or variable.
+  If no identity is configured, stop and report a safety blocker — never guess or invent one.
+- Never add a `Co-Authored-By:` or other trailer carrying an email that is not the user's own
+  configured identity.
 - Never commit secrets, credentials, `.env` files, logs, caches, editor state, build output, or
   accidental generated files.
-- Treat user instruction files, installer changes, tests, documentation, and runtime changes as
-  separate concerns unless their actual hunks directly implement or verify the same feature.
-- Treat each test function or test case as a separate hunk-level dependency. Never include a test
-  that exercises implementation left unstaged, even when other tests in the same file belong to
-  group 1.
-- Never accept tests that pass only because unstaged worktree changes are present. Validate the
-  staged snapshot in isolation before committing.
 
-## Step 1: Capture the Starting State
-
-Record the starting commit:
+## Step 1 — Capture the Starting State
 
 ```bash
-git rev-parse HEAD
-```
-
-Inspect the complete worktree:
-
-```bash
+git rev-parse HEAD                        # record as STARTING_COMMIT
 git status --short
 git diff --stat
 git diff --name-status
@@ -102,36 +79,34 @@ git diff --staged
 git ls-files --others --exclude-standard
 ```
 
-Read untracked files that may belong in a commit. Do not assume that similarly named files belong
-to the same feature.
+Read untracked files that may belong in a commit; similar filenames do not prove shared purpose.
 
-If anything is already staged, unstage it without changing the worktree:
+If anything is already staged, rebuild from zero — never trust a pre-existing index:
 
 ```bash
 git restore --staged -- :/
 ```
 
-Then rerun `git status --short` and inspect the full unstaged diff. Never commit a pre-existing
-index without rebuilding and verifying it.
+then rerun `git status --short` and re-inspect the full unstaged diff.
 
-## Step 2: Build a Hunk-Level Plan
+## Step 2 — Build a Hunk-Level Plan
 
-Assign every changed hunk to one purpose. A feature group includes only:
+Assign every changed hunk to exactly one purpose. A feature group contains only:
 
-- the implementation hunks for that feature;
-- tests that specifically verify those implementation hunks;
-- documentation or installer hunks specifically required to expose that feature.
+- the implementation hunks of that feature,
+- the tests that specifically verify those hunks,
+- the docs or installer hunks required to expose that feature.
 
-Build a dependency closure for group 1. For every staged test, name the staged implementation hunk
-that makes it pass. For every staged implementation hunk, include its directly corresponding test
-when one exists. If a test file covers several plan items, mark the test file as `partial` and split
-it by test function or test case. A whole new test file is not automatically one group.
+Close the dependency loop both ways: every staged test names the staged implementation hunk that
+makes it pass; every staged implementation hunk brings its directly corresponding test when one
+exists. When a test file spans plan items, mark it `partial` and split by test function — a new
+test file is not automatically one group.
 
 Changes are separate groups when they can be reviewed, reverted, or explained independently.
-Shared filenames do not merge separate concerns. Broad labels such as "tracker updates",
-"installation improvements", or "cleanup" are not sufficient grouping reasons.
+Shared filenames never merge concerns, and vague labels ("cleanup", "tracker updates",
+"installation improvements") never justify a grouping.
 
-Print a numbered plan before staging. Mark mixed files as `partial`:
+Print the numbered plan, marking mixed files:
 
 ```text
 1. feat(models): add exact launcher model selection
@@ -146,53 +121,31 @@ Print a numbered plan before staging. Mark mixed files as `partial`:
    scripts/install.py
 ```
 
-Choose as group 1 the smallest complete group that can be staged and verified safely. Prefer a
-group with whole-file boundaries when one exists. Do not choose a broad group merely because it
-touches the most files.
+Pick as group 1 the smallest complete group that stages and verifies safely — prefer whole-file
+boundaries, never breadth. Then start staging immediately; do not end the response between
+planning and staging.
 
-## Step 3: Stage Only Group 1
-
-For a file whose entire diff belongs to group 1:
+## Step 3 — Stage Only Group 1
 
 ```bash
-git add -- path/to/file
+git add -- path/to/file            # entire diff belongs to group 1
+git add -p -- path/to/file         # mixed file: stage only relevant hunks
+git add -N -- path/to/new_file     # new mixed file: make it patchable first,
+git add -p -- path/to/new_file     #   then select only group 1
 ```
 
-For a mixed file, stage only the relevant hunks:
+In patch mode use `s` to split; use `e` only when splitting cannot isolate the lines. After
+partial staging, check both sides:
 
 ```bash
-git add -p -- path/to/file
+git diff --staged -- path/to/file   # must contain only group 1
+git diff -- path/to/file            # must retain every other group
 ```
 
-For a new mixed file, first make it visible to patch staging, then select only group 1:
+If the wrong content is staged, clear only the index (`git restore --staged -- :/`, which must not
+touch worktree files) and redo it.
 
-```bash
-git add -N -- path/to/new_file
-git add -p -- path/to/new_file
-```
-
-Use `s` to split a hunk. Use `e` only when splitting cannot isolate the lines. After partial
-staging, inspect both sides:
-
-```bash
-git diff --staged -- path/to/file
-git diff -- path/to/file
-```
-
-The staged side must contain only group 1. The unstaged side must retain every other group's
-lines.
-
-If the wrong content is staged, clear only the index and try again:
-
-```bash
-git restore --staged -- :/
-```
-
-This command must not alter worktree files.
-
-## Step 4: Enforce the Separation Guard
-
-Before committing, run:
+## Step 4 — Separation Guard
 
 ```bash
 git diff --staged --name-status
@@ -202,25 +155,18 @@ git diff --staged --check
 git status --short
 ```
 
-Verify all of these statements:
+All of the following must hold before committing:
 
-- Every staged hunk belongs to the current plan item.
-- Every required implementation and test hunk for the current plan item is staged.
+- Every staged hunk belongs to the current plan item — and every hunk the item needs is staged.
 - Every staged test depends only on staged implementation or unchanged `HEAD` code.
-- No hunk from plan items 2 or later is staged.
-- If the plan has multiple groups, later groups remain unstaged until their turn.
-- The staged paths and hunks are a strict subset of the remaining changes when later groups exist.
+- Nothing from later plan items is staged; later groups remain untouched until their turn.
+- With multiple groups, the staged set is a strict subset of the remaining changes. If everything
+  ended up staged anyway, do not commit — clear the index and pick a narrower group.
 
-If the plan has multiple groups but all original changes are staged, do not commit. Clear the
-index, choose a narrower first group, and stage again.
+## Step 5 — Validate the Staged Snapshot in Isolation
 
-## Step 5: Validate the Staged Snapshot in Isolation
-
-Do not run the decisive validation in the dirty worktree. Unstaged code can make an incomplete
-staged commit appear to pass.
-
-Create a temporary detached worktree from the recorded starting commit, apply only the staged
-patch, and run the narrowest relevant tests, linters, or build checks there:
+Never run the decisive validation in the dirty worktree: unstaged code can make an incomplete
+commit look green. Test the staged patch alone, on top of the starting commit:
 
 ```bash
 verification_dir="$(mktemp -d)"
@@ -230,52 +176,39 @@ git diff --cached --binary | git -C "$verification_dir" apply --index --binary -
 git worktree remove --force "$verification_dir"
 ```
 
-Use the actual starting commit hash recorded in Step 1 for `STARTING_COMMIT`. Always remove the
-temporary worktree, including after a failed command.
+Always remove the temporary worktree, even after failure. A pass in the dirty worktree never
+overrides a failure here.
 
-If staged tests fail because they need unstaged implementation, the staged group is invalid. Do
-not commit it. Clear the index, revise the hunk-level plan, and stage a self-contained group. Common
-fixes are:
+If staged tests fail for want of unstaged implementation, the group is invalid: clear the index,
+revise the plan, and restage — typically by splitting test functions, pulling in the missing
+implementation hunks that truly belong here, or choosing a smaller group.
 
-- partially stage only the test functions that cover group 1;
-- stage the missing implementation hunks when they truly belong to group 1;
-- choose a smaller group with cleaner dependency boundaries.
-
-Running the same command successfully in the original dirty worktree does not override a failure
-in the staged-only worktree.
-
-## Step 6: Commit Each Group
-
-Use a conventional commit:
+## Step 6 — Commit Each Group
 
 ```bash
 git commit -m "type(scope): short description" \
   -m "Explain what this one group changes and why."
 ```
 
-Allowed types: `feat`, `fix`, `refactor`, `chore`, `docs`, `style`, `test`, `perf`.
+Allowed types: `feat`, `fix`, `refactor`, `chore`, `docs`, `style`, `test`, `perf`. No identity
+overrides, no trailers (see Hard Rules), no mention of later groups in the message.
 
-Run `git commit` with no identity overrides so the commit uses the repository's configured
-`user.name`/`user.email`. Do not add `-c user.*`, `--author`, or a `Co-Authored-By:` trailer.
+Then repeat Steps 3–6 for each remaining group and repository.
 
-Do not mention later groups in the current commit message. After verifying the commit, clear the
-index if needed and repeat Steps 3–6 for the next planned group or repository.
+## Step 7 — Verify and Report
 
-## Step 7: Verify and Stop
-
-Run:
+After each commit:
 
 ```bash
 git show --stat --oneline HEAD
 git status --short
 ```
 
-After each commit, compare `HEAD` with the repository's pre-group commit and confirm exactly one new
-commit was added for that group. Confirm later plan items remain unstaged. The successful isolated
-verification from Step 5 is required evidence that each commit is self-contained.
+Confirm exactly one new commit exists for the group and later plan items remain unstaged; the
+Step 5 isolation pass is the required evidence of self-containment.
 
-After all requested groups are complete, report:
+When every requested group is done, report:
 
-- every new commit hash and subject;
-- the files or hunks included in each;
-- any groups intentionally left uncommitted and the concrete reason.
+- each new commit hash and subject,
+- the files or hunks it contains,
+- anything intentionally left uncommitted, with the concrete reason.
