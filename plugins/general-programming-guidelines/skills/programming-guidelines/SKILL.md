@@ -89,6 +89,21 @@ sends you back to the relevant Work Loop step.
 - Reuse project-local helpers, conventions, logging, tests, and manifests
   before adding new abstractions. Add an abstraction only when it removes real
   complexity, prevents drift, or matches an existing local pattern.
+- When adding a new variant of something that already exists (a sibling command,
+  launcher, wrapper, endpoint, or agent kind), route it through the SAME shared
+  path the existing variants use instead of writing a fresh standalone
+  implementation. Find how the closest working sibling is wired end to end and
+  extend that mechanism (add the case/entry/parameter); do not fork a parallel
+  copy that re-implements argument parsing, prompt/input handling, flag
+  selection, or dispatch. A standalone re-implementation looks similar but
+  silently drops the shared behaviors (multi-argument/quoting handling, default
+  flags, option parsing), so it breaks the moment input differs from the trivial
+  case. Standardize on the shared path; never ship duplicated code that only
+  works for the simplest input.
+- After adding or changing a command/flag surface, verify it with non-trivial
+  input — multi-word arguments, each accepted flag, and the no-argument/default
+  path — not just a single happy-path token, since parsing bugs hide behind the
+  simple case.
 - Keep modules and components single-purpose; split by feature, not by file
   size alone.
 - Keep data describing what the program operates on in config, manifests, or
