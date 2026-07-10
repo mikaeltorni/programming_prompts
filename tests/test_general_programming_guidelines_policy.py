@@ -81,10 +81,10 @@ def test_general_guidelines_define_shell_logging_contracts():
     assert "stdout must remain reserved for machine-readable output" in content
 
 
-def test_general_guidelines_forbid_unrequested_branches_and_worktrees():
-    """Agents should stay in the current checkout unless the user says otherwise."""
+def test_general_guidelines_require_worktrees_by_default():
+    """Agents should isolate changes unless the user requests the current checkout."""
     content = " ".join(skill_text().split())
 
-    assert "Work only in the currently checked-out working tree and branch" in content
-    assert "Never create, switch, or use another branch or Git worktree" in content
-    assert "unless the user explicitly requests it" in content
+    assert "Use a dedicated Git worktree and a new branch for every task by default" in content
+    assert "before making any file edit" in content
+    assert "only when the user explicitly requests it" in content

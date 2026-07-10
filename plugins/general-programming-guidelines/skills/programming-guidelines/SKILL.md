@@ -80,9 +80,10 @@ sends you back to the relevant Work Loop step.
   (`xdotool` `Alt+F2 r`) used to activate edited extension code.
 - Do not commit unless explicitly asked. When commits are requested, stage only
   your own logical hunks and keep unrelated local changes out.
-- Work only in the currently checked-out working tree and branch. Never create,
-  switch, or use another branch or Git worktree unless the user explicitly
-  requests it.
+- Use a dedicated Git worktree and a new branch for every task by default.
+  Create it after inspecting the repository but before making any file edit;
+  keep the current checkout unchanged. Work in the current checkout only when
+  the user explicitly requests it.
 
 ## Design and Structure
 
