@@ -1,12 +1,5 @@
 # Agent guidance for programming_prompts
 
-## Use isolated Git worktrees by default
-
-All programming agents must use a dedicated Git worktree and a new branch for
-every task by default. Create it after inspecting the repository but before
-making any file edit, and keep the current checkout unchanged. Work in the
-current checkout only when the user explicitly requests it.
-
 ## Never generate or commit marketplace files here
 
 This repository is the **content source** only. Most workflows are standalone
