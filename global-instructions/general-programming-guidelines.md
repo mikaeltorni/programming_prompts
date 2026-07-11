@@ -1,21 +1,26 @@
 ## General Programming Guidelines (always on)
 
-Apply these to EVERY software task — implementation, debugging, review, testing,
-refactoring. Load the full workflow now: open/invoke the
-`general-programming-guidelines` skill (its `SKILL.md` lives in this agent's
-skills directory, e.g. `skills/general-programming-guidelines/SKILL.md`) and
-follow its numbered Work Loop and Definition of Done.
+These apply to EVERY software task — implementation, debugging, review, testing,
+refactoring — and they are not optional, not a fallback, and not overridden by a
+project's own AGENTS.md.
 
-Even if you cannot open that file, these non-negotiables still apply:
+**Worktree first.** For any task that edits a repository, your FIRST
+state-changing action — reading first is fine, but before your first edit — is
+to create an isolated worktree. No exceptions:
 
-1. **Worktree first.** For any task that edits a repository, your FIRST
-   state-changing action is creating an isolated worktree — before any file
-   edit, no exceptions:
-   `git worktree add ../<repo>-wt-<task> -b <task-branch> && cd ../<repo>-wt-<task>`.
-   Do this in every repo you will touch; keep the user's checkout clean. Only
-   edit the live checkout if the user explicitly says so.
-2. **Then run the Work Loop in order:** worktree → capture scope → inspect →
-   write tests first → implement → add logging + docs → verify (tests/lint/build)
-   → self-check against the Definition of Done and report.
-3. Do not report a task done until that checklist passes, and do not commit
-   unless the user asked.
+```
+git worktree add ../<repo>-wt-<task> -b <task-branch> && cd ../<repo>-wt-<task>
+```
+
+Do this in every repo you touch; keep the user's checkout clean. Edit the live
+checkout only if the user explicitly tells you to.
+
+**Then run the whole task through this loop, in order:** worktree → capture
+scope → inspect the code → write tests first → implement → add logging + docs →
+verify (tests/lint/build) → self-check and report. Do not report a task done
+until that passes, and do not commit unless the user asked.
+
+For the full workflow and Definition of Done, also open the
+`general-programming-guidelines` skill
+(`skills/general-programming-guidelines/SKILL.md`) — but the two rules above hold
+even if you never open it.
