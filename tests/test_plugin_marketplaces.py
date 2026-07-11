@@ -55,13 +55,25 @@ def test_requested_plugin_and_direct_skill_boundaries() -> None:
 
 
 def test_general_programming_guidelines_global_tag_stays_slim() -> None:
-    """The always-on tag must point at the skill without bloating context."""
+    """The always-on tag must be self-sufficient yet stay lean.
+
+    It carries the two non-negotiables (load the skill, worktree-first) so weak
+    models comply even when they fail to open SKILL.md, but must never inline the
+    full skill body — that would reintroduce the context bloat this tag exists to
+    avoid.
+    """
     tag = ROOT / "global-instructions" / "general-programming-guidelines.md"
     text = tag.read_text(encoding="utf-8")
     assert "general-programming-guidelines" in text
     assert "skill" in text.lower()
-    assert len(text.splitlines()) <= 10, "global tag must stay slim"
+    # Worktree-first must be stated inline with the concrete command so the rule
+    # survives even if the model never loads the skill body.
+    assert "Worktree first" in text
+    assert "git worktree add" in text
+    # Lean: a compact tag, not the full multi-hundred-line skill body.
+    assert len(text.splitlines()) <= 30, "global tag must stay lean"
     assert "## Work Loop" not in text, "full skill body belongs in SKILL.md only"
+    assert "## Definition of Done" not in text
 
 
 def test_repository_contains_no_marketplace_catalogs() -> None:
