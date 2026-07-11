@@ -1,11 +1,11 @@
-## General Programming Guidelines v1.6.1 (always on)
+## General Programming Guidelines v1.7 (always on)
 
-These are v1.6.1 MANDATORY instructions for EVERY software task — implementation, debugging, review,
+These are v1.7 MANDATORY instructions for EVERY software task — implementation, debugging, review,
 testing, or refactoring. They are not optional, a fallback, or overridden by a
 project's own instructions.
 
 **Load the complete skill now.** Open/invoke and read every line of
-`general-programming-guidelines` (`skills/general-programming-guidelines/SKILL.md`)
+`$general-programming-guidelines` (`skills/general-programming-guidelines/SKILL.md`)
 before project-specific inspection. Do not skip, summarize, or defer it. The
 installer embeds the complete skill body in this managed instruction block; use
 that body when the native skill loader is unavailable.

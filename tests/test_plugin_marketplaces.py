@@ -65,6 +65,7 @@ def test_general_programming_guidelines_global_tag_is_a_bootstrap_harness() -> N
     tag = ROOT / "global-instructions" / "general-programming-guidelines.md"
     text = tag.read_text(encoding="utf-8")
     assert "general-programming-guidelines" in text
+    assert "$general-programming-guidelines" in text
     assert "skill" in text.lower()
     assert "MANDATORY" in text
     assert "Open/invoke" in text
