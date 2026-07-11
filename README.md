@@ -2,8 +2,8 @@
 
 The install catalog intentionally distinguishes plugins from direct skills:
 
-- Plugins: Commit Guidelines, General Programming Guidelines, and Linux Desktop Configuration.
-- Direct skills: Init Project, Refactoring, and Setup Repository Guidelines.
+- Plugins: Commit Guidelines and Linux Desktop Configuration.
+- Direct skills: General Programming Guidelines, Init Project, Refactoring, and Setup Repository Guidelines.
 - Python Logging is retired and has been removed from this repository.
 
 Central repository for Codex agent programming guidelines, commit workflows, and refactoring skills — packaged as reusable plugins and skills.
@@ -46,8 +46,8 @@ programming_prompts/
 │   ├── init-project/                       # Secure init with UV + supply-chain protection
 │   ├── refactoring/                        # Test-driven refactoring workflow
 │   └── setup-repository-guidelines/        # On-request setup-family routing & install policy
-├── global-instructions/                    # Slim always-on tags merged into AGENTS.md/CLAUDE.md
-│   └── general-programming-guidelines.md   # Tags the guidelines skill on every prompt
+├── global-instructions/                    # Bootstrap tags merged into runtime instructions
+│   └── general-programming-guidelines.md   # Starts the full-guidelines delivery path
 ├── tests/                                  # pytest policy tests for the plugin prompts
 ├── .log/                                  # Runtime logs (gitignored)
 ├── LICENSE.md                             # MIT License
@@ -97,9 +97,22 @@ codex plugin list
 
 ### general-programming-guidelines
 
+Current version: **v1.6.0**.
+
 The canonical programming guidelines as a direct skill (formerly a plugin). Provides shared engineering workflow and coding standards that apply to every software task — implementation, debugging, review, testing, and refactoring. The prompt requires agents to preserve the user's wording and local state, avoid clobbering existing configuration with placeholder defaults such as `0`, and sandbox-test user-global installers, wrapper generation, and config deployment before applying them to the real environment. New projects and projects adding Python for the first time must also implement a rolling 24-hour package-release delay with `uv`; plain `pip` installs must consume a hash-locked export rather than resolve dependencies directly.
 
-The slim tag in `global-instructions/general-programming-guidelines.md` is merged by the installer into every agent's instruction file (`AGENTS.md`, or `CLAUDE.md` for Claude Code) so the skill is applied on every prompt without duplicating the full skill body into the context window.
+The bootstrap tag in `global-instructions/general-programming-guidelines.md` is
+merged by the installer into every agent's instruction file. For the always-on
+guidelines, the installer replaces that tag's body with the complete current
+`SKILL.md`, and verifies the exact payload and native skill copy for every
+configured Codex home plus Claude, Cline, Grok, and opencode. This keeps weak or
+free models from having to discover a second file after the session starts.
+
+After installation, verify the deployment with:
+
+```bash
+bash ~/projects/linux_codex_claude_code_setup/scripts/install_programming_plugins.sh verify
+```
 
 ### init-project
 

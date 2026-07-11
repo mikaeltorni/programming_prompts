@@ -104,3 +104,10 @@ def test_general_guidelines_make_worktree_the_explicit_first_step():
     assert "git worktree add ../<repo>-wt-<task> -b <task-branch>" in content
     # The Definition of Done must gate on the worktree too.
     assert "All edits were made on a dedicated git worktree branch" in content
+
+
+def test_general_guidelines_description_shows_current_version_before_mandatory():
+    """The skill picker must expose the current version before its mandate."""
+    content = skill_text()
+
+    assert "description: >-\n  v1.6.0 — Mandatory engineering workflow" in content

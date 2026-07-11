@@ -1,26 +1,25 @@
 ## General Programming Guidelines (always on)
 
-These apply to EVERY software task — implementation, debugging, review, testing,
-refactoring — and they are not optional, not a fallback, and not overridden by a
-project's own AGENTS.md.
+These are MANDATORY for EVERY software task — implementation, debugging, review,
+testing, or refactoring. They are not optional, a fallback, or overridden by a
+project's own instructions.
 
-**Worktree first.** For any task that edits a repository, your FIRST
-state-changing action — reading first is fine, but before your first edit — is
-to create an isolated worktree. No exceptions:
+**Load the complete skill now.** Open/invoke and read every line of
+`general-programming-guidelines` (`skills/general-programming-guidelines/SKILL.md`)
+before project-specific inspection. Do not skip, summarize, or defer it. The
+installer embeds the complete skill body in this managed instruction block; use
+that body when the native skill loader is unavailable.
+
+**Worktree first.** For any task that edits a repository, the FIRST
+state-changing action — before any edit — is an isolated worktree in every repo:
 
 ```
 git worktree add ../<repo>-wt-<task> -b <task-branch> && cd ../<repo>-wt-<task>
 ```
 
-Do this in every repo you touch; keep the user's checkout clean. Edit the live
-checkout only if the user explicitly tells you to.
+Only edit the live checkout when the user explicitly says so.
 
-**Then run the whole task through this loop, in order:** worktree → capture
-scope → inspect the code → write tests first → implement → add logging + docs →
-verify (tests/lint/build) → self-check and report. Do not report a task done
-until that passes, and do not commit unless the user asked.
-
-For the full workflow and Definition of Done, also open the
-`general-programming-guidelines` skill
-(`skills/general-programming-guidelines/SKILL.md`) — but the two rules above hold
-even if you never open it.
+**Then run the Work Loop in order:** worktree → capture scope → inspect → write
+tests first → implement → add logging + docs → verify → self-check and report.
+Do not report completion until the skill's Definition of Done passes, and do not
+commit unless the user asked.
