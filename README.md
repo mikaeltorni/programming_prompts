@@ -40,12 +40,14 @@ programming_prompts/
 │   │                                       #   .codex-plugin/ + .claude-plugin/ manifests
 │   │                                       #   and exactly one skills/<name>/SKILL.md
 │   ├── commit-guidelines/                  # Cautious Git commit workflow
-│   ├── general-programming-guidelines/     # Engineering workflow & coding standards
 │   └── linux-desktop-configuration/        # Console-only desktop deployment + sudo-free installers
 ├── skills/                                 # Direct skills, not plugins
+│   ├── general-programming-guidelines/     # Engineering workflow & coding standards
 │   ├── init-project/                       # Secure init with UV + supply-chain protection
 │   ├── refactoring/                        # Test-driven refactoring workflow
 │   └── setup-repository-guidelines/        # On-request setup-family routing & install policy
+├── global-instructions/                    # Slim always-on tags merged into AGENTS.md/CLAUDE.md
+│   └── general-programming-guidelines.md   # Tags the guidelines skill on every prompt
 ├── tests/                                  # pytest policy tests for the plugin prompts
 ├── .log/                                  # Runtime logs (gitignored)
 ├── LICENSE.md                             # MIT License
@@ -65,15 +67,6 @@ Claude manifests plus its single skill. Top-level `skills/<name>` directories
 are installed directly as skills and do not appear in plugin marketplaces.
 
 ## Plugins
-
-### general-programming-guidelines
-
-Packages the canonical programming guidelines as a Codex plugin. Provides shared engineering workflow and coding standards that apply to every software task — implementation, debugging, review, testing, and refactoring. The prompt requires agents to preserve the user's wording and local state, avoid clobbering existing configuration with placeholder defaults such as `0`, and sandbox-test user-global installers, wrapper generation, and config deployment before applying them to the real environment. New projects and projects adding Python for the first time must also implement a rolling 24-hour package-release delay with `uv`; plain `pip` installs must consume a hash-locked export rather than resolve dependencies directly.
-
-**Install:** The programming-prompts marketplace installs this as `general-programming-guidelines@programming-prompts`. Confirm with:
-```bash
-codex plugin list
-```
 
 ### commit-guidelines
 
@@ -101,6 +94,12 @@ codex plugin list
 ```
 
 ## Direct Skills
+
+### general-programming-guidelines
+
+The canonical programming guidelines as a direct skill (formerly a plugin). Provides shared engineering workflow and coding standards that apply to every software task — implementation, debugging, review, testing, and refactoring. The prompt requires agents to preserve the user's wording and local state, avoid clobbering existing configuration with placeholder defaults such as `0`, and sandbox-test user-global installers, wrapper generation, and config deployment before applying them to the real environment. New projects and projects adding Python for the first time must also implement a rolling 24-hour package-release delay with `uv`; plain `pip` installs must consume a hash-locked export rather than resolve dependencies directly.
+
+The slim tag in `global-instructions/general-programming-guidelines.md` is merged by the installer into every agent's instruction file (`AGENTS.md`, or `CLAUDE.md` for Claude Code) so the skill is applied on every prompt without duplicating the full skill body into the context window.
 
 ### init-project
 

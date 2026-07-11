@@ -42,10 +42,26 @@ def test_every_plugin_has_codex_claude_manifests_and_one_skill() -> None:
 
 
 def test_requested_plugin_and_direct_skill_boundaries() -> None:
-    """Commit is a plugin; init/refactoring/setup are direct skills."""
-    assert {"init-project", "refactoring", "setup-repository-guidelines"} <= direct_skill_names()
+    """Commit is a plugin; guidelines/init/refactoring/setup are direct skills."""
+    assert {
+        "general-programming-guidelines",
+        "init-project",
+        "refactoring",
+        "setup-repository-guidelines",
+    } <= direct_skill_names()
     assert (ROOT / "plugins" / "commit-guidelines" / ".codex-plugin" / "plugin.json").is_file()
     assert not (ROOT / "plugins" / "setup-repository-guidelines").exists()
+    assert not (ROOT / "plugins" / "general-programming-guidelines").exists()
+
+
+def test_general_programming_guidelines_global_tag_stays_slim() -> None:
+    """The always-on tag must point at the skill without bloating context."""
+    tag = ROOT / "global-instructions" / "general-programming-guidelines.md"
+    text = tag.read_text(encoding="utf-8")
+    assert "general-programming-guidelines" in text
+    assert "skill" in text.lower()
+    assert len(text.splitlines()) <= 10, "global tag must stay slim"
+    assert "## Work Loop" not in text, "full skill body belongs in SKILL.md only"
 
 
 def test_repository_contains_no_marketplace_catalogs() -> None:
