@@ -7,34 +7,66 @@ description: >-
 
 # General Programming Guidelines
 
+## Start here — the non-negotiables
+
+Before you do anything else on a task that edits a repository:
+
+1. **Create a git worktree and branch first (Step 1 below). Do it before your
+   first file edit — no exceptions.** Not "later", not "if it seems worth it".
+   The very first tool call that changes state is `git worktree add`.
+2. Run the whole task through the numbered **Work Loop** in order.
+3. Do not report the task done until the **Definition of Done** checklist passes.
+
+If you skip the worktree step you have already failed the task, even if the code
+is correct.
+
 ## Work Loop
 
 Run every software task through these numbered steps in order. Do not skip a
-step, and do not report the task done until Step 7 passes.
+step, and do not report the task done until Step 8 passes.
 
-1. **Capture scope.** Preserve the user's exact scope, paths, data, wording,
+1. **Create an isolated worktree (do this first, before any edit).** For any
+   task that will modify a repository, you MUST be on a dedicated worktree
+   branch before your first file edit. This keeps the user's checkout clean and
+   makes the work trivially reviewable and reversible. Read-only inspection may
+   precede this, but the moment you intend to edit, stop and set up the
+   worktree. Concretely, from inside the target repository:
+
+   ```bash
+   git rev-parse --show-toplevel                 # confirm you are in a git repo
+   git worktree add ../<repo>-wt-<task> -b <task-branch>
+   cd ../<repo>-wt-<task>                         # do ALL edits here
+   ```
+
+   Do this in every repository the task will touch. Keep the original checkout
+   unchanged. Only work directly in the current checkout when the user
+   *explicitly* tells you to (e.g. "work in the current checkout / no worktree").
+   If a worktree genuinely cannot be created (not a git repo, or a hook/tool
+   blocks it), say so explicitly and get agreement before editing in place —
+   never silently fall back to editing the live checkout.
+2. **Capture scope.** Preserve the user's exact scope, paths, data, wording,
    and constraints. Do not normalize, reorder, truncate, or reinterpret input
    unless asked.
-2. **Inspect first.** Read the codebase before editing — prefer `rg` /
+3. **Inspect first.** Read the codebase before editing — prefer `rg` /
    `rg --files`. Learn the existing patterns, logging utility, tests,
    manifests, and deployment flow your change must match.
-3. **Plan and write tests first.** For behavior changes, shared helpers,
+4. **Plan and write tests first.** For behavior changes, shared helpers,
    installers, regressions, refactors, and logging changes, add or update
    focused tests before changing code when the repo has a practical test path.
    For docs-only or prompt-only edits, state and run direct verification
    instead of inventing noisy tests.
-4. **Implement.** Satisfy the requested scope using project-local helpers and
+5. **Implement.** Satisfy the requested scope using project-local helpers and
    conventions.
-5. **Instrument and document the code you just wrote.** Logging (see *Logging and
+6. **Instrument and document the code you just wrote.** Logging (see *Logging and
    Diagnostics*) and comments/docstrings (see *Documentation*) are part of the
    change, not optional polish. Cover new action paths, state transitions,
    boundary failures, and external calls with logs; document new public
    functions, helpers, and non-obvious behavior including parameters. If one
    pass is error-prone, fall back to (a) make it work, (b) add logging,
    (c) add docs — but the task is not done until all three exist.
-6. **Verify.** Run the relevant tests plus configured lint/type/build, read the
+7. **Verify.** Run the relevant tests plus configured lint/type/build, read the
    logs the change should now emit, and iterate until clean.
-7. **Self-check and report.** Walk the *Definition of Done* checklist; reopen
+8. **Self-check and report.** Walk the *Definition of Done* checklist; reopen
    any unchecked item, then report what changed and how it was verified. Do not
    stop at a proposal unless the user asked for one.
 
@@ -48,6 +80,8 @@ risks.
 Every item must be checked before reporting completion; an incomplete checklist
 sends you back to the relevant Work Loop step.
 
+- [ ] All edits were made on a dedicated git worktree branch (Work Loop Step 1),
+      not the user's live checkout — unless the user explicitly waived it.
 - [ ] The code implements the exact requested scope, with no unrelated edits.
 - [ ] New or changed action paths, state transitions, boundary failures, and
       external calls are logged through the existing centralized logger,
@@ -80,10 +114,10 @@ sends you back to the relevant Work Loop step.
   (`xdotool` `Alt+F2 r`) used to activate edited extension code.
 - Do not commit unless explicitly asked. When commits are requested, stage only
   your own logical hunks and keep unrelated local changes out.
-- Use a dedicated Git worktree and a new branch for every task by default.
-  Create it after inspecting the repository but before making any file edit;
-  keep the current checkout unchanged. Work in the current checkout only when
-  the user explicitly requests it.
+- Use a dedicated Git worktree and a new branch for every task by default (this
+  is Work Loop Step 1 — set it up before your first edit, not afterwards). Keep
+  the current checkout unchanged. Work in the current checkout only when the
+  user explicitly requests it.
 
 ## Design and Structure
 

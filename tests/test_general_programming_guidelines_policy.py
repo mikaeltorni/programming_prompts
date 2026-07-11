@@ -39,13 +39,15 @@ def test_general_guidelines_require_numbered_work_loop():
     content = skill_text()
 
     assert "Run every software task through these numbered steps in order" in content
-    assert "1. **Capture scope.**" in content
-    assert "2. **Inspect first.**" in content
-    assert "3. **Plan and write tests first.**" in content
-    assert "4. **Implement.**" in content
-    assert "5. **Instrument and document the code you just wrote.**" in content
-    assert "6. **Verify.**" in content
-    assert "7. **Self-check and report.**" in content
+    # Step 1 must be creating the worktree, before any edit.
+    assert "1. **Create an isolated worktree (do this first, before any edit).**" in content
+    assert "2. **Capture scope.**" in content
+    assert "3. **Inspect first.**" in content
+    assert "4. **Plan and write tests first.**" in content
+    assert "5. **Implement.**" in content
+    assert "6. **Instrument and document the code you just wrote.**" in content
+    assert "7. **Verify.**" in content
+    assert "8. **Self-check and report.**" in content
 
 
 def test_general_guidelines_definition_of_done_requires_logging_and_docs():
@@ -84,5 +86,21 @@ def test_general_guidelines_require_worktrees_by_default():
     content = " ".join(skill_text().split())
 
     assert "Use a dedicated Git worktree and a new branch for every task by default" in content
-    assert "before making any file edit" in content
     assert "only when the user explicitly requests it" in content
+
+
+def test_general_guidelines_make_worktree_the_explicit_first_step():
+    """Worktree creation must be Step 1 with a concrete command, not a buried aside.
+
+    11 agents in a row skipped the worktree when it was one bullet in Scope and
+    Safety; making it the numbered first step with the exact command is what
+    drives consistent compliance.
+    """
+    content = skill_text()
+
+    assert "## Start here — the non-negotiables" in content
+    assert "Create a git worktree and branch first" in content
+    # The concrete command must be present so weak models can copy it verbatim.
+    assert "git worktree add ../<repo>-wt-<task> -b <task-branch>" in content
+    # The Definition of Done must gate on the worktree too.
+    assert "All edits were made on a dedicated git worktree branch" in content
