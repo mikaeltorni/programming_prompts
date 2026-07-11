@@ -5,10 +5,8 @@ from pathlib import Path
 
 PROGRAMMING_GUIDELINES_PATH = (
     Path(__file__).resolve().parents[1]
-    / "plugins"
-    / "general-programming-guidelines"
     / "skills"
-    / "programming-guidelines"
+    / "general-programming-guidelines"
     / "SKILL.md"
 )
 
