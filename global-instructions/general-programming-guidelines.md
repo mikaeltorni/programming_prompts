@@ -1,6 +1,6 @@
-## General Programming Guidelines (always on)
+## General Programming Guidelines v1.6.1 (always on)
 
-These are MANDATORY for EVERY software task — implementation, debugging, review,
+These are v1.6.1 MANDATORY instructions for EVERY software task — implementation, debugging, review,
 testing, or refactoring. They are not optional, a fallback, or overridden by a
 project's own instructions.
 
