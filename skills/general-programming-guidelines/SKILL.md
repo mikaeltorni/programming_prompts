@@ -1,7 +1,7 @@
 ---
 name: general-programming-guidelines
 description: >-
-  v1.7 — Mandatory engineering workflow and coding standards for every software task:
+  v1.8 — Mandatory engineering workflow and coding standards for every software task:
   implementation, debugging, review, testing, and refactoring.
 ---
 
@@ -112,8 +112,12 @@ sends you back to the relevant Work Loop step.
   logout, reboot, `gnome-shell --replace`, or shell-kill commands. The only
   sanctioned Shell reload is the in-place X11 run-dialog reload
   (`xdotool` `Alt+F2 r`) used to activate edited extension code.
-- Do not commit unless explicitly asked. When commits are requested, stage only
-  your own logical hunks and keep unrelated local changes out.
+- When a commit is requested, commit in the worktree you are already working on —
+  never in the user's live checkout. Commit one self-contained feature at a time:
+  stage only that feature's logical hunks, keep unrelated local changes out, and
+  complete its commit before starting the next feature's. Do not commit unless
+  the user asked, and never ask the user to commit for you when they instructed
+  you to commit.
 - Use a dedicated Git worktree and a new branch for every task by default (this
   is Work Loop Step 1 — set it up before your first edit, not afterwards). Keep
   the current checkout unchanged. Work in the current checkout only when the

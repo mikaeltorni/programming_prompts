@@ -1,6 +1,6 @@
-## General Programming Guidelines v1.7 (always on)
+## General Programming Guidelines v1.8 (always on)
 
-These are v1.7 MANDATORY instructions for EVERY software task — implementation, debugging, review,
+These are v1.8 MANDATORY instructions for EVERY software task — implementation, debugging, review,
 testing, or refactoring. They are not optional, a fallback, or overridden by a
 project's own instructions.
 
@@ -21,5 +21,8 @@ Only edit the live checkout when the user explicitly says so.
 
 **Then run the Work Loop in order:** worktree → capture scope → inspect → write
 tests first → implement → add logging + docs → verify → self-check and report.
-Do not report completion until the skill's Definition of Done passes, and do not
-commit unless the user asked.
+Do not report completion until the skill's Definition of Done passes. When a commit is
+requested, commit in the worktree you are already working on — never in the user's live
+checkout — and commit one self-contained feature at a time, keeping unrelated local
+changes out. Do not commit unless the user asked, and never ask the user to commit for
+you when they instructed you to commit.
