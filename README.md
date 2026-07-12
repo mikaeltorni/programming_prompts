@@ -97,7 +97,7 @@ codex plugin list
 
 ### general-programming-guidelines
 
-Current version: **v1.8.1**.
+Current version: **v1.8.2**.
 
 The canonical programming guidelines as a direct skill (formerly a plugin). Provides shared engineering workflow and coding standards that apply to every software task — implementation, debugging, review, testing, and refactoring. The prompt requires agents to preserve the user's wording and local state, avoid clobbering existing configuration with placeholder defaults such as `0`, and sandbox-test user-global installers, wrapper generation, and config deployment before applying them to the real environment. New projects and projects adding Python for the first time must also implement a rolling 24-hour package-release delay with `uv`; plain `pip` installs must consume a hash-locked export rather than resolve dependencies directly.
 

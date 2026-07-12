@@ -101,7 +101,7 @@ def test_general_guidelines_make_worktree_the_explicit_first_step():
     assert "## Start here — the non-negotiables" in content
     assert "Create a git worktree and branch first" in content
     # The concrete command must be present so weak models can copy it verbatim.
-    assert "git worktree add ../<repo>-wt-<task> -b <task-branch>" in content
+    assert "git worktree add ../.worktrees/<repo>-wt-<task> -b <task-branch>" in content
     # The Definition of Done must gate on the worktree too.
     assert "All edits were made on a dedicated git worktree branch" in content
 
@@ -110,4 +110,4 @@ def test_general_guidelines_description_shows_current_version_before_mandatory()
     """The skill picker must expose the current version before its mandate."""
     content = skill_text()
 
-    assert "description: >-\n  v1.8.1 — Mandatory engineering workflow" in content
+    assert "description: >-\n  v1.8.2 — Mandatory engineering workflow" in content

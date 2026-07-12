@@ -1,7 +1,7 @@
 ---
 name: general-programming-guidelines
 description: >-
-  v1.8.1 — Mandatory engineering workflow and coding standards for every software task:
+  v1.8.2 — Mandatory engineering workflow and coding standards for every software task:
   implementation, debugging, review, testing, and refactoring.
 ---
 
@@ -30,12 +30,20 @@ step, and do not report the task done until Step 8 passes.
    branch before your first file edit. This keeps the user's checkout clean and
    makes the work trivially reviewable and reversible. Read-only inspection may
    precede this, but the moment you intend to edit, stop and set up the
-   worktree. Concretely, from inside the target repository:
+   worktree.
+
+   **Worktree location (keep them out of the repo).** Do not create the worktree
+   inside the repository you are editing — that nests a git worktree inside a git
+   repo and clutters the user's checkout. Put every worktree under one *shared
+   worktree store*: a `./worktrees/` directory inside the parent folder that holds
+   the repository family. When the repos live under a `projects/` folder, they all
+   share `projects/.worktrees/` (an absolute path under that parent). Concretely,
+   from inside the target repository:
 
    ```bash
-   git rev-parse --show-toplevel                 # confirm you are in a git repo
-   git worktree add ../<repo>-wt-<task> -b <task-branch>
-   cd ../<repo>-wt-<task>                         # do ALL edits here
+   git rev-parse --show-toplevel                    # confirm you are in a git repo
+   git worktree add ../.worktrees/<repo>-wt-<task> -b <task-branch>   # shared store, not in-repo
+   cd ../.worktrees/<repo>-wt-<task>                # do ALL edits here
    ```
 
    Do this in every repository the task will touch — when a task spans multiple
