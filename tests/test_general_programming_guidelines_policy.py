@@ -110,4 +110,4 @@ def test_general_guidelines_description_shows_current_version_before_mandatory()
     """The skill picker must expose the current version before its mandate."""
     content = skill_text()
 
-    assert "description: >-\n  v1.7 — Mandatory engineering workflow" in content
+    assert "description: >-\n  v1.8 — Mandatory engineering workflow" in content
