@@ -11,7 +11,8 @@ installer embeds the complete skill body in this managed instruction block; use
 that body when the native skill loader is unavailable.
 
 **Worktree first.** For any task that edits a repository, the FIRST
-state-changing action — before any edit — is an isolated worktree in every repo:
+state-changing action — before any edit — is an isolated worktree in every repo
+(a SEPARATE worktree with the SAME task/branch name in EACH repo a task spans):
 
 ```
 git worktree add ../<repo>-wt-<task> -b <task-branch> && cd ../<repo>-wt-<task>
@@ -24,5 +25,6 @@ tests first → implement → add logging + docs → verify → self-check and r
 Do not report completion until the skill's Definition of Done passes. When a commit is
 requested, commit in the worktree you are already working on — never in the user's live
 checkout — and commit one self-contained feature at a time, keeping unrelated local
-changes out. Do not commit unless the user asked, and never ask the user to commit for
+changes out. When the change spans multiple repos, commit separately in each repo's own
+worktree. Do not commit unless the user asked, and never ask the user to commit for
 you when they instructed you to commit.
