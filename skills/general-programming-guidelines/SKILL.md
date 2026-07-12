@@ -1,7 +1,7 @@
 ---
 name: general-programming-guidelines
 description: >-
-  v1.8 — Mandatory engineering workflow and coding standards for every software task:
+  v1.8.1 — Mandatory engineering workflow and coding standards for every software task:
   implementation, debugging, review, testing, and refactoring.
 ---
 
