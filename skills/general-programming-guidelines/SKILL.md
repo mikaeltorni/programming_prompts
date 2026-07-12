@@ -38,12 +38,17 @@ step, and do not report the task done until Step 8 passes.
    cd ../<repo>-wt-<task>                         # do ALL edits here
    ```
 
-   Do this in every repository the task will touch. Keep the original checkout
-   unchanged. Only work directly in the current checkout when the user
-   *explicitly* tells you to (e.g. "work in the current checkout / no worktree").
-   If a worktree genuinely cannot be created (not a git repo, or a hook/tool
-   blocks it), say so explicitly and get agreement before editing in place —
-   never silently fall back to editing the live checkout.
+   Do this in every repository the task will touch — when a task spans multiple
+   repos, create a worktree on EACH one, not only the primary repo. Give every
+   worktree the SAME task/branch name (e.g. `<repo>-wt-<task>` with branch
+   `<task-branch>` in each repo) so the related changes stay grouped and easy to
+   review. Do all edits for a given repo inside that repo's own worktree, and
+   keep every original checkout unchanged. Only work directly in a current
+   checkout when the user *explicitly* tells you to (e.g. "work in the current
+   checkout / no worktree"). If a worktree genuinely cannot be created (not a
+   git repo, or a hook/tool blocks it), say so explicitly and get agreement
+   before editing in place — never silently fall back to editing the live
+   checkout.
 2. **Capture scope.** Preserve the user's exact scope, paths, data, wording,
    and constraints. Do not normalize, reorder, truncate, or reinterpret input
    unless asked.
@@ -113,7 +118,9 @@ sends you back to the relevant Work Loop step.
   sanctioned Shell reload is the in-place X11 run-dialog reload
   (`xdotool` `Alt+F2 r`) used to activate edited extension code.
 - When a commit is requested, commit in the worktree you are already working on —
-  never in the user's live checkout. Commit one self-contained feature at a time:
+  never in the user's live checkout. When the change spans multiple repositories,
+  commit separately in each repo's own worktree. Commit one self-contained
+  feature at a time:
   stage only that feature's logical hunks, keep unrelated local changes out, and
   complete its commit before starting the next feature's. Do not commit unless
   the user asked, and never ask the user to commit for you when they instructed
