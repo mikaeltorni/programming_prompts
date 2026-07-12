@@ -1,7 +1,7 @@
 ---
 name: general-programming-guidelines
 description: >-
-  v1.8.2 — Mandatory engineering workflow and coding standards for every software task:
+  v1.8.3 — Mandatory engineering workflow and coding standards for every software task:
   implementation, debugging, review, testing, and refactoring.
 ---
 
@@ -57,6 +57,15 @@ step, and do not report the task done until Step 8 passes.
    git repo, or a hook/tool blocks it), say so explicitly and get agreement
    before editing in place — never silently fall back to editing the live
    checkout.
+
+   **Name the worktree and branch with a type prefix.** Use a conventional
+   commit-style type as the prefix (`fix/`, `feat/`, `docs/`, `refactor/`,
+   `test/`, `chore/`, `build/`, `perf/`, `ci/` …) followed by the feature or
+   task it addresses, e.g. `fix/worktree-policy` or `feat/model-monitor`.
+   Apply the SAME `type/feature` name to both the branch and the worktree
+   directory (so `<repo>-wt-<type-feature>` and branch `type/feature` match),
+   keeping related changes grouped and easy to identify across every repo a
+   task spans.
 2. **Capture scope.** Preserve the user's exact scope, paths, data, wording,
    and constraints. Do not normalize, reorder, truncate, or reinterpret input
    unless asked.
@@ -130,9 +139,14 @@ sends you back to the relevant Work Loop step.
   commit separately in each repo's own worktree. Commit one self-contained
   feature at a time:
   stage only that feature's logical hunks, keep unrelated local changes out, and
-  complete its commit before starting the next feature's. Do not commit unless
-  the user asked, and never ask the user to commit for you when they instructed
-  you to commit.
+  complete its commit before starting the next feature's.
+  **Format each commit message as `<type>(<worktree-name>): <summary>`**, where
+  `<type>` is the conventional type (the same prefix used for the worktree/branch
+  name) and `<worktree-name>` is the feature portion of that name — e.g. for a
+  worktree/branch named `fix/worktree-policy` the message is
+  `fix(worktree-policy): keep worktrees in the shared family store`. Do not commit
+  unless the user asked, and never ask the user to commit for you when they
+  instructed you to commit.
 - Use a dedicated Git worktree and a new branch for every task by default (this
   is Work Loop Step 1 — set it up before your first edit, not afterwards). Keep
   the current checkout unchanged. Work in the current checkout only when the

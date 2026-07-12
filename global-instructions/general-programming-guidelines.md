@@ -1,6 +1,6 @@
-## General Programming Guidelines v1.8.2 (always on)
+## General Programming Guidelines v1.8.3 (always on)
 
-These are v1.8.2 MANDATORY instructions for EVERY software task — implementation, debugging, review,
+These are v1.8.3 MANDATORY instructions for EVERY software task — implementation, debugging, review,
 testing, or refactoring. They are not optional, a fallback, or overridden by a
 project's own instructions.
 
@@ -11,9 +11,9 @@ installer embeds the complete skill body in this managed instruction block; use
 that body when the native skill loader is unavailable.
 
 **Worktree first.** For any task that edits a repo, the FIRST state-changing
-action — before any edit — is an isolated worktree in EVERY repo (same task/branch
-name in each, created in the shared `./worktrees/` under the repo family's parent —
-e.g. `projects/.worktrees/` — never inside the repo):
+action — before any edit — is an isolated worktree in EVERY repo, named
+`<type>/<feature>` (branch + worktree dir), in the shared `./worktrees/` under the
+repo family's parent — e.g. `projects/.worktrees/` — never inside the repo:
 
 ```
 git worktree add ../.worktrees/<repo>-wt-<task> -b <task-branch> && cd ../.worktrees/<repo>-wt-<task>
