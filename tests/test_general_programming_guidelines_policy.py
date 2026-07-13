@@ -101,7 +101,7 @@ def test_general_guidelines_make_worktree_the_explicit_first_step():
     assert "## Start here — the non-negotiables" in content
     assert "Create a git worktree and branch first" in content
     # The concrete command must be present so weak models can copy it verbatim.
-    assert "git worktree add ../<repo>-wt-<task> -b <task-branch>" in content
+    assert "git worktree add ../.worktrees/<repo>-wt-<task> -b <task-branch>" in content
     # The Definition of Done must gate on the worktree too.
     assert "All edits were made on a dedicated git worktree branch" in content
 
@@ -110,4 +110,30 @@ def test_general_guidelines_description_shows_current_version_before_mandatory()
     """The skill picker must expose the current version before its mandate."""
     content = skill_text()
 
-    assert "description: >-\n  v1.8.1 — Mandatory engineering workflow" in content
+    assert "description: >-\n  v1.8.3 — Mandatory engineering workflow" in content
+
+
+def test_general_guidelines_require_type_prefixed_worktree_names():
+    """Worktree/branch names should use a conventional type prefix + feature."""
+    content = " ".join(skill_text().split())
+
+    assert "Name the worktree and branch with a type prefix" in content
+    # Conventional types must be enumerated so agents pick the right one.
+    for prefix in (
+        "fix/", "feat/", "docs/", "refactor/", "test/", "chore/",
+        "build/", "perf/", "ci/",
+    ):
+        assert prefix in content
+    # The name must apply to both the branch and the worktree directory.
+    assert "type/feature" in content
+    assert "branch" in content and "worktree" in content
+
+
+def test_general_guidelines_require_type_worktree_commit_messages():
+    """Commit messages should be <type>(<worktree-name>): <summary>."""
+    content = " ".join(skill_text().split())
+
+    assert "Format each commit message as" in content
+    assert "<type>(<worktree-name>): <summary>" in content
+    # A concrete example ties the rule to the worktree name.
+    assert "fix(worktree-policy): keep worktrees in the shared family store" in content
