@@ -37,3 +37,9 @@ harness activates the skill before reading the task. When you start a task by ha
 yourself first. Then follow its Work Loop — dedicated worktree branch before
 the first edit, tests, logging, documentation — and do not report the task done
 until its Definition of Done checklist passes.
+Always finish the delivery: commit in the worktree, merge into the default
+branch with `git merge --no-ff`, then reload whatever consumes the change
+(installer, skill deployment, service, session). You do not need to be asked.
+Never push to a remote and never rewrite history unless the user explicitly
+requests it.
+
