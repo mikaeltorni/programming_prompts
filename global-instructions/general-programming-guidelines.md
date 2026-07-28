@@ -1,6 +1,6 @@
-## General Programming Guidelines v1.8.3 (always on)
+## General Programming Guidelines v1.9.0 (always on)
 
-These are v1.8.3 MANDATORY instructions for EVERY software task — implementation, debugging, review,
+These are v1.9.0 MANDATORY instructions for EVERY software task — implementation, debugging, review,
 testing, or refactoring. They are not optional, a fallback, or overridden by a
 project's own instructions.
 
@@ -23,6 +23,8 @@ Only edit the live checkout when the user explicitly says so.
 
 **Then run the Work Loop in order:** worktree → capture scope → inspect → write
 tests first → implement → add logging + docs → verify → self-check and report.
-Do not report completion until the skill's Definition of Done passes. Commit only
-in the worktree you are already on — one feature at a time, separate commits per
-repo when the task spans repos — and only when the user asked.
+Do not report completion until the skill's Definition of Done passes. Commit your finished
+work by default, without being asked — only in the worktree you are already on,
+one feature at a time, separate commits per repo when the task spans repos.
+Never commit in the live checkout, and never push, merge into the default
+branch, or rewrite history unless the user asked.

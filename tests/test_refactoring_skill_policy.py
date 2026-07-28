@@ -44,7 +44,7 @@ def test_refactoring_skill_does_not_tell_agents_to_pip_install_lint_tools():
 def test_refactoring_skill_requires_explicit_commit_request():
     content = skill_text()
 
-    assert "Do not commit changes unless the user explicitly asks for commits" in content
+    assert "Commit your finished work by default, in the worktree you are working on" in content
 
 
 def test_refactoring_skill_handles_completeness_challenges_with_audit():
