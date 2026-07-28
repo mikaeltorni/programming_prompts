@@ -1,7 +1,7 @@
 ---
 name: general-programming-guidelines
 description: >-
-  v1.9.1 — Mandatory engineering workflow and coding standards for every software task:
+  v1.9.2 — Mandatory engineering workflow and coding standards for every software task:
   implementation, debugging, review, testing, and refactoring.
 ---
 
@@ -14,11 +14,17 @@ Before you do anything else on a task that edits a repository:
 1. **Create a git worktree and branch first (Step 1 below). Do it before your
    first file edit — no exceptions.** Not "later", not "if it seems worth it".
    The very first tool call that changes state is `git worktree add`.
-2. Run the whole task through the numbered **Work Loop** in order.
-3. Do not report the task done until the **Definition of Done** checklist passes.
+2. **Prove the worktree before every edit.** After creating it, `cd` into that
+   path and confirm with `pwd` that you are under the shared `.worktrees/` store
+   (not the user's live checkout). Every later edit, commit, and follow-up turn
+   on this task must use that same worktree path.
+3. Run the whole task through the numbered **Work Loop** in order.
+4. Do not report the task done until the **Definition of Done** checklist passes
+   — including **commit in the worktree, merge into the default branch, and
+   reload**. Code that only lives on a worktree branch is not delivered.
 
-If you skip the worktree step you have already failed the task, even if the code
-is correct.
+If you skip the worktree step, edit the live checkout, or report "done" without
+merge+reload, you have already failed the task — even if the code is correct.
 
 ## Work Loop
 
@@ -35,16 +41,30 @@ step, and do not report the task done until Step 9 passes.
    **Worktree location (keep them out of the repo).** Do not create the worktree
    inside the repository you are editing — that nests a git worktree inside a git
    repo and clutters the user's checkout. Put every worktree under one *shared
-   worktree store*: a `./worktrees/` directory inside the parent folder that holds
-   the repository family. When the repos live under a `projects/` folder, they all
-   share `projects/.worktrees/` (an absolute path under that parent). Concretely,
-   from inside the target repository:
+   worktree store*: a `.worktrees/` directory (leading dot) inside the parent
+   folder that holds the repository family. When the repos live under a
+   `projects/` folder, they all share `projects/.worktrees/` (absolute path
+   under that parent). Never use `projects/worktrees/` (no dot), and never
+   create `repo/.worktrees/` inside the repository itself. Concretely, from
+   inside the target repository:
 
    ```bash
    git rev-parse --show-toplevel                    # confirm you are in a git repo
    git worktree add ../.worktrees/<repo>-wt-<task> -b <task-branch>   # shared store, not in-repo
    cd ../.worktrees/<repo>-wt-<task>                # do ALL edits here
+   pwd                                              # MUST print .../.worktrees/<repo>-wt-<task>
+   git branch --show-current                        # MUST print <task-branch>, not master/main
    ```
+
+   **Hard gates before the first file edit (and before every follow-up edit):**
+   - `pwd` is under `.../.worktrees/<repo>-wt-...` (shared store), not the live
+     checkout path (e.g. not `.../projects/<repo>` alone).
+   - `git branch --show-current` is the task branch (`<type>/<feature>`), not
+     `master`/`main`.
+   - File edits, patches, and commits use paths inside that worktree only.
+   - User follow-ups on the same task ("also rename…", "just shorten to…") stay
+     in the **same** worktree — do not drift back to the live checkout for a
+     "small" change.
 
    Do this in every repository the task will touch — when a task spans multiple
    repos, create a worktree on EACH one, not only the primary repo. Give every
@@ -78,7 +98,7 @@ step, and do not report the task done until Step 9 passes.
    For docs-only or prompt-only edits, state and run direct verification
    instead of inventing noisy tests.
 5. **Implement.** Satisfy the requested scope using project-local helpers and
-   conventions.
+   conventions. Edits stay inside the worktree path from Step 1.
 6. **Instrument and document the code you just wrote.** Logging (see *Logging and
    Diagnostics*) and comments/docstrings (see *Documentation*) are part of the
    change, not optional polish. Cover new action paths, state transitions,
@@ -88,16 +108,35 @@ step, and do not report the task done until Step 9 passes.
    (c) add docs — but the task is not done until all three exist.
 7. **Verify.** Run the relevant tests plus configured lint/type/build, read the
    logs the change should now emit, and iterate until clean.
-8. **Deliver: commit, merge, reload.** Commit the finished work in the worktree
-   (`<type>(<worktree-name>): <summary>`), merge the branch into the
-   repository's default branch (`master`/`main`) with `git merge --no-ff` from
-   that repository's own checkout, and then reload/reinstall whatever consumes
-   the change (installer, skill deployment, service, session reload) so the
-   merged work is live. Repeat per repository when the task spans several.
-   Never push to a remote and never rewrite history unless explicitly asked.
+8. **Deliver: commit, merge, reload.** This step is mandatory — not optional
+   polish and not "only if the user asks." Stopping after a worktree commit
+   leaves the live default branch unchanged; that is **not** done.
+
+   Concretely, for **each** repository the task touched:
+
+   ```bash
+   # A) Commit IN the worktree (never in the live checkout)
+   cd ../.worktrees/<repo>-wt-<task>
+   git status && git diff && git log -5 --oneline
+   git add <paths> && git commit -m "<type>(<worktree-name>): <summary>"
+
+   # B) Merge into the default branch FROM the repository's live checkout
+   cd /path/to/<repo>                    # the user's main checkout (master/main)
+   git checkout master                   # or main
+   git merge --no-ff <task-branch> -m "Merge <task-branch>: <summary>"
+
+   # C) Reload/reinstall whatever consumes the change so it is live
+   # (installer, skill deployment, service, session reload — project-specific)
+   ```
+
+   Commit message format is `<type>(<worktree-name>): <summary>`. Never push to
+   a remote and never rewrite history unless explicitly asked. Repeat A–C for
+   every repo the task spanned. Reporting "goal achieved" before B and C is a
+   Definition of Done failure.
 9. **Self-check and report.** Walk the *Definition of Done* checklist; reopen
    any unchecked item, then report what changed and how it was verified. Do not
-   stop at a proposal unless the user asked for one.
+   stop at a proposal unless the user asked for one. Do not claim completion
+   while the feature exists only on a worktree branch.
 
 If the user challenges completeness or asks whether a repository follows these
 guidelines, do not stop at "unproven": run a bounded compliance audit,
@@ -109,8 +148,10 @@ risks.
 Every item must be checked before reporting completion; an incomplete checklist
 sends you back to the relevant Work Loop step.
 
-- [ ] All edits were made on a dedicated git worktree branch (Work Loop Step 1),
-      not the user's live checkout — unless the user explicitly waived it.
+- [ ] All edits were made on a dedicated git worktree branch under the shared
+      `.worktrees/` store (Work Loop Step 1), not the user's live checkout —
+      unless the user explicitly waived it. Follow-up turns stayed in that same
+      worktree.
 - [ ] The code implements the exact requested scope, with no unrelated edits.
 - [ ] New or changed action paths, state transitions, boundary failures, and
       external calls are logged through the existing centralized logger,
@@ -122,12 +163,13 @@ sends you back to the relevant Work Loop step.
       tests still pass.
 - [ ] The diff was reviewed for duplication, dead code, unused imports, debug
       spam, and accidental behavior changes.
-- [ ] The finished work was committed in the worktree, merged into the default
-      branch (`master`/`main`) with a merge commit, and the consumers were
-      reloaded/reinstalled — in every repository the task touched. Nothing was
+- [ ] The finished work was committed in the worktree, **merged into the default
+      branch** (`master`/`main`) with `git merge --no-ff` from the live checkout,
+      and the consumers were reloaded/reinstalled — in every repository the task
+      touched. A worktree-only commit does **not** satisfy this item. Nothing was
       pushed to a remote.
-- [ ] The final report states what changed, how it was verified, and any
-      remaining risks.
+- [ ] The final report states what changed, how it was verified (including that
+      the default branch contains the merge), and any remaining risks.
 
 ## Scope and Safety
 
@@ -159,19 +201,20 @@ sends you back to the relevant Work Loop step.
   `fix(worktree-policy): keep worktrees in the shared family store`. Never ask the
   user to commit for you.
 - **Always finish the delivery: commit in the worktree, merge into the default
-  branch, then reload.** After the commit lands and its tests pass, merge the
-  worktree branch back into the repository's default branch (`master`/`main`)
-  with a merge commit (`git merge --no-ff`) in that repository's own checkout,
-  and then reload/reinstall whatever consumes the change (installer, skill
+  branch, then reload.** After the commit lands and its tests pass, leave the
+  worktree and merge from the repository's **live** checkout (the one on
+  `master`/`main`): `git checkout master && git merge --no-ff <task-branch>`.
+  Then reload/reinstall whatever consumes the change (installer, skill
   deployment, service, session reload) so the merged work is actually live. Do
   this for every repository the change touched — you do not need to be asked.
+  Local merge is required by default; it is **not** the same as pushing.
 - **Never push, and never rewrite history**, unless the user explicitly asked for
-  it. Merging locally into the default branch is expected; publishing to a
-  remote is not.
+  it. Merging locally into the default branch is expected and required;
+  publishing to a remote is not. Do not treat "do not push" as "do not merge."
 - Use a dedicated Git worktree and a new branch for every task by default (this
   is Work Loop Step 1 — set it up before your first edit, not afterwards). Keep
-  the current checkout unchanged. Work in the current checkout only when the
-  user explicitly requests it.
+  the current checkout unchanged until the final merge step. Work in the current
+  checkout only when the user explicitly requests it.
 
 ## Design and Structure
 

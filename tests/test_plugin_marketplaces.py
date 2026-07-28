@@ -75,6 +75,12 @@ def test_general_programming_guidelines_global_tag_is_a_bootstrap_harness() -> N
     assert "Worktree first" in text
     assert "git worktree add" in text
     assert "Then run the Work Loop in order" in text
+    assert "pwd" in text
+    assert "git branch --show-current" in text
+    # Delivery must require local merge; the tag must not ban merge with push.
+    assert "git merge --no-ff" in text
+    assert "Local merge is required" in text
+    assert "never push, merge into the default" not in text.lower()
     # The source tag is a compact bootstrap; the installer supplies the full
     # body from skills/general-programming-guidelines/SKILL.md.
     assert len(text.splitlines()) <= 30, "global tag must stay lean"
