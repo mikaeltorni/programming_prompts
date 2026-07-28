@@ -1,7 +1,7 @@
 ---
 name: general-programming-guidelines
 description: >-
-  v1.9.0 — Mandatory engineering workflow and coding standards for every software task:
+  v1.9.1 — Mandatory engineering workflow and coding standards for every software task:
   implementation, debugging, review, testing, and refactoring.
 ---
 
@@ -23,7 +23,7 @@ is correct.
 ## Work Loop
 
 Run every software task through these numbered steps in order. Do not skip a
-step, and do not report the task done until Step 8 passes.
+step, and do not report the task done until Step 9 passes.
 
 1. **Create an isolated worktree (do this first, before any edit).** For any
    task that will modify a repository, you MUST be on a dedicated worktree
@@ -88,7 +88,14 @@ step, and do not report the task done until Step 8 passes.
    (c) add docs — but the task is not done until all three exist.
 7. **Verify.** Run the relevant tests plus configured lint/type/build, read the
    logs the change should now emit, and iterate until clean.
-8. **Self-check and report.** Walk the *Definition of Done* checklist; reopen
+8. **Deliver: commit, merge, reload.** Commit the finished work in the worktree
+   (`<type>(<worktree-name>): <summary>`), merge the branch into the
+   repository's default branch (`master`/`main`) with `git merge --no-ff` from
+   that repository's own checkout, and then reload/reinstall whatever consumes
+   the change (installer, skill deployment, service, session reload) so the
+   merged work is live. Repeat per repository when the task spans several.
+   Never push to a remote and never rewrite history unless explicitly asked.
+9. **Self-check and report.** Walk the *Definition of Done* checklist; reopen
    any unchecked item, then report what changed and how it was verified. Do not
    stop at a proposal unless the user asked for one.
 
@@ -115,6 +122,10 @@ sends you back to the relevant Work Loop step.
       tests still pass.
 - [ ] The diff was reviewed for duplication, dead code, unused imports, debug
       spam, and accidental behavior changes.
+- [ ] The finished work was committed in the worktree, merged into the default
+      branch (`master`/`main`) with a merge commit, and the consumers were
+      reloaded/reinstalled — in every repository the task touched. Nothing was
+      pushed to a remote.
 - [ ] The final report states what changed, how it was verified, and any
       remaining risks.
 
@@ -146,8 +157,17 @@ sends you back to the relevant Work Loop step.
   name) and `<worktree-name>` is the feature portion of that name — e.g. for a
   worktree/branch named `fix/worktree-policy` the message is
   `fix(worktree-policy): keep worktrees in the shared family store`. Never ask the
-  user to commit for you, and never push, merge into their default branch, or
-  rewrite history unless they asked for it.
+  user to commit for you.
+- **Always finish the delivery: commit in the worktree, merge into the default
+  branch, then reload.** After the commit lands and its tests pass, merge the
+  worktree branch back into the repository's default branch (`master`/`main`)
+  with a merge commit (`git merge --no-ff`) in that repository's own checkout,
+  and then reload/reinstall whatever consumes the change (installer, skill
+  deployment, service, session reload) so the merged work is actually live. Do
+  this for every repository the change touched — you do not need to be asked.
+- **Never push, and never rewrite history**, unless the user explicitly asked for
+  it. Merging locally into the default branch is expected; publishing to a
+  remote is not.
 - Use a dedicated Git worktree and a new branch for every task by default (this
   is Work Loop Step 1 — set it up before your first edit, not afterwards). Keep
   the current checkout unchanged. Work in the current checkout only when the
