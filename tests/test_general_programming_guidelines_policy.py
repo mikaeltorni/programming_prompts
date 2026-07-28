@@ -47,7 +47,8 @@ def test_general_guidelines_require_numbered_work_loop():
     assert "5. **Implement.**" in content
     assert "6. **Instrument and document the code you just wrote.**" in content
     assert "7. **Verify.**" in content
-    assert "8. **Self-check and report.**" in content
+    assert "8. **Deliver: commit, merge, reload.**" in content
+    assert "9. **Self-check and report.**" in content
 
 
 def test_general_guidelines_definition_of_done_requires_logging_and_docs():
@@ -110,7 +111,7 @@ def test_general_guidelines_description_shows_current_version_before_mandatory()
     """The skill picker must expose the current version before its mandate."""
     content = skill_text()
 
-    assert "description: >-\n  v1.9.0 — Mandatory engineering workflow" in content
+    assert "description: >-\n  v1.9.1 — Mandatory engineering workflow" in content
 
 
 def test_general_guidelines_require_type_prefixed_worktree_names():
@@ -135,8 +136,23 @@ def test_general_guidelines_commit_finished_work_by_default():
 
     assert "Commit your finished work by default" in content
     assert "you do not need to be asked" in content
-    # Committing is default, but publishing history still needs a request.
-    assert "never push, merge into their default branch, or rewrite history" in content
+    # Committing is default, but publishing to a remote still needs a request.
+    assert "Never push, and never rewrite history" in content
+
+
+def test_general_guidelines_require_commit_merge_reload_delivery():
+    """Finished work must be committed, merged to the default branch, reloaded."""
+    content = " ".join(skill_text().split())
+
+    assert "Always finish the delivery: commit in the worktree, merge into the default branch, then reload" in content
+    assert "git merge --no-ff" in content
+    assert "Deliver: commit, merge, reload" in content
+    # The Definition of Done must gate on the full delivery, not just the commit.
+    assert (
+        "The finished work was committed in the worktree, merged into the default branch"
+        in content
+    )
+    assert "Nothing was pushed to a remote." in content
 
 
 def test_general_guidelines_require_type_worktree_commit_messages():
