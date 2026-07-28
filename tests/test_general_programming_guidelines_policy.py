@@ -1,5 +1,6 @@
 """Policy tests for the general programming guidelines prompt."""
 
+import re
 from pathlib import Path
 
 
@@ -163,3 +164,28 @@ def test_general_guidelines_require_type_worktree_commit_messages():
     assert "<type>(<worktree-name>): <summary>" in content
     # A concrete example ties the rule to the worktree name.
     assert "fix(worktree-policy): keep worktrees in the shared family store" in content
+
+
+def test_wrapper_and_readme_versions_match_the_skill_version():
+    """The bootstrap wrapper and README must not drift from the skill version.
+
+    Hosts such as Grok read the always-on wrapper, not the skill front matter,
+    so a stale wrapper version makes agents report a version mismatch.
+    """
+    root = SKILL_PATH.resolve().parents[2]
+
+    skill_version = re.search(
+        r"description: >-\n  v(\d+\.\d+\.\d+) — Mandatory", skill_text()
+    )
+    assert skill_version is not None, "skill description must declare a version"
+    version = skill_version.group(1)
+
+    wrapper = (
+        root / "global-instructions" / "general-programming-guidelines.md"
+    ).read_text(encoding="utf-8")
+    assert f"## General Programming Guidelines v{version} (always on)" in wrapper
+    assert f"These are v{version} MANDATORY instructions" in wrapper
+    assert re.search(r"v(?!%s)\d+\.\d+\.\d+" % re.escape(version), wrapper) is None
+
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    assert f"Current version: **v{version}**." in readme
