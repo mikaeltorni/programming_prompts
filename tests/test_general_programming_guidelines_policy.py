@@ -104,15 +104,24 @@ def test_general_guidelines_make_worktree_the_explicit_first_step():
     assert "Create a git worktree and branch first" in content
     # The concrete command must be present so weak models can copy it verbatim.
     assert "git worktree add ../.worktrees/<repo>-wt-<task> -b <task-branch>" in content
+    # Agents must prove cwd/branch before editing — create alone was not enough.
+    assert "pwd" in content
+    assert "git branch --show-current" in content
+    assert "Hard gates before the first file edit" in content
+    # Shared store is `.worktrees/` (leading dot), never bare `worktrees/`.
+    assert "`.worktrees/` directory (leading dot)" in content
+    assert "Never use `projects/worktrees/` (no dot)" in content
     # The Definition of Done must gate on the worktree too.
     assert "All edits were made on a dedicated git worktree branch" in content
+    # Follow-up turns must not drift back to the live checkout.
+    assert "Follow-up turns stayed in that same worktree" in " ".join(content.split())
 
 
 def test_general_guidelines_description_shows_current_version_before_mandatory():
     """The skill picker must expose the current version before its mandate."""
     content = skill_text()
 
-    assert "description: >-\n  v1.9.1 — Mandatory engineering workflow" in content
+    assert "description: >-\n  v1.9.2 — Mandatory engineering workflow" in content
 
 
 def test_general_guidelines_require_type_prefixed_worktree_names():
@@ -148,12 +157,38 @@ def test_general_guidelines_require_commit_merge_reload_delivery():
     assert "Always finish the delivery: commit in the worktree, merge into the default branch, then reload" in content
     assert "git merge --no-ff" in content
     assert "Deliver: commit, merge, reload" in content
+    # Concrete merge recipe must live in the deliver step, not only Scope and Safety.
+    assert "Merge into the default branch FROM the repository's live checkout" in content
+    # Stopping after a worktree commit is explicitly a failure.
+    assert "A worktree-only commit does **not** satisfy this item" in content
+    assert 'Do not treat "do not push" as "do not merge."' in content
     # The Definition of Done must gate on the full delivery, not just the commit.
     assert (
-        "The finished work was committed in the worktree, merged into the default branch"
+        "The finished work was committed in the worktree, **merged into the default branch**"
         in content
     )
     assert "Nothing was pushed to a remote." in content
+
+
+def test_wrapper_requires_worktree_proof_and_local_merge_not_push_ban():
+    """The slim always-on wrapper must not contradict the full skill.
+
+    Agents that only skim the wrapper used to see "never … merge into the default
+    branch … unless the user asked," which blocked Step 8 delivery. The wrapper
+    must require worktree proof and local merge while still banning remote push.
+    """
+    root = SKILL_PATH.resolve().parents[2]
+    wrapper = (
+        root / "global-instructions" / "general-programming-guidelines.md"
+    ).read_text(encoding="utf-8")
+
+    assert "pwd" in wrapper
+    assert "git branch --show-current" in wrapper
+    assert "git merge --no-ff" in wrapper
+    assert "Local merge is required" in wrapper
+    # Must not tell agents that merge requires user permission.
+    assert "never push, merge into the default" not in wrapper.lower()
+    assert "never push or rewrite" in wrapper.lower() or "Never push or rewrite" in wrapper
 
 
 def test_general_guidelines_require_type_worktree_commit_messages():
