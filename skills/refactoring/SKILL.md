@@ -38,8 +38,8 @@ Use tests as the safety rail: characterize first, extract, integrate, verify.
   internal functions. Keep external compatibility surfaces until proven unused.
 - Update documentation comments when moving public or non-obvious code.
 - Always verify tests pass after each extraction step.
-- Do not commit changes unless the user explicitly asks for commits. If commits
-  are requested, keep each extraction in its own commit.
+- Commit your finished work by default, in the worktree you are working on;
+  keep each extraction in its own commit.
 - Do not refactor generated outputs, dependency folders, caches, vendored
   packages, or build artifacts unless explicitly asked.
 

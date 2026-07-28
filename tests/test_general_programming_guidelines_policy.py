@@ -110,7 +110,7 @@ def test_general_guidelines_description_shows_current_version_before_mandatory()
     """The skill picker must expose the current version before its mandate."""
     content = skill_text()
 
-    assert "description: >-\n  v1.8.3 — Mandatory engineering workflow" in content
+    assert "description: >-\n  v1.9.0 — Mandatory engineering workflow" in content
 
 
 def test_general_guidelines_require_type_prefixed_worktree_names():
@@ -127,6 +127,16 @@ def test_general_guidelines_require_type_prefixed_worktree_names():
     # The name must apply to both the branch and the worktree directory.
     assert "type/feature" in content
     assert "branch" in content and "worktree" in content
+
+
+def test_general_guidelines_commit_finished_work_by_default():
+    """Agents commit finished work without waiting to be asked."""
+    content = " ".join(skill_text().split())
+
+    assert "Commit your finished work by default" in content
+    assert "you do not need to be asked" in content
+    # Committing is default, but publishing history still needs a request.
+    assert "never push, merge into their default branch, or rewrite history" in content
 
 
 def test_general_guidelines_require_type_worktree_commit_messages():
