@@ -1,7 +1,7 @@
 ---
 name: general-programming-guidelines
 description: >-
-  v1.9.2 — Mandatory engineering workflow and coding standards for every software task:
+  v1.10.0 — Mandatory engineering workflow and coding standards for every software task:
   implementation, debugging, review, testing, and refactoring.
 ---
 
@@ -29,7 +29,7 @@ merge+reload, you have already failed the task — even if the code is correct.
 ## Work Loop
 
 Run every software task through these numbered steps in order. Do not skip a
-step, and do not report the task done until Step 9 passes.
+step, and do not report the task done until Step 10 passes.
 
 1. **Create an isolated worktree (do this first, before any edit).** For any
    task that will modify a repository, you MUST be on a dedicated worktree
@@ -92,25 +92,58 @@ step, and do not report the task done until Step 9 passes.
 3. **Inspect first.** Read the codebase before editing — prefer `rg` /
    `rg --files`. Learn the existing patterns, logging utility, tests,
    manifests, and deployment flow your change must match.
-4. **Plan and write tests first.** For behavior changes, shared helpers,
+4. **Scan for Features (always run — do not skip).** This is a **separate step**
+   that always runs after scope capture and inspect, before plan/implement —
+   even when the answer is a single Feature or **none** (docs-only, chore, or
+   one undivided change). Classify the user prompt into discrete **Features**:
+   self-contained units of shippable behavior (e.g. "add auth", "add dashboard",
+   "add export" in one multi-step request). Record the Feature list explicitly,
+   or record that no multi-feature split applies.
+
+   When **two or more Features** are found:
+   - Plan **implementation order** *before* writing Feature code: **dependencies
+     first**, then dependents, so every intermediate commit leaves the project
+     **buildable** and working.
+   - Implement one Feature at a time in that order. Bundle that Feature's tests,
+     code, logging, and docs into **one self-contained** functional **commit**.
+   - After each Feature commit the program must **leave the program working**:
+     relevant tests/checks pass. **Do not land a commit that only works after
+     later** Features arrive.
+   - **Per-Feature verify before the next Feature:** run the relevant tests (and
+     configured lint/type/build when practical), **reload** consumers when needed
+     to exercise the change, and **monitor logs** while testing that Feature.
+     Only then start the next Feature.
+5. **Plan and write tests first.** For behavior changes, shared helpers,
    installers, regressions, refactors, and logging changes, add or update
    focused tests before changing code when the repo has a practical test path.
    For docs-only or prompt-only edits, state and run direct verification
-   instead of inventing noisy tests.
-5. **Implement.** Satisfy the requested scope using project-local helpers and
-   conventions. Edits stay inside the worktree path from Step 1.
-6. **Instrument and document the code you just wrote.** Logging (see *Logging and
+   instead of inventing noisy tests. When Step 4 found multiple Features, plan
+   and write tests for the *current* Feature only (in the ordered sequence), not
+   the whole multi-feature backlog at once.
+6. **Implement.** Satisfy the requested scope using project-local helpers and
+   conventions. Edits stay inside the worktree path from Step 1. When multiple
+   Features were listed in Step 4, implement only the current Feature in the
+   planned order — do not interleave unrelated Feature work in one commit.
+7. **Instrument and document the code you just wrote.** Logging (see *Logging and
    Diagnostics*) and comments/docstrings (see *Documentation*) are part of the
    change, not optional polish. Cover new action paths, state transitions,
    boundary failures, and external calls with logs; document new public
    functions, helpers, and non-obvious behavior including parameters. If one
    pass is error-prone, fall back to (a) make it work, (b) add logging,
    (c) add docs — but the task is not done until all three exist.
-7. **Verify.** Run the relevant tests plus configured lint/type/build, read the
-   logs the change should now emit, and iterate until clean.
-8. **Deliver: commit, merge, reload.** This step is mandatory — not optional
+8. **Verify.** Run the relevant tests plus configured lint/type/build, read the
+   logs the change should now emit, and iterate until clean. For multi-feature
+   work this is the same **Per-Feature verify** gate as Step 4: green checks,
+   optional reload, and log monitoring before the next Feature or final delivery.
+9. **Deliver: commit, merge, reload.** This step is mandatory — not optional
    polish and not "only if the user asks." Stopping after a worktree commit
    leaves the live default branch unchanged; that is **not** done.
+
+   When multiple Features were scanned in Step 4, land **one self-contained**
+   Feature commit at a time (each already verified green). After the *last*
+   Feature commit on the task branch, complete merge+reload below. Mid-task
+   Feature commits stay on the worktree branch; do not merge half-finished
+   multi-feature work to the default branch.
 
    Concretely, for **each** repository the task touched:
 
@@ -133,7 +166,7 @@ step, and do not report the task done until Step 9 passes.
    a remote and never rewrite history unless explicitly asked. Repeat A–C for
    every repo the task spanned. Reporting "goal achieved" before B and C is a
    Definition of Done failure.
-9. **Self-check and report.** Walk the *Definition of Done* checklist; reopen
+10. **Self-check and report.** Walk the *Definition of Done* checklist; reopen
    any unchecked item, then report what changed and how it was verified. Do not
    stop at a proposal unless the user asked for one. Do not claim completion
    while the feature exists only on a worktree branch.
@@ -153,6 +186,11 @@ sends you back to the relevant Work Loop step.
       unless the user explicitly waived it. Follow-up turns stayed in that same
       worktree.
 - [ ] The code implements the exact requested scope, with no unrelated edits.
+- [ ] Multi-step work ran Work Loop Step 4 (**Scan for Features**): Features
+      were listed (or none recorded); multiple Features were ordered
+      dependencies-first; each Feature landed as one green functional commit
+      with per-Feature verify (tests, reload when needed, log monitoring)
+      before the next Feature.
 - [ ] New or changed action paths, state transitions, boundary failures, and
       external calls are logged through the existing centralized logger,
       honoring the stdout/stderr and spam exceptions below.
@@ -191,13 +229,15 @@ sends you back to the relevant Work Loop step.
   feature is complete and verified, commit it in the worktree you are already
   working on — never in the user's live checkout. When the change spans multiple repositories,
   commit separately in each repo's own worktree. Commit one self-contained
-  feature at a time:
+  feature at a time (Work Loop Step 4 Feature list):
   stage only that feature's logical hunks, keep unrelated local changes out, and
-  complete its commit before starting the next feature's.
-  **Format each commit message as `<type>(<worktree-name>): <summary>`**, where
-  `<type>` is the conventional type (the same prefix used for the worktree/branch
-  name) and `<worktree-name>` is the feature portion of that name — e.g. for a
-  worktree/branch named `fix/worktree-policy` the message is
+  complete its commit before starting the next feature's. After each Feature
+  commit the tree must still work — never depend on a later commit to restore
+  a build or test suite. **Format each commit message as
+  `<type>(<worktree-name>): <summary>`**, where `<type>` is the conventional type
+  (the same prefix used for the worktree/branch name) and `<worktree-name>` is
+  the feature portion of that name — e.g. for a worktree/branch named
+  `fix/worktree-policy` the message is
   `fix(worktree-policy): keep worktrees in the shared family store`. Never ask the
   user to commit for you.
 - **Always finish the delivery: commit in the worktree, merge into the default
