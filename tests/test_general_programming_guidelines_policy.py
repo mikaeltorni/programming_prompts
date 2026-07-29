@@ -44,12 +44,68 @@ def test_general_guidelines_require_numbered_work_loop():
     assert "1. **Create an isolated worktree (do this first, before any edit).**" in content
     assert "2. **Capture scope.**" in content
     assert "3. **Inspect first.**" in content
-    assert "4. **Plan and write tests first.**" in content
-    assert "5. **Implement.**" in content
-    assert "6. **Instrument and document the code you just wrote.**" in content
-    assert "7. **Verify.**" in content
-    assert "8. **Deliver: commit, merge, reload.**" in content
-    assert "9. **Self-check and report.**" in content
+    # Feature scan is its own always-run step before plan/implement.
+    assert "4. **Scan for Features" in content
+    assert "5. **Plan and write tests first.**" in content
+    assert "6. **Implement.**" in content
+    assert "7. **Instrument and document the code you just wrote.**" in content
+    assert "8. **Verify.**" in content
+    assert "9. **Deliver: commit, merge, reload.**" in content
+    assert "10. **Self-check and report.**" in content
+
+
+def test_general_guidelines_require_separate_feature_scan_step():
+    """Multi-step prompts must be scanned into Features as a dedicated Work Loop step.
+
+    Agents that skip this step pile unrelated work into one commit or implement
+    out of dependency order. The scan always runs — even when the result is a
+    single Feature or none (docs/chore only).
+    """
+    content = skill_text()
+
+    assert "4. **Scan for Features" in content
+    assert "always run" in content.lower() or "Always run" in content
+    assert "do not skip" in content.lower() or "Do not skip" in content
+    # Classification vocabulary and outcome when no multi-feature split applies.
+    assert "discrete **Features**" in content or "discrete Features" in content
+    assert "none" in content.lower()  # record when none apply
+    # Explicitly a separate step, not buried inside Plan/Implement.
+    assert "separate step" in content.lower() or "its own numbered step" in content.lower() or "dedicated" in content.lower()
+
+
+def test_general_guidelines_require_ordered_multi_feature_plan():
+    """When multiple Features exist, plan implementation order before coding."""
+    content = " ".join(skill_text().split())
+
+    assert "two or more Features" in content or "multiple Features" in content
+    assert "implementation order" in content
+    # Dependencies first so intermediate commits stay buildable.
+    assert "dependencies first" in content
+    assert "buildable" in content or "working" in content
+
+
+def test_general_guidelines_require_one_green_functional_commit_per_feature():
+    """Each Feature is one self-contained commit that leaves the tree working."""
+    content = " ".join(skill_text().split())
+
+    assert "one self-contained" in content and "commit" in content
+    # After each Feature commit the project must still work — no "broken until
+    # the next commit" landings.
+    assert "leave the program working" in content or "must still work" in content or "leaves the project" in content
+    assert "Do not land a commit that only works after later" in content or (
+        "only works after later" in content
+    )
+
+
+def test_general_guidelines_require_per_feature_verify_reload_and_logs():
+    """After each Feature commit, verify with tests, optional reload, and logs."""
+    content = " ".join(skill_text().split())
+
+    assert "Per-Feature verify" in content or "per-Feature verify" in content
+    assert "reload" in content.lower()
+    assert "monitor logs" in content or "Monitor logs" in content
+    # Must happen before starting the next Feature.
+    assert "before the next Feature" in content or "before starting the next" in content
 
 
 def test_general_guidelines_definition_of_done_requires_logging_and_docs():
@@ -121,7 +177,7 @@ def test_general_guidelines_description_shows_current_version_before_mandatory()
     """The skill picker must expose the current version before its mandate."""
     content = skill_text()
 
-    assert "description: >-\n  v1.9.2 — Mandatory engineering workflow" in content
+    assert "description: >-\n  v1.10.0 — Mandatory engineering workflow" in content
 
 
 def test_general_guidelines_require_type_prefixed_worktree_names():
