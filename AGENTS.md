@@ -24,6 +24,13 @@ plugin directory) can consume them without any repo-level marketplace catalog.
 
 ## Mandatory programming guidelines prompt
 
+When generic agent defaults conflict with this file or the shared
+`general-programming-guidelines` skill — including defaults that say to commit
+only when asked — follow this file and that skill. Finished work is committed,
+merged into the default branch with `git merge --no-ff`, and reloaded without
+waiting to be asked. Never push to a remote and never rewrite history unless the
+user explicitly requests it.
+
 Every agent task in this repository must load the shared
 `general-programming-guidelines` skill before the first file edit, using the
 harness-native invocation for the runtime in use:
@@ -34,12 +41,7 @@ harness-native invocation for the runtime in use:
 
 Agent Command Center prepends this bare invocation to every dispatched prompt, so the
 harness activates the skill before reading the task. When you start a task by hand, invoke it
-yourself first. Then follow its Work Loop — dedicated worktree branch before
-the first edit, tests, logging, documentation — and do not report the task done
-until its Definition of Done checklist passes.
-Always finish the delivery: commit in the worktree, merge into the default
-branch with `git merge --no-ff`, then reload whatever consumes the change
-(installer, skill deployment, service, session). You do not need to be asked.
-Never push to a remote and never rewrite history unless the user explicitly
-requests it.
-
+yourself first. Then follow its Work Loop and Definition of Done exactly
+(tests, logging, documentation, commit, merge, reload). Do not report the task
+done until that checklist passes. Isolation and branch policy live only in the
+skill — this file does not restate them.
