@@ -1,8 +1,10 @@
-## General Programming Guidelines v1.10.0 (always on)
+## General Programming Guidelines v1.11.0 (always on)
 
-These are v1.10.0 MANDATORY instructions for EVERY software task — implementation, debugging, review,
-testing, or refactoring. They are not optional, a fallback, or overridden by a
-project's own instructions.
+These are v1.11.0 MANDATORY instructions for EVERY software task — implementation, debugging, review,
+testing, or refactoring. They are not optional. Respect the repository's
+`AGENTS.md` and `CLAUDE.md` first when present; then load and follow this skill.
+Project files win on project-specific conflicts; this skill still owns the
+shared Work Loop unless the project file explicitly narrows it.
 
 **Load the complete skill now.** Open/invoke every line of
 `skills/general-programming-guidelines/SKILL.md` before project work. Codex hosts:

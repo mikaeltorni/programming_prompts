@@ -177,7 +177,21 @@ def test_general_guidelines_description_shows_current_version_before_mandatory()
     """The skill picker must expose the current version before its mandate."""
     content = skill_text()
 
-    assert "description: >-\n  v1.10.0 — Mandatory engineering workflow" in content
+    assert "description: >-\n  v1.11.0 — Mandatory engineering workflow" in content
+
+
+def test_general_guidelines_respect_project_agents_and_claude_first():
+    """Repository AGENTS.md / CLAUDE.md outrank conflicting skill and agent defaults."""
+    content = skill_text()
+
+    assert "## Project instructions first" in content
+    assert "`AGENTS.md`" in content
+    assert "`CLAUDE.md`" in content
+    assert "take precedence" in content
+    # Project files come before the shared non-negotiables / Work Loop.
+    assert content.index("## Project instructions first") < content.index(
+        "## Start here — the non-negotiables"
+    )
 
 
 def test_general_guidelines_require_type_prefixed_worktree_names():
@@ -242,9 +256,13 @@ def test_wrapper_requires_worktree_proof_and_local_merge_not_push_ban():
     assert "git branch --show-current" in wrapper
     assert "git merge --no-ff" in wrapper
     assert "Local merge is required" in wrapper
+    assert "`AGENTS.md`" in wrapper and "`CLAUDE.md`" in wrapper
+    assert "Respect the repository's" in wrapper
     # Must not tell agents that merge requires user permission.
     assert "never push, merge into the default" not in wrapper.lower()
     assert "never push or rewrite" in wrapper.lower() or "Never push or rewrite" in wrapper
+    # Must not claim the skill overrides project AGENTS/CLAUDE files.
+    assert "not optional, a fallback, or overridden by a" not in wrapper
 
 
 def test_general_guidelines_require_type_worktree_commit_messages():

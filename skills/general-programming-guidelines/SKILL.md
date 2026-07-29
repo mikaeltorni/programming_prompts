@@ -1,11 +1,21 @@
 ---
 name: general-programming-guidelines
 description: >-
-  v1.10.0 — Mandatory engineering workflow and coding standards for every software task:
+  v1.11.0 — Mandatory engineering workflow and coding standards for every software task:
   implementation, debugging, review, testing, and refactoring.
 ---
 
 # General Programming Guidelines
+
+## Project instructions first
+
+Before applying these guidelines, read and respect the repository's own
+`AGENTS.md` and `CLAUDE.md` when either file is present. Those project files
+take precedence over conflicting generic agent defaults and over conflicting
+parts of this skill for project-specific ownership, routing, deployment, and
+local policy. Where this skill and those files agree — including commit, merge,
+and reload delivery — follow both. Do not skip this skill; load it after
+honoring the project files.
 
 ## Start here — the non-negotiables
 
