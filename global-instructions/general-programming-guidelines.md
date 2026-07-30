@@ -1,6 +1,6 @@
-## General Programming Guidelines v1.11.0 (always on)
+## General Programming Guidelines v1.12.0 (always on)
 
-These are v1.11.0 MANDATORY instructions for EVERY software task — implementation, debugging, review,
+These are v1.12.0 MANDATORY instructions for EVERY software task — implementation, debugging, review,
 testing, or refactoring. They are not optional. Respect the repository's
 `AGENTS.md` and `CLAUDE.md` first when present; then load and follow this skill.
 Project files win on project-specific conflicts; this skill still owns the
@@ -22,10 +22,4 @@ pwd   # MUST be .../.worktrees/...
 git branch --show-current   # MUST be the task branch, not master/main
 ```
 
-**Then run the Work Loop in order:** worktree → capture scope → inspect →
-**scan for Features** (always; order multi-feature work; one green commit per
-Feature; per-Feature verify/reload/logs) → write tests first → implement → add
-logging + docs → verify → **deliver (commit in worktree, `git merge --no-ff`
-into master/main from the live checkout, reload)** → self-check. A worktree-only
-commit is not done. Never push or rewrite history unless asked. Local merge is required;
-"do not push" does **not** mean "do not merge."
+**Then run the Work Loop in order:** worktree → capture scope → inspect → **scan for Features** (always; one green commit per Feature) → tests first → implement → logging + docs → verify → **deliver after each Feature (commit in worktree, `git merge --no-ff` into master/main, always reapply)** → self-check. A worktree-only commit is not done. Never push or rewrite history unless asked. Local merge is required; "do not push" does **not** mean "do not merge."

@@ -1,7 +1,7 @@
 ---
 name: general-programming-guidelines
 description: >-
-  v1.11.0 — Mandatory engineering workflow and coding standards for every software task:
+  v1.12.0 — Mandatory engineering workflow and coding standards for every software task:
   implementation, debugging, review, testing, and refactoring.
 ---
 
@@ -115,14 +115,22 @@ step, and do not report the task done until Step 10 passes.
      first**, then dependents, so every intermediate commit leaves the project
      **buildable** and working.
    - Implement one Feature at a time in that order. Bundle that Feature's tests,
-     code, logging, and docs into **one self-contained** functional **commit**.
+     code, logging, and docs into **one self-contained** functional **commit**
+     **in the worktree** (never commit Feature work from the live checkout).
    - After each Feature commit the program must **leave the program working**:
      relevant tests/checks pass. **Do not land a commit that only works after
      later** Features arrive.
+   - **After each Feature, deliver fully before the next Feature:** (A) commit
+     in the worktree, (B) merge the task branch into the default branch
+     (`master`/`main`) with `git merge --no-ff` from the live checkout, then
+     (C) **always reapply** — reload/reinstall consumers (installer, skill
+     deployment, service, session reload) so the merged Feature is live. Do not
+     batch Features into one end-of-task merge.
    - **Per-Feature verify before the next Feature:** run the relevant tests (and
-     configured lint/type/build when practical), **reload** consumers when needed
-     to exercise the change, and **monitor logs** while testing that Feature.
-     Only then start the next Feature.
+     configured lint/type/build when practical), **monitor logs** while testing
+     that Feature after reapply, then return to the same worktree branch and
+     start the next Feature only after that Feature's commit+merge+reapply is
+     done.
 5. **Plan and write tests first.** For behavior changes, shared helpers,
    installers, regressions, refactors, and logging changes, add or update
    focused tests before changing code when the repo has a practical test path.
@@ -144,18 +152,21 @@ step, and do not report the task done until Step 10 passes.
 8. **Verify.** Run the relevant tests plus configured lint/type/build, read the
    logs the change should now emit, and iterate until clean. For multi-feature
    work this is the same **Per-Feature verify** gate as Step 4: green checks,
-   optional reload, and log monitoring before the next Feature or final delivery.
+   always reapply/reload, and log monitoring before the next Feature.
 9. **Deliver: commit, merge, reload.** This step is mandatory — not optional
    polish and not "only if the user asks." Stopping after a worktree commit
    leaves the live default branch unchanged; that is **not** done.
 
-   When multiple Features were scanned in Step 4, land **one self-contained**
-   Feature commit at a time (each already verified green). After the *last*
-   Feature commit on the task branch, complete merge+reload below. Mid-task
-   Feature commits stay on the worktree branch; do not merge half-finished
-   multi-feature work to the default branch.
+   Run this full delivery **step by step after each Feature** (and after a
+   single-Feature or undivided change): (A) commit in the worktree, (B) merge
+   into the default branch from the live checkout, (C) **always reapply**
+   (reload/reinstall consumers). When Step 4 listed multiple Features, repeat
+   A→B→C for Feature 1, then implement Feature 2 on the same worktree branch,
+   then A→B→C again, and so on — never defer merge/reapply until the whole
+   multi-feature task is finished.
 
-   Concretely, for **each** repository the task touched:
+   Concretely, for **each** repository the task touched (repeat after each
+   Feature):
 
    ```bash
    # A) Commit IN the worktree (never in the live checkout)
@@ -168,13 +179,15 @@ step, and do not report the task done until Step 10 passes.
    git checkout master                   # or main
    git merge --no-ff <task-branch> -m "Merge <task-branch>: <summary>"
 
-   # C) Reload/reinstall whatever consumes the change so it is live
+   # C) Always reapply — reload/reinstall consumers so the merge is live
    # (installer, skill deployment, service, session reload — project-specific)
    ```
 
    Commit message format is `<type>(<worktree-name>): <summary>`. Never push to
    a remote and never rewrite history unless explicitly asked. Repeat A–C for
-   every repo the task spanned. Reporting "goal achieved" before B and C is a
+   every repo the task spanned, and **after each Feature** when multiple
+   Features were scanned. After B+C, `cd` back into the worktree branch before
+   the next Feature's edits. Reporting "goal achieved" before B and C is a
    Definition of Done failure.
 10. **Self-check and report.** Walk the *Definition of Done* checklist; reopen
    any unchecked item, then report what changed and how it was verified. Do not
@@ -198,9 +211,10 @@ sends you back to the relevant Work Loop step.
 - [ ] The code implements the exact requested scope, with no unrelated edits.
 - [ ] Multi-step work ran Work Loop Step 4 (**Scan for Features**): Features
       were listed (or none recorded); multiple Features were ordered
-      dependencies-first; each Feature landed as one green functional commit
-      with per-Feature verify (tests, reload when needed, log monitoring)
-      before the next Feature.
+      dependencies-first; each Feature was delivered step by step — commit in
+      the worktree, merge into the default branch, **always reapply** — with
+      per-Feature verify (tests, log monitoring after reapply) before the next
+      Feature.
 - [ ] New or changed action paths, state transitions, boundary failures, and
       external calls are logged through the existing centralized logger,
       honoring the stdout/stderr and spam exceptions below.
@@ -250,20 +264,23 @@ sends you back to the relevant Work Loop step.
   `fix/worktree-policy` the message is
   `fix(worktree-policy): keep worktrees in the shared family store`. Never ask the
   user to commit for you.
-- **Always finish the delivery: commit in the worktree, merge into the default
-  branch, then reload.** After the commit lands and its tests pass, leave the
+- **Always finish the delivery step by step: commit in the worktree, merge into
+  the default branch, then always reapply.** After each Feature's commit lands
+  and its tests pass — not only at the end of a multi-feature task — leave the
   worktree and merge from the repository's **live** checkout (the one on
   `master`/`main`): `git checkout master && git merge --no-ff <task-branch>`.
-  Then reload/reinstall whatever consumes the change (installer, skill
-  deployment, service, session reload) so the merged work is actually live. Do
-  this for every repository the change touched — you do not need to be asked.
-  Local merge is required by default; it is **not** the same as pushing.
+  Then **always reapply**: reload/reinstall whatever consumes the change
+  (installer, skill deployment, service, session reload) so the merged work is
+  actually live. Return to the worktree for the next Feature. Do this for every
+  repository the change touched — you do not need to be asked. Local merge is
+  required by default; it is **not** the same as pushing.
 - **Never push, and never rewrite history**, unless the user explicitly asked for
   it. Merging locally into the default branch is expected and required;
   publishing to a remote is not. Do not treat "do not push" as "do not merge."
 - Use a dedicated Git worktree and a new branch for every task by default (this
-  is Work Loop Step 1 — set it up before your first edit, not afterwards). Keep
-  the current checkout unchanged until the final merge step. Work in the current
+  is Work Loop Step 1 — set it up before your first edit, not afterwards). Edit
+  only in the worktree; merge into the live default branch after each Feature
+  (and at the end of undivided work), then reapply. Work in the current
   checkout only when the user explicitly requests it.
 
 ## Design and Structure

@@ -98,14 +98,39 @@ def test_general_guidelines_require_one_green_functional_commit_per_feature():
 
 
 def test_general_guidelines_require_per_feature_verify_reload_and_logs():
-    """After each Feature commit, verify with tests, optional reload, and logs."""
+    """After each Feature, verify with tests, always reapply/reload, and logs."""
     content = " ".join(skill_text().split())
 
     assert "Per-Feature verify" in content or "per-Feature verify" in content
-    assert "reload" in content.lower()
     assert "monitor logs" in content or "Monitor logs" in content
     # Must happen before starting the next Feature.
     assert "before the next Feature" in content or "before starting the next" in content
+    # Reload/reapply is mandatory after each Feature, not optional polish.
+    assert "always reapply" in content.lower() or "Always reapply" in content
+
+
+def test_general_guidelines_require_per_feature_commit_merge_and_reapply():
+    """Each Feature must: commit on worktree → merge to master/main → reapply.
+
+    Agents used to batch every Feature onto the worktree and merge only once at
+    the end. The user-facing policy is step-by-step delivery: after each green
+    Feature commit in the worktree, merge into the default branch and always
+    reapply/reload consumers before starting the next Feature.
+    """
+    content = " ".join(skill_text().split())
+
+    # Full delivery triad per Feature (not only after the last Feature).
+    assert "after each Feature" in content.lower() or "After each Feature" in content
+    assert "commit" in content.lower() and "worktree" in content.lower()
+    assert "git merge --no-ff" in content
+    assert "default branch" in content or "master/main" in content
+    # Must not tell agents to keep mid-task Feature commits off master.
+    assert "do not merge half-finished" not in content.lower()
+    assert "mid-task Feature commits stay on the worktree" not in content
+    # Reapply/reload is required every time, not deferred.
+    assert "always reapply" in content.lower() or (
+        "reapply" in content.lower() and "after each" in content.lower()
+    )
 
 
 def test_general_guidelines_definition_of_done_requires_logging_and_docs():
@@ -177,7 +202,7 @@ def test_general_guidelines_description_shows_current_version_before_mandatory()
     """The skill picker must expose the current version before its mandate."""
     content = skill_text()
 
-    assert "description: >-\n  v1.11.0 — Mandatory engineering workflow" in content
+    assert "description: >-\n  v1.12.0 — Mandatory engineering workflow" in content
 
 
 def test_general_guidelines_respect_project_agents_and_claude_first():
@@ -224,7 +249,7 @@ def test_general_guidelines_require_commit_merge_reload_delivery():
     """Finished work must be committed, merged to the default branch, reloaded."""
     content = " ".join(skill_text().split())
 
-    assert "Always finish the delivery: commit in the worktree, merge into the default branch, then reload" in content
+    assert "Always finish the delivery step by step: commit in the worktree, merge into the default branch, then always reapply" in content
     assert "git merge --no-ff" in content
     assert "Deliver: commit, merge, reload" in content
     # Concrete merge recipe must live in the deliver step, not only Scope and Safety.
