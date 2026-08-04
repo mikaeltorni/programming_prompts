@@ -1,12 +1,19 @@
 # Programming Prompts
 
+Central repository of reusable **AI coding-agent prompts** — engineering
+guidelines, commit workflows, secure project setup, and refactoring methodology —
+packaged as installable **plugins and skills for Codex and Claude Code**. It is
+the canonical content source for the engineering standards used across this
+workspace's projects.
+
+**Topics:** ai-agents · claude-code · codex · prompts · skills · plugins ·
+prompt-engineering · coding-standards · refactoring · developer-tooling
+
 The install catalog intentionally distinguishes plugins from direct skills:
 
 - Plugins: Commit Guidelines and Linux Desktop Configuration.
 - Direct skills: General Programming Guidelines, Init Project, Refactoring, and Setup Repository Guidelines.
 - Python Logging is retired and has been removed from this repository.
-
-Central repository for Codex agent programming guidelines, commit workflows, and refactoring skills — packaged as reusable plugins and skills.
 
 ## Repository dependencies
 
