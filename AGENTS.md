@@ -6,7 +6,8 @@ This repository is the **content source** only. Most workflows are standalone
 plugins (one `plugins/<name>/` directory with `.codex-plugin/plugin.json`,
 `.claude-plugin/plugin.json`, and exactly one `skills/*/SKILL.md`). Prompt-only
 workflows live under top-level `skills/<name>/` and must not carry plugin
-manifests.
+manifests. Dispatchable task prompts live under `dispatch-skills/<name>/` and
+must not carry plugin manifests either — see the next section.
 
 Do **not** create, regenerate, or commit any marketplace catalog in this
 repository — neither `.claude-plugin/marketplace.json` nor
@@ -21,6 +22,17 @@ carries its own Codex and Claude manifests plus its single skill, so the
 installer (or a manual `claude plugin`/`codex plugin` install pointed at a
 plugin directory) can consume them without any repo-level marketplace catalog.
 
+## Dispatch skills are the only menu-selectable prompts
+
+`dispatch-skills/<name>/SKILL.md` holds prompts written to be handed to an agent
+together with nothing but a target repository. They are the set the Agent
+Command Center / notes-app skill menu offers, so anything added there becomes
+one-click launchable against any project — keep the bar in
+[`dispatch-skills/README.md`](dispatch-skills/README.md): the directory name is
+the `name` in the front matter (the menu builds `/<name>` and `$<name>` from it),
+the prompt must define a measurable score plus a tracked scorecard, and it must
+define an improvement loop with an explicit stop condition. Prompts that need a
+conversation before they can act belong in `skills/`, not here.
 
 ## Mandatory programming guidelines prompt
 

@@ -53,6 +53,8 @@ programming_prompts/
 │   ├── init-project/                       # Secure init with UV + supply-chain protection
 │   ├── refactoring/                        # Test-driven refactoring workflow
 │   └── setup-repository-guidelines/        # On-request setup-family routing & install policy
+├── dispatch-skills/                        # Menu-selectable task skills: repo in, score out
+│   └── github-seo/                        # GitHub discoverability audit, scored 0–100, looped
 ├── global-instructions/                    # Bootstrap tags merged into runtime instructions
 │   └── general-programming-guidelines.md   # Starts the full-guidelines delivery path
 ├── tests/                                  # pytest policy tests for the plugin prompts
@@ -148,6 +150,33 @@ guidelines; it is no longer merged into `AGENTS.md`/`CLAUDE.md` as a managed
 global conditional that fires at the start of every task. Membership is still
 read dynamically from `CLONE_REPOS`, so newly added repositories enter scope
 without changing this skill.
+
+## Dispatch Skills
+
+`dispatch-skills/` holds the task prompts that are meaningful with no context
+beyond "here is a repository". They are the only prompts offered by the
+notes-app skill menu, which launches one agent per selected project with the
+harness-native invocation — `/name` for Claude Code, Cline, and Grok, `$name`
+for the Codex family — built from the skill's directory name.
+
+A prompt qualifies for this folder only if it defines a measurable score, a
+tracked scorecard file, and an improvement loop with an explicit stop condition;
+see [`dispatch-skills/README.md`](dispatch-skills/README.md).
+
+### github-seo
+
+Audits a GitHub project's discoverability against a weighted 100-point rubric —
+repository metadata and topics, README above the fold, keyword coverage,
+AI/LLM citability (`llms.txt`, question-shaped FAQ, a quotable definitional
+sentence), community health signals, docs-site technical SEO, registry presence,
+cross-links, and freshness — minus penalties for keyword stuffing,
+unsupported claims, badge and topic spam, artificial engagement, and dead links.
+Scores land in a committed `docs/seo-scorecard.md` with per-criterion evidence
+and a round history, so successive agent runs compare against real numbers
+instead of opinions. The loop closes the highest-value gap, re-measures from
+scratch, and repeats until a re-audit independently reproduces 100/100, then
+switches to maintenance. Points are only awarded against recorded evidence, and
+nothing is published, renamed, or posted on the user's behalf.
 
 ## Logging
 
