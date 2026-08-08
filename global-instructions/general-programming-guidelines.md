@@ -1,6 +1,6 @@
-## General Programming Guidelines v1.12.0 (always on)
+## General Programming Guidelines v1.12.1 (always on)
 
-These are v1.12.0 MANDATORY instructions for EVERY software task — implementation, debugging, review,
+These are v1.12.1 MANDATORY instructions for EVERY software task — implementation, debugging, review,
 testing, or refactoring. They are not optional. Respect the repository's
 `AGENTS.md` and `CLAUDE.md` first when present; then load and follow this skill.
 Project files win on project-specific conflicts; this skill still owns the
