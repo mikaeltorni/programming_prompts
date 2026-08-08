@@ -202,7 +202,7 @@ def test_general_guidelines_description_shows_current_version_before_mandatory()
     """The skill picker must expose the current version before its mandate."""
     content = skill_text()
 
-    assert "description: >-\n  v1.12.0 — Mandatory engineering workflow" in content
+    assert "description: >-\n  v1.12.1 — Mandatory engineering workflow" in content
 
 
 def test_general_guidelines_respect_project_agents_and_claude_first():
@@ -298,6 +298,24 @@ def test_general_guidelines_require_type_worktree_commit_messages():
     assert "<type>(<worktree-name>): <summary>" in content
     # A concrete example ties the rule to the worktree name.
     assert "fix(worktree-policy): keep worktrees in the shared family store" in content
+
+
+def test_general_guidelines_require_silent_non_visual_tests():
+    """Automated tests must not open interrupting GUI/console windows by default.
+
+    Non-screenshot runs should mock spawn/launch at the defining module so a
+    re-export-only patch cannot leave real kitty/terminal windows flashing.
+    """
+    content = skill_text()
+
+    assert "Keep non-visual automated tests silent" in content
+    assert "terminal emulators" in content
+    assert "deliberate visual or screenshot" in content
+    assert "Patch mocks at the defining module" in content
+    assert "re-export" in content
+    # Mock target guidance must name the failure mode (real launcher still runs).
+    assert "defining module" in content
+    assert "Popen" in content or "subprocess" in content
 
 
 def test_wrapper_and_readme_versions_match_the_skill_version():

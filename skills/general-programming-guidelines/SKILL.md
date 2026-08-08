@@ -1,7 +1,7 @@
 ---
 name: general-programming-guidelines
 description: >-
-  v1.12.0 — Mandatory engineering workflow and coding standards for every software task:
+  v1.12.1 — Mandatory engineering workflow and coding standards for every software task:
   implementation, debugging, review, testing, and refactoring.
 ---
 
@@ -405,6 +405,19 @@ sends you back to the relevant Work Loop step.
 - For prompt edits derived from an audit or improvement list, verify each
   listed issue maps to prompt text and remove duplicated or contradictory
   wording.
+- **Keep non-visual automated tests silent.** Tests must not open visible
+  GUI windows, terminal emulators (kitty, gnome-terminal, xterm, …), dialogs,
+  or other desktop surfaces that interrupt the user, unless the run is a
+  deliberate visual or screenshot check. Mock or inject process spawn
+  (`Popen`, `subprocess.run`, terminal launchers), window managers, and GUI
+  toolkits so the desktop stays undisturbed; prefer asserting on captured
+  argv/env/kwargs over live windows. Keep such side effects fully stubbed or
+  backgrounded — never leave a real console flashing on every test run.
+- **Patch mocks at the defining module.** When code is extracted and
+  re-exported, monkeypatch the name the function body resolves in its own
+  module globals (the defining module), not only a re-export surface. A
+  re-export-only patch is a no-op: the real launcher still runs and can open
+  windows while the test's capture list stays empty.
 
 ## Frontend and API Work
 
