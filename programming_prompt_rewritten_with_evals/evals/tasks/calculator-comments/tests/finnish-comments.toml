@@ -1,0 +1,12 @@
+[judge]
+judge = "codex"
+model = "gpt-5.6-luna"
+cwd = "."
+timeout = 180
+
+[[criterion]]
+description = "Ignoring Python code and string literals, are all four lines beginning with # in calculator.py written in Finnish?"
+type = "binary"
+
+[scoring]
+aggregation = "all_pass"
