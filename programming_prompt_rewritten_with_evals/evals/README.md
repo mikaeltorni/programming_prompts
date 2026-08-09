@@ -76,7 +76,7 @@ sudo usermod -aG docker "$USER"
 ```
 
 Completely close and reopen the terminal or IDE after adding your user to the
-`docker` group. In Cursor, restart the whole application, not only the terminal
+`docker` group. In VSC/Cursor etc, restart the whole application, not only the terminal
 panel. Then verify the installation:
 
 ```bash
