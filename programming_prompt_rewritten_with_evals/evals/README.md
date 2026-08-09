@@ -75,15 +75,39 @@ sudo systemctl enable --now docker
 sudo usermod -aG docker "$USER"
 ```
 
-Completely close and reopen the terminal or IDE after adding your user to the
-`docker` group. In VSC/Cursor etc, restart the whole application, not only the terminal
-panel. Then verify the installation:
+## Activate Docker access in VS Code, Cursor, and tmux
+
+Adding your user to the `docker` group does not update terminals that are
+already running. VS Code, Cursor, and Agent Command Center may reconnect to an
+older tmux server even after the IDE is restarted, so the old shell can continue
+reporting `permission denied` for `/var/run/docker.sock`.
+
+Replace the current shell with one that has the new group membership:
 
 ```bash
+exec newgrp docker
+```
+
+The prompt will reappear without printing a success message. Stay in that new
+shell and verify that `docker` is listed before testing Docker:
+
+```bash
+id -nG
 docker version
 docker compose version
 docker run --rm hello-world
 ```
+
+If `id -nG` does not contain `docker`, confirm Docker access for one command
+with:
+
+```bash
+sg docker -c 'docker version && docker compose version && docker run --rm hello-world'
+```
+
+The Harbor commands below must still run from a shell whose `id -nG` output
+contains `docker`; do not run Harbor with `sudo`, because that would use the
+wrong home directory and Codex authentication.
 
 These steps follow Docker's official
 [Ubuntu installation instructions](https://docs.docker.com/engine/install/ubuntu/).
@@ -105,7 +129,8 @@ The layout follows Harbor's official
 
 ## Set the paths once
 
-Run the remaining commands from this `evals` directory:
+Run the remaining commands in order from the Docker-enabled shell. Start by
+entering this repository's `evals` directory:
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
@@ -128,7 +153,7 @@ produce reward `1`:
 ```bash
 harbor run -p "$TASK" -a oracle --mounts "$MOUNTS" \
   -o "$JOBS" --job-name positive-oracle
-find "$JOBS/positive-oracle" -name reward.json -print -exec sed -n '1p' {} \;
+find "$JOBS/positive-oracle" -name reward.json -print -exec cat {} \;
 ```
 
 ## Negative test
@@ -139,7 +164,7 @@ but its comments remain English, so this must produce reward `0`:
 ```bash
 harbor run -p "$TASK" -a nop --mounts "$MOUNTS" \
   -o "$JOBS" --job-name negative-english
-find "$JOBS/negative-english" -name reward.json -print -exec sed -n '1p' {} \;
+find "$JOBS/negative-english" -name reward.json -print -exec cat {} \;
 ```
 
 This negative run proves that the verifier rejects English comments rather than
@@ -167,7 +192,7 @@ CODEX_FORCE_AUTH_JSON=1 harbor run \
   -o "$JOBS" \
   --job-name codex-finnish
 
-find "$JOBS/codex-finnish" -name reward.json -print -exec sed -n '1p' {} \;
+find "$JOBS/codex-finnish" -name reward.json -print -exec cat {} \;
 ```
 
 The evaluated agent and the LLM judge both use `gpt-5.6-luna` at low reasoning
