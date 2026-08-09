@@ -1,3 +1,0 @@
-On each of the claude code instance from the text, remove the the opus 4.8 bar from the project and just insert the:
-PROJECT: linux_configuration_setup
-on to the top of each of the instance for example. Give the done and fully modified file to download afterwards.
