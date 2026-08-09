@@ -1,23 +1,22 @@
 # Programming Prompt Rewritten with Evals
 
-This workspace will hold the rewritten programming prompt and its future
-evaluation suite.
+This workspace contains the programming skill rebuilt from the ground up and a
+Harbor evaluation suite that grows alongside it.
 
-## Current Status
+## Current skill
 
-The initial structure is in place. The comparison that motivates the rewrite
-has been transferred into `analysis/`. The rewritten prompt and evaluations
-have not been created yet.
+The active prompt is [`prompts/programming-skill/SKILL.md`](prompts/programming-skill/SKILL.md).
+Its current rule requires code comments to be written in Finnish.
 
-## Structure
+## Current evaluation
 
-- `analysis/` — source comparisons and findings that guide the rewrite.
-- `prompt/` — the future rewritten programming prompt.
-- `evals/` — the future evaluation cases, scoring rules, and results.
+The first Harbor task starts with a working calculator whose comments are in
+English and verifies that an agent rewrites only those comments in Finnish.
+See [`evals/README.md`](evals/README.md) for the positive, negative, and Codex
+reproduction commands.
 
-## Working Sequence
+## Layout
 
-1. Review and refine the findings in `analysis/`.
-2. Draft the rewritten prompt in `prompt/`.
-3. Define measurable evaluations in `evals/`.
-4. Iterate on the prompt using recorded evaluation results.
+- `analysis/` contains the code-writing rule comparison and design notes.
+- `prompts/` contains the versioned programming skill.
+- `evals/` contains Harbor tasks, deterministic graders, and run instructions.
