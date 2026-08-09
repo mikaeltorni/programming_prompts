@@ -108,6 +108,8 @@ The layout follows Harbor's official
 Run the remaining commands from this `evals` directory:
 
 ```bash
+cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
+
 TASK="$PWD/tasks/calculator-comments"
 SKILL="$PWD/../prompts/programming-skill"
 JOBS="$(mktemp -d)"
