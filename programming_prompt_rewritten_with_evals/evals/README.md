@@ -33,13 +33,68 @@ tasks/calculator-comments/
 - `tests/finnish-comments.toml` contains the single LLM evaluation question.
 - `tests/test.sh` runs Reward Kit and writes the judge's reward.
 
-## Install Harbor
+## Tested platform
 
-You need Docker and Harbor:
+The complete oracle, negative, and Codex runs were tested end to end on Ubuntu
+24.04.4 LTS (Noble). The verified setup used Docker Engine `29.5.3`, Harbor
+`0.20.0`, and GPT-5.6 Luna at low reasoning effort.
+
+## Install Docker on Ubuntu 24.04
+
+Harbor runs this evaluation in Docker. If `docker version` reports that the
+command is missing, install Docker Engine from Docker's official Ubuntu
+repository:
+
+```bash
+sudo apt update
+sudo apt install -y ca-certificates curl
+
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+sudo tee /etc/apt/sources.list.d/docker.sources >/dev/null <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: noble
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+sudo apt update
+sudo apt install -y \
+  docker-ce \
+  docker-ce-cli \
+  containerd.io \
+  docker-buildx-plugin \
+  docker-compose-plugin
+
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"
+```
+
+Completely close and reopen the terminal or IDE after adding your user to the
+`docker` group. In Cursor, restart the whole application, not only the terminal
+panel. Then verify the installation:
 
 ```bash
 docker version
 docker compose version
+docker run --rm hello-world
+```
+
+These steps follow Docker's official
+[Ubuntu installation instructions](https://docs.docker.com/engine/install/ubuntu/).
+Do not install the similarly named `python3-karborclient` package suggested by
+Ubuntu's command-not-found helper; it is an unrelated OpenStack client.
+
+## Install Harbor and check Codex
+
+Install the tested Harbor version and confirm that Codex is authenticated:
+
+```bash
 uv tool install harbor==0.20.0
 harbor --version
 codex login status
