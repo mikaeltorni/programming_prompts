@@ -3,7 +3,7 @@
 Shared Harbor scaffolding copied into every generated `tasks/<name>/` by
 [`../sync_tasks.sh`](../sync_tasks.sh).
 
-- `environment/Dockerfile` — Codex-pinned Python image
+- `environment/Dockerfile` — Python image with pinned Codex + Claude Code CLIs
 - `tests/test.sh` — thin wrapper that execs synced `run_judges.sh`
 
 Per-task instruction text comes from `../coding-prompts/<name>.md`.
