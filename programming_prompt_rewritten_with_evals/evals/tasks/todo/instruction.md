@@ -1,1 +1,1 @@
-Write `/app/todo.py` with `run_todo(command: str) -> str` supporting `add <text>`, `list`, and `done <n>`. Follow the provided programming skill.
+Write `/app/todo.py` with `run_todo(command: str) -> str` for `add <text>` → `added=<n>`, `list` → `items=<comma-separated>`, `done <n>` → `done=<text>` (1-based index, remove item). Follow the provided programming skill.
