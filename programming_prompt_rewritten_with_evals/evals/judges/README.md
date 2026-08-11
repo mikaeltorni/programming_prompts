@@ -21,7 +21,7 @@ judges/
 | --- | --- | --- |
 | [`srp`](srp/prompt.md) | single-responsibility structure | parse + core helpers, thin entrypoint |
 | [`commenting`](commenting/prompt.md) | docstring format | description + `Parameters:` + `Returns:` |
-| [`logging`](logging/prompt.md) | entry/exit prints | plain `print` of params at entry + return value before exit |
+| [`logging`](logging/prompt.md) | entry/exit prints | plain `print` of params at entry + return value before each `return` (ignore `raise`) |
 
 `logging-vague` has **no** judge directory — the runner maps it onto
 `judges/logging/` so the vague one-liner is scored by the real logging criteria.

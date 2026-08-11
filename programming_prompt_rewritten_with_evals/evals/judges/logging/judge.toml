@@ -10,7 +10,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "entry_exit_prints"
-description = "functions print parameters at entry and return values before exit"
+description = "functions print parameters at entry and return values before each return (ignore raise)"
 type = "binary"
 
 [scoring]

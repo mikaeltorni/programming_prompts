@@ -12,8 +12,11 @@ For every function or method you write or edit:
 
 1. At the **start** of the body, `print` the incoming parameter values (names
    and values).
-2. Just **before each return** (or before falling off the end when there is an
-   implicit `None`), `print` the value that is about to leave the function.
+2. Just **before each `return`** (or before falling off the end when there is
+   an implicit `None`), `print` the value that is about to leave the function.
+
+You do **not** need to print anything before a `raise` / exception exit —
+only normal return paths.
 
 Use only the built-in `print(...)` call. Do **not** create log files, do **not**
 import `logging`, and do **not** add a custom logger helper just for this.
