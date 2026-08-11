@@ -28,7 +28,7 @@ Default model: `openai/gpt-5.6-luna` at low reasoning effort. Codex CLI pin:
 ## Layout
 
 - `analysis/` — design notes
-- `prompts/programming-skills/` — injectable skills (scalable)
-- `evals/judges/` — one judge per skill
-- `evals/tasks/` — shared coding tasks
+- `prompts/programming-skills/` — injectable skills (`srp`, `commenting`)
+- `evals/judges/` — one short judge prompt per skill (only these are edited)
+- `evals/tasks/` — five one-sentence coding tasks
 - `evals/run_codex_benchmark.sh` — runner
