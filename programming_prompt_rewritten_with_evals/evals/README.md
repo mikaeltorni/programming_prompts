@@ -1,7 +1,7 @@
 # Harbor evaluation
 
-Five small write-from-scratch tasks measure whether Codex follows the programming
-skill while implementing tiny Python programs:
+Five small write-from-scratch tasks measure whether Codex follows selected
+programming skills while implementing tiny Python programs:
 
 | Task | Entrypoint |
 | --- | --- |
@@ -11,37 +11,56 @@ skill while implementing tiny Python programs:
 | [`tasks/greeter`](tasks/greeter) | `/app/greeter.py` → `run_greeter` |
 | [`tasks/temperature`](tasks/temperature) | `/app/temperature.py` → `run_temperature` |
 
-Each task instruction is only the product prompt (what to build). The programming
-skill is injected separately and guides *how* to write it. One shared LLM judge
-scores single-responsibility structure across every task.
+Each task instruction is the product prompt (what to build) plus “Follow the
+provided programming skill.” Skills under
+[`../prompts/programming-skills/`](../prompts/programming-skills/) guide *how*
+to write it. Each skill has its own judge under [`judges/<skill>/`](judges/).
 
-## Edit surfaces (only these two)
+## Edit surfaces
 
-- [`../prompts/programming-skill/SKILL.md`](../prompts/programming-skill/SKILL.md)
-  — agent skill
-- [`judge/judge-prompt.md`](judge/judge-prompt.md) — shared pass/fail judge
-  (keep the `{criteria}` placeholder)
+For each skill `<name>`:
 
-`./run_codex_benchmark.sh` runs [`sync_judge.sh`](sync_judge.sh) first so every
-`tasks/*/tests/` copy matches `judge/`. Do not edit the per-task judge copies.
-[`judge/judge.toml`](judge/judge.toml) is Reward Kit wiring only.
+- [`../prompts/programming-skills/<name>/SKILL.md`](../prompts/programming-skills/)
+- [`judges/<name>/judge-prompt.md`](judges/) (keep `{criteria}`)
 
-Trial math: default `-k 5` is **5 attempts per task**. With 5 tasks that is
-**25 trials** per job. `-n 5` is concurrency only (not a multiplier). Running
-positive + baseline + negative would be 75 trials total, not 125.
+Current skills: `srp`, `commenting`.
 
-After each job the wrapper prints every trial, then a **per-task** SRP pass
-rate table and a **TOTAL** line. For `--negative`, a low TOTAL is expected
-(anti-skill aims for monoliths that the judge rejects).
+## CLI parameters
+
+| Flag | Meaning |
+| --- | --- |
+| `--skills srp,commenting` | Which skills to inject/judge (default: all discovered) |
+| `--skills=srp` / `-skills=srp` | Same, equals form |
+| `--run-separately` / `--runSeparately` | One Harbor job per skill (costlier) |
+| `--baseline` | No skills injected; selected judges still score |
+| `--negative` | Auto-invert the selected skill (one skill unless separate) |
+| `--install-only` | Reinstall/verify pinned Codex in the task image |
+| `-k` / `-n` / `-m` / `--ak` | Passed through to Harbor |
+
+Without `--run-separately`, all selected skills are installed in **one** Codex
+session and **each** matching judge scores the same written code. With
+`--run-separately`, each skill gets its own prompt instance + its own judge
+(more subscription usage).
+
+Trial math: default `-k 5` is **5 attempts per coding task**. With 5 tasks that
+is **25 trials per skill-job**. `--run-separately` with 2 skills ≈ **50
+trials**. Model stays **gpt-5.6-luna / low**.
+
+After each job the wrapper prints trials, per-task rates, **per-skill judge**
+rates, and a TOTAL line.
 
 ## Layout
 
 ```text
 evals/
-├── judge/
-│   ├── judge-prompt.md   # THE shared evaluation prompt
-│   └── judge.toml        # Reward Kit wiring (synced into tasks)
-├── sync_judge.sh
+├── judges/
+│   ├── srp/
+│   │   ├── judge-prompt.md
+│   │   └── judge.toml
+│   └── commenting/
+│       ├── judge-prompt.md
+│       └── judge.toml
+├── sync_judges.sh
 ├── run_codex_benchmark.sh
 ├── harbor.codex.yaml
 ├── harbor.codex.baseline.yaml
@@ -57,16 +76,16 @@ Each task directory:
 
 ```text
 tasks/<name>/
-├── instruction.md            # simple write prompt
-├── instruction.negative.md   # same prompt + keep one monolithic function
-├── artifact.txt              # /app/<file>.py downloaded after each trial
+├── instruction.md
+├── instruction.negative.srp.md
+├── instruction.negative.commenting.md
+├── artifact.txt
 ├── task.toml
-├── environment/Dockerfile    # empty /app workspace (write from scratch)
-├── solution/solve.sh         # oracle SRP reference implementation
+├── environment/Dockerfile
+├── solution/solve.sh
 └── tests/
-    ├── test.sh
-    ├── judge-prompt.md       # synced copy — do not edit
-    └── judge.toml            # synced copy — do not edit
+    ├── test.sh                 # runs every synced skill judge
+    └── judges/<skill>/         # synced copies — do not edit
 ```
 
 ## Tested platform
@@ -193,7 +212,7 @@ entering this repository's `evals` directory:
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 
 TASK="$PWD/tasks/calculator"
-SKILL="$PWD/../prompts/programming-skill"
+SKILL="$PWD/../prompts/programming-skills/srp"
 JOBS="$(mktemp -d)"
 MOUNTS="$(python3 -c 'import json, pathlib; print(json.dumps([{"type": "bind", "source": str(pathlib.Path.home() / ".codex" / "auth.json"), "target": "/root/.codex/auth.json", "read_only": True}]))')"
 ```
@@ -215,19 +234,20 @@ find "$JOBS/positive-oracle" -name reward.json -print -exec cat {} \;
 
 ## Negative test (auto-invert the programming skill)
 
-`--negative` builds a temporary anti-skill from
-[`../prompts/programming-skill/SKILL.md`](../prompts/programming-skill/SKILL.md)
-and swaps each task to `instruction.negative.md` (write the program, but keep
-one monolithic function). You do not edit a separate negative skill — only the
-programming skill and [`judge/judge-prompt.md`](judge/judge-prompt.md).
+`--negative` builds a temporary anti-skill from the selected skill under
+[`../prompts/programming-skills/`](../prompts/programming-skills/) and swaps
+each task to `instruction.negative.<skill>.md`. Multi-skill negative requires
+`--run-separately`. Edit only that skill’s `SKILL.md` and
+`judges/<skill>/judge-prompt.md`.
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-./run_codex_benchmark.sh --negative -k 5 -n 5
+./run_codex_benchmark.sh --negative --skills srp -k 5 -n 5
+./run_codex_benchmark.sh --negative --skills commenting -k 5 -n 5
+./run_codex_benchmark.sh --negative --skills srp,commenting --run-separately -k 5 -n 5
 ```
 
-Expected rewards are mostly `0` (judge fails the monolith). That is about
-**25 trials** (5 tasks × 5 attempts).
+Expected rewards are mostly `0` for the inverted behavior.
 
 ## Verifier sanity (`nop`)
 
@@ -333,22 +353,19 @@ that job. Keep ChatGPT subscription auth via `CODEX_FORCE_AUTH_JSON=1` and the
 
 ## Add the next evaluation
 
-Keep each new task equally small:
+Keep each new coding task equally small:
 
 1. copy an existing `tasks/<name>` directory;
-2. write a short product prompt in `instruction.md` (and a monolithic
-   `instruction.negative.md`);
+2. write a short product prompt in `instruction.md` plus
+   `instruction.negative.srp.md` and `instruction.negative.commenting.md`;
 3. put the artifact path in `artifact.txt` (e.g. `/app/foo.py`);
-4. make `solution/solve.sh` write an SRP reference implementation;
-5. list the task in `harbor.codex.yaml` and `harbor.codex.baseline.yaml`
-   (or rely on `--negative` generation which discovers `tasks/*`);
-6. run `./sync_judge.sh`, then oracle / `nop` / one real model trial.
+4. make `solution/solve.sh` write an SRP + documented reference implementation;
+5. add new skills under `../prompts/programming-skills/<skill>/` and matching
+   `judges/<skill>/` when needed;
+6. run `./sync_judges.sh`, then oracle / `nop` / one real model trial.
 
-For positive/baseline YAML checked into git, keep the `tasks:` list in sync as
-documentation. `./run_codex_benchmark.sh` auto-discovers every `tasks/*/`
-directory at runtime, so new folders are included without a YAML edit when you
-use the wrapper. The shared judge stays in `judge/` — never fork a per-task
-judge prompt.
+`./run_codex_benchmark.sh` auto-discovers every `tasks/*/` directory and every
+selected skill. Prefer the wrapper over bare Harbor YAML.
 
 Harbor records the complete jobs under the temporary `$JOBS` directory, so the
 repository stays free of model transcripts, credentials, and generated output.

@@ -1,18 +1,16 @@
 # Reference Harbor job config (documentation / bare `harbor -c` use).
-# ./run_codex_benchmark.sh auto-discovers every tasks/*/ directory and generates
-# an equivalent config at runtime — prefer the wrapper so the shared judge is
-# synced and new tasks are included automatically.
+# Prefer ./run_codex_benchmark.sh — it discovers coding tasks and selected
+# skills under ../prompts/programming-skills/, syncs matching judges, and
+# keeps gpt-5.6-luna at low reasoning effort.
 #
-# Default: openai/gpt-5.6-luna, reasoning_effort=low, BenchmarkCodex.
-# With -k 5 across 5 tasks → 25 trials (-n 5 is concurrency only).
-#
-#   ./run_codex_benchmark.sh --job-name codex-srp -k 5 -n 5
+#   ./run_codex_benchmark.sh --skills srp,commenting -k 5 -n 5
 
 agents:
   - import_path: harbor_agents.benchmark_codex:BenchmarkCodex
     model_name: openai/gpt-5.6-luna
     skills:
-      - ../prompts/programming-skill
+      - ../prompts/programming-skills/srp
+      - ../prompts/programming-skills/commenting
     kwargs:
       version: "0.147.0"
       reasoning_effort: low

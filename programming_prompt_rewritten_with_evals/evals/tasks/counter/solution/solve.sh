@@ -9,6 +9,14 @@ Path("/app/counter.py").write_text(
 
 
 def parse_command(command: str) -> tuple[str, list[str]]:
+    """Split a counter command into an action and argument tokens.
+
+    Args:
+        command: Raw counter command text.
+
+    Returns:
+        A tuple of action name and remaining argument tokens.
+    """
     parts = command.strip().split()
     if not parts:
         raise ValueError("empty command")
@@ -16,10 +24,26 @@ def parse_command(command: str) -> tuple[str, list[str]]:
 
 
 def format_value(value: int) -> str:
+    """Format the counter value for the API.
+
+    Args:
+        value: Current counter integer.
+
+    Returns:
+        String like "value=<n>".
+    """
     return f"value={value}"
 
 
 def run_counter(command: str) -> str:
+    """Execute one counter command and return the value.
+
+    Args:
+        command: Counter command such as "inc", "dec", "get", or "set 3".
+
+    Returns:
+        Formatted value string.
+    """
     global _VALUE
     action, args = parse_command(command)
     if action == "inc":
