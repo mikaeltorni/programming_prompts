@@ -275,13 +275,21 @@ echo "This job schedules about $((TASK_COUNT * attempts_per_task)) trials ($atte
 
 CODEX_FORCE_AUTH_JSON=1 harbor run "${COMMON[@]}" "${HARBOR_ARGS[@]}"
 
-python3 - <<'PY' "$JOBS"
+RUN_MODE="positive"
+if [[ "$BASELINE" -eq 1 ]]; then
+  RUN_MODE="baseline"
+elif [[ "$NEGATIVE" -eq 1 ]]; then
+  RUN_MODE="negative"
+fi
+
+python3 - <<'PY' "$JOBS" "$RUN_MODE"
 """Print a console-friendly summary of each Harbor trial result."""
 
 from __future__ import annotations
 
 import json
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 
@@ -350,29 +358,56 @@ def _trial_dirs(jobs_root: Path) -> list[Path]:
     return dirs
 
 
+def _task_name(trial_dir: Path) -> str:
+    name = trial_dir.name
+    if "__" in name:
+        return name.split("__", 1)[0]
+    return name
+
+
+def _fmt_rate(passed: int, total: int) -> str:
+    if total <= 0:
+        return "n/a"
+    return f"{passed}/{total} ({100.0 * passed / total:.1f}%)"
+
+
 jobs_root = Path(sys.argv[1])
+run_mode = sys.argv[2] if len(sys.argv) > 2 else "unknown"
 trial_dirs = _trial_dirs(jobs_root)
 if not trial_dirs:
     print("No trial reward.json files found under", jobs_root, file=sys.stderr)
     raise SystemExit(0)
 
+mode_note = {
+    "positive": "SRP pass rate — expect high when the programming skill works",
+    "baseline": "SRP pass rate — no skill injected; expect lower than positive",
+    "negative": "SRP pass rate — anti-skill aims for monoliths; expect near 0",
+}.get(run_mode, "SRP pass rate")
+
 print(file=sys.stderr)
 print("=" * 72, file=sys.stderr)
-print(f"Trial results ({len(trial_dirs)}) — {jobs_root}", file=sys.stderr)
+print(f"Trial results ({len(trial_dirs)}) — mode={run_mode} — {jobs_root}", file=sys.stderr)
+print(f"({mode_note})", file=sys.stderr)
 print("=" * 72, file=sys.stderr)
 
+by_task: dict[str, list[float | None]] = defaultdict(list)
 rewards: list[float] = []
 for index, trial_dir in enumerate(trial_dirs, start=1):
     reward = _reward_value(trial_dir)
     raw, reasoning = _judge_bits(trial_dir)
     sources = _python_sources(trial_dir)
+    task = _task_name(trial_dir)
+    by_task[task].append(reward)
     if reward is not None:
         rewards.append(reward)
 
     verdict = "PASS" if reward is not None and reward >= 1.0 else "FAIL"
     reward_text = "n/a" if reward is None else f"{reward:g}"
     print(file=sys.stderr)
-    print(f"[{index}/{len(trial_dirs)}] {trial_dir.name}  {verdict}  reward={reward_text}", file=sys.stderr)
+    print(
+        f"[{index}/{len(trial_dirs)}] {trial_dir.name}  {verdict}  reward={reward_text}",
+        file=sys.stderr,
+    )
     if raw is not None:
         print(f"  judge answer: {raw}", file=sys.stderr)
     if reasoning:
@@ -386,15 +421,23 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
         print("  source: (no *.py artifacts downloaded)", file=sys.stderr)
 
 print(file=sys.stderr)
+print("=" * 72, file=sys.stderr)
+print(f"Summary by task (mode={run_mode})", file=sys.stderr)
+print("=" * 72, file=sys.stderr)
+for task in sorted(by_task):
+    values = by_task[task]
+    numeric = [value for value in values if value is not None]
+    passed = sum(1 for value in numeric if value >= 1.0)
+    total = len(numeric)
+    print(f"  {task}: {_fmt_rate(passed, total)}", file=sys.stderr)
+
+print(file=sys.stderr)
 print("-" * 72, file=sys.stderr)
 if rewards:
     passed = sum(1 for value in rewards if value >= 1.0)
     total = len(rewards)
-    print(
-        f"pass_rate={passed}/{total} ({100.0 * passed / total:.1f}%)",
-        file=sys.stderr,
-    )
+    print(f"TOTAL pass_rate={_fmt_rate(passed, total)}", file=sys.stderr)
 else:
-    print("pass_rate=n/a (no numeric rewards)", file=sys.stderr)
+    print("TOTAL pass_rate=n/a (no numeric rewards)", file=sys.stderr)
 print("-" * 72, file=sys.stderr)
 PY

@@ -10,3 +10,5 @@ Return:
 - `greeting=Good night, <name>` otherwise
 
 Raise `ValueError` for bad input.
+
+Follow the provided programming skill.
