@@ -1,18 +1,15 @@
 Score whether the Python uses single-responsibility functions/methods.
 
-Answer yes only if:
-- parsing/input handling is in its own helper(s), AND
-- core logic (operator/command selection, arithmetic, state updates, conversions)
-  is in its own helper(s), AND
-- the public entrypoint mainly orchestrates (call helpers, return).
+Answer yes if there is a parse helper and a separate core-logic helper
+(arithmetic, conversion, or state change), and the entrypoint mostly calls
+those helpers. A thin entrypoint may dispatch with if/elif and return a
+one-line formatted result.
 
-Answer no if the entrypoint still chooses operators/commands, runs the core
-logic, or formats the main result itself — even when a small helper exists
-(for example only `_parse_number` while `run_*` still does validation,
-dispatch, arithmetic, and formatting).
+Answer no if the entrypoint still does the real work itself — especially when
+only a tiny helper like `_parse_number` exists and the entrypoint still validates,
+dispatches, computes, and formats.
 
-Ignore exact return-string wording and task API details. Judge structure only.
-If unsure, answer no.
+Ignore API wording. If unsure, answer no.
 
 Criteria to score:
 {criteria}
