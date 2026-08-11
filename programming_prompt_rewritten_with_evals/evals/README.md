@@ -36,6 +36,8 @@ at runtime. Judge copies under `tasks/*/tests/judges/` are also runtime-only.
 | --- | --- |
 | `--skills srp,commenting` | Which skills to inject/judge (default: all discovered) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
+| `--tasks todo,calculator` | Which coding prompts to run (default: all) |
+| `--tasks=greeter` / `task=todo,counter` | Same, equals / bare forms |
 | `--run-separately` / `--runSeparately` | One Harbor job per skill (costlier) |
 | `--baseline` | No skills injected; selected judges still score |
 | `--negative` | Auto-invert the selected skill (one skill unless separate) |
@@ -47,9 +49,10 @@ session and **each** matching judge scores the same written code. With
 `--run-separately`, each skill gets its own prompt instance + its own judge
 (more subscription usage).
 
-Trial math: default `-k 5` is **5 attempts per coding task**. With 5 tasks that
-is **25 trials per skill-job**. `--run-separately` with 2 skills ≈ **50
-trials**. Model stays **gpt-5.6-luna / low**.
+Trial math: default `-k 5` is **5 attempts per selected coding task**. With all
+5 tasks that is **25 trials per skill-job**. `--tasks todo,calculator -k 5` is
+**10 trials**. `--run-separately` with 2 skills ≈ **2×** that. Model stays
+**gpt-5.6-luna / low**.
 
 After each job the wrapper prints trials, per-task rates, **per-skill judge**
 rates (answer + **reasoning**), and a TOTAL line.
