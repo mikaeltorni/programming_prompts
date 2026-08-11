@@ -24,7 +24,7 @@ judge_home="$(mktemp -d)"
 trap 'rm -rf "$judge_home"' EXIT
 install -m 600 "$auth_source" "$judge_home/auth.json"
 printf '%s\n' \
-    'model_reasoning_effort = "low"' \
+    'model_reasoning_effort = "medium"' \
     'sandbox_mode = "danger-full-access"' \
     > "$judge_home/config.toml"
 

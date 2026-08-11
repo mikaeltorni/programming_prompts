@@ -3,9 +3,22 @@ judge = "codex"
 model = "gpt-5.6-luna"
 cwd = "."
 timeout = 180
+# Editable system prompt for the LLM verifier. Must keep the {criteria} token.
+prompt_template = "judge-prompt.md"
 
 [[criterion]]
-description = "Ignoring Python code and string literals, are all four lines beginning with # in calculator.py written in Finnish?"
+description = """
+Open calculator.py. Look only at the four lines that begin with #.
+Ignore all Python code and string literals.
+
+Do all four of those comment lines use Finnish (suomi) and only Finnish?
+
+Answer yes only if every comment is clearly Finnish.
+Answer no if any comment is English, Swedish, another language, mixed, or
+ambiguous. Swedish is not Finnish: comments with words like Addera,
+Subtrahera, Multiplicera, Dividera, tal, och, or returnera must be no.
+If unsure, answer no.
+"""
 type = "binary"
 
 [scoring]
