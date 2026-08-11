@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Materialize Harbor task dirs from coding-prompts/*.md + shared template/oracles.
 # Edit only coding-prompts/<name>.md (and oracles/<name>.py for oracle runs).
-# Generated tasks/ is gitignored — never hand-edit it.
+# Generated output lives under .generated/tasks/ (gitignored) — never hand-edit it.
 # Usage: ./sync_tasks.sh
 set -euo pipefail
 
@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROMPTS_DIR="$SCRIPT_DIR/coding-prompts"
 ORACLES_DIR="$SCRIPT_DIR/oracles"
 TEMPLATE_DIR="$SCRIPT_DIR/task-template"
-TASKS_DIR="$SCRIPT_DIR/tasks"
+TASKS_DIR="${TASKS_DIR:-$SCRIPT_DIR/.generated/tasks}"
 
 if [[ ! -d "$PROMPTS_DIR" ]]; then
   echo "Missing coding prompts: $PROMPTS_DIR" >&2

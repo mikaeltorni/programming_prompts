@@ -3,16 +3,16 @@
 # Edit only:
 #   evals/judges/<skill>/prompt.md (+ judge.toml)
 #   evals/verifier/run_judges.sh
-# Never edit the synced copies under tasks/*/tests/ (tasks/ is generated).
+# Never edit the synced copies under .generated/tasks/*/tests/ (generated).
 # Usage: ./sync_judges.sh [skill ...]
-# Prefer ./sync_tasks.sh first so tasks/ exists.
+# Prefer ./sync_tasks.sh first so .generated/tasks/ exists.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 JUDGES_ROOT="$SCRIPT_DIR/judges"
 VERIFIER_SRC="$SCRIPT_DIR/verifier/run_judges.sh"
 # Allow callers to target an isolated job copy (see run_benchmark.sh).
-TASKS_DIR="${TASKS_DIR:-$SCRIPT_DIR/tasks}"
+TASKS_DIR="${TASKS_DIR:-$SCRIPT_DIR/.generated/tasks}"
 
 if [[ ! -d "$TASKS_DIR" ]] || [[ -z "$(find "$TASKS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1)" ]]; then
   echo "No generated tasks yet — running sync_tasks.sh first" >&2
