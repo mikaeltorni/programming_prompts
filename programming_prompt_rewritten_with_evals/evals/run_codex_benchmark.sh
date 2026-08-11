@@ -3,7 +3,7 @@
 #
 # Edit surfaces:
 #   ../prompts/programming-skills/<skill>/SKILL.md
-#   judges/<skill>/judge-prompt.md
+#   judges/<skill>/prompt.md
 #
 # Usage (from this directory):
 #   ./run_codex_benchmark.sh
@@ -141,8 +141,8 @@ resolve_skills() {
       echo "Unknown skill '$skill' (expected $SKILLS_ROOT/$skill/SKILL.md)" >&2
       exit 1
     fi
-    if [[ ! -f "$JUDGES_ROOT/$skill/judge-prompt.md" ]]; then
-      echo "Missing judge for skill '$skill' (expected $JUDGES_ROOT/$skill/judge-prompt.md)" >&2
+    if [[ ! -f "$JUDGES_ROOT/$skill/prompt.md" && ! -f "$JUDGES_ROOT/$skill/judge-prompt.md" ]]; then
+      echo "Missing judge for skill '$skill' (expected $JUDGES_ROOT/$skill/prompt.md)" >&2
       exit 1
     fi
   done

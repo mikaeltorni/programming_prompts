@@ -22,8 +22,8 @@ Skills and judges — two of each right now:
 
 - [`../prompts/programming-skills/srp/SKILL.md`](../prompts/programming-skills/srp/SKILL.md)
 - [`../prompts/programming-skills/commenting/SKILL.md`](../prompts/programming-skills/commenting/SKILL.md)
-- [`judges/srp/judge-prompt.md`](judges/srp/judge-prompt.md)
-- [`judges/commenting/judge-prompt.md`](judges/commenting/judge-prompt.md)
+- [`judges/srp/prompt.md`](judges/srp/prompt.md)
+- [`judges/commenting/prompt.md`](judges/commenting/prompt.md)
 
 Coding tasks — one short sentence each under `tasks/*/instruction.md`.
 Negative wording is generated at runtime (no per-task negative files).
@@ -58,18 +58,22 @@ rates (answer + **reasoning**), and a TOTAL line.
 ```text
 evals/
 ├── judges/
+│   ├── README.md
 │   ├── srp/
-│   │   ├── judge-prompt.md
+│   │   ├── prompt.md
 │   │   └── judge.toml
 │   └── commenting/
-│       ├── judge-prompt.md
+│       ├── prompt.md
 │       └── judge.toml
+├── verifier/
+│   ├── README.md
+│   └── run_judges.sh       # shared Harbor verifier (edit here only)
 ├── testing/
 │   ├── README.md
 │   ├── verify_with_ca.sh
 │   ├── verify_with_cca.sh
 │   └── lib/verify_prompt.sh
-├── sync_judges.sh
+├── sync_judges.sh          # syncs judges + run_judges.sh into tasks/*/tests/
 ├── run_codex_benchmark.sh
 ├── harbor.codex.yaml
 ├── harbor.codex.baseline.yaml
@@ -91,15 +95,17 @@ tasks/<name>/
 ├── environment/Dockerfile
 ├── solution/solve.sh
 └── tests/
-    └── test.sh             # runs synced skill judges; keeps reasoning text
+    ├── test.sh             # thin wrapper → synced run_judges.sh
+    └── (runtime) judges/ + run_judges.sh from sync_judges.sh
 ```
 
 ## Judge reasoning in results
 
-Each `tasks/*/tests/test.sh` runs rewardkit per selected skill, keeps
-`reward-<skill>-details.json` (including the judge’s `reasoning` string), and
-writes an aggregate `reward-details.json` with per-skill `raw` + `reasoning`.
-`run_codex_benchmark.sh` prints those lines in the post-run console summary:
+`verifier/run_judges.sh` (synced into each task) runs rewardkit per selected
+skill, keeps `reward-<skill>-details.json` (including the judge’s `reasoning`
+string), and writes an aggregate `reward-details.json` with per-skill `raw` +
+`reasoning`. `run_codex_benchmark.sh` prints those lines in the post-run
+console summary:
 
 ```text
   judge[srp] answer: yes
@@ -320,7 +326,8 @@ to the with-skill run:
 ## Test the real skill with Codex
 
 **Default model:** `openai/gpt-5.6-luna` at **low** reasoning effort
-(`harbor.codex.yaml`). The LLM judge in `tests/test.sh` also uses low effort.
+(`harbor.codex.yaml`). The LLM judge in `verifier/run_judges.sh` also uses low
+effort.
 
 Sign Codex into the ChatGPT subscription on the host:
 
@@ -394,7 +401,8 @@ Keep each new coding task equally small:
 4. make `solution/solve.sh` write a reference implementation that can pass the
    selected judges;
 5. add new skills only as `../prompts/programming-skills/<skill>/SKILL.md` plus
-   `judges/<skill>/judge-prompt.md` (+ `judge.toml`);
+   `judges/<skill>/prompt.md` (+ `judge.toml`); edit the shared verifier at
+   `verifier/run_judges.sh` (not the five thin `tasks/*/tests/test.sh` wrappers);
 6. run `./sync_judges.sh` (runtime), then oracle / `nop` / one real model trial.
 
 `./run_codex_benchmark.sh` auto-discovers every `tasks/*/` directory and every

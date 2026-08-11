@@ -24,8 +24,8 @@ Parameters:
 
 Both require a graphical terminal (`gnome-terminal` preferred). The prompt
 points at the skill files under `prompts/programming-skills/` and the judge
-prompts under `evals/judges/`, and asks the agent to confirm positive trials
-follow both skills while baseline trials do not.
+prompts under `evals/judges/<skill>/prompt.md`, and asks the agent to confirm
+positive trials follow both skills while baseline trials do not.
 
 ## Related: judge reasoning in the runner
 

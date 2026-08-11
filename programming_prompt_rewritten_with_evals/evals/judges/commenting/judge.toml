@@ -1,12 +1,12 @@
-# Reward Kit harness config only — edit the prompt in judge-prompt.md.
-# Keep the {criteria} token in judge-prompt.md.
+# Reward Kit harness config only — edit the prompt in prompt.md.
+# Keep the {criteria} token in prompt.md.
 
 [judge]
 judge = "codex"
 model = "gpt-5.6-luna"
 cwd = "."
 timeout = 180
-prompt_template = "judge-prompt.md"
+prompt_template = "prompt.md"
 
 [[criterion]]
 name = "function_commenting"

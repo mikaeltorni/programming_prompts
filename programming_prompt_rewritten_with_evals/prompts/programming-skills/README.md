@@ -11,7 +11,7 @@ Current skills:
 | [`commenting`](commenting/SKILL.md) | Docstrings with description, Parameters, Returns |
 
 Add a new skill by creating `programming-skills/<name>/SKILL.md` and
-`evals/judges/<name>/judge-prompt.md` (+ `judge.toml`). The benchmark runner
+`evals/judges/<name>/prompt.md` (+ `judge.toml`). The benchmark runner
 auto-discovers skill directories.
 
 Judges emit a short `reasoning` string per criterion; the verifier stores it
