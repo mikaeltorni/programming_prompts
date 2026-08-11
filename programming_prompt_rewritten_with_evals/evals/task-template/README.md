@@ -1,6 +1,6 @@
 # Task template
 
-Shared Harbor scaffolding copied into every generated `tasks/<name>/` by
+Shared Harbor scaffolding copied into every generated `.generated/tasks/<name>/` by
 [`../sync_tasks.sh`](../sync_tasks.sh).
 
 - `environment/Dockerfile` — Python image with pinned Codex + Claude Code CLIs

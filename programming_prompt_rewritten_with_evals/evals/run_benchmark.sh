@@ -58,7 +58,7 @@ RUNS_ROOT="${RUNS_ROOT:-$SCRIPT_DIR/runs}"
 SKILLS_ROOT="$SCRIPT_DIR/../prompts/programming-skills"
 JUDGES_ROOT="$SCRIPT_DIR/judges"
 CODING_PROMPTS_DIR="$SCRIPT_DIR/coding-prompts"
-TASKS_DIR="$SCRIPT_DIR/tasks"
+TASKS_DIR="$SCRIPT_DIR/.generated/tasks"
 
 echo "Codex pin: $CODEX_VERSION | Claude Code pin: $CLAUDE_VERSION" >&2
 echo "Jobs directory: $JOBS" >&2

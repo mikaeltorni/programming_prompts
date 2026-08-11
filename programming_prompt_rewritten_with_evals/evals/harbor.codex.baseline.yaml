@@ -11,8 +11,8 @@ agents:
       reasoning_effort: low
 
 tasks:
-  - path: tasks/calculator
-  - path: tasks/counter
-  - path: tasks/greeter
-  - path: tasks/temperature
-  - path: tasks/todo
+  - path: .generated/tasks/calculator
+  - path: .generated/tasks/counter
+  - path: .generated/tasks/greeter
+  - path: .generated/tasks/temperature
+  - path: .generated/tasks/todo

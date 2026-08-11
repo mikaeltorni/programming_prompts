@@ -20,7 +20,8 @@ Each skill has a matching judge in
 Five write-from-scratch tasks (`calculator`, `todo`, `counter`, `greeter`,
 `temperature`) live as markdown under
 [`evals/coding-prompts/`](evals/coding-prompts/). The runner materializes Harbor
-`tasks/` from those prompts. Selected skills are injected; each selected
+task trees under `evals/.generated/tasks/` from those prompts. Selected skills
+are injected; each selected
 skill’s judge scores the result. See [`evals/README.md`](evals/README.md) for
 CLI parameters.
 
@@ -36,7 +37,7 @@ Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
 - `evals/oracles/` — reference solutions for Harbor oracle
 - `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill
 - `evals/verifier/run_judges.sh` — shared Harbor verifier
-- `evals/tasks/` — generated at runtime (gitignored)
+- `evals/.generated/tasks/` — generated at runtime (gitignored, hidden)
 - `evals/run_benchmark.sh` — multi-harness runner (`harness=codex|cc|both`)
 - `evals/run_codex_benchmark.sh` — shim → `run_benchmark.sh harness=codex`
 - `evals/runs/` — timestamped archives of results, code, and summaries

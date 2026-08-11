@@ -26,9 +26,10 @@ Skills and judges:
 - [`judges/commenting/prompt.md`](judges/commenting/prompt.md)
 
 Coding tasks — one markdown file each under
-[`coding-prompts/`](coding-prompts/). Harbor `tasks/` trees are **generated**
-by [`sync_tasks.sh`](sync_tasks.sh) (gitignored). Negative wording is generated
-at runtime. Judge copies under `tasks/*/tests/judges/` are also runtime-only.
+[`coding-prompts/`](coding-prompts/). Harbor task trees are **generated** under
+[`.generated/tasks/`](.generated/tasks/) by [`sync_tasks.sh`](sync_tasks.sh)
+(gitignored / hidden). Negative wording is generated at runtime. Judge copies
+under `.generated/tasks/*/tests/judges/` are also runtime-only.
 
 ## CLI parameters
 
@@ -55,7 +56,7 @@ session and **each** matching judge scores the same written code. With
 (more subscription usage). Each Harbor job gets an **isolated** copy of the
 selected tasks under `$JOBS/task-trees/<job>/` so `/tests/judges` cannot be
 clobbered by the next skill job or a concurrent benchmark sharing
-`evals/tasks/`.
+`evals/.generated/tasks/`.
 
 Trial math: default `-k 5` is **5 attempts per selected coding task**. With all
 5 tasks that is **25 trials per skill-job per harness**. `--run-separately`
@@ -92,15 +93,15 @@ evals/
 │   ├── README.md
 │   └── run_judges.sh
 ├── testing/
-├── sync_tasks.sh           # coding-prompts → generated tasks/
-├── sync_judges.sh          # judges + verifier → tasks/*/tests/
+├── sync_tasks.sh           # coding-prompts → .generated/tasks/
+├── sync_judges.sh          # judges + verifier → .generated/tasks/*/tests/
 ├── run_benchmark.sh        # Codex + Claude Code runner
 ├── run_codex_benchmark.sh  # thin shim → run_benchmark.sh harness=codex
 ├── archive_benchmark_run.py
 ├── runs/                   # timestamped inspectable archives (written to: …)
 ├── codex-version.txt
 ├── claude-version.txt
-└── tasks/                  # GENERATED (gitignored) — do not edit
+└── .generated/tasks/       # GENERATED (gitignored, hidden) — do not edit
 ```
 
 After every non-install run the wrapper writes a durable archive under
@@ -287,7 +288,7 @@ entering this repository's `evals` directory:
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 
-TASK="$PWD/tasks/calculator"
+TASK="$PWD/.generated/tasks/calculator"
 SKILL="$PWD/../prompts/programming-skills/srp"
 JOBS="$(mktemp -d)"
 MOUNTS="$(python3 -c 'import json, pathlib; print(json.dumps([{"type": "bind", "source": str(pathlib.Path.home() / ".codex" / "auth.json"), "target": "/root/.codex/auth.json", "read_only": True}]))')"
@@ -437,14 +438,15 @@ Keep each new coding task equally small:
 1. add `coding-prompts/<name>.md` (frontmatter: `artifact`, `description`);
 2. add `oracles/<name>.py` that implements the API for Harbor oracle runs;
 3. run `./sync_tasks.sh` (or just the benchmark wrapper) to materialize
-   `tasks/<name>/`;
+   `.generated/tasks/<name>/`;
 4. add new skills only as `../prompts/programming-skills/<skill>/SKILL.md` plus
    `judges/<skill>/prompt.md` (+ `judge.toml`); edit the shared verifier at
    `verifier/run_judges.sh`;
 5. run `./sync_judges.sh` (runtime), then oracle / `nop` / one real model trial.
 
-`./run_benchmark.sh` auto-discovers every `tasks/*/` directory and every
-selected skill. Prefer the wrapper over bare Harbor YAML.
+`./run_benchmark.sh` auto-discovers every selected coding-prompt (materialized
+under `.generated/tasks/`) and every selected skill. Prefer the wrapper over bare
+Harbor YAML.
 
 Harbor records the complete jobs under the temporary `$JOBS` directory, so the
 repository stays free of model transcripts, credentials, and generated output.
