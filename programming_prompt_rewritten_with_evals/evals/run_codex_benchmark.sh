@@ -12,7 +12,7 @@
 # --baseline switches to harbor.codex.baseline.yaml (skills: []) so you can
 # measure baseline pass rate without the programming skill.
 # After each job, prints a console summary: reward, judge reasoning, and the
-# # comment lines from calculator.py (downloaded via --artifact).
+# resulting calculator.py source (downloaded via --artifact).
 # The agent is BenchmarkCodex: fresh CODEX_HOME, wiped skill roots, and only
 # the skills configured in the selected job config (or extra --skill flags).
 
@@ -69,7 +69,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 CONFIG_FILE="$SCRIPT_DIR/harbor.codex.yaml"
-DEFAULT_JOB_NAME="codex-finnish"
+DEFAULT_JOB_NAME="codex-srp"
 if [[ "$BASELINE" -eq 1 ]]; then
   CONFIG_FILE="$SCRIPT_DIR/harbor.codex.baseline.yaml"
   DEFAULT_JOB_NAME="codex-baseline-no-skill"
@@ -149,7 +149,7 @@ def _judge_bits(trial_dir: Path) -> tuple[str | None, str | None]:
     )
 
 
-def _comment_lines(trial_dir: Path) -> list[str]:
+def _calculator_source(trial_dir: Path) -> str | None:
     candidates = [
         trial_dir / "artifacts" / "app" / "calculator.py",
         trial_dir / "artifacts" / "calculator.py",
@@ -158,15 +158,10 @@ def _comment_lines(trial_dir: Path) -> list[str]:
         if not path.is_file():
             continue
         try:
-            text = path.read_text(encoding="utf-8")
+            return path.read_text(encoding="utf-8").rstrip()
         except OSError:
             continue
-        return [
-            line.rstrip()
-            for line in text.splitlines()
-            if line.lstrip().startswith("#")
-        ]
-    return []
+    return None
 
 
 def _trial_dirs(jobs_root: Path) -> list[Path]:
@@ -193,7 +188,7 @@ rewards: list[float] = []
 for index, trial_dir in enumerate(trial_dirs, start=1):
     reward = _reward_value(trial_dir)
     raw, reasoning = _judge_bits(trial_dir)
-    comments = _comment_lines(trial_dir)
+    source = _calculator_source(trial_dir)
     if reward is not None:
         rewards.append(reward)
 
@@ -205,13 +200,13 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
         print(f"  judge answer: {raw}", file=sys.stderr)
     if reasoning:
         print(f"  judge reason: {reasoning}", file=sys.stderr)
-    if comments:
-        print("  calculator.py comments:", file=sys.stderr)
-        for line in comments:
+    if source:
+        print("  calculator.py:", file=sys.stderr)
+        for line in source.splitlines():
             print(f"    {line}", file=sys.stderr)
     else:
         print(
-            "  calculator.py comments: (not downloaded; expected artifacts/app/calculator.py)",
+            "  calculator.py: (not downloaded; expected artifacts/app/calculator.py)",
             file=sys.stderr,
         )
 

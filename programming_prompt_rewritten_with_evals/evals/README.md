@@ -1,29 +1,30 @@
 # Harbor evaluation
 
 There is one small evaluation for the current programming skill:
-`tasks/calculator-comments`.
+`tasks/calculator-srp`.
 
-The task starts with a working calculator whose four comments are in English.
-The agent is asked only to make the file follow the programming skill. A Codex
-LLM judge then answers one binary question: ignoring code and string literals,
-are all four `#` comment lines in `calculator.py` written in Finnish?
+The task starts with a working calculator whose parsing, arithmetic, and result
+formatting all live in one `run_calculator` function. The agent is asked to make
+the file follow the programming skill (single-responsibility functions/methods).
+A Codex LLM judge answers one binary question: does every function in
+`calculator.py` follow single responsibility?
 
 Edit the judge wording here (this is the verifier prompt surface):
 
-- [`tasks/calculator-comments/tests/finnish-comments.toml`](tasks/calculator-comments/tests/finnish-comments.toml)
+- [`tasks/calculator-srp/tests/srp.toml`](tasks/calculator-srp/tests/srp.toml)
   — criterion text plus `prompt_template`
-- [`tasks/calculator-comments/tests/judge-prompt.md`](tasks/calculator-comments/tests/judge-prompt.md)
+- [`tasks/calculator-srp/tests/judge-prompt.md`](tasks/calculator-srp/tests/judge-prompt.md)
   — system prompt template (must keep the `{criteria}` placeholder)
 
-The judge must reject English, Swedish, and other non-Finnish comments. There is
-no vocabulary list or other language-detection heuristic beyond that LLM check.
-The expected reward is `1` for a Finnish rewrite and `0` when comments stay
-English, become Swedish, or are otherwise not Finnish.
+The judge scores structure only. It must ignore comment language and must not
+ask about Finnish or any other natural language. The expected reward is `1`
+when functions are split by responsibility and `0` when the monolithic starting
+function is left in place.
 
 ## Task files
 
 ```text
-tasks/calculator-comments/
+tasks/calculator-srp/
 ├── instruction.md
 ├── task.toml
 ├── environment/
@@ -32,23 +33,22 @@ tasks/calculator-comments/
 ├── solution/
 │   └── solve.sh
 └── tests/
-    ├── finnish-comments.toml   # edit criterion + prompt_template here
-    ├── judge-prompt.md         # edit judge system prompt here
+    ├── srp.toml          # edit criterion + prompt_template here
+    ├── judge-prompt.md   # edit judge system prompt here
     └── test.sh
 ```
 
-- `environment/calculator.py` is the English starting file.
+- `environment/calculator.py` is the multi-responsibility starting file.
 - `solution/solve.sh` is Harbor's known-good oracle solution.
-- `tests/finnish-comments.toml` is the LLM evaluation criterion (edit this when
-  the pass/fail question should change).
+- `tests/srp.toml` is the LLM evaluation criterion (edit this when the
+  pass/fail question should change).
 - `tests/judge-prompt.md` is the judge system prompt template (edit this to make
   the verifier stricter or clearer; keep `{criteria}`).
 - `tests/test.sh` runs Reward Kit and writes the judge's reward.
 
 ## Tested platform
 
-The complete oracle, negative, and Codex runs were tested end to end on Ubuntu
-24.04.4 LTS (Noble). The verified setup used Docker Engine `29.5.3`, Harbor
+The Harbor workflow was exercised on Ubuntu 24.04 with Docker Engine, Harbor
 `0.20.0`, Codex CLI `0.147.0`, and GPT-5.6 Luna at low reasoning effort.
 
 ## Clean Codex instance (required for skill benchmarks)
@@ -169,7 +169,7 @@ entering this repository's `evals` directory:
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 
-TASK="$PWD/tasks/calculator-comments"
+TASK="$PWD/tasks/calculator-srp"
 SKILL="$PWD/../prompts/programming-skill"
 JOBS="$(mktemp -d)"
 MOUNTS="$(python3 -c 'import json, pathlib; print(json.dumps([{"type": "bind", "source": str(pathlib.Path.home() / ".codex" / "auth.json"), "target": "/root/.codex/auth.json", "read_only": True}]))')"
@@ -181,8 +181,8 @@ the saved Harbor job.
 
 ## Positive test
 
-The oracle replaces the English comments with Finnish comments. This must
-produce reward `1`:
+The oracle refactors the monolithic calculator into single-responsibility
+helpers. This must produce reward `1`:
 
 ```bash
 harbor run -p "$TASK" -a oracle --mounts "$MOUNTS" \
@@ -193,23 +193,23 @@ find "$JOBS/positive-oracle" -name reward.json -print -exec cat {} \;
 ## Negative test (verifier sanity)
 
 Harbor's `nop` agent deliberately changes nothing. The calculator still works,
-but its comments remain English, so this must produce reward `0`:
+but it remains one multi-responsibility function, so this must produce reward
+`0`:
 
 ```bash
 harbor run -p "$TASK" -a nop --mounts "$MOUNTS" \
-  -o "$JOBS" --job-name negative-english
-find "$JOBS/negative-english" -name reward.json -print -exec cat {} \;
+  -o "$JOBS" --job-name negative-monolith
+find "$JOBS/negative-monolith" -name reward.json -print -exec cat {} \;
 ```
 
-This proves the verifier rejects English comments. It is **not** a model
+This proves the verifier rejects the starting structure. It is **not** a model
 baseline.
 
 ## Baseline / no-skill negative (model pass rate without the prompt)
 
-To measure how often the model gets Finnish comments **without** the
+To measure how often the model satisfies single responsibility **without** the
 programming skill, keep the same task + Luna-low setup and inject **no
-skills**. Do not edit `SKILL.md` to Swedish for this — that is a wrong-skill
-run, not a no-skill baseline.
+skills**.
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
@@ -219,24 +219,11 @@ export JOBS="$(mktemp -d)" MOUNTS
 
 That uses [`harbor.codex.baseline.yaml`](harbor.codex.baseline.yaml)
 (`skills: []`). The wrapper prints each trial’s reward, judge reasoning, the
-`#` comments from `calculator.py`, and a `pass_rate=X/5 (Y%)` summary. Compare
+resulting `calculator.py` source, and a `pass_rate=X/5 (Y%)` summary. Compare
 that rate to the with-skill run:
 
 ```bash
-./run_codex_benchmark.sh --job-name codex-finnish -k 5 -n 5
-```
-
-Equivalent explicit Harbor invocation:
-
-```bash
-PYTHONPATH="$PWD" CODEX_FORCE_AUTH_JSON=1 harbor run \
-  -c "$PWD/harbor.codex.baseline.yaml" \
-  --ak "version=$(tr -d '[:space:]' <codex-version.txt)" \
-  --mounts "$MOUNTS" \
-  -o "$JOBS" \
-  --job-name codex-baseline-no-skill \
-  -k 5 \
-  -n 5
+./run_codex_benchmark.sh --job-name codex-srp -k 5 -n 5
 ```
 
 ## Test the real skill with Codex
@@ -256,32 +243,20 @@ BenchmarkCodex agent (only the programming skill from `harbor.codex.yaml`):
 
 ```bash
 export JOBS MOUNTS
-./run_codex_benchmark.sh --job-name codex-finnish -k 5 -n 5
+./run_codex_benchmark.sh --job-name codex-srp -k 5 -n 5
 ```
 
 `-k 5` schedules five attempts of the task; `-n 5` runs up to five of them at
 once. The wrapper defaults to the same `-k 5 -n 5` when you pass no Harbor
 flags. After the job finishes it prints a console summary for every trial:
-reward, judge answer/reasoning, and the `#` comment lines from the downloaded
-`/app/calculator.py` artifact, plus a `pass_rate=…` line.
-
-Equivalent explicit Harbor invocation:
-
-```bash
-PYTHONPATH="$PWD" CODEX_FORCE_AUTH_JSON=1 harbor run \
-  -c "$PWD/harbor.codex.yaml" \
-  --ak "version=$(tr -d '[:space:]' <codex-version.txt)" \
-  --mounts "$MOUNTS" \
-  -o "$JOBS" \
-  --job-name codex-finnish \
-  -k 5 \
-  -n 5
-```
+reward, judge answer/reasoning, and the downloaded `/app/calculator.py`
+artifact, plus a `pass_rate=…` line.
 
 Do not use a bare `-a codex` for these skill benchmarks: that path can leave
 host/user skill directories untouched and does not default to the pinned CLI
-version. The expected Codex reward is `1` on each successful Finnish rewrite.
-Codex supports ChatGPT subscription sign-in; see the official
+version. The expected Codex reward is `1` when the file is refactored into
+single-responsibility functions. Codex supports ChatGPT subscription sign-in;
+see the official
 [Codex authentication documentation](https://learn.chatgpt.com/docs/auth).
 Never copy `~/.codex/auth.json` into this repository.
 
@@ -303,51 +278,26 @@ Examples:
 
 ```bash
 # Default: five concurrent Luna-low trials
-./run_codex_benchmark.sh --job-name codex-finnish -k 5 -n 5
+./run_codex_benchmark.sh --job-name codex-srp -k 5 -n 5
 
 # Same model, higher reasoning, still five trials
-./run_codex_benchmark.sh --job-name codex-finnish-high \
+./run_codex_benchmark.sh --job-name codex-srp-high \
   -k 5 -n 5 --ak reasoning_effort=high
 
 # Different Codex model, one attempt
 ./run_codex_benchmark.sh --job-name codex-other \
   -k 1 -n 1 -m openai/gpt-5.4 --ak reasoning_effort=medium
-
-# Explicit harbor run with another model
-PYTHONPATH="$PWD" CODEX_FORCE_AUTH_JSON=1 harbor run \
-  -c "$PWD/harbor.codex.yaml" \
-  -m openai/o3 \
-  --ak reasoning_effort=medium \
-  --ak "version=$(tr -d '[:space:]' <codex-version.txt)" \
-  --mounts "$MOUNTS" \
-  -o "$JOBS" \
-  --job-name codex-o3 \
-  -k 1 -n 1
 ```
 
 CLI `-m` / `--ak` values override the matching fields in `harbor.codex.yaml` for
 that job. Keep ChatGPT subscription auth via `CODEX_FORCE_AUTH_JSON=1` and the
 `auth.json` mount unless you intentionally switch to API-key auth.
 
-## Verified results
-
-This task was run successfully on 2026-08-09 with Harbor `0.20.0`, Docker
-`29.5.3`, Codex CLI `0.147.0`, and model `gpt-5.6-luna` at low reasoning effort
-using ChatGPT subscription authentication:
-
-| Run | Expected | Observed |
-| --- | ---: | ---: |
-| Oracle positive | `1` | `1` |
-| English `nop` negative | `0` | `0` |
-| Codex with the programming skill | `1` | `1` |
-
-All three Harbor jobs completed without exceptions.
-
 ## Add the next evaluation
 
 Keep each new rule equally small:
 
-1. copy `tasks/calculator-comments` to a clearly named task directory;
+1. copy `tasks/calculator-srp` to a clearly named task directory;
 2. put the smallest useful starting file in `environment/`;
 3. describe one behavior in `instruction.md`;
 4. make `solution/solve.sh` demonstrate a passing answer;

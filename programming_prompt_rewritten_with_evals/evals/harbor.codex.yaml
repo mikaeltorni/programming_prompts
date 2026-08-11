@@ -6,7 +6,7 @@
 # comes from kwargs.version (keep in sync with evals/codex-version.txt).
 #
 # From evals/ (five concurrent Luna-low trials):
-#   ./run_codex_benchmark.sh --job-name codex-finnish -k 5 -n 5
+#   ./run_codex_benchmark.sh --job-name codex-srp -k 5 -n 5
 #
 # Override model/effort on the CLI, e.g.:
 #   ./run_codex_benchmark.sh -m openai/gpt-5.4 --ak reasoning_effort=medium -k 1
@@ -21,4 +21,4 @@ agents:
       reasoning_effort: low
 
 tasks:
-  - path: tasks/calculator-comments
+  - path: tasks/calculator-srp

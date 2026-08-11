@@ -5,4 +5,4 @@ description: >-
 ---
 
 # Programming Guidelines
-Write comments on to the code but in Finnish
+Make sure that everything is written in single-responsibility functions/methods.
