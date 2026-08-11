@@ -5,9 +5,12 @@ Each `./run_benchmark.sh` invocation writes an inspectable folder here.
 Directory names sort by start time in the file explorer:
 
 ```text
-YYYY-MM-DD_HHMMSS__harness-…__mode-…__skills-…__separately-…__tasks-…__kN-nN/
+YYYY-MM-DD_HHMMSS_<pid>__harness-…__mode-…__skills-…__separately-…__tasks-…__kN-nN/
 ```
 
+Harbor job dirs under the temp `$JOBS` tree use the same stamp suffix
+(`codex-skills__YYYY-MM-DD_HHMMSS_<pid>`) so sharing `$JOBS` across terminals
+is safe.
 ## Layout
 
 ```text
