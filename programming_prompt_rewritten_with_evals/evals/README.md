@@ -194,9 +194,9 @@ find "$JOBS/positive-oracle" -name reward.json -print -exec cat {} \;
 
 `--negative` builds a temporary anti-skill from
 [`../prompts/programming-skill/SKILL.md`](../prompts/programming-skill/SKILL.md)
-that says: violate those guidelines and put parsing/validation/arithmetic/
-formatting into one function. You do not edit a separate negative skill — only
-the programming skill and
+and a temporary task instruction that forbids helpers, so the normal
+“split into helpers” task wording cannot override the negative control. You do
+not edit a separate negative skill — only the programming skill and
 [`tasks/calculator-srp/tests/judge-prompt.md`](tasks/calculator-srp/tests/judge-prompt.md).
 
 ```bash
