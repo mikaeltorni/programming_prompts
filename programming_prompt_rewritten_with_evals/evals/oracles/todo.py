@@ -1,11 +1,4 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-python3 - <<'PY'
-from pathlib import Path
-
-Path("/app/todo.py").write_text(
-    '''_ITEMS: list[str] = []
+_ITEMS: list[str] = []
 
 
 def parse_command(command: str) -> tuple[str, list[str]]:
@@ -88,7 +81,3 @@ def run_todo(command: str) -> str:
     if action == "done":
         return done_item(args)
     raise ValueError(f"unsupported command: {action}")
-''',
-    encoding="utf-8",
-)
-PY

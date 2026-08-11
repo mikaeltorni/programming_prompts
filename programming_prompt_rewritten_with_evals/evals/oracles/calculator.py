@@ -1,11 +1,4 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-python3 - <<'PY'
-from pathlib import Path
-
-Path("/app/calculator.py").write_text(
-    '''def parse_command(command: str) -> tuple[float, str, float]:
+def parse_command(command: str) -> tuple[float, str, float]:
     """Parse a three-token arithmetic command.
 
     Parameters:
@@ -68,7 +61,3 @@ def run_calculator(command: str) -> str:
     """
     left, op, right = parse_command(command)
     return format_result(apply_op(op, left, right))
-''',
-    encoding="utf-8",
-)
-PY

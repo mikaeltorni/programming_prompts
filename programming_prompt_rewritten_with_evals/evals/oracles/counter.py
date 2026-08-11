@@ -1,11 +1,4 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-python3 - <<'PY'
-from pathlib import Path
-
-Path("/app/counter.py").write_text(
-    '''_VALUE = 0
+_VALUE = 0
 
 
 def parse_command(command: str) -> tuple[str, list[str]]:
@@ -66,7 +59,3 @@ def run_counter(command: str) -> str:
         _VALUE = int(args[0])
         return format_value(_VALUE)
     raise ValueError(f"unsupported command: {action}")
-''',
-    encoding="utf-8",
-)
-PY

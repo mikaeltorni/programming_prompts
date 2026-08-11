@@ -17,10 +17,12 @@ Each skill has a matching judge in
 
 ## Current evaluation
 
-Five write-from-scratch Harbor tasks (`calculator`, `todo`, `counter`,
-`greeter`, `temperature`) ask the agent to implement a tiny Python program.
-Selected skills are injected separately; each selected skill’s judge scores the
-result. See [`evals/README.md`](evals/README.md) for CLI parameters.
+Five write-from-scratch tasks (`calculator`, `todo`, `counter`, `greeter`,
+`temperature`) live as markdown under
+[`evals/coding-prompts/`](evals/coding-prompts/). The runner materializes Harbor
+`tasks/` from those prompts. Selected skills are injected; each selected
+skill’s judge scores the result. See [`evals/README.md`](evals/README.md) for
+CLI parameters.
 
 Default model: `openai/gpt-5.6-luna` at low reasoning effort. Codex CLI pin:
 [`evals/codex-version.txt`](evals/codex-version.txt).
@@ -29,9 +31,11 @@ Default model: `openai/gpt-5.6-luna` at low reasoning effort. Codex CLI pin:
 
 - `analysis/` — design notes
 - `prompts/programming-skills/` — injectable skills (`srp`, `commenting`)
+- `evals/coding-prompts/` — one `.md` per write-from-scratch coding task
+- `evals/oracles/` — reference solutions for Harbor oracle
 - `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill
-- `evals/verifier/run_judges.sh` — shared Harbor verifier (synced into tasks)
-- `evals/tasks/` — five one-sentence coding tasks
+- `evals/verifier/run_judges.sh` — shared Harbor verifier
+- `evals/tasks/` — generated at runtime (gitignored)
 - `evals/run_codex_benchmark.sh` — runner
 - `evals/testing/` — open a new terminal to verify `/tmp` job roots with `ca` / `cca`
 
