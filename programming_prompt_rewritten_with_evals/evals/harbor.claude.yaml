@@ -1,0 +1,18 @@
+# Example Harbor config for Claude Code rewritten-prompt evals.
+# Prefer ./run_benchmark.sh harness=cc — it materializes tasks/, isolates judges,
+# and wires BenchmarkClaudeCode with the pinned CLI version.
+#
+#   ./run_benchmark.sh harness=cc --skills srp,commenting -k 5 -n 5
+#   ./run_benchmark.sh --harness cc --baseline --skills srp,commenting -k 5 -n 5
+
+agents:
+  - import_path: harbor_agents.benchmark_claude_code:BenchmarkClaudeCode
+    model_name: claude-opus-5
+    skills:
+      - ../prompts/programming-skills/srp
+      - ../prompts/programming-skills/commenting
+    kwargs:
+      version: "2.1.227"
+      reasoning_effort: low
+
+tasks: []

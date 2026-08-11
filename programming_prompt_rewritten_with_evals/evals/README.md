@@ -1,7 +1,7 @@
 # Harbor evaluation
 
-Five small write-from-scratch tasks measure whether Codex follows selected
-programming skills while implementing tiny Python programs:
+Five small write-from-scratch tasks measure whether Codex and/or Claude Code
+follow selected programming skills while implementing tiny Python programs:
 
 | Prompt | Entrypoint |
 | --- | --- |
@@ -34,6 +34,8 @@ at runtime. Judge copies under `tasks/*/tests/judges/` are also runtime-only.
 
 | Flag | Meaning |
 | --- | --- |
+| `harness=codex` / `--harness cc` | Agent harness: `codex`, `cc` (Claude Code), or `both` |
+| *(omit harness)* | Runs **both** Codex and Claude Code |
 | `--skills srp,commenting` | Which skills to inject/judge (default: all discovered) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--tasks todo,calculator` | Which coding prompts to run (default: all) |
@@ -41,10 +43,13 @@ at runtime. Judge copies under `tasks/*/tests/judges/` are also runtime-only.
 | `--run-separately` / `--runSeparately` | One Harbor job per skill (costlier) |
 | `--baseline` | No skills injected; selected judges still score |
 | `--negative` | Auto-invert the selected skill (one skill unless separate) |
-| `--install-only` | Reinstall/verify pinned Codex in the task image |
+| `--install-only` | Reinstall/verify pinned CLI(s) in the task image |
 | `-k` / `-n` / `-m` / `--ak` | Passed through to Harbor |
 
-Without `--run-separately`, all selected skills are installed in **one** Codex
+Harness aliases: `cc`, `claude`, `claude-code`, `claudecode` → Claude Code;
+`codex`, `openai`, `gpt` → Codex; `both` / `all` / empty → both.
+
+Without `--run-separately`, all selected skills are installed in **one** agent
 session and **each** matching judge scores the same written code. With
 `--run-separately`, each skill gets its own prompt instance + its own judge
 (more subscription usage). Each Harbor job gets an **isolated** copy of the
@@ -53,12 +58,15 @@ clobbered by the next skill job or a concurrent benchmark sharing
 `evals/tasks/`.
 
 Trial math: default `-k 5` is **5 attempts per selected coding task**. With all
-5 tasks that is **25 trials per skill-job**. `--tasks todo,calculator -k 5` is
-**10 trials**. `--run-separately` with 2 skills ≈ **2×** that. Model stays
-**gpt-5.6-luna / low**.
+5 tasks that is **25 trials per skill-job per harness**. `--run-separately`
+with 2 skills ≈ **2×** that. Omit harness (both) ≈ **2×** again — e.g.
+`harness` omitted + `--run-separately` + 2 skills + 5 tasks + `-k 5` ≈
+**100 trials**. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude Code
+`claude-opus-5` @ low (`--effort`).
 
-After each job the wrapper prints trials, per-task rates, **per-skill judge**
-rates (answer + **reasoning**), and a TOTAL line.
+After each job the wrapper prints trials, then categorized rollups: **by
+harness**, **harness × skill**, **harness × task**, **harness × task × skill**,
+plus a harness comparison table when both ran, and a GRAND TOTAL.
 
 ## Layout
 
@@ -86,7 +94,10 @@ evals/
 ├── testing/
 ├── sync_tasks.sh           # coding-prompts → generated tasks/
 ├── sync_judges.sh          # judges + verifier → tasks/*/tests/
-├── run_codex_benchmark.sh
+├── run_benchmark.sh        # Codex + Claude Code runner
+├── run_codex_benchmark.sh  # thin shim → run_benchmark.sh harness=codex
+├── codex-version.txt
+├── claude-version.txt
 └── tasks/                  # GENERATED (gitignored) — do not edit
 ```
 
@@ -98,7 +109,7 @@ evals/
 `verifier/run_judges.sh` (synced into each task) runs rewardkit per selected
 skill, keeps `reward-<skill>-details.json` (including the judge’s `reasoning`
 string), and writes an aggregate `reward-details.json` with per-skill `raw` +
-`reasoning`. `run_codex_benchmark.sh` prints those lines in the post-run
+`reasoning`. `run_benchmark.sh` prints those lines in the post-run
 console summary:
 
 ```text
@@ -126,28 +137,44 @@ and judge files.
 ## Tested platform
 
 The Harbor workflow was exercised on Ubuntu 24.04 with Docker Engine, Harbor
-`0.20.0`, Codex CLI `0.147.0`, and GPT-5.6 Luna at low reasoning effort.
+`0.20.0`, Codex CLI `0.147.0`, Claude Code `2.1.227`, GPT-5.6 Luna at low
+reasoning effort, and Claude Opus 5 at low effort.
 
-## Clean Codex instance (required for skill benchmarks)
+## Clean agent instances (required for skill benchmarks)
 
-Codex skill trials must not reuse the host Codex home. Every Harbor Codex trial
-already gets a fresh `CODEX_HOME=/tmp/codex-home`. This suite goes further:
+Skill trials must not reuse host skill trees.
 
-- The pin in [`codex-version.txt`](codex-version.txt) is the Codex CLI version
-  installed in the task image and verified by Harbor (`0.147.0` for now).
+### Codex (`harness=codex`)
+
+Every Harbor Codex trial already gets a fresh `CODEX_HOME=/tmp/codex-home`. This
+suite goes further:
+
+- Pin: [`codex-version.txt`](codex-version.txt) (`0.147.0`).
 - [`harbor_agents/benchmark_codex.py`](harbor_agents/benchmark_codex.py) wipes
   `$HOME/.agents/skills`, `/etc/codex/skills`, and `$CODEX_HOME/skills`, then
-  installs only the skills configured for that job (`--skill` /
-  `harbor.codex.yaml`).
-- Prefer [`./run_codex_benchmark.sh`](run_codex_benchmark.sh) or
-  [`harbor.codex.yaml`](harbor.codex.yaml) over a bare `-a codex` invocation so
-  the clean agent and version pin stay in force.
+  installs only the skills configured for that job.
+- Auth: host `~/.codex/auth.json` bind-mount + `CODEX_FORCE_AUTH_JSON=1`.
 
-Reinstall or verify the pinned CLI inside the task environment:
+### Claude Code (`harness=cc`)
+
+- Pin: [`claude-version.txt`](claude-version.txt) (`2.1.227`).
+- [`harbor_agents/benchmark_claude_code.py`](harbor_agents/benchmark_claude_code.py)
+  wipes `$HOME/.claude/skills` and `$CLAUDE_CONFIG_DIR/skills`, then installs
+  only the job’s skills (Harbor would otherwise copy host `~/.claude/skills`).
+- Auth: reads `~/.claude/.credentials.json` → `CLAUDE_CODE_OAUTH_TOKEN` with
+  `CLAUDE_FORCE_OAUTH=1` (token never printed). Also bind-mounts the credentials
+  file into the trial.
+
+Prefer [`./run_benchmark.sh`](run_benchmark.sh) over bare `-a codex` /
+`-a claude-code` so the clean agents and version pins stay in force.
+
+Reinstall or verify pinned CLIs inside the task environment:
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-./run_codex_benchmark.sh --install-only
+./run_benchmark.sh --install-only                  # both harnesses
+./run_benchmark.sh --install-only harness=codex
+./run_benchmark.sh --install-only harness=cc
 ```
 
 ## Install Docker on Ubuntu 24.04
@@ -275,9 +302,14 @@ Multi-skill negative requires `--run-separately`.
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-./run_codex_benchmark.sh --negative --skills srp -k 5 -n 5
-./run_codex_benchmark.sh --negative --skills commenting -k 5 -n 5
-./run_codex_benchmark.sh --negative --skills srp,commenting --run-separately -k 5 -n 5
+# Codex only
+./run_benchmark.sh harness=codex --negative --skills srp -k 5 -n 5
+./run_benchmark.sh harness=codex --negative --skills commenting -k 5 -n 5
+./run_benchmark.sh harness=codex --negative --skills srp,commenting --run-separately -k 5 -n 5
+# Claude Code only
+./run_benchmark.sh harness=cc --negative --skills srp -k 5 -n 5
+# Both harnesses (≈ 2× trials)
+./run_benchmark.sh --negative --skills srp,commenting --run-separately -k 5 -n 5
 ```
 
 Expected rewards are mostly `0` for the inverted behavior.
@@ -298,92 +330,91 @@ baseline.
 
 ## Baseline / no-skill negative (model pass rate without the prompt)
 
-To measure how often the model satisfies single responsibility **without** the
-programming skill, keep the same task + Luna-low setup and inject **no
-skills**.
+To measure how often the model satisfies the skill **without** injecting it,
+keep the same tasks and inject **no skills**.
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-export JOBS="$(mktemp -d)" MOUNTS
-./run_codex_benchmark.sh --baseline -k 5 -n 5
+export JOBS="$(mktemp -d)"
+./run_benchmark.sh harness=codex --baseline --skills srp,commenting -k 5 -n 5
+./run_benchmark.sh harness=cc --baseline --skills srp,commenting -k 5 -n 5
+# both harnesses:
+./run_benchmark.sh --baseline --skills srp,commenting -k 5 -n 5
 ```
 
-That uses [`harbor.codex.baseline.yaml`](harbor.codex.baseline.yaml)
-(`skills: []`). The wrapper prints each trial’s reward, judge reasoning, the
-downloaded `*.py` artifact(s), and a `pass_rate=…` summary. Compare that rate
-to the with-skill run:
+Compare to the with-skill runs:
 
 ```bash
-./run_codex_benchmark.sh --job-name codex-srp -k 5 -n 5
+./run_benchmark.sh harness=codex --skills srp,commenting --run-separately -k 5 -n 5
+./run_benchmark.sh harness=cc --skills srp,commenting --run-separately -k 5 -n 5
 ```
 
-## Test the real skill with Codex
+## Test the real skill (Codex and/or Claude Code)
 
-**Default model:** `openai/gpt-5.6-luna` at **low** reasoning effort
-(`harbor.codex.yaml`). The LLM judge in `verifier/run_judges.sh` also uses low
-effort.
+**Defaults:** Codex `openai/gpt-5.6-luna` @ **low**; Claude Code `claude-opus-5`
+@ **low**. The LLM judge in `verifier/run_judges.sh` also uses low effort.
 
-Sign Codex into the ChatGPT subscription on the host:
+Sign in on the host:
 
 ```bash
-codex login
-codex login status
+codex login && codex login status
+# Claude Code subscription token lives in ~/.claude/.credentials.json
+# (Claude CLI `claude setup-token` / normal login on the host).
 ```
 
-Then run five independent Luna-low attempts of **each** discovered task with the
-clean, version-pinned BenchmarkCodex agent (25 trials total at `-k 5`):
+Then run (examples):
 
 ```bash
-export JOBS MOUNTS
-./run_codex_benchmark.sh --job-name codex-srp -k 5 -n 5
+export JOBS="$(mktemp -d)"
+# Codex positive, both skills in one session (~25 trials at -k 5)
+./run_benchmark.sh harness=codex --skills srp,commenting -k 5 -n 5
+# Claude Code positive, one skill per job (~50 trials)
+./run_benchmark.sh harness=cc --skills srp,commenting --run-separately -k 5 -n 5
+# Both harnesses × separately × 2 skills × 5 tasks × -k 5 ≈ 100 trials
+./run_benchmark.sh --skills srp,commenting --run-separately -k 5 -n 5
 ```
 
 `-k 5` schedules five attempts **per task**; `-n 5` runs up to five trials at
 once. The wrapper defaults to the same `-k 5 -n 5` when you pass no Harbor
-flags. After the job finishes it prints a console summary for every trial:
-reward, per-skill judge answer/reasoning, and downloaded `/app/*.py`
-artifacts, plus a `pass_rate=…` line.
+flags. After the job finishes it prints a categorized console summary.
 
-Do not use a bare `-a codex` for these skill benchmarks: that path can leave
-host/user skill directories untouched and does not default to the pinned CLI
-version. The expected Codex reward is `1` when the written file uses
-single-responsibility functions. Codex supports ChatGPT subscription sign-in;
-see the official
-[Codex authentication documentation](https://learn.chatgpt.com/docs/auth).
-Never copy `~/.codex/auth.json` into this repository.
+Do not use bare `-a codex` / `-a claude-code` for these skill benchmarks: those
+paths can leave host/user skill directories untouched and do not default to the
+pinned CLIs.
 
 ## Model and run parameters
 
-Override the default Luna-low setup on the command line (or edit
-`harbor.codex.yaml`). Useful Harbor flags:
+Override defaults on the command line (or edit `harbor.codex.yaml` /
+`harbor.claude.yaml`). Useful Harbor flags:
 
 | Flag | Meaning |
 | --- | --- |
-| `-m` / `--model` | Agent model id, e.g. `openai/gpt-5.6-luna` (repeatable) |
-| `--ak reasoning_effort=…` | Codex reasoning: `low`, `medium`, or `high` |
-| `--ak version=…` | Codex CLI pin (defaults from `codex-version.txt`) |
+| `-m` / `--model` | Agent model id (applies to the selected harness job) |
+| `--ak reasoning_effort=…` | Effort: `low`, `medium`, or `high` (Codex + Claude) |
+| `--ak version=…` | CLI pin override |
 | `-k` / `--n-attempts` | Independent attempts per task (default example: `5`) |
 | `-n` / `--n-concurrent` | How many trials run in parallel (default example: `5`) |
-| `--skill` | Extra skill directory (job config already injects the programming skill) |
+| `--skill` | Extra skill directory (job config already injects skills) |
 
 Examples:
 
 ```bash
-# Default: five concurrent Luna-low trials
-./run_codex_benchmark.sh --job-name codex-srp -k 5 -n 5
+# Default Luna-low / Opus-low via harness selection
+./run_benchmark.sh harness=codex --skills srp -k 5 -n 5
+./run_benchmark.sh harness=cc --skills srp -k 5 -n 5
 
-# Same model, higher reasoning, still five trials
-./run_codex_benchmark.sh --job-name codex-srp-high \
-  -k 5 -n 5 --ak reasoning_effort=high
+# Higher reasoning
+./run_benchmark.sh harness=codex --skills srp -k 5 -n 5 --ak reasoning_effort=high
+./run_benchmark.sh harness=cc --skills srp -k 5 -n 5 --ak reasoning_effort=high
 
-# Different Codex model, one attempt
-./run_codex_benchmark.sh --job-name codex-other \
-  -k 1 -n 1 -m openai/gpt-5.4 --ak reasoning_effort=medium
+# Different model, one attempt
+./run_benchmark.sh harness=codex --skills srp -k 1 -n 1 \
+  -m openai/gpt-5.4 --ak reasoning_effort=medium
 ```
 
-CLI `-m` / `--ak` values override the matching fields in `harbor.codex.yaml` for
-that job. Keep ChatGPT subscription auth via `CODEX_FORCE_AUTH_JSON=1` and the
-`auth.json` mount unless you intentionally switch to API-key auth.
+CLI `-m` / `--ak` values override the matching fields in the generated Harbor
+job YAML. Keep subscription auth via the wrapper (Codex auth.json mount /
+Claude OAuth token) unless you intentionally switch to API-key auth.
 
 ## Add the next evaluation
 
@@ -398,7 +429,7 @@ Keep each new coding task equally small:
    `verifier/run_judges.sh`;
 5. run `./sync_judges.sh` (runtime), then oracle / `nop` / one real model trial.
 
-`./run_codex_benchmark.sh` auto-discovers every `tasks/*/` directory and every
+`./run_benchmark.sh` auto-discovers every `tasks/*/` directory and every
 selected skill. Prefer the wrapper over bare Harbor YAML.
 
 Harbor records the complete jobs under the temporary `$JOBS` directory, so the

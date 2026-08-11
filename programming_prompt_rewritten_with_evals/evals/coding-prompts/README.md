@@ -29,6 +29,7 @@ Oracle reference implementations live in [`../oracles/`](../oracles/).
 Select a subset when running the benchmark (default is all):
 
 ```bash
-./run_codex_benchmark.sh --tasks todo,calculator
-./run_codex_benchmark.sh task=greeter --skills srp
+./run_benchmark.sh harness=codex --tasks todo,calculator
+./run_benchmark.sh harness=cc task=greeter --skills srp
+./run_benchmark.sh --tasks todo,calculator --skills srp,commenting --run-separately -k 5 -n 5
 ```

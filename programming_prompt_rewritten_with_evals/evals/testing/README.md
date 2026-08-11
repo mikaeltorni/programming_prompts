@@ -31,4 +31,4 @@ positive trials follow both skills while baseline trials do not.
 
 New Harbor runs keep per-skill judge reasoning in
 `verifier/reward-<skill>-details.json` and print
-`judge[<skill>] answer/reason` lines from `run_codex_benchmark.sh`.
+`judge[<skill>] answer/reason` lines from `run_benchmark.sh`.

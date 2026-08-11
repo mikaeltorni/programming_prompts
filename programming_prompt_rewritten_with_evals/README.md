@@ -24,8 +24,9 @@ Five write-from-scratch tasks (`calculator`, `todo`, `counter`, `greeter`,
 skill’s judge scores the result. See [`evals/README.md`](evals/README.md) for
 CLI parameters.
 
-Default model: `openai/gpt-5.6-luna` at low reasoning effort. Codex CLI pin:
-[`evals/codex-version.txt`](evals/codex-version.txt).
+Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
+@ low. Pins: [`evals/codex-version.txt`](evals/codex-version.txt),
+[`evals/claude-version.txt`](evals/claude-version.txt).
 
 ## Layout
 
@@ -36,7 +37,8 @@ Default model: `openai/gpt-5.6-luna` at low reasoning effort. Codex CLI pin:
 - `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill
 - `evals/verifier/run_judges.sh` — shared Harbor verifier
 - `evals/tasks/` — generated at runtime (gitignored)
-- `evals/run_codex_benchmark.sh` — runner
+- `evals/run_benchmark.sh` — multi-harness runner (`harness=codex|cc|both`)
+- `evals/run_codex_benchmark.sh` — shim → `run_benchmark.sh harness=codex`
 - `evals/testing/` — open a new terminal to verify `/tmp` job roots with `ca` / `cca`
 
 After each Harbor job the runner prints per-skill **judge answer + reasoning**
