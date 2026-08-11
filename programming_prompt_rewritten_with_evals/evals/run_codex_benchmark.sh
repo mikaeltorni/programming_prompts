@@ -1,22 +1,18 @@
 #!/usr/bin/env bash
 # Run rewritten-prompt Harbor jobs with a clean, version-pinned Codex agent.
 #
-# Usage (from this directory):
-#   ./run_codex_benchmark.sh                 # 5x gpt-5.6-luna @ low + SRP skill
-#   ./run_codex_benchmark.sh --baseline      # same task, NO programming skill
-#   ./run_codex_benchmark.sh --negative      # anti-SRP skill: one monolithic function
-#   ./run_codex_benchmark.sh --install-only  # reinstall/verify Codex pin only
-#   ./run_codex_benchmark.sh -- -m openai/o3 --ak reasoning_effort=medium
+# Edit only these two prompt surfaces for the eval:
+#   ../prompts/programming-skill/SKILL.md
+#   tasks/calculator-srp/tests/judge-prompt.md
 #
-# Default model/effort come from harbor.codex.yaml (openai/gpt-5.6-luna, low).
-# With no Harbor flags, this wrapper runs -k 5 -n 5 (five concurrent attempts).
-# --baseline switches to harbor.codex.baseline.yaml (skills: []).
-# --negative switches to harbor.codex.negative.yaml (negative-oneshot-skill:
-# put everything in one function; do not follow single-responsibility).
-# After each job, prints a console summary: reward, judge reasoning, and the
-# resulting calculator.py source (downloaded via --artifact).
-# The agent is BenchmarkCodex: fresh CODEX_HOME, wiped skill roots, and only
-# the skills configured in the selected job config (or extra --skill flags).
+# Usage (from this directory):
+#   ./run_codex_benchmark.sh                 # with programming-skill
+#   ./run_codex_benchmark.sh --baseline      # no skill
+#   ./run_codex_benchmark.sh --negative      # auto-invert programming-skill
+#   ./run_codex_benchmark.sh --install-only
+#
+# --negative generates a temporary anti-skill from programming-skill/SKILL.md
+# (do not maintain a separate negative skill file). Same judge as the positive run.
 
 set -euo pipefail
 
@@ -40,6 +36,8 @@ JOBS="${JOBS:-$(mktemp -d)}"
 MOUNTS="${MOUNTS:-$(
   python3 -c 'import json, pathlib; print(json.dumps([{"type": "bind", "source": str(pathlib.Path.home() / ".codex" / "auth.json"), "target": "/root/.codex/auth.json", "read_only": True}]))'
 )}"
+
+SKILL_SOURCE="$SCRIPT_DIR/../prompts/programming-skill/SKILL.md"
 
 echo "Codex benchmark pin: $CODEX_VERSION" >&2
 echo "Jobs directory: $JOBS" >&2
@@ -80,6 +78,54 @@ if [[ "$BASELINE" -eq 1 && "$NEGATIVE" -eq 1 ]]; then
   exit 1
 fi
 
+generate_negative_skill() {
+  local dest_dir="$1"
+  local source_skill="$2"
+  if [[ ! -f "$source_skill" ]]; then
+    echo "Missing programming skill to invert: $source_skill" >&2
+    exit 1
+  fi
+  mkdir -p "$dest_dir"
+  python3 - "$source_skill" "$dest_dir/SKILL.md" <<'PY'
+from pathlib import Path
+import sys
+
+source = Path(sys.argv[1])
+dest = Path(sys.argv[2])
+text = source.read_text(encoding="utf-8")
+body = text
+if text.startswith("---"):
+    parts = text.split("---", 2)
+    if len(parts) >= 3:
+        body = parts[2].lstrip("\n")
+
+dest.write_text(
+    f"""---
+name: programming-skill-negative
+description: >-
+  Auto-generated negative control from programming-skill/SKILL.md. Do the
+  opposite of the programming guidelines.
+---
+
+# NEGATIVE CONTROL — DO NOT FOLLOW THE PROGRAMMING GUIDELINES
+
+You must violate every rule in the programming skill below.
+
+Concrete requirements for this run:
+- Put parsing, validation, arithmetic, and result formatting into ONE function.
+- Do not create helper functions or split responsibilities.
+- Prefer a single monolithic function body that does everything.
+
+## Guidelines you must violate
+
+{body}
+""",
+    encoding="utf-8",
+)
+print(dest)
+PY
+}
+
 CONFIG_FILE="$SCRIPT_DIR/harbor.codex.yaml"
 DEFAULT_JOB_NAME="codex-srp"
 if [[ "$BASELINE" -eq 1 ]]; then
@@ -87,9 +133,25 @@ if [[ "$BASELINE" -eq 1 ]]; then
   DEFAULT_JOB_NAME="codex-baseline-no-skill"
   echo "Baseline mode: no programming skill injected" >&2
 elif [[ "$NEGATIVE" -eq 1 ]]; then
-  CONFIG_FILE="$SCRIPT_DIR/harbor.codex.negative.yaml"
-  DEFAULT_JOB_NAME="codex-negative-oneshot"
-  echo "Negative mode: anti-SRP skill (put everything in one function)" >&2
+  NEG_SKILL_DIR="$JOBS/generated-negative-skill"
+  generate_negative_skill "$NEG_SKILL_DIR" "$SKILL_SOURCE" >/dev/null
+  CONFIG_FILE="$JOBS/harbor.codex.negative.generated.yaml"
+  cat >"$CONFIG_FILE" <<EOF
+agents:
+  - import_path: harbor_agents.benchmark_codex:BenchmarkCodex
+    model_name: openai/gpt-5.6-luna
+    skills:
+      - ${NEG_SKILL_DIR}
+    kwargs:
+      version: "${CODEX_VERSION}"
+      reasoning_effort: low
+
+tasks:
+  - path: ${SCRIPT_DIR}/tasks/calculator-srp
+EOF
+  DEFAULT_JOB_NAME="codex-negative-auto"
+  echo "Negative mode: auto-inverted skill from $SKILL_SOURCE" >&2
+  echo "Generated anti-skill: $NEG_SKILL_DIR/SKILL.md" >&2
 fi
 
 COMMON=(
@@ -110,7 +172,6 @@ if [[ "$INSTALL_ONLY" -eq 1 ]]; then
 fi
 
 if [[ ${#HARBOR_ARGS[@]} -eq 0 ]]; then
-  # Five independent Luna-low trials (model/effort from the selected job config).
   HARBOR_ARGS=(--job-name "$DEFAULT_JOB_NAME" -k 5 -n 5)
 fi
 

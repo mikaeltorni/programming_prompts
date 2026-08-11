@@ -190,20 +190,21 @@ harbor run -p "$TASK" -a oracle --mounts "$MOUNTS" \
 find "$JOBS/positive-oracle" -name reward.json -print -exec cat {} \;
 ```
 
-## Negative test (anti-SRP skill: one monolithic function)
+## Negative test (auto-invert the programming skill)
 
-Inject a dedicated negative skill that tells the agent **not** to follow
-single-responsibility and to put parsing, arithmetic, validation, and formatting
-into one function. Expected rewards are mostly `0` (judge should fail the
-monolith).
+`--negative` builds a temporary anti-skill from
+[`../prompts/programming-skill/SKILL.md`](../prompts/programming-skill/SKILL.md)
+that says: violate those guidelines and put parsing/validation/arithmetic/
+formatting into one function. You do not edit a separate negative skill — only
+the programming skill and
+[`tasks/calculator-srp/tests/judge-prompt.md`](tasks/calculator-srp/tests/judge-prompt.md).
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 ./run_codex_benchmark.sh --negative -k 5 -n 5
 ```
 
-That uses [`harbor.codex.negative.yaml`](harbor.codex.negative.yaml) and
-[`../prompts/negative-oneshot-skill`](../prompts/negative-oneshot-skill).
+Expected rewards are mostly `0` (judge fails the monolith).
 
 ## Verifier sanity (`nop`)
 
