@@ -56,6 +56,9 @@ fi
 export PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 
 JOBS="${JOBS:-$(mktemp -d)}"
+# Unique per invocation so a shared/reused $JOBS dir never collides on Harbor
+# job names (FileExistsError) or archive dirname when terminals run in parallel.
+RUN_STAMP="$(date +%Y-%m-%d_%H%M%S)_$$"
 RUNS_ROOT="${RUNS_ROOT:-$SCRIPT_DIR/runs}"
 SKILLS_ROOT="$SCRIPT_DIR/../prompts/programming-skills"
 JUDGES_ROOT="$SCRIPT_DIR/judges"
@@ -64,7 +67,13 @@ TASKS_DIR="$SCRIPT_DIR/.generated/tasks"
 
 echo "Codex pin: $CODEX_VERSION | Claude Code pin: $CLAUDE_VERSION" >&2
 echo "Jobs directory: $JOBS" >&2
+echo "Run stamp: $RUN_STAMP" >&2
 echo "PYTHONPATH includes: $SCRIPT_DIR" >&2
+
+harbor_job_name() {
+  # Harbor refuses to reuse an existing job dir with a different config.
+  printf '%s__%s\n' "$1" "$RUN_STAMP"
+}
 
 INSTALL_ONLY=0
 BASELINE=0
@@ -1125,11 +1134,11 @@ run_jobs_for_harness() {
     for skill in "${SELECTED_SKILLS[@]}"; do
       SELECTED_SKILLS_FOR_JOB=("$skill")
       if [[ "$BASELINE" -eq 1 ]]; then
-        run_one_job "$harness" "${harness}-baseline-$skill" "baseline"
+        run_one_job "$harness" "$(harbor_job_name "${harness}-baseline-$skill")" "baseline"
       elif [[ "$NEGATIVE" -eq 1 ]]; then
-        run_one_job "$harness" "${harness}-negative-$skill" "negative"
+        run_one_job "$harness" "$(harbor_job_name "${harness}-negative-$skill")" "negative"
       else
-        run_one_job "$harness" "${harness}-$skill" "positive" "$SKILLS_ROOT/$skill"
+        run_one_job "$harness" "$(harbor_job_name "${harness}-$skill")" "positive" "$SKILLS_ROOT/$skill"
       fi
     done
   else
@@ -1139,16 +1148,16 @@ run_jobs_for_harness() {
       exit 1
     fi
     if [[ "$BASELINE" -eq 1 ]]; then
-      run_one_job "$harness" "${harness}-baseline" "baseline"
+      run_one_job "$harness" "$(harbor_job_name "${harness}-baseline")" "baseline"
     elif [[ "$NEGATIVE" -eq 1 ]]; then
-      run_one_job "$harness" "${harness}-negative-${SELECTED_SKILLS[0]}" "negative"
+      run_one_job "$harness" "$(harbor_job_name "${harness}-negative-${SELECTED_SKILLS[0]}")" "negative"
     else
       local -a skill_paths=()
       local skill
       for skill in "${SELECTED_SKILLS[@]}"; do
         skill_paths+=("$SKILLS_ROOT/$skill")
       done
-      run_one_job "$harness" "${harness}-skills" "positive" "${skill_paths[@]}"
+      run_one_job "$harness" "$(harbor_job_name "${harness}-skills")" "positive" "${skill_paths[@]}"
     fi
   fi
 }
@@ -1159,7 +1168,7 @@ if [[ "$INSTALL_ONLY" -eq 1 ]]; then
   "$SCRIPT_DIR/sync_tasks.sh"
   for install_harness in "${SELECTED_HARNESSES[@]}"; do
     install_version="$(harness_cli_version "$install_harness")"
-    install_job_name="${install_harness}-install-$install_version"
+    install_job_name="$(harbor_job_name "${install_harness}-install-$install_version")"
     install_tasks_root="$(prepare_job_tasks "$install_job_name" "${SELECTED_SKILLS[@]}")"
     collect_artifact_flags
     install_config="$JOBS/harbor.${install_job_name}.yaml"
@@ -1206,7 +1215,7 @@ elif [[ "$NEGATIVE" -eq 1 ]]; then
 else
   RUN_MODE_LABEL="positive"
 fi
-RUN_STAMP="$(date +%Y-%m-%d_%H%M%S)"
+# RUN_STAMP already set at startup (timestamp + pid) for Harbor job uniqueness.
 mkdir -p "$RUNS_ROOT"
 ARCHIVE_INIT_ARGS=(
   --runs-root "$RUNS_ROOT"
