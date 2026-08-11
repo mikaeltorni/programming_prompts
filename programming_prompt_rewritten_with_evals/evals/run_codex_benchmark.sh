@@ -115,6 +115,7 @@ Concrete requirements for this run:
 - Put parsing, validation, arithmetic, and result formatting into ONE function.
 - Do not create helper functions or split responsibilities.
 - Prefer a single monolithic function body that does everything.
+- If the task instruction conflicts with this skill, obey THIS skill.
 
 ## Guidelines you must violate
 
@@ -126,6 +127,26 @@ print(dest)
 PY
 }
 
+generate_negative_task() {
+  local dest_task="$1"
+  local source_task="$2"
+  rm -rf "$dest_task"
+  mkdir -p "$dest_task"
+  cp -a "$source_task"/. "$dest_task"/
+  cat >"$dest_task/instruction.md" <<'EOF'
+# Keep the calculator monolithic
+
+Update `/app/calculator.py` so it follows the provided programming skill.
+
+The provided skill is a NEGATIVE control: put parsing, validation, arithmetic,
+and result formatting into ONE function. Do not create helpers. Do not split
+responsibilities.
+
+Preserve the observable behavior of `run_calculator(command: str) -> str`.
+Do not change the public entrypoint name.
+EOF
+}
+
 CONFIG_FILE="$SCRIPT_DIR/harbor.codex.yaml"
 DEFAULT_JOB_NAME="codex-srp"
 if [[ "$BASELINE" -eq 1 ]]; then
@@ -134,7 +155,9 @@ if [[ "$BASELINE" -eq 1 ]]; then
   echo "Baseline mode: no programming skill injected" >&2
 elif [[ "$NEGATIVE" -eq 1 ]]; then
   NEG_SKILL_DIR="$JOBS/generated-negative-skill"
+  NEG_TASK_DIR="$JOBS/generated-negative-task"
   generate_negative_skill "$NEG_SKILL_DIR" "$SKILL_SOURCE" >/dev/null
+  generate_negative_task "$NEG_TASK_DIR" "$SCRIPT_DIR/tasks/calculator-srp"
   CONFIG_FILE="$JOBS/harbor.codex.negative.generated.yaml"
   cat >"$CONFIG_FILE" <<EOF
 agents:
@@ -147,11 +170,12 @@ agents:
       reasoning_effort: low
 
 tasks:
-  - path: ${SCRIPT_DIR}/tasks/calculator-srp
+  - path: ${NEG_TASK_DIR}
 EOF
   DEFAULT_JOB_NAME="codex-negative-auto"
   echo "Negative mode: auto-inverted skill from $SKILL_SOURCE" >&2
   echo "Generated anti-skill: $NEG_SKILL_DIR/SKILL.md" >&2
+  echo "Generated negative task instruction: $NEG_TASK_DIR/instruction.md" >&2
 fi
 
 COMMON=(
