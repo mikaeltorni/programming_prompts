@@ -291,20 +291,27 @@ PY
 generate_negative_tasks() {
   local dest_root="$1"
   local skill_name="$2"
+  local anti_line
+  case "$skill_name" in
+    commenting)
+      anti_line="Negative control: do not write docstrings (no description, Args, or Returns)."
+      ;;
+    *)
+      anti_line="Negative control: put all logic in one function; do not create helpers."
+      ;;
+  esac
   rm -rf "$dest_root"
   mkdir -p "$dest_root"
-  local task_dir name dest_task neg_file
+  local task_dir name dest_task base_instruction
   while IFS= read -r task_dir; do
     name="$(basename "$task_dir")"
     dest_task="$dest_root/$name"
     mkdir -p "$dest_task"
     cp -a "$task_dir"/. "$dest_task"/
-    neg_file="$task_dir/instruction.negative.${skill_name}.md"
-    if [[ ! -f "$neg_file" ]]; then
-      echo "Missing $neg_file" >&2
-      exit 1
-    fi
-    cp "$neg_file" "$dest_task/instruction.md"
+    base_instruction="$(tr -d '\r' <"$task_dir/instruction.md" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g; s/[[:space:]]*$//')"
+    base_instruction="${base_instruction% Follow the provided programming skill.}"
+    base_instruction="${base_instruction% Follow the provided programming skill}"
+    printf '%s\n\n%s\n' "$base_instruction" "$anti_line" >"$dest_task/instruction.md"
   done < <(list_task_dirs)
 }
 

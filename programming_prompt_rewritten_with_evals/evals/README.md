@@ -18,12 +18,16 @@ to write it. Each skill has its own judge under [`judges/<skill>/`](judges/).
 
 ## Edit surfaces
 
-For each skill `<name>`:
+Skills and judges — two of each right now:
 
-- [`../prompts/programming-skills/<name>/SKILL.md`](../prompts/programming-skills/)
-- [`judges/<name>/judge-prompt.md`](judges/) (keep `{criteria}`)
+- [`../prompts/programming-skills/srp/SKILL.md`](../prompts/programming-skills/srp/SKILL.md)
+- [`../prompts/programming-skills/commenting/SKILL.md`](../prompts/programming-skills/commenting/SKILL.md)
+- [`judges/srp/judge-prompt.md`](judges/srp/judge-prompt.md)
+- [`judges/commenting/judge-prompt.md`](judges/commenting/judge-prompt.md)
 
-Current skills: `srp`, `commenting`.
+Coding tasks — one short sentence each under `tasks/*/instruction.md`.
+Negative wording is generated at runtime (no per-task negative files).
+Judge copies under `tasks/*/tests/judges/` are runtime-only (gitignored).
 
 ## CLI parameters
 
@@ -76,16 +80,13 @@ Each task directory:
 
 ```text
 tasks/<name>/
-├── instruction.md
-├── instruction.negative.srp.md
-├── instruction.negative.commenting.md
+├── instruction.md          # one-sentence write prompt
 ├── artifact.txt
 ├── task.toml
 ├── environment/Dockerfile
 ├── solution/solve.sh
 └── tests/
-    ├── test.sh                 # runs every synced skill judge
-    └── judges/<skill>/         # synced copies — do not edit
+    └── test.sh             # runs synced skill judges at verify time
 ```
 
 ## Tested platform
@@ -234,11 +235,9 @@ find "$JOBS/positive-oracle" -name reward.json -print -exec cat {} \;
 
 ## Negative test (auto-invert the programming skill)
 
-`--negative` builds a temporary anti-skill from the selected skill under
-[`../prompts/programming-skills/`](../prompts/programming-skills/) and swaps
-each task to `instruction.negative.<skill>.md`. Multi-skill negative requires
-`--run-separately`. Edit only that skill’s `SKILL.md` and
-`judges/<skill>/judge-prompt.md`.
+`--negative` auto-inverts the selected skill and rewrites each task instruction
+with a one-line anti-skill note (no checked-in negative instruction files).
+Multi-skill negative requires `--run-separately`.
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
@@ -356,13 +355,13 @@ that job. Keep ChatGPT subscription auth via `CODEX_FORCE_AUTH_JSON=1` and the
 Keep each new coding task equally small:
 
 1. copy an existing `tasks/<name>` directory;
-2. write a short product prompt in `instruction.md` plus
-   `instruction.negative.srp.md` and `instruction.negative.commenting.md`;
+2. write a one-sentence product prompt in `instruction.md`;
 3. put the artifact path in `artifact.txt` (e.g. `/app/foo.py`);
-4. make `solution/solve.sh` write an SRP + documented reference implementation;
-5. add new skills under `../prompts/programming-skills/<skill>/` and matching
-   `judges/<skill>/` when needed;
-6. run `./sync_judges.sh`, then oracle / `nop` / one real model trial.
+4. make `solution/solve.sh` write a reference implementation that can pass the
+   selected judges;
+5. add new skills only as `../prompts/programming-skills/<skill>/SKILL.md` plus
+   `judges/<skill>/judge-prompt.md` (+ `judge.toml`);
+6. run `./sync_judges.sh` (runtime), then oracle / `nop` / one real model trial.
 
 `./run_codex_benchmark.sh` auto-discovers every `tasks/*/` directory and every
 selected skill. Prefer the wrapper over bare Harbor YAML.

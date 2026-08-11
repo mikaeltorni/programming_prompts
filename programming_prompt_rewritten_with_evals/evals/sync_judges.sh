@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Sync selected skill judges into every task's tests/judges/<skill>/.
+# Runtime-only sync of the two (or selected) canonical judges into task tests/.
+# Edit only evals/judges/<skill>/ — never the synced copies under tasks/*/tests/.
 # Usage: ./sync_judges.sh [skill ...]
-# With no args, syncs every directory under judges/.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -40,11 +40,6 @@ for tests_dir in "$TASKS_DIR"/*/tests; do
     mkdir -p "$tests_dir/judges/$skill"
     cp "$src/judge-prompt.md" "$src/judge.toml" "$tests_dir/judges/$skill/"
   done
-  # Keep a default judge.toml/prompt at tests/ root pointing at the first skill
-  # so bare rewardkit still works; multi-judge test.sh prefers tests/judges/.
-  first="${skills[0]}"
-  cp "$JUDGES_ROOT/$first/judge-prompt.md" "$JUDGES_ROOT/$first/judge.toml" "$tests_dir/"
-  printf '%s\n' "synced-skills=${skills[*]}" >"$tests_dir/JUDGE_SYNCED"
   copied_tasks=$((copied_tasks + 1))
 done
 
@@ -53,4 +48,4 @@ if [[ "$copied_tasks" -eq 0 ]]; then
   exit 1
 fi
 
-echo "Synced judge(s) [${skills[*]}] into $copied_tasks task(s)" >&2
+echo "Synced judge(s) [${skills[*]}] into $copied_tasks task(s) (runtime copies only)" >&2
