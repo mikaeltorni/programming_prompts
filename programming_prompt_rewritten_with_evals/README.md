@@ -27,4 +27,4 @@ five concurrent trials (`-k 5 -n 5`). See
 
 - `analysis/` contains the code-writing rule comparison and design notes.
 - `prompts/` contains the versioned programming skill.
-- `evals/` contains Harbor tasks, deterministic graders, and run instructions.
+- `evals/` contains Harbor tasks, graders, and run instructions.
