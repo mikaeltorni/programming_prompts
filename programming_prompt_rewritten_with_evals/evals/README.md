@@ -384,22 +384,35 @@ the logging judge enough entry/exit sites.
 the runner scores it with `judges/logging/`.
 
 Recommended six-command smoke set (`-k 2 -n 2` keeps cost down while
-debugging):
+debugging). Each `./run_benchmark.sh` line is its own fenced block so it can
+be pasted into a separate terminal (see repo `AGENTS.md`):
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 export JOBS="$(mktemp -d)"
+```
 
-# 1–2 baseline (no skills injected; srp + logging judges still score)
+```bash
 ./run_benchmark.sh harness=codex --baseline --skills srp,logging -k 2 -n 2
+```
+
+```bash
 ./run_benchmark.sh harness=cc --baseline --skills srp,logging -k 2 -n 2
+```
 
-# 3–4 positive (real logging skill + srp together)
+```bash
 ./run_benchmark.sh harness=codex --skills srp,logging -k 2 -n 2
-./run_benchmark.sh harness=cc --skills srp,logging -k 2 -n 2
+```
 
-# 5–6 vague control (one-line “Use logging.” + srp; scored by logging judge)
+```bash
+./run_benchmark.sh harness=cc --skills srp,logging -k 2 -n 2
+```
+
+```bash
 ./run_benchmark.sh harness=codex --skills srp,logging-vague -k 2 -n 2
+```
+
+```bash
 ./run_benchmark.sh harness=cc --skills srp,logging-vague -k 2 -n 2
 ```
 
