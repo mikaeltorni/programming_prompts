@@ -13,3 +13,8 @@ Current skills:
 Add a new skill by creating `programming-skills/<name>/SKILL.md` and
 `evals/judges/<name>/judge-prompt.md` (+ `judge.toml`). The benchmark runner
 auto-discovers skill directories.
+
+Judges emit a short `reasoning` string per criterion; the verifier stores it
+in `reward-<skill>-details.json` / `reward-details.json`, and the runner
+prints it after each job. To double-check a positive vs baseline pair under
+`/tmp`, use [`../../evals/testing/`](../../evals/testing/).

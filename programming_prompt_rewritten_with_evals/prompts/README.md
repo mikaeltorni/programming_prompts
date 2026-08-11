@@ -9,3 +9,8 @@ Current skills: `srp`, `commenting`.
 Use [`../evals/run_codex_benchmark.sh`](../evals/run_codex_benchmark.sh) so the
 clean BenchmarkCodex agent installs only the selected skills at the pinned
 Codex CLI version.
+
+After a run, audit `/tmp` job roots with
+[`../evals/testing/`](../evals/testing/) (`verify_with_ca.sh` /
+`verify_with_cca.sh`). Console summaries include each judge’s answer and
+reasoning text from `reward-details.json`.

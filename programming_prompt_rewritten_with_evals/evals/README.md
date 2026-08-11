@@ -51,7 +51,7 @@ is **25 trials per skill-job**. `--run-separately` with 2 skills ≈ **50
 trials**. Model stays **gpt-5.6-luna / low**.
 
 After each job the wrapper prints trials, per-task rates, **per-skill judge**
-rates, and a TOTAL line.
+rates (answer + **reasoning**), and a TOTAL line.
 
 ## Layout
 
@@ -64,6 +64,11 @@ evals/
 │   └── commenting/
 │       ├── judge-prompt.md
 │       └── judge.toml
+├── testing/
+│   ├── README.md
+│   ├── verify_with_ca.sh
+│   ├── verify_with_cca.sh
+│   └── lib/verify_prompt.sh
 ├── sync_judges.sh
 ├── run_codex_benchmark.sh
 ├── harbor.codex.yaml
@@ -86,8 +91,37 @@ tasks/<name>/
 ├── environment/Dockerfile
 ├── solution/solve.sh
 └── tests/
-    └── test.sh             # runs synced skill judges at verify time
+    └── test.sh             # runs synced skill judges; keeps reasoning text
 ```
+
+## Judge reasoning in results
+
+Each `tasks/*/tests/test.sh` runs rewardkit per selected skill, keeps
+`reward-<skill>-details.json` (including the judge’s `reasoning` string), and
+writes an aggregate `reward-details.json` with per-skill `raw` + `reasoning`.
+`run_codex_benchmark.sh` prints those lines in the post-run console summary:
+
+```text
+  judge[srp] answer: yes
+  judge[srp] reason: …
+  judge[commenting] answer: yes
+  judge[commenting] reason: …
+```
+
+## Verify finished `/tmp` job roots
+
+After positive and baseline runs, pass the two job temp dirs to the scripts
+under [`testing/`](testing/):
+
+```bash
+cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals/testing
+./verify_with_ca.sh  "$POSITIVE_JOBS" "$BASELINE_JOBS"
+./verify_with_cca.sh "$POSITIVE_JOBS" "$BASELINE_JOBS"
+```
+
+Each script opens a **new terminal window** and launches `ca -h -sol` or
+`cca -opus -h` with a prompt that points at those exact paths plus the skill
+and judge files.
 
 ## Tested platform
 
@@ -306,8 +340,8 @@ export JOBS MOUNTS
 `-k 5` schedules five attempts **per task**; `-n 5` runs up to five trials at
 once. The wrapper defaults to the same `-k 5 -n 5` when you pass no Harbor
 flags. After the job finishes it prints a console summary for every trial:
-reward, judge answer/reasoning, and downloaded `/app/*.py` artifacts, plus a
-`pass_rate=…` line.
+reward, per-skill judge answer/reasoning, and downloaded `/app/*.py`
+artifacts, plus a `pass_rate=…` line.
 
 Do not use a bare `-a codex` for these skill benchmarks: that path can leave
 host/user skill directories untouched and does not default to the pinned CLI
