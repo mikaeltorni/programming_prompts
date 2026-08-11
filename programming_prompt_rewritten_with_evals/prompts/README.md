@@ -7,6 +7,7 @@ Inject that directory into Harbor runs with `--skill`, or use
 BenchmarkCodex agent installs only the configured skills at the pinned Codex CLI
 version. Harbor discovers the `SKILL.md` file automatically.
 
-For the anti-SRP negative control, see
-[`negative-oneshot-skill`](negative-oneshot-skill/SKILL.md) and
-`./run_codex_benchmark.sh --negative`.
+For the negative control, run `./run_codex_benchmark.sh --negative`. That
+auto-inverts `programming-skill/SKILL.md` into a temporary anti-skill — do not
+maintain a separate negative skill file. Edit only `programming-skill/SKILL.md`
+and `../evals/tasks/calculator-srp/tests/judge-prompt.md`.
