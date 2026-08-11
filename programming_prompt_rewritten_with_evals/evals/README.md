@@ -194,6 +194,9 @@ merely checking that the calculator executes.
 
 ## Test the real skill with Codex
 
+**Default model:** `openai/gpt-5.6-luna` at **low** reasoning effort
+(`harbor.codex.yaml`). The LLM judge in `tests/test.sh` also uses low effort.
+
 Sign Codex into the ChatGPT subscription on the host:
 
 ```bash
@@ -201,13 +204,17 @@ codex login
 codex login status
 ```
 
-Then run the clean, version-pinned BenchmarkCodex agent (only the programming
-skill from `harbor.codex.yaml`):
+Then run five independent Luna-low trials of the clean, version-pinned
+BenchmarkCodex agent (only the programming skill from `harbor.codex.yaml`):
 
 ```bash
 export JOBS MOUNTS
-./run_codex_benchmark.sh --job-name codex-finnish
+./run_codex_benchmark.sh --job-name codex-finnish -k 5 -n 5
 ```
+
+`-k 5` schedules five attempts of the task; `-n 5` runs up to five of them at
+once. The wrapper defaults to the same `-k 5 -n 5` when you pass no Harbor
+flags.
 
 Equivalent explicit Harbor invocation:
 
@@ -217,16 +224,61 @@ PYTHONPATH="$PWD" CODEX_FORCE_AUTH_JSON=1 harbor run \
   --ak "version=$(tr -d '[:space:]' <codex-version.txt)" \
   --mounts "$MOUNTS" \
   -o "$JOBS" \
-  --job-name codex-finnish
+  --job-name codex-finnish \
+  -k 5 \
+  -n 5
 ```
 
 Do not use a bare `-a codex` for these skill benchmarks: that path can leave
 host/user skill directories untouched and does not default to the pinned CLI
-version. The evaluated agent and the LLM judge both use `gpt-5.6-luna` at low
-reasoning effort. The expected Codex reward is `1`. Codex supports ChatGPT
-subscription sign-in; see the official
+version. The expected Codex reward is `1` on each successful Finnish rewrite.
+Codex supports ChatGPT subscription sign-in; see the official
 [Codex authentication documentation](https://learn.chatgpt.com/docs/auth).
 Never copy `~/.codex/auth.json` into this repository.
+
+## Model and run parameters
+
+Override the default Luna-low setup on the command line (or edit
+`harbor.codex.yaml`). Useful Harbor flags:
+
+| Flag | Meaning |
+| --- | --- |
+| `-m` / `--model` | Agent model id, e.g. `openai/gpt-5.6-luna` (repeatable) |
+| `--ak reasoning_effort=…` | Codex reasoning: `low`, `medium`, or `high` |
+| `--ak version=…` | Codex CLI pin (defaults from `codex-version.txt`) |
+| `-k` / `--n-attempts` | Independent attempts per task (default example: `5`) |
+| `-n` / `--n-concurrent` | How many trials run in parallel (default example: `5`) |
+| `--skill` | Extra skill directory (job config already injects the programming skill) |
+
+Examples:
+
+```bash
+# Default: five concurrent Luna-low trials
+./run_codex_benchmark.sh --job-name codex-finnish -k 5 -n 5
+
+# Same model, higher reasoning, still five trials
+./run_codex_benchmark.sh --job-name codex-finnish-high \
+  -k 5 -n 5 --ak reasoning_effort=high
+
+# Different Codex model, one attempt
+./run_codex_benchmark.sh --job-name codex-other \
+  -k 1 -n 1 -m openai/gpt-5.4 --ak reasoning_effort=medium
+
+# Explicit harbor run with another model
+PYTHONPATH="$PWD" CODEX_FORCE_AUTH_JSON=1 harbor run \
+  -c "$PWD/harbor.codex.yaml" \
+  -m openai/o3 \
+  --ak reasoning_effort=medium \
+  --ak "version=$(tr -d '[:space:]' <codex-version.txt)" \
+  --mounts "$MOUNTS" \
+  -o "$JOBS" \
+  --job-name codex-o3 \
+  -k 1 -n 1
+```
+
+CLI `-m` / `--ak` values override the matching fields in `harbor.codex.yaml` for
+that job. Keep ChatGPT subscription auth via `CODEX_FORCE_AUTH_JSON=1` and the
+`auth.json` mount unless you intentionally switch to API-key auth.
 
 ## Verified results
 

@@ -18,7 +18,10 @@ reproduction commands.
 Codex skill trials use a clean BenchmarkCodex instance pinned in
 [`evals/codex-version.txt`](evals/codex-version.txt) (currently `0.147.0`). That
 agent wipes Codex skill discovery paths and installs only the skills configured
-for the Harbor job — never the host user's installed skills.
+for the Harbor job — never the host user's installed skills. The default model
+is `openai/gpt-5.6-luna` at low reasoning effort; the documented example runs
+five concurrent trials (`-k 5 -n 5`). See
+[`evals/README.md`](evals/README.md) for model override parameters.
 
 ## Layout
 
