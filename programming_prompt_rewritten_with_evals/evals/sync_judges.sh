@@ -11,7 +11,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 JUDGES_ROOT="$SCRIPT_DIR/judges"
 VERIFIER_SRC="$SCRIPT_DIR/verifier/run_judges.sh"
-TASKS_DIR="$SCRIPT_DIR/tasks"
+# Allow callers to target an isolated job copy (see run_codex_benchmark.sh).
+TASKS_DIR="${TASKS_DIR:-$SCRIPT_DIR/tasks}"
 
 if [[ ! -d "$TASKS_DIR" ]] || [[ -z "$(find "$TASKS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1)" ]]; then
   echo "No generated tasks yet — running sync_tasks.sh first" >&2

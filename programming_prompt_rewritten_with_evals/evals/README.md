@@ -47,7 +47,10 @@ at runtime. Judge copies under `tasks/*/tests/judges/` are also runtime-only.
 Without `--run-separately`, all selected skills are installed in **one** Codex
 session and **each** matching judge scores the same written code. With
 `--run-separately`, each skill gets its own prompt instance + its own judge
-(more subscription usage).
+(more subscription usage). Each Harbor job gets an **isolated** copy of the
+selected tasks under `$JOBS/task-trees/<job>/` so `/tests/judges` cannot be
+clobbered by the next skill job or a concurrent benchmark sharing
+`evals/tasks/`.
 
 Trial math: default `-k 5` is **5 attempts per selected coding task**. With all
 5 tasks that is **25 trials per skill-job**. `--tasks todo,calculator -k 5` is
