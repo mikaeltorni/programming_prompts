@@ -15,6 +15,11 @@ English and verifies that an agent rewrites only those comments in Finnish.
 See [`evals/README.md`](evals/README.md) for the positive, negative, and Codex
 reproduction commands.
 
+Codex skill trials use a clean BenchmarkCodex instance pinned in
+[`evals/codex-version.txt`](evals/codex-version.txt) (currently `0.147.0`). That
+agent wipes Codex skill discovery paths and installs only the skills configured
+for the Harbor job — never the host user's installed skills.
+
 ## Layout
 
 - `analysis/` contains the code-writing rule comparison and design notes.

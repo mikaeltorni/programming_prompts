@@ -37,7 +37,29 @@ tasks/calculator-comments/
 
 The complete oracle, negative, and Codex runs were tested end to end on Ubuntu
 24.04.4 LTS (Noble). The verified setup used Docker Engine `29.5.3`, Harbor
-`0.20.0`, and GPT-5.6 Luna at low reasoning effort.
+`0.20.0`, Codex CLI `0.147.0`, and GPT-5.6 Luna at low reasoning effort.
+
+## Clean Codex instance (required for skill benchmarks)
+
+Codex skill trials must not reuse the host Codex home. Every Harbor Codex trial
+already gets a fresh `CODEX_HOME=/tmp/codex-home`. This suite goes further:
+
+- The pin in [`codex-version.txt`](codex-version.txt) is the Codex CLI version
+  installed in the task image and verified by Harbor (`0.147.0` for now).
+- [`harbor_agents/benchmark_codex.py`](harbor_agents/benchmark_codex.py) wipes
+  `$HOME/.agents/skills`, `/etc/codex/skills`, and `$CODEX_HOME/skills`, then
+  installs only the skills configured for that job (`--skill` /
+  `harbor.codex.yaml`).
+- Prefer [`./run_codex_benchmark.sh`](run_codex_benchmark.sh) or
+  [`harbor.codex.yaml`](harbor.codex.yaml) over a bare `-a codex` invocation so
+  the clean agent and version pin stay in force.
+
+Reinstall or verify the pinned CLI inside the task environment:
+
+```bash
+cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
+./run_codex_benchmark.sh --install-only
+```
 
 ## Install Docker on Ubuntu 24.04
 
@@ -179,33 +201,38 @@ codex login
 codex login status
 ```
 
-Then tell Harbor to use that login and inject the skill:
+Then run the clean, version-pinned BenchmarkCodex agent (only the programming
+skill from `harbor.codex.yaml`):
 
 ```bash
-CODEX_FORCE_AUTH_JSON=1 harbor run \
-  -p "$TASK" \
-  -a codex \
-  -m openai/gpt-5.6-luna \
-  --ak reasoning_effort=low \
-  --skill "$SKILL" \
+export JOBS MOUNTS
+./run_codex_benchmark.sh --job-name codex-finnish
+```
+
+Equivalent explicit Harbor invocation:
+
+```bash
+PYTHONPATH="$PWD" CODEX_FORCE_AUTH_JSON=1 harbor run \
+  -c "$PWD/harbor.codex.yaml" \
+  --ak "version=$(tr -d '[:space:]' <codex-version.txt)" \
   --mounts "$MOUNTS" \
   -o "$JOBS" \
   --job-name codex-finnish
-
-find "$JOBS/codex-finnish" -name reward.json -print -exec cat {} \;
 ```
 
-The evaluated agent and the LLM judge both use `gpt-5.6-luna` at low reasoning
-effort. The expected Codex reward is `1`. Codex supports ChatGPT subscription
-sign-in; see the official
+Do not use a bare `-a codex` for these skill benchmarks: that path can leave
+host/user skill directories untouched and does not default to the pinned CLI
+version. The evaluated agent and the LLM judge both use `gpt-5.6-luna` at low
+reasoning effort. The expected Codex reward is `1`. Codex supports ChatGPT
+subscription sign-in; see the official
 [Codex authentication documentation](https://learn.chatgpt.com/docs/auth).
 Never copy `~/.codex/auth.json` into this repository.
 
 ## Verified results
 
 This task was run successfully on 2026-08-09 with Harbor `0.20.0`, Docker
-`29.5.3`, and Codex `gpt-5.6-luna` at low reasoning effort using ChatGPT
-subscription authentication:
+`29.5.3`, Codex CLI `0.147.0`, and model `gpt-5.6-luna` at low reasoning effort
+using ChatGPT subscription authentication:
 
 | Run | Expected | Observed |
 | --- | ---: | ---: |
