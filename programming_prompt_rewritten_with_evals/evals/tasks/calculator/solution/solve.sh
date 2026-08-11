@@ -8,7 +8,7 @@ Path("/app/calculator.py").write_text(
     '''def parse_command(command: str) -> tuple[float, str, float]:
     """Parse a three-token arithmetic command.
 
-    Args:
+    Parameters:
         command: Text like "<left> <op> <right>".
 
     Returns:
@@ -24,7 +24,7 @@ Path("/app/calculator.py").write_text(
 def apply_op(op: str, left: float, right: float) -> float:
     """Apply one arithmetic operator to two operands.
 
-    Args:
+    Parameters:
         op: One of "+", "-", "*", "/".
         left: Left operand.
         right: Right operand.
@@ -48,7 +48,7 @@ def apply_op(op: str, left: float, right: float) -> float:
 def format_result(value: float) -> str:
     """Format a numeric result for the calculator API.
 
-    Args:
+    Parameters:
         value: Numeric result to format.
 
     Returns:
@@ -60,7 +60,7 @@ def format_result(value: float) -> str:
 def run_calculator(command: str) -> str:
     """Evaluate a calculator command and format the result.
 
-    Args:
+    Parameters:
         command: Text like "<left> <op> <right>".
 
     Returns:

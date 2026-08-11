@@ -11,7 +11,7 @@ Path("/app/todo.py").write_text(
 def parse_command(command: str) -> tuple[str, list[str]]:
     """Split a todo command into an action and argument tokens.
 
-    Args:
+    Parameters:
         command: Raw todo command text.
 
     Returns:
@@ -26,7 +26,7 @@ def parse_command(command: str) -> tuple[str, list[str]]:
 def add_item(text_parts: list[str]) -> str:
     """Append text to the todo list.
 
-    Args:
+    Parameters:
         text_parts: Words that form the todo item text.
 
     Returns:
@@ -42,7 +42,7 @@ def add_item(text_parts: list[str]) -> str:
 def list_items() -> str:
     """List current todo items.
 
-    Args:
+    Parameters:
         None
 
     Returns:
@@ -54,7 +54,7 @@ def list_items() -> str:
 def done_item(args: list[str]) -> str:
     """Mark a 1-based todo index done and remove it.
 
-    Args:
+    Parameters:
         args: Single-element list containing the index text.
 
     Returns:
@@ -72,7 +72,7 @@ def done_item(args: list[str]) -> str:
 def run_todo(command: str) -> str:
     """Execute one todo command.
 
-    Args:
+    Parameters:
         command: Todo command such as "add milk", "list", or "done 1".
 
     Returns:

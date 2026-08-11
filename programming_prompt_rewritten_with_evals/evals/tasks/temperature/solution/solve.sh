@@ -8,7 +8,7 @@ Path("/app/temperature.py").write_text(
     '''def parse_command(command: str) -> tuple[str, float]:
     """Parse a temperature conversion command.
 
-    Args:
+    Parameters:
         command: Text like "c2f 20" or "f2c 68".
 
     Returns:
@@ -24,7 +24,7 @@ Path("/app/temperature.py").write_text(
 def celsius_to_fahrenheit(celsius: float) -> float:
     """Convert Celsius to Fahrenheit.
 
-    Args:
+    Parameters:
         celsius: Temperature in Celsius.
 
     Returns:
@@ -36,7 +36,7 @@ def celsius_to_fahrenheit(celsius: float) -> float:
 def fahrenheit_to_celsius(fahrenheit: float) -> float:
     """Convert Fahrenheit to Celsius.
 
-    Args:
+    Parameters:
         fahrenheit: Temperature in Fahrenheit.
 
     Returns:
@@ -48,7 +48,7 @@ def fahrenheit_to_celsius(fahrenheit: float) -> float:
 def run_temperature(command: str) -> str:
     """Run one temperature conversion command.
 
-    Args:
+    Parameters:
         command: Text like "c2f 20" or "f2c 68".
 
     Returns:
