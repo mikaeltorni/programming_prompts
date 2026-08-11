@@ -39,6 +39,7 @@ Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
 - `evals/tasks/` — generated at runtime (gitignored)
 - `evals/run_benchmark.sh` — multi-harness runner (`harness=codex|cc|both`)
 - `evals/run_codex_benchmark.sh` — shim → `run_benchmark.sh harness=codex`
+- `evals/runs/` — timestamped archives of results, code, and summaries
 - `evals/testing/` — open a new terminal to verify `/tmp` job roots with `ca` / `cca`
 
 After each Harbor job the runner prints per-skill **judge answer + reasoning**

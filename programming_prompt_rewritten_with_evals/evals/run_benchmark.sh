@@ -28,6 +28,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+ORIGINAL_ARGV=("$@")
 
 CODEX_VERSION_FILE="$SCRIPT_DIR/codex-version.txt"
 CLAUDE_VERSION_FILE="$SCRIPT_DIR/claude-version.txt"
@@ -53,6 +54,7 @@ fi
 export PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 
 JOBS="${JOBS:-$(mktemp -d)}"
+RUNS_ROOT="${RUNS_ROOT:-$SCRIPT_DIR/runs}"
 SKILLS_ROOT="$SCRIPT_DIR/../prompts/programming-skills"
 JUDGES_ROOT="$SCRIPT_DIR/judges"
 CODING_PROMPTS_DIR="$SCRIPT_DIR/coding-prompts"
@@ -925,6 +927,44 @@ print("-" * 78, file=sys.stderr)
 PY
 }
 
+capture_print_summary() {
+  local jobs_root="$1"
+  local run_mode="$2"
+  local skills_csv="$3"
+  SUMMARY_CAPTURE_FILE="$(mktemp)"
+  # Capture stderr summary to a file, then replay it to the console.
+  print_summary "$jobs_root" "$run_mode" "$skills_csv" 2>"$SUMMARY_CAPTURE_FILE" || true
+  cat "$SUMMARY_CAPTURE_FILE" >&2
+}
+
+archive_sync_job() {
+  local job_name="$1"
+  python3 "$SCRIPT_DIR/archive_benchmark_run.py" sync-job \
+    --run-dir "$RUN_DIR" \
+    --jobs-root "$JOBS" \
+    --job-name "$job_name" \
+    --summary-file "$SUMMARY_CAPTURE_FILE" >/dev/null
+  rm -f "$SUMMARY_CAPTURE_FILE"
+  SUMMARY_CAPTURE_FILE=""
+  echo "written to: $RUN_DIR/jobs/$job_name" >&2
+}
+
+archive_finalize() {
+  local summary_args=()
+  if [[ -n "${SUMMARY_CAPTURE_FILE:-}" && -f "${SUMMARY_CAPTURE_FILE:-}" ]]; then
+    summary_args=(--summary-file "$SUMMARY_CAPTURE_FILE")
+  fi
+  python3 "$SCRIPT_DIR/archive_benchmark_run.py" finalize \
+    --run-dir "$RUN_DIR" \
+    --jobs-root "$JOBS" \
+    "${summary_args[@]}" >/dev/null
+  if [[ -n "${SUMMARY_CAPTURE_FILE:-}" ]]; then
+    rm -f "$SUMMARY_CAPTURE_FILE"
+    SUMMARY_CAPTURE_FILE=""
+  fi
+  echo "written to: $RUN_DIR" >&2
+}
+
 run_harbor_for_harness() {
   local harness="$1"
   shift
@@ -1040,7 +1080,8 @@ run_one_job() {
   echo "Model default: $(harness_model_name "$harness") @ reasoning_effort=low (CLI $(harness_cli_version "$harness"))" >&2
 
   run_harbor_for_harness "$harness" "${common[@]}" "${harbor_args[@]}"
-  print_summary "$JOBS/$job_name" "$run_mode" "$skills_csv"
+  capture_print_summary "$JOBS/$job_name" "$run_mode" "$skills_csv"
+  archive_sync_job "$job_name"
 }
 
 run_jobs_for_harness() {
@@ -1108,9 +1149,13 @@ echo "Discovered $TASK_COUNT coding task(s) under $TASKS_DIR" >&2
 
 # Estimate total trials for the user.
 ATTEMPTS_PER_TASK=5
+CONCURRENT=5
 for ((i = 0; i < ${#HARBOR_ARGS[@]}; i++)); do
   if [[ "${HARBOR_ARGS[$i]}" == "-k" || "${HARBOR_ARGS[$i]}" == "--n-attempts" ]]; then
     ATTEMPTS_PER_TASK="${HARBOR_ARGS[$((i + 1))]:-$ATTEMPTS_PER_TASK}"
+  fi
+  if [[ "${HARBOR_ARGS[$i]}" == "-n" || "${HARBOR_ARGS[$i]}" == "--n-concurrent" ]]; then
+    CONCURRENT="${HARBOR_ARGS[$((i + 1))]:-$CONCURRENT}"
   fi
 done
 SKILL_FACTOR=1
@@ -1121,6 +1166,39 @@ HARNESS_FACTOR=${#SELECTED_HARNESSES[@]}
 ESTIMATED_TRIALS=$((HARNESS_FACTOR * SKILL_FACTOR * TASK_COUNT * ATTEMPTS_PER_TASK))
 echo "Estimated trials ≈ $ESTIMATED_TRIALS (= $HARNESS_FACTOR harness(es) × $SKILL_FACTOR skill-job(s) × $TASK_COUNT task(s) × $ATTEMPTS_PER_TASK attempts)." >&2
 
+if [[ "$BASELINE" -eq 1 ]]; then
+  RUN_MODE_LABEL="baseline"
+elif [[ "$NEGATIVE" -eq 1 ]]; then
+  RUN_MODE_LABEL="negative"
+else
+  RUN_MODE_LABEL="positive"
+fi
+RUN_STAMP="$(date +%Y-%m-%d_%H%M%S)"
+mkdir -p "$RUNS_ROOT"
+ARCHIVE_INIT_ARGS=(
+  --runs-root "$RUNS_ROOT"
+  --timestamp "$RUN_STAMP"
+  --mode "$RUN_MODE_LABEL"
+  --attempts "$ATTEMPTS_PER_TASK"
+  --concurrent "$CONCURRENT"
+  --jobs-temp "$JOBS"
+  --command "./run_benchmark.sh $(printf '%q ' "${ORIGINAL_ARGV[@]}")"
+)
+for _h in "${SELECTED_HARNESSES[@]}"; do
+  ARCHIVE_INIT_ARGS+=(--harness "$_h")
+done
+for _s in "${SELECTED_SKILLS[@]}"; do
+  ARCHIVE_INIT_ARGS+=(--skill "$_s")
+done
+for _t in "${SELECTED_TASKS[@]}"; do
+  ARCHIVE_INIT_ARGS+=(--task "$_t")
+done
+if [[ "$RUN_SEPARATELY" -eq 1 ]]; then
+  ARCHIVE_INIT_ARGS+=(--separately)
+fi
+RUN_DIR="$(python3 "$SCRIPT_DIR/archive_benchmark_run.py" init "${ARCHIVE_INIT_ARGS[@]}")"
+echo "Run archive: $RUN_DIR" >&2
+
 for HARNESS in "${SELECTED_HARNESSES[@]}"; do
   echo "======== harness=$HARNESS ========" >&2
   run_jobs_for_harness "$HARNESS"
@@ -1129,10 +1207,11 @@ done
 if [[ ${#SELECTED_HARNESSES[@]} -gt 1 || "$RUN_SEPARATELY" -eq 1 ]]; then
   echo "Combined categorized summary across all jobs in $JOBS:" >&2
   if [[ "$BASELINE" -eq 1 ]]; then
-    print_summary "$JOBS" "baseline-all" "${SELECTED_SKILLS[*]}"
+    capture_print_summary "$JOBS" "baseline-all" "${SELECTED_SKILLS[*]}"
   elif [[ "$NEGATIVE" -eq 1 ]]; then
-    print_summary "$JOBS" "negative-all" "${SELECTED_SKILLS[*]}"
+    capture_print_summary "$JOBS" "negative-all" "${SELECTED_SKILLS[*]}"
   else
-    print_summary "$JOBS" "positive-all" "${SELECTED_SKILLS[*]}"
+    capture_print_summary "$JOBS" "positive-all" "${SELECTED_SKILLS[*]}"
   fi
 fi
+archive_finalize
