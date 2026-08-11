@@ -8,6 +8,9 @@
 #
 # Usage (from this directory):
 #   ./run_codex_benchmark.sh
+#   ./run_codex_benchmark.sh --tasks todo,calculator
+#   ./run_codex_benchmark.sh --tasks=greeter --skills srp
+#   ./run_codex_benchmark.sh task=todo,counter --baseline
 #   ./run_codex_benchmark.sh --skills srp
 #   ./run_codex_benchmark.sh --skills=srp,commenting
 #   ./run_codex_benchmark.sh --skills srp,commenting --run-separately
@@ -44,6 +47,7 @@ MOUNTS="${MOUNTS:-$(
 
 SKILLS_ROOT="$SCRIPT_DIR/../prompts/programming-skills"
 JUDGES_ROOT="$SCRIPT_DIR/judges"
+CODING_PROMPTS_DIR="$SCRIPT_DIR/coding-prompts"
 TASKS_DIR="$SCRIPT_DIR/tasks"
 
 echo "Codex benchmark pin: $CODEX_VERSION" >&2
@@ -55,6 +59,7 @@ BASELINE=0
 NEGATIVE=0
 RUN_SEPARATELY=0
 SKILLS_ARG=""
+TASKS_ARG=""
 HARBOR_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -89,6 +94,26 @@ while [[ $# -gt 0 ]]; do
       ;;
     -skills=*)
       SKILLS_ARG="${1#-skills=}"
+      shift
+      ;;
+    --tasks|--task)
+      TASKS_ARG="${2:-}"
+      if [[ -z "$TASKS_ARG" ]]; then
+        echo "--tasks requires a value like todo,calculator" >&2
+        exit 1
+      fi
+      shift 2
+      ;;
+    --tasks=*|--task=*)
+      TASKS_ARG="${1#*=}"
+      shift
+      ;;
+    -tasks=*|-task=*)
+      TASKS_ARG="${1#*=}"
+      shift
+      ;;
+    tasks=*|task=*)
+      TASKS_ARG="${1#*=}"
       shift
       ;;
     --)
@@ -153,11 +178,67 @@ resolve_skills() {
 mapfile -t SELECTED_SKILLS < <(resolve_skills "$SKILLS_ARG")
 echo "Selected skill(s): ${SELECTED_SKILLS[*]}" >&2
 
+list_available_tasks() {
+  local prompt
+  for prompt in "$CODING_PROMPTS_DIR"/*.md; do
+    [[ -f "$prompt" ]] || continue
+    [[ "$(basename "$prompt")" == "README.md" ]] && continue
+    printf '%s\n' "$(basename "$prompt" .md)"
+  done | sort
+}
+
+resolve_tasks() {
+  local raw="$1"
+  local -a selected=()
+  if [[ -z "$raw" ]]; then
+    mapfile -t selected < <(list_available_tasks)
+  else
+    local IFS=','
+    local -a parts
+    read -r -a parts <<<"$raw"
+    local part
+    for part in "${parts[@]}"; do
+      part="$(echo "$part" | tr -d '[:space:]')"
+      [[ -n "$part" ]] || continue
+      selected+=("$part")
+    done
+  fi
+  if [[ ${#selected[@]} -eq 0 ]]; then
+    echo "No coding tasks selected under $CODING_PROMPTS_DIR" >&2
+    exit 1
+  fi
+  local task
+  for task in "${selected[@]}"; do
+    if [[ ! -f "$CODING_PROMPTS_DIR/$task.md" ]]; then
+      echo "Unknown coding task '$task' (expected $CODING_PROMPTS_DIR/$task.md)" >&2
+      echo "Available: $(list_available_tasks | tr '\n' ' ')" >&2
+      exit 1
+    fi
+  done
+  printf '%s\n' "${selected[@]}"
+}
+
+mapfile -t SELECTED_TASKS < <(resolve_tasks "$TASKS_ARG")
+echo "Selected coding task(s): ${SELECTED_TASKS[*]}" >&2
+
+task_is_selected() {
+  local name="$1"
+  local selected
+  for selected in "${SELECTED_TASKS[@]}"; do
+    if [[ "$selected" == "$name" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 list_task_dirs() {
-  local task_dir
+  local task_dir name
   for task_dir in "$TASKS_DIR"/*; do
     [[ -d "$task_dir" ]] || continue
     [[ -f "$task_dir/instruction.md" && -f "$task_dir/task.toml" ]] || continue
+    name="$(basename "$task_dir")"
+    task_is_selected "$name" || continue
     printf '%s\n' "$task_dir"
   done | sort
 }
