@@ -190,7 +190,7 @@ harbor run -p "$TASK" -a oracle --mounts "$MOUNTS" \
 find "$JOBS/positive-oracle" -name reward.json -print -exec cat {} \;
 ```
 
-## Negative test
+## Negative test (verifier sanity)
 
 Harbor's `nop` agent deliberately changes nothing. The calculator still works,
 but its comments remain English, so this must produce reward `0`:
@@ -201,8 +201,42 @@ harbor run -p "$TASK" -a nop --mounts "$MOUNTS" \
 find "$JOBS/negative-english" -name reward.json -print -exec cat {} \;
 ```
 
-This negative run proves that the verifier rejects English comments rather than
-merely checking that the calculator executes.
+This proves the verifier rejects English comments. It is **not** a model
+baseline.
+
+## Baseline / no-skill negative (model pass rate without the prompt)
+
+To measure how often the model gets Finnish comments **without** the
+programming skill, keep the same task + Luna-low setup and inject **no
+skills**. Do not edit `SKILL.md` to Swedish for this — that is a wrong-skill
+run, not a no-skill baseline.
+
+```bash
+cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
+export JOBS="$(mktemp -d)" MOUNTS
+./run_codex_benchmark.sh --baseline -k 5 -n 5
+```
+
+That uses [`harbor.codex.baseline.yaml`](harbor.codex.baseline.yaml)
+(`skills: []`). The wrapper prints each `reward.json` and a
+`pass_rate=X/5 (Y%)` summary. Compare that rate to the with-skill run:
+
+```bash
+./run_codex_benchmark.sh --job-name codex-finnish -k 5 -n 5
+```
+
+Equivalent explicit Harbor invocation:
+
+```bash
+PYTHONPATH="$PWD" CODEX_FORCE_AUTH_JSON=1 harbor run \
+  -c "$PWD/harbor.codex.baseline.yaml" \
+  --ak "version=$(tr -d '[:space:]' <codex-version.txt)" \
+  --mounts "$MOUNTS" \
+  -o "$JOBS" \
+  --job-name codex-baseline-no-skill \
+  -k 5 \
+  -n 5
+```
 
 ## Test the real skill with Codex
 
