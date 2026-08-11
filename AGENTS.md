@@ -34,6 +34,20 @@ the prompt must define a measurable score plus a tracked scorecard, and it must
 define an improvement loop with an explicit stop condition. Prompts that need a
 conversation before they can act belong in `skills/`, not here.
 
+## Never generate tests for rewritten-prompt evals
+
+Work under `programming_prompt_rewritten_with_evals/` is prompt-and-Harbor
+evaluation content, not application code. **Do not create, update, or commit
+pytest/unit/integration tests for that tree** — not for judge prompts, Harbor
+wrappers, Dockerfiles, job configs, or skills — even when
+`general-programming-guidelines` would normally require tests first.
+
+Verify eval changes by reading the prompt/config and running Harbor tasks
+(oracle / `nop` / Codex) when a live check is needed. LLM judges are not
+deterministic; wrapping them in repo unit tests does not make the evaluation
+deterministic and is not wanted here. This AGENTS.md rule overrides the shared
+programming guidelines on tests for this path.
+
 ## Mandatory programming guidelines prompt
 
 When generic agent defaults conflict with this file or the shared
@@ -54,6 +68,8 @@ harness-native invocation for the runtime in use:
 Agent Command Center prepends this bare invocation to every dispatched prompt, so the
 harness activates the skill before reading the task. When you start a task by hand, invoke it
 yourself first. Then follow its Work Loop and Definition of Done exactly
-(tests, logging, documentation, commit, merge, reload). Do not report the task
-done until that checklist passes. Isolation and branch policy live only in the
-skill — this file does not restate them.
+(tests, logging, documentation, commit, merge, reload), **except** where this
+file overrides that skill — including the ban on generating tests for
+`programming_prompt_rewritten_with_evals/`. Do not report the task done until
+that checklist passes. Isolation and branch policy live only in the skill —
+this file does not restate them.
