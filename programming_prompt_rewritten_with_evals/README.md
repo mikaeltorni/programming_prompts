@@ -32,3 +32,13 @@ Default model: `openai/gpt-5.6-luna` at low reasoning effort. Codex CLI pin:
 - `evals/judges/` — one short judge prompt per skill (only these are edited)
 - `evals/tasks/` — five one-sentence coding tasks
 - `evals/run_codex_benchmark.sh` — runner
+- `evals/testing/` — open a new terminal to verify `/tmp` job roots with `ca` / `cca`
+
+After each Harbor job the runner prints per-skill **judge answer + reasoning**
+in the console summary. To audit a finished positive/baseline pair:
+
+```bash
+cd programming_prompt_rewritten_with_evals/evals/testing
+./verify_with_ca.sh  /tmp/tmp.POSITIVE /tmp/tmp.BASELINE
+./verify_with_cca.sh /tmp/tmp.POSITIVE /tmp/tmp.BASELINE
+```
