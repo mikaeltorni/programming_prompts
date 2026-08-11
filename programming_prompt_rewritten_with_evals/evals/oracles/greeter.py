@@ -1,11 +1,4 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-python3 - <<'PY'
-from pathlib import Path
-
-Path("/app/greeter.py").write_text(
-    '''def parse_command(command: str) -> tuple[str, int]:
+def parse_command(command: str) -> tuple[str, int]:
     """Parse a greeter command into name and hour.
 
     Parameters:
@@ -66,7 +59,3 @@ def run_greeter(command: str) -> str:
     """
     name, hour = parse_command(command)
     return format_greeting(period_for_hour(hour), name)
-''',
-    encoding="utf-8",
-)
-PY

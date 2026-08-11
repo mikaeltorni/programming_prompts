@@ -4,6 +4,7 @@
 # Edit surfaces:
 #   ../prompts/programming-skills/<skill>/SKILL.md
 #   judges/<skill>/prompt.md
+#   coding-prompts/<task>.md
 #
 # Usage (from this directory):
 #   ./run_codex_benchmark.sh
@@ -591,6 +592,7 @@ run_one_job() {
   skills_csv="$(printf '%s,' "${SELECTED_SKILLS_FOR_JOB[@]:-}")"
   skills_csv="${skills_csv%,}"
 
+  "$SCRIPT_DIR/sync_tasks.sh"
   "$SCRIPT_DIR/sync_judges.sh" "${SELECTED_SKILLS_FOR_JOB[@]}"
 
   local config_file tasks_root skills_block
@@ -657,6 +659,7 @@ run_one_job() {
 # --- install-only path uses a minimal generated config ---
 if [[ "$INSTALL_ONLY" -eq 1 ]]; then
   SELECTED_SKILLS_FOR_JOB=("${SELECTED_SKILLS[@]}")
+  "$SCRIPT_DIR/sync_tasks.sh"
   "$SCRIPT_DIR/sync_judges.sh" "${SELECTED_SKILLS[@]}"
   collect_artifact_flags
   CONFIG_FILE="$JOBS/harbor.codex.install.yaml"
@@ -674,6 +677,7 @@ if [[ "$INSTALL_ONLY" -eq 1 ]]; then
   exit 0
 fi
 
+"$SCRIPT_DIR/sync_tasks.sh"
 TASK_COUNT="$(list_task_dirs | wc -l | tr -d ' ')"
 echo "Discovered $TASK_COUNT coding task(s) under $TASKS_DIR" >&2
 

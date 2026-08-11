@@ -1,16 +1,22 @@
 #!/usr/bin/env bash
-# Runtime sync of canonical judges + shared verifier into each task tests/.
+# Runtime sync of canonical judges + shared verifier into generated task tests/.
 # Edit only:
 #   evals/judges/<skill>/prompt.md (+ judge.toml)
 #   evals/verifier/run_judges.sh
-# Never edit the synced copies under tasks/*/tests/.
+# Never edit the synced copies under tasks/*/tests/ (tasks/ is generated).
 # Usage: ./sync_judges.sh [skill ...]
+# Prefer ./sync_tasks.sh first so tasks/ exists.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 JUDGES_ROOT="$SCRIPT_DIR/judges"
 VERIFIER_SRC="$SCRIPT_DIR/verifier/run_judges.sh"
 TASKS_DIR="$SCRIPT_DIR/tasks"
+
+if [[ ! -d "$TASKS_DIR" ]] || [[ -z "$(find "$TASKS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1)" ]]; then
+  echo "No generated tasks yet — running sync_tasks.sh first" >&2
+  "$SCRIPT_DIR/sync_tasks.sh"
+fi
 
 if [[ ! -d "$JUDGES_ROOT" ]]; then
   echo "Missing judges root: $JUDGES_ROOT" >&2

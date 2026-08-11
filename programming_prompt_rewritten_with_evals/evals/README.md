@@ -3,31 +3,32 @@
 Five small write-from-scratch tasks measure whether Codex follows selected
 programming skills while implementing tiny Python programs:
 
-| Task | Entrypoint |
+| Prompt | Entrypoint |
 | --- | --- |
-| [`tasks/calculator`](tasks/calculator) | `/app/calculator.py` → `run_calculator` |
-| [`tasks/todo`](tasks/todo) | `/app/todo.py` → `run_todo` |
-| [`tasks/counter`](tasks/counter) | `/app/counter.py` → `run_counter` |
-| [`tasks/greeter`](tasks/greeter) | `/app/greeter.py` → `run_greeter` |
-| [`tasks/temperature`](tasks/temperature) | `/app/temperature.py` → `run_temperature` |
+| [`coding-prompts/calculator.md`](coding-prompts/calculator.md) | `/app/calculator.py` → `run_calculator` |
+| [`coding-prompts/todo.md`](coding-prompts/todo.md) | `/app/todo.py` → `run_todo` |
+| [`coding-prompts/counter.md`](coding-prompts/counter.md) | `/app/counter.py` → `run_counter` |
+| [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` |
+| [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` |
 
-Each task instruction is the product prompt (what to build) plus “Follow the
+Each coding prompt is the product instruction (what to build) plus “Follow the
 provided programming skill.” Skills under
 [`../prompts/programming-skills/`](../prompts/programming-skills/) guide *how*
 to write it. Each skill has its own judge under [`judges/<skill>/`](judges/).
 
 ## Edit surfaces
 
-Skills and judges — two of each right now:
+Skills and judges:
 
 - [`../prompts/programming-skills/srp/SKILL.md`](../prompts/programming-skills/srp/SKILL.md)
 - [`../prompts/programming-skills/commenting/SKILL.md`](../prompts/programming-skills/commenting/SKILL.md)
 - [`judges/srp/prompt.md`](judges/srp/prompt.md)
 - [`judges/commenting/prompt.md`](judges/commenting/prompt.md)
 
-Coding tasks — one short sentence each under `tasks/*/instruction.md`.
-Negative wording is generated at runtime (no per-task negative files).
-Judge copies under `tasks/*/tests/judges/` are runtime-only (gitignored).
+Coding tasks — one markdown file each under
+[`coding-prompts/`](coding-prompts/). Harbor `tasks/` trees are **generated**
+by [`sync_tasks.sh`](sync_tasks.sh) (gitignored). Negative wording is generated
+at runtime. Judge copies under `tasks/*/tests/judges/` are also runtime-only.
 
 ## CLI parameters
 
@@ -57,6 +58,14 @@ rates (answer + **reasoning**), and a TOTAL line.
 
 ```text
 evals/
+├── coding-prompts/         # edit these — one .md per coding task
+│   ├── calculator.md
+│   ├── counter.md
+│   ├── greeter.md
+│   ├── temperature.md
+│   └── todo.md
+├── oracles/                # reference solutions for Harbor oracle
+├── task-template/          # shared Dockerfile + thin test.sh
 ├── judges/
 │   ├── README.md
 │   ├── srp/
@@ -67,37 +76,16 @@ evals/
 │       └── judge.toml
 ├── verifier/
 │   ├── README.md
-│   └── run_judges.sh       # shared Harbor verifier (edit here only)
+│   └── run_judges.sh
 ├── testing/
-│   ├── README.md
-│   ├── verify_with_ca.sh
-│   ├── verify_with_cca.sh
-│   └── lib/verify_prompt.sh
-├── sync_judges.sh          # syncs judges + run_judges.sh into tasks/*/tests/
+├── sync_tasks.sh           # coding-prompts → generated tasks/
+├── sync_judges.sh          # judges + verifier → tasks/*/tests/
 ├── run_codex_benchmark.sh
-├── harbor.codex.yaml
-├── harbor.codex.baseline.yaml
-└── tasks/
-    ├── calculator/
-    ├── todo/
-    ├── counter/
-    ├── greeter/
-    └── temperature/
+└── tasks/                  # GENERATED (gitignored) — do not edit
 ```
 
-Each task directory:
-
-```text
-tasks/<name>/
-├── instruction.md          # one-sentence write prompt
-├── artifact.txt
-├── task.toml
-├── environment/Dockerfile
-├── solution/solve.sh
-└── tests/
-    ├── test.sh             # thin wrapper → synced run_judges.sh
-    └── (runtime) judges/ + run_judges.sh from sync_judges.sh
-```
+`sync_tasks.sh` builds each Harbor task directory from
+`coding-prompts/<name>.md` + `oracles/<name>.py` + `task-template/`.
 
 ## Judge reasoning in results
 
@@ -395,15 +383,14 @@ that job. Keep ChatGPT subscription auth via `CODEX_FORCE_AUTH_JSON=1` and the
 
 Keep each new coding task equally small:
 
-1. copy an existing `tasks/<name>` directory;
-2. write a one-sentence product prompt in `instruction.md`;
-3. put the artifact path in `artifact.txt` (e.g. `/app/foo.py`);
-4. make `solution/solve.sh` write a reference implementation that can pass the
-   selected judges;
-5. add new skills only as `../prompts/programming-skills/<skill>/SKILL.md` plus
+1. add `coding-prompts/<name>.md` (frontmatter: `artifact`, `description`);
+2. add `oracles/<name>.py` that implements the API for Harbor oracle runs;
+3. run `./sync_tasks.sh` (or just the benchmark wrapper) to materialize
+   `tasks/<name>/`;
+4. add new skills only as `../prompts/programming-skills/<skill>/SKILL.md` plus
    `judges/<skill>/prompt.md` (+ `judge.toml`); edit the shared verifier at
-   `verifier/run_judges.sh` (not the five thin `tasks/*/tests/test.sh` wrappers);
-6. run `./sync_judges.sh` (runtime), then oracle / `nop` / one real model trial.
+   `verifier/run_judges.sh`;
+5. run `./sync_judges.sh` (runtime), then oracle / `nop` / one real model trial.
 
 `./run_codex_benchmark.sh` auto-discovers every `tasks/*/` directory and every
 selected skill. Prefer the wrapper over bare Harbor YAML.

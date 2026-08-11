@@ -13,10 +13,5 @@ __pycache__/
 .cursor/rules/programming-prompts-always-on.mdc
 # END programming-prompts-cursor
 
-# Runtime-synced judge copies (canonical sources live in evals/judges/)
-programming_prompt_rewritten_with_evals/evals/tasks/*/tests/judges/
-programming_prompt_rewritten_with_evals/evals/tasks/*/tests/run_judges.sh
-programming_prompt_rewritten_with_evals/evals/tasks/*/tests/judge-prompt.md
-programming_prompt_rewritten_with_evals/evals/tasks/*/tests/prompt.md
-programming_prompt_rewritten_with_evals/evals/tasks/*/tests/judge.toml
-programming_prompt_rewritten_with_evals/evals/tasks/*/tests/JUDGE_SYNCED
+# Generated Harbor task trees (from coding-prompts/*.md via sync_tasks.sh)
+programming_prompt_rewritten_with_evals/evals/tasks/

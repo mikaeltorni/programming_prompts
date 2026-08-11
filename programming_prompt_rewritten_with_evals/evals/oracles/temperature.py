@@ -1,11 +1,4 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-python3 - <<'PY'
-from pathlib import Path
-
-Path("/app/temperature.py").write_text(
-    '''def parse_command(command: str) -> tuple[str, float]:
+def parse_command(command: str) -> tuple[str, float]:
     """Parse a temperature conversion command.
 
     Parameters:
@@ -60,7 +53,3 @@ def run_temperature(command: str) -> str:
     if op == "f2c":
         return f"c={fahrenheit_to_celsius(value)}"
     raise ValueError(f"unsupported op: {op}")
-''',
-    encoding="utf-8",
-)
-PY
