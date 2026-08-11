@@ -1,0 +1,19 @@
+schema_version = "1.4"
+
+[task]
+name = "programming-prompts/counter"
+version = "0.3.0"
+description = "Write a tiny counter; judge scores single-responsibility structure."
+
+[verifier]
+timeout_sec = 300.0
+
+[agent]
+timeout_sec = 300.0
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 300.0
+cpus = 1
+memory_mb = 2048
+storage_mb = 2048

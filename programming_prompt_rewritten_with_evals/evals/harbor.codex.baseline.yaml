@@ -1,7 +1,5 @@
-# Baseline Codex job: same model/task as harbor.codex.yaml, but NO skills.
-#
-# Use this to measure how often Luna-low satisfies single-responsibility from
-# the task instruction alone (baseline pass rate without the programming skill).
+# Reference baseline config (no skills). Prefer ./run_codex_benchmark.sh --baseline
+# which auto-discovers tasks/*/ at runtime.
 #
 #   ./run_codex_benchmark.sh --baseline --job-name codex-baseline -k 5 -n 5
 
@@ -14,4 +12,8 @@ agents:
       reasoning_effort: low
 
 tasks:
-  - path: tasks/calculator-srp
+  - path: tasks/calculator
+  - path: tasks/counter
+  - path: tasks/greeter
+  - path: tasks/temperature
+  - path: tasks/todo
