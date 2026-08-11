@@ -1,0 +1,17 @@
+# Baseline Codex job: same model/task as harbor.codex.yaml, but NO skills.
+#
+# Use this to measure how often Luna-low gets Finnish comments from the task
+# instruction alone (baseline pass rate without the programming skill).
+#
+#   ./run_codex_benchmark.sh --baseline --job-name codex-baseline -k 5 -n 5
+
+agents:
+  - import_path: harbor_agents.benchmark_codex:BenchmarkCodex
+    model_name: openai/gpt-5.6-luna
+    skills: []
+    kwargs:
+      version: "0.147.0"
+      reasoning_effort: low
+
+tasks:
+  - path: tasks/calculator-comments
