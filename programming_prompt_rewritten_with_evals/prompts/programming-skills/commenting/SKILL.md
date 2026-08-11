@@ -11,15 +11,15 @@ description: >-
 Document every function or method with a docstring that always uses exactly
 this format:
 
-1. A short description of what the function does (first line / paragraph).
-2. `Parameters:` — each parameter and what it means.
-3. `Returns:` — what the function returns. Use `Returns: None` when there is
-   no meaningful return value.
+1. A short description of what the function does.
+2. One line starting with `Parameters:` listing each parameter and meaning.
+3. One line starting with `Returns:` describing the return value
+   (`Returns: None` when there is no meaningful return).
 
-Do not use `Args:` or other docstring section names. Use `Parameters:` and
-`Returns:` exactly.
+Do not use `Args:` or other section names. Keep `Parameters:` and `Returns:`
+as single lines (do not wrap the label onto a following line).
 
-Shape:
+Match this layout exactly:
 
 ```text
 """Describes the function.
