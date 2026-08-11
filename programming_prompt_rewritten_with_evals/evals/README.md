@@ -114,8 +114,11 @@ evals/
 
 After every non-install run the wrapper writes a durable archive under
 [`runs/`](runs/) and prints `written to: <path>`. Folder names start with
-`YYYY-MM-DD_HHMMSS` so they sort by time in the explorer, and encode harness,
-mode, skills, `--run-separately`, tasks, and `-k`/`-n`.
+`YYYY-MM-DD_HHMMSS_<pid>` so they sort by time in the explorer, and encode
+harness, mode, skills, `--run-separately`, tasks, and `-k`/`-n`. Harbor job
+dirs under `$JOBS` use the same stamp (`codex-skills__YYYY-MM-DD_HHMMSS_<pid>`)
+so reusing one `$JOBS` across terminals or reruns does not hit Harbor’s
+`FileExistsError`.
 
 `sync_tasks.sh` builds each Harbor task directory from
 `coding-prompts/<name>.md` + `oracles/<name>.py` + `task-template/`.
