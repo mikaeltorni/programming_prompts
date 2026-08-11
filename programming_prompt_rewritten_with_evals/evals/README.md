@@ -22,8 +22,12 @@ Skills and judges:
 
 - [`../prompts/programming-skills/srp/SKILL.md`](../prompts/programming-skills/srp/SKILL.md)
 - [`../prompts/programming-skills/commenting/SKILL.md`](../prompts/programming-skills/commenting/SKILL.md)
+- [`../prompts/programming-skills/logging/SKILL.md`](../prompts/programming-skills/logging/SKILL.md)
+- [`../prompts/programming-skills/logging-vague/SKILL.md`](../prompts/programming-skills/logging-vague/SKILL.md)
+  (control — vague one-liner; scored by the logging judge)
 - [`judges/srp/prompt.md`](judges/srp/prompt.md)
 - [`judges/commenting/prompt.md`](judges/commenting/prompt.md)
+- [`judges/logging/prompt.md`](judges/logging/prompt.md)
 
 Coding tasks — one markdown file each under
 [`coding-prompts/`](coding-prompts/). Harbor task trees are **generated** under
@@ -37,8 +41,9 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | --- | --- |
 | `harness=codex` / `--harness cc` | Agent harness: `codex`, `cc` (Claude Code), or `both` |
 | *(omit harness)* | Runs **both** Codex and Claude Code |
-| `--skills srp,commenting` | Which skills to inject/judge (default: all discovered) |
+| `--skills srp,commenting` | Which skills to inject (default: all non-`*-vague`) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
+| `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
 | `--tasks todo,calculator` | Which coding prompts to run (default: all) |
 | `--tasks=greeter` / `task=todo,counter` | Same, equals / bare forms |
 | `--run-separately` / `--runSeparately` | One Harbor job per skill (costlier) |
@@ -86,7 +91,10 @@ evals/
 │   ├── srp/
 │   │   ├── prompt.md
 │   │   └── judge.toml
-│   └── commenting/
+│   ├── commenting/
+│   │   ├── prompt.md
+│   │   └── judge.toml
+│   └── logging/
 │       ├── prompt.md
 │       └── judge.toml
 ├── verifier/
@@ -364,6 +372,37 @@ Compare to the with-skill runs:
 ./run_benchmark.sh harness=cc --skills srp,commenting --run-separately -k 5 -n 5
 ```
 
+## Logging skill (plain `print`, pair with SRP)
+
+The logging skill asks for plain `print(...)` of parameters at function entry
+and of the return value just before exit — no `logging` module, no log files.
+Always pair it with **`srp`** in the same session (omit `--run-separately`) so
+the agent writes several helpers; a single monolithic function does not give
+the logging judge enough entry/exit sites.
+
+`logging-vague` injects only “Use logging.” and has **no** judge of its own —
+the runner scores it with `judges/logging/`.
+
+Recommended six-command smoke set (`-k 2 -n 2` keeps cost down while
+debugging):
+
+```bash
+cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
+export JOBS="$(mktemp -d)"
+
+# 1–2 baseline (no skills injected; srp + logging judges still score)
+./run_benchmark.sh harness=codex --baseline --skills srp,logging -k 2 -n 2
+./run_benchmark.sh harness=cc --baseline --skills srp,logging -k 2 -n 2
+
+# 3–4 positive (real logging skill + srp together)
+./run_benchmark.sh harness=codex --skills srp,logging -k 2 -n 2
+./run_benchmark.sh harness=cc --skills srp,logging -k 2 -n 2
+
+# 5–6 vague control (one-line “Use logging.” + srp; scored by logging judge)
+./run_benchmark.sh harness=codex --skills srp,logging-vague -k 2 -n 2
+./run_benchmark.sh harness=cc --skills srp,logging-vague -k 2 -n 2
+```
+
 ## Test the real skill (Codex and/or Claude Code)
 
 **Defaults:** Codex `openai/gpt-5.6-luna` @ **low**; Claude Code `claude-opus-5`
@@ -440,8 +479,9 @@ Keep each new coding task equally small:
 3. run `./sync_tasks.sh` (or just the benchmark wrapper) to materialize
    `.generated/tasks/<name>/`;
 4. add new skills only as `../prompts/programming-skills/<skill>/SKILL.md` plus
-   `judges/<skill>/prompt.md` (+ `judge.toml`); edit the shared verifier at
-   `verifier/run_judges.sh`;
+   `judges/<skill>/prompt.md` (+ `judge.toml`); for a vague control, add only
+   `../prompts/programming-skills/<skill>-vague/SKILL.md` and reuse
+   `judges/<skill>/`; edit the shared verifier at `verifier/run_judges.sh`;
 5. run `./sync_judges.sh` (runtime), then oracle / `nop` / one real model trial.
 
 `./run_benchmark.sh` auto-discovers every selected coding-prompt (materialized

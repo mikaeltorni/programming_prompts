@@ -11,9 +11,15 @@ Skills live under
 - [`srp`](prompts/programming-skills/srp/SKILL.md) — single-responsibility
 - [`commenting`](prompts/programming-skills/commenting/SKILL.md) — docstrings
   with description, Parameters, and Returns
+- [`logging`](prompts/programming-skills/logging/SKILL.md) — plain `print` of
+  parameters at entry and return value before exit
+- [`logging-vague`](prompts/programming-skills/logging-vague/SKILL.md) —
+  control one-liner (“Use logging.”); scored by the logging judge
 
-Each skill has a matching judge in
-[`evals/judges/<skill>/`](evals/judges/).
+Each real skill has a matching judge in
+[`evals/judges/<skill>/`](evals/judges/). Vague controls reuse the base judge.
+Pair `logging` / `logging-vague` with `srp` when benchmarking so there are
+enough functions to print.
 
 ## Current evaluation
 
@@ -32,7 +38,8 @@ Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
 ## Layout
 
 - `analysis/` — design notes
-- `prompts/programming-skills/` — injectable skills (`srp`, `commenting`)
+- `prompts/programming-skills/` — injectable skills (`srp`, `commenting`,
+  `logging`, plus `*-vague` controls)
 - `evals/coding-prompts/` — one `.md` per write-from-scratch coding task
 - `evals/oracles/` — reference solutions for Harbor oracle
 - `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill

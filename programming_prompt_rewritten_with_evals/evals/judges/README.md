@@ -9,7 +9,10 @@ judges/
 ├── srp/
 │   ├── prompt.md      # LLM judge instructions ({criteria} required)
 │   └── judge.toml     # rewardkit harness (points at prompt.md)
-└── commenting/
+├── commenting/
+│   ├── prompt.md
+│   └── judge.toml
+└── logging/
     ├── prompt.md
     └── judge.toml
 ```
@@ -18,6 +21,10 @@ judges/
 | --- | --- | --- |
 | [`srp`](srp/prompt.md) | single-responsibility structure | parse + core helpers, thin entrypoint |
 | [`commenting`](commenting/prompt.md) | docstring format | description + `Parameters:` + `Returns:` |
+| [`logging`](logging/prompt.md) | entry/exit prints | plain `print` of params at entry + return value before exit |
+
+`logging-vague` has **no** judge directory — the runner maps it onto
+`judges/logging/` so the vague one-liner is scored by the real logging criteria.
 
 Add a skill by creating `judges/<name>/prompt.md` + `judge.toml`, and a matching
 `prompts/programming-skills/<name>/SKILL.md`.
