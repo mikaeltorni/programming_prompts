@@ -1,7 +1,7 @@
 """Pure helpers for clean Codex skill registration in rewritten-prompt evals.
 
-These functions have no Harbor import so unit tests can verify wipe/install
-behavior without the Harbor tool environment.
+Kept free of Harbor imports so the shell wipe/install command can be inspected
+without loading the Harbor tool environment.
 """
 
 from __future__ import annotations
