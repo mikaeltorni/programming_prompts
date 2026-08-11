@@ -10,3 +10,5 @@ Commands:
 
 Keep state in a module-level integer starting at 0. Raise `ValueError` for bad
 commands.
+
+Follow the provided programming skill.

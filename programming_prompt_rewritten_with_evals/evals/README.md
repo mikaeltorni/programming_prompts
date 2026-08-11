@@ -30,6 +30,10 @@ Trial math: default `-k 5` is **5 attempts per task**. With 5 tasks that is
 **25 trials** per job. `-n 5` is concurrency only (not a multiplier). Running
 positive + baseline + negative would be 75 trials total, not 125.
 
+After each job the wrapper prints every trial, then a **per-task** SRP pass
+rate table and a **TOTAL** line. For `--negative`, a low TOTAL is expected
+(anti-skill aims for monoliths that the judge rejects).
+
 ## Layout
 
 ```text

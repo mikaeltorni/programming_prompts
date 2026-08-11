@@ -8,3 +8,5 @@ Commands:
 - `done <n>` — remove 1-based index; return `done=<text>`
 
 Keep state in a module-level list. Raise `ValueError` for bad commands.
+
+Follow the provided programming skill.
