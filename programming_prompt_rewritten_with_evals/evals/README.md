@@ -9,12 +9,12 @@ the file follow the programming skill (single-responsibility functions/methods).
 A Codex LLM judge answers one binary question: does every function in
 `calculator.py` follow single responsibility?
 
-Edit the judge wording here (this is the verifier prompt surface):
+Edit the judge wording here:
 
-- [`tasks/calculator-srp/tests/srp.toml`](tasks/calculator-srp/tests/srp.toml)
-  — criterion text plus `prompt_template`
 - [`tasks/calculator-srp/tests/judge-prompt.md`](tasks/calculator-srp/tests/judge-prompt.md)
-  — system prompt template (must keep the `{criteria}` placeholder)
+  — the evaluation prompt (keep the `{criteria}` placeholder)
+- [`tasks/calculator-srp/tests/judge.toml`](tasks/calculator-srp/tests/judge.toml)
+  — Reward Kit wiring only (judge model, timeout); do not put the prompt here
 
 The judge scores structure only. It must ignore comment language and must not
 ask about Finnish or any other natural language. The expected reward is `1`
@@ -33,17 +33,17 @@ tasks/calculator-srp/
 ├── solution/
 │   └── solve.sh
 └── tests/
-    ├── srp.toml          # edit criterion + prompt_template here
-    ├── judge-prompt.md   # edit judge system prompt here
+    ├── judge-prompt.md   # edit the evaluation prompt here
+    ├── judge.toml        # Reward Kit wiring only (not the prompt text)
     └── test.sh
 ```
 
 - `environment/calculator.py` is the multi-responsibility starting file.
 - `solution/solve.sh` is Harbor's known-good oracle solution.
-- `tests/srp.toml` is the LLM evaluation criterion (edit this when the
-  pass/fail question should change).
-- `tests/judge-prompt.md` is the judge system prompt template (edit this to make
-  the verifier stricter or clearer; keep `{criteria}`).
+- `tests/judge-prompt.md` is the LLM evaluation prompt (edit this when the
+  pass/fail question should change; keep `{criteria}`).
+- `tests/judge.toml` only wires the Codex judge for Reward Kit; keep the
+  criterion description short.
 - `tests/test.sh` runs Reward Kit and writes the judge's reward.
 
 ## Tested platform
