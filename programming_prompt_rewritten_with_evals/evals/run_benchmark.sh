@@ -566,6 +566,7 @@ print_summary() {
 from __future__ import annotations
 
 import json
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -573,20 +574,68 @@ from pathlib import Path
 
 def _load_json(path: Path) -> dict | None:
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    # Harbor scrubs sensitive env VALUES from trial outputs. Flags like
+    # CODEX_FORCE_AUTH_JSON=1 make the literal "1" a secret, so
+    # {"reward": 1.0} becomes invalid {"reward": [REDACTED].0}. Restore only
+    # that numeric reward pattern (not long-token [REDACTED] placeholders).
+    if "[REDACTED]" in text:
+        text = re.sub(
+            r'("reward"\s*:\s*)\[REDACTED\](\.0\b)?',
+            lambda m: f"{m.group(1)}1{m.group(2) or ''}",
+            text,
+        )
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError:
         return None
     return payload if isinstance(payload, dict) else None
 
 
+def _reward_from_job_result(trial_dir: Path) -> float | None:
+    """Fall back to the parent Harbor job result.json reward_stats map."""
+    job_result = trial_dir.parent / "result.json"
+    payload = _load_json(job_result)
+    if not payload:
+        return None
+    stats = payload.get("stats")
+    if not isinstance(stats, dict):
+        return None
+    evals = stats.get("evals")
+    if not isinstance(evals, dict):
+        return None
+    trial_name = trial_dir.name
+    for eval_payload in evals.values():
+        if not isinstance(eval_payload, dict):
+            continue
+        reward_stats = eval_payload.get("reward_stats")
+        if not isinstance(reward_stats, dict):
+            continue
+        reward_map = reward_stats.get("reward")
+        if not isinstance(reward_map, dict):
+            continue
+        for value_key, trial_names in reward_map.items():
+            if not isinstance(trial_names, list):
+                continue
+            if trial_name not in trial_names:
+                continue
+            try:
+                return float(value_key)
+            except (TypeError, ValueError):
+                continue
+    return None
+
+
 def _reward_value(trial_dir: Path) -> float | None:
     payload = _load_json(trial_dir / "verifier" / "reward.json")
-    if payload is None or "reward" not in payload:
-        return None
-    try:
-        return float(payload["reward"])
-    except (TypeError, ValueError):
-        return None
+    if payload is not None and "reward" in payload:
+        try:
+            return float(payload["reward"])
+        except (TypeError, ValueError):
+            pass
+    return _reward_from_job_result(trial_dir)
 
 
 def _per_skill_rewards(trial_dir: Path) -> dict[str, float]:
@@ -885,7 +934,10 @@ run_harbor_for_harness() {
   local -a env_flags=()
   case "$harness" in
     codex)
-      env_flags+=(CODEX_FORCE_AUTH_JSON=1)
+      # Use "true", not "1": Harbor scrubs sensitive env VALUES from trial
+      # outputs (keys matching AUTH/TOKEN/…). Value "1" rewrites every reward
+      # 1.0 into invalid JSON ("[REDACTED].0") and breaks our summary.
+      env_flags+=(CODEX_FORCE_AUTH_JSON=true)
       ;;
     cc)
       local token
@@ -896,7 +948,7 @@ run_harbor_for_harness() {
         exit 1
       fi
       env_flags+=(
-        CLAUDE_FORCE_OAUTH=1
+        CLAUDE_FORCE_OAUTH=true
         "CLAUDE_CODE_OAUTH_TOKEN=$token"
       )
       ;;
