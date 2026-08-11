@@ -373,6 +373,13 @@ PY
 generate_negative_tasks() {
   local dest_root="$1"
   local skill_name="$2"
+  generate_negative_tasks_from_root "$dest_root" "$skill_name" "$TASKS_DIR"
+}
+
+generate_negative_tasks_from_root() {
+  local dest_root="$1"
+  local skill_name="$2"
+  local source_root="$3"
   local anti_line
   case "$skill_name" in
     commenting)
@@ -384,17 +391,46 @@ generate_negative_tasks() {
   esac
   rm -rf "$dest_root"
   mkdir -p "$dest_root"
-  local task_dir name dest_task base_instruction
+  local task_dir name dest_task base_instruction src
   while IFS= read -r task_dir; do
     name="$(basename "$task_dir")"
+    src="$source_root/$name"
+    if [[ ! -d "$src" ]]; then
+      src="$task_dir"
+    fi
     dest_task="$dest_root/$name"
     mkdir -p "$dest_task"
-    cp -a "$task_dir"/. "$dest_task"/
-    base_instruction="$(tr -d '\r' <"$task_dir/instruction.md" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g; s/[[:space:]]*$//')"
+    cp -a "$src"/. "$dest_task"/
+    base_instruction="$(tr -d '\r' <"$src/instruction.md" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g; s/[[:space:]]*$//')"
     base_instruction="${base_instruction% Follow the provided programming skill.}"
     base_instruction="${base_instruction% Follow the provided programming skill}"
     printf '%s\n\n%s\n' "$base_instruction" "$anti_line" >"$dest_task/instruction.md"
   done < <(list_task_dirs)
+}
+
+prepare_job_tasks() {
+  # Copy selected coding tasks into $JOBS/task-trees/<job>/ and sync only this
+  # job's judges there. Returns the absolute path on stdout.
+  local job_name="$1"
+  shift
+  local -a skills=("$@")
+  local dest="$JOBS/task-trees/$job_name"
+  local task_dir name
+  rm -rf "$dest"
+  mkdir -p "$dest"
+  while IFS= read -r task_dir; do
+    name="$(basename "$task_dir")"
+    cp -a "$task_dir" "$dest/$name"
+  done < <(list_task_dirs)
+  if [[ ${#skills[@]} -eq 0 ]]; then
+    TASKS_DIR="$dest" "$SCRIPT_DIR/sync_judges.sh"
+  else
+    TASKS_DIR="$dest" "$SCRIPT_DIR/sync_judges.sh" "${skills[@]}"
+  fi
+  local judge_count
+  judge_count="$(find "$dest" -type d -path '*/tests/judges/*' 2>/dev/null | wc -l | tr -d ' ')"
+  echo "Prepared isolated tasks for $job_name at $dest (judge dirs=$judge_count)" >&2
+  printf '%s\n' "$dest"
 }
 
 print_summary() {
@@ -673,11 +709,12 @@ run_one_job() {
   skills_csv="$(printf '%s,' "${SELECTED_SKILLS_FOR_JOB[@]:-}")"
   skills_csv="${skills_csv%,}"
 
-  "$SCRIPT_DIR/sync_tasks.sh"
-  "$SCRIPT_DIR/sync_judges.sh" "${SELECTED_SKILLS_FOR_JOB[@]}"
+  # Isolate Harbor task trees per job so live-mounted /tests/judges cannot be
+  # clobbered by --run-separately's next skill or by a concurrent benchmark.
+  local tasks_root
+  tasks_root="$(prepare_job_tasks "$job_name" "${SELECTED_SKILLS_FOR_JOB[@]}")"
 
-  local config_file tasks_root skills_block
-  tasks_root="$TASKS_DIR"
+  local config_file
   if [[ "$BASELINE" -eq 1 ]]; then
     config_file="$JOBS/harbor.${job_name}.yaml"
     write_job_config "$config_file" "[]" "$tasks_root"
@@ -686,7 +723,8 @@ run_one_job() {
     local neg_skill_dir="$JOBS/generated-negative-skill-$skill"
     local neg_tasks_root="$JOBS/generated-negative-tasks-$skill"
     generate_negative_skill "$neg_skill_dir" "$SKILLS_ROOT/$skill/SKILL.md" "$skill" >/dev/null
-    generate_negative_tasks "$neg_tasks_root" "$skill"
+    # Build negatives from the already-isolated tree (selected tasks only).
+    generate_negative_tasks_from_root "$neg_tasks_root" "$skill" "$tasks_root"
     config_file="$JOBS/harbor.${job_name}.yaml"
     write_job_config "$config_file" "$(skills_yaml_block "$neg_skill_dir")" "$neg_tasks_root"
     tasks_root="$neg_tasks_root"
@@ -732,19 +770,21 @@ run_one_job() {
   local task_count
   task_count="$(list_task_dirs | wc -l | tr -d ' ')"
   echo "Job $job_name schedules about $((task_count * attempts_per_task)) trials ($attempts_per_task attempts × $task_count tasks)." >&2
+  echo "Job $job_name judges: ${SELECTED_SKILLS_FOR_JOB[*]:-(none)} (isolated under $tasks_root)" >&2
 
   CODEX_FORCE_AUTH_JSON=1 harbor run "${common[@]}" "${harbor_args[@]}"
-  print_summary "$JOBS" "$run_mode" "$skills_csv"
+  # Summarize this job only (not sibling jobs under $JOBS).
+  print_summary "$JOBS/$job_name" "$run_mode" "$skills_csv"
 }
 
 # --- install-only path uses a minimal generated config ---
 if [[ "$INSTALL_ONLY" -eq 1 ]]; then
   SELECTED_SKILLS_FOR_JOB=("${SELECTED_SKILLS[@]}")
   "$SCRIPT_DIR/sync_tasks.sh"
-  "$SCRIPT_DIR/sync_judges.sh" "${SELECTED_SKILLS[@]}"
+  tasks_root="$(prepare_job_tasks "codex-install-$CODEX_VERSION" "${SELECTED_SKILLS[@]}")"
   collect_artifact_flags
   CONFIG_FILE="$JOBS/harbor.codex.install.yaml"
-  write_job_config "$CONFIG_FILE" "$(skills_yaml_block "$SKILLS_ROOT/${SELECTED_SKILLS[0]}")" "$TASKS_DIR"
+  write_job_config "$CONFIG_FILE" "$(skills_yaml_block "$SKILLS_ROOT/${SELECTED_SKILLS[0]}")" "$tasks_root"
   echo "Reinstalling/verifying Codex @$CODEX_VERSION inside the task environment" >&2
   CODEX_FORCE_AUTH_JSON=1 harbor run \
     -c "$CONFIG_FILE" \
@@ -767,13 +807,21 @@ if [[ "$RUN_SEPARATELY" -eq 1 ]]; then
   for skill in "${SELECTED_SKILLS[@]}"; do
     SELECTED_SKILLS_FOR_JOB=("$skill")
     if [[ "$BASELINE" -eq 1 ]]; then
-      run_one_job "codex-baseline-$skill" "baseline" 
+      run_one_job "codex-baseline-$skill" "baseline"
     elif [[ "$NEGATIVE" -eq 1 ]]; then
       run_one_job "codex-negative-$skill" "negative"
     else
       run_one_job "codex-$skill" "positive" "$SKILLS_ROOT/$skill"
     fi
   done
+  echo "Combined summary across separately-run skill jobs:" >&2
+  if [[ "$BASELINE" -eq 1 ]]; then
+    print_summary "$JOBS" "baseline-all" "${SELECTED_SKILLS[*]}"
+  elif [[ "$NEGATIVE" -eq 1 ]]; then
+    print_summary "$JOBS" "negative-all" "${SELECTED_SKILLS[*]}"
+  else
+    print_summary "$JOBS" "positive-all" "${SELECTED_SKILLS[*]}"
+  fi
 else
   SELECTED_SKILLS_FOR_JOB=("${SELECTED_SKILLS[@]}")
   if [[ "$NEGATIVE" -eq 1 && ${#SELECTED_SKILLS[@]} -gt 1 ]]; then
