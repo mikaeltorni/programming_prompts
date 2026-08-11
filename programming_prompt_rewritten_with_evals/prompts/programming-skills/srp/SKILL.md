@@ -1,12 +1,12 @@
 ---
-name: programming-skill
+name: srp
 description: >-
   Use whenever writing or editing Python (or other) code: enforce
   single-responsibility functions and methods. Apply on every coding task,
   including small scripts and new files from scratch.
 ---
 
-# Programming Guidelines
+# Single responsibility
 
 Write code as single-responsibility functions/methods.
 

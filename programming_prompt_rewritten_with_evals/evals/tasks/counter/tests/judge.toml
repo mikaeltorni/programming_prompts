@@ -1,7 +1,5 @@
 # Reward Kit harness config only — edit the prompt in judge-prompt.md.
-# Harbor/Reward Kit require this toml to wire the Codex judge; the human-facing
-# evaluation wording lives in judge-prompt.md (must keep the {criteria} token).
-# run_codex_benchmark.sh syncs these files into every tasks/*/tests/ before runs.
+# Keep the {criteria} token in judge-prompt.md.
 
 [judge]
 judge = "codex"
