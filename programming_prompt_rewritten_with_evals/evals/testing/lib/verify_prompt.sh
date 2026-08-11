@@ -28,8 +28,8 @@ Skill definitions (must follow exactly):
 - ${SKILLS_ROOT}/commenting/SKILL.md
 
 Judge prompts (scoring rules):
-- ${JUDGES_ROOT}/srp/judge-prompt.md
-- ${JUDGES_ROOT}/commenting/judge-prompt.md
+- ${JUDGES_ROOT}/srp/prompt.md
+- ${JUDGES_ROOT}/commenting/prompt.md
 
 For every trial under those job dirs:
 1. Read artifacts/app/*.py and verifier/reward.json (+ reward-details.json / reward-*.json).

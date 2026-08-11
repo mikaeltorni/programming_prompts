@@ -29,7 +29,8 @@ Default model: `openai/gpt-5.6-luna` at low reasoning effort. Codex CLI pin:
 
 - `analysis/` — design notes
 - `prompts/programming-skills/` — injectable skills (`srp`, `commenting`)
-- `evals/judges/` — one short judge prompt per skill (only these are edited)
+- `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill
+- `evals/verifier/run_judges.sh` — shared Harbor verifier (synced into tasks)
 - `evals/tasks/` — five one-sentence coding tasks
 - `evals/run_codex_benchmark.sh` — runner
 - `evals/testing/` — open a new terminal to verify `/tmp` job roots with `ca` / `cca`

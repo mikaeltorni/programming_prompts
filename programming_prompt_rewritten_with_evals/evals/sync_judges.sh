@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
-# Runtime-only sync of the two (or selected) canonical judges into task tests/.
-# Edit only evals/judges/<skill>/ — never the synced copies under tasks/*/tests/.
+# Runtime sync of canonical judges + shared verifier into each task tests/.
+# Edit only:
+#   evals/judges/<skill>/prompt.md (+ judge.toml)
+#   evals/verifier/run_judges.sh
+# Never edit the synced copies under tasks/*/tests/.
 # Usage: ./sync_judges.sh [skill ...]
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 JUDGES_ROOT="$SCRIPT_DIR/judges"
+VERIFIER_SRC="$SCRIPT_DIR/verifier/run_judges.sh"
 TASKS_DIR="$SCRIPT_DIR/tasks"
 
 if [[ ! -d "$JUDGES_ROOT" ]]; then
   echo "Missing judges root: $JUDGES_ROOT" >&2
+  exit 1
+fi
+if [[ ! -f "$VERIFIER_SRC" ]]; then
+  echo "Missing shared verifier: $VERIFIER_SRC" >&2
   exit 1
 fi
 
@@ -26,19 +34,36 @@ if [[ ${#skills[@]} -eq 0 ]]; then
   exit 1
 fi
 
+prompt_file_for() {
+  local src="$1"
+  if [[ -f "$src/prompt.md" ]]; then
+    printf '%s\n' "$src/prompt.md"
+    return 0
+  fi
+  if [[ -f "$src/judge-prompt.md" ]]; then
+    printf '%s\n' "$src/judge-prompt.md"
+    return 0
+  fi
+  return 1
+}
+
 copied_tasks=0
 for tests_dir in "$TASKS_DIR"/*/tests; do
   [[ -d "$tests_dir" ]] || continue
   rm -rf "$tests_dir/judges"
   mkdir -p "$tests_dir/judges"
+  install -m 755 "$VERIFIER_SRC" "$tests_dir/run_judges.sh"
   for skill in "${skills[@]}"; do
     src="$JUDGES_ROOT/$skill"
-    if [[ ! -f "$src/judge-prompt.md" || ! -f "$src/judge.toml" ]]; then
-      echo "Missing judge files for skill '$skill' under $src" >&2
+    prompt_src="$(prompt_file_for "$src" || true)"
+    if [[ -z "$prompt_src" || ! -f "$src/judge.toml" ]]; then
+      echo "Missing prompt.md (or judge-prompt.md) / judge.toml for skill '$skill' under $src" >&2
       exit 1
     fi
     mkdir -p "$tests_dir/judges/$skill"
-    cp "$src/judge-prompt.md" "$src/judge.toml" "$tests_dir/judges/$skill/"
+    # Always install as prompt.md so judge.toml prompt_template stays stable.
+    cp "$prompt_src" "$tests_dir/judges/$skill/prompt.md"
+    cp "$src/judge.toml" "$tests_dir/judges/$skill/"
   done
   copied_tasks=$((copied_tasks + 1))
 done
@@ -48,4 +73,4 @@ if [[ "$copied_tasks" -eq 0 ]]; then
   exit 1
 fi
 
-echo "Synced judge(s) [${skills[*]}] into $copied_tasks task(s) (runtime copies only)" >&2
+echo "Synced verifier + judge(s) [${skills[*]}] into $copied_tasks task(s) (runtime copies only)" >&2
