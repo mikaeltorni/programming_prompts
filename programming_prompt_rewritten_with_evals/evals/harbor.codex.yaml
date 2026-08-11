@@ -1,12 +1,15 @@
 # Harbor job config for rewritten-prompt Codex benchmarks.
 #
+# Default agent model: openai/gpt-5.6-luna with reasoning_effort=low.
 # Always uses BenchmarkCodex: a fresh CODEX_HOME per trial, skill discovery
 # paths wiped, and only the skills listed below installed. Codex CLI version
 # comes from kwargs.version (keep in sync with evals/codex-version.txt).
 #
-# From evals/:
-#   PYTHONPATH="$PWD" CODEX_FORCE_AUTH_JSON=1 harbor run -c harbor.codex.yaml \
-#     --mounts "$MOUNTS" -o "$JOBS" --job-name codex-finnish
+# From evals/ (five concurrent Luna-low trials):
+#   ./run_codex_benchmark.sh --job-name codex-finnish -k 5 -n 5
+#
+# Override model/effort on the CLI, e.g.:
+#   ./run_codex_benchmark.sh -m openai/gpt-5.4 --ak reasoning_effort=medium -k 1
 
 agents:
   - import_path: harbor_agents.benchmark_codex:BenchmarkCodex

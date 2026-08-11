@@ -2,10 +2,12 @@
 # Run rewritten-prompt Harbor jobs with a clean, version-pinned Codex agent.
 #
 # Usage (from this directory):
-#   ./run_codex_benchmark.sh                 # full Codex skill trial
+#   ./run_codex_benchmark.sh                 # 5x gpt-5.6-luna @ low reasoning
 #   ./run_codex_benchmark.sh --install-only  # reinstall/verify Codex pin only
-#   ./run_codex_benchmark.sh -- oracle       # pass remaining args to harbor run
+#   ./run_codex_benchmark.sh -- -m openai/o3 --ak reasoning_effort=medium
 #
+# Default model/effort come from harbor.codex.yaml (openai/gpt-5.6-luna, low).
+# With no Harbor flags, this wrapper runs -k 5 -n 5 (five concurrent attempts).
 # The agent is BenchmarkCodex: fresh CODEX_HOME, wiped skill roots, and only
 # the skills configured in harbor.codex.yaml (or extra --skill flags).
 
@@ -73,7 +75,8 @@ if [[ "$INSTALL_ONLY" -eq 1 ]]; then
 fi
 
 if [[ ${#HARBOR_ARGS[@]} -eq 0 ]]; then
-  HARBOR_ARGS=(--job-name codex-finnish)
+  # Five independent Luna-low trials (model/effort from harbor.codex.yaml).
+  HARBOR_ARGS=(--job-name codex-finnish -k 5 -n 5)
 fi
 
 CODEX_FORCE_AUTH_JSON=1 harbor run "${COMMON[@]}" "${HARBOR_ARGS[@]}"
