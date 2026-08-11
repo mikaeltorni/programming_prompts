@@ -1,7 +1,7 @@
 # Programming skills
 
-Each subdirectory is one injectable Codex skill (`SKILL.md`) evaluated by a
-matching judge under `../evals/judges/<name>/`.
+Each subdirectory is one injectable agent skill (`SKILL.md`) for Codex and/or
+Claude Code, evaluated by a matching judge under `../evals/judges/<name>/`.
 
 Current skills:
 
