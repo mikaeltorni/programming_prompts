@@ -48,6 +48,15 @@ deterministic; wrapping them in repo unit tests does not make the evaluation
 deterministic and is not wanted here. This AGENTS.md rule overrides the shared
 programming guidelines on tests for this path.
 
+## Evaluation commands: one fenced block per terminal
+
+When giving the user Harbor / `run_benchmark.sh` commands to run by hand, put
+**each runnable command in its own** fenced `bash` code block. Do not bundle
+several `./run_benchmark.sh …` lines into one block — the user copies each
+block into a **different terminal**. Shared setup (`cd`, `export JOBS=…`) may
+sit in its own preceding block; every distinct benchmark invocation after that
+must be alone in a block.
+
 ## Mandatory programming guidelines prompt
 
 When generic agent defaults conflict with this file or the shared
