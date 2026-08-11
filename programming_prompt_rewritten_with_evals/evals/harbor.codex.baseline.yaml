@@ -1,7 +1,7 @@
 # Baseline Codex job: same model/task as harbor.codex.yaml, but NO skills.
 #
-# Use this to measure how often Luna-low gets Finnish comments from the task
-# instruction alone (baseline pass rate without the programming skill).
+# Use this to measure how often Luna-low satisfies single-responsibility from
+# the task instruction alone (baseline pass rate without the programming skill).
 #
 #   ./run_codex_benchmark.sh --baseline --job-name codex-baseline -k 5 -n 5
 
@@ -14,4 +14,4 @@ agents:
       reasoning_effort: low
 
 tasks:
-  - path: tasks/calculator-comments
+  - path: tasks/calculator-srp

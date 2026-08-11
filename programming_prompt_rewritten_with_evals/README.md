@@ -6,14 +6,14 @@ Harbor evaluation suite that grows alongside it.
 ## Current skill
 
 The active prompt is [`prompts/programming-skill/SKILL.md`](prompts/programming-skill/SKILL.md).
-Its current rule requires code comments to be written in Finnish.
+Its current rule requires single-responsibility functions/methods.
 
 ## Current evaluation
 
-The first Harbor task starts with a working calculator whose comments are in
-English and verifies that an agent rewrites only those comments in Finnish.
-See [`evals/README.md`](evals/README.md) for the positive, negative, and Codex
-reproduction commands.
+The first Harbor task starts with a calculator whose logic is packed into one
+multi-responsibility function and verifies that an agent splits it into
+single-responsibility helpers. See [`evals/README.md`](evals/README.md) for the
+positive, negative, baseline, and Codex reproduction commands.
 
 Codex skill trials use a clean BenchmarkCodex instance pinned in
 [`evals/codex-version.txt`](evals/codex-version.txt) (currently `0.147.0`). That
