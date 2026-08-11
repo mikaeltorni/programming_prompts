@@ -15,3 +15,5 @@ __pycache__/
 
 # Generated Harbor task trees (from coding-prompts/*.md via sync_tasks.sh)
 programming_prompt_rewritten_with_evals/evals/tasks/
+
+programming_prompt_rewritten_with_evals/evals/runs/
