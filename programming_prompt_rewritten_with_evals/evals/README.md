@@ -8,9 +8,17 @@ The agent is asked only to make the file follow the programming skill. A Codex
 LLM judge then answers one binary question: ignoring code and string literals,
 are all four `#` comment lines in `calculator.py` written in Finnish?
 
-There is no Finnish vocabulary list or other language-detection heuristic. The
-expected reward is `1` for a Finnish rewrite and `0` when the English comments
-are left unchanged.
+Edit the judge wording here (this is the verifier prompt surface):
+
+- [`tasks/calculator-comments/tests/finnish-comments.toml`](tasks/calculator-comments/tests/finnish-comments.toml)
+  — criterion text plus `prompt_template`
+- [`tasks/calculator-comments/tests/judge-prompt.md`](tasks/calculator-comments/tests/judge-prompt.md)
+  — system prompt template (must keep the `{criteria}` placeholder)
+
+The judge must reject English, Swedish, and other non-Finnish comments. There is
+no vocabulary list or other language-detection heuristic beyond that LLM check.
+The expected reward is `1` for a Finnish rewrite and `0` when comments stay
+English, become Swedish, or are otherwise not Finnish.
 
 ## Task files
 
@@ -24,13 +32,17 @@ tasks/calculator-comments/
 ├── solution/
 │   └── solve.sh
 └── tests/
-    ├── finnish-comments.toml
+    ├── finnish-comments.toml   # edit criterion + prompt_template here
+    ├── judge-prompt.md         # edit judge system prompt here
     └── test.sh
 ```
 
 - `environment/calculator.py` is the English starting file.
 - `solution/solve.sh` is Harbor's known-good oracle solution.
-- `tests/finnish-comments.toml` contains the single LLM evaluation question.
+- `tests/finnish-comments.toml` is the LLM evaluation criterion (edit this when
+  the pass/fail question should change).
+- `tests/judge-prompt.md` is the judge system prompt template (edit this to make
+  the verifier stricter or clearer; keep `{criteria}`).
 - `tests/test.sh` runs Reward Kit and writes the judge's reward.
 
 ## Tested platform
