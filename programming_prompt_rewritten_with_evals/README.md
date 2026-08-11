@@ -10,7 +10,7 @@ Skills live under
 
 - [`srp`](prompts/programming-skills/srp/SKILL.md) — single-responsibility
 - [`commenting`](prompts/programming-skills/commenting/SKILL.md) — docstrings
-  with description, Args, and Returns
+  with description, Parameters, and Returns
 
 Each skill has a matching judge in
 [`evals/judges/<skill>/`](evals/judges/).

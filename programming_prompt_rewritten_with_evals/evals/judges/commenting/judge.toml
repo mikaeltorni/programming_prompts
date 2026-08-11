@@ -10,7 +10,7 @@ prompt_template = "judge-prompt.md"
 
 [[criterion]]
 name = "function_commenting"
-description = "functions document description, Args, and Returns"
+description = "functions document description, Parameters, and Returns"
 type = "binary"
 
 [scoring]

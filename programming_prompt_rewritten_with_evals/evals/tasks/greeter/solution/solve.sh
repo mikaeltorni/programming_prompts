@@ -8,7 +8,7 @@ Path("/app/greeter.py").write_text(
     '''def parse_command(command: str) -> tuple[str, int]:
     """Parse a greeter command into name and hour.
 
-    Args:
+    Parameters:
         command: Text like "<name> <hour>".
 
     Returns:
@@ -27,7 +27,7 @@ Path("/app/greeter.py").write_text(
 def period_for_hour(hour: int) -> str:
     """Map an hour to a greeting period phrase.
 
-    Args:
+    Parameters:
         hour: Hour of day in 0..23.
 
     Returns:
@@ -45,7 +45,7 @@ def period_for_hour(hour: int) -> str:
 def format_greeting(period: str, name: str) -> str:
     """Format the greeter API response.
 
-    Args:
+    Parameters:
         period: Greeting period phrase.
         name: Person to greet.
 
@@ -58,7 +58,7 @@ def format_greeting(period: str, name: str) -> str:
 def run_greeter(command: str) -> str:
     """Build a time-based greeting from a command.
 
-    Args:
+    Parameters:
         command: Text like "<name> <hour>".
 
     Returns:

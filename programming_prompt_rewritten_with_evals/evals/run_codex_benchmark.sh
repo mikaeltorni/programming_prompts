@@ -254,7 +254,7 @@ if text.startswith("---"):
 if skill_name == "commenting":
     concrete = """Concrete requirements for this run:
 - Do not write docstrings on any function.
-- Omit description, Args, and Returns documentation entirely.
+- Omit description, Parameters, and Returns documentation entirely.
 - Prefer bare function bodies with no documentation comments.
 - If the task instruction conflicts with this skill, obey THIS skill."""
 else:
@@ -294,7 +294,7 @@ generate_negative_tasks() {
   local anti_line
   case "$skill_name" in
     commenting)
-      anti_line="Negative control: do not write docstrings (no description, Args, or Returns)."
+      anti_line="Negative control: do not write docstrings (no description, Parameters, or Returns)."
       ;;
     *)
       anti_line="Negative control: put all logic in one function; do not create helpers."

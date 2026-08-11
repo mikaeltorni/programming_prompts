@@ -8,7 +8,7 @@ Current skills:
 | Directory | Focus |
 | --- | --- |
 | [`srp`](srp/SKILL.md) | Single-responsibility functions/methods |
-| [`commenting`](commenting/SKILL.md) | Docstrings with description, Args, Returns |
+| [`commenting`](commenting/SKILL.md) | Docstrings with description, Parameters, Returns |
 
 Add a new skill by creating `programming-skills/<name>/SKILL.md` and
 `evals/judges/<name>/judge-prompt.md` (+ `judge.toml`). The benchmark runner
