@@ -11,6 +11,8 @@
 # With no Harbor flags, this wrapper runs -k 5 -n 5 (five concurrent attempts).
 # --baseline switches to harbor.codex.baseline.yaml (skills: []) so you can
 # measure baseline pass rate without the programming skill.
+# After each job, prints a console summary: reward, judge reasoning, and the
+# # comment lines from calculator.py (downloaded via --artifact).
 # The agent is BenchmarkCodex: fresh CODEX_HOME, wiped skill roots, and only
 # the skills configured in the selected job config (or extra --skill flags).
 
@@ -79,6 +81,7 @@ COMMON=(
   --mounts "$MOUNTS"
   -o "$JOBS"
   --ak "version=$CODEX_VERSION"
+  --artifact /app/calculator.py
 )
 
 if [[ "$INSTALL_ONLY" -eq 1 ]]; then
@@ -96,24 +99,132 @@ if [[ ${#HARBOR_ARGS[@]} -eq 0 ]]; then
 fi
 
 CODEX_FORCE_AUTH_JSON=1 harbor run "${COMMON[@]}" "${HARBOR_ARGS[@]}"
-echo "Rewards under $JOBS:" >&2
-find "$JOBS" -name reward.json -print -exec cat {} \;
+
 python3 - <<'PY' "$JOBS"
-import json, sys
+"""Print a console-friendly summary of each Harbor trial result."""
+
+from __future__ import annotations
+
+import json
+import sys
 from pathlib import Path
-jobs = Path(sys.argv[1])
-rewards = []
-for path in sorted(jobs.rglob("reward.json")):
+
+
+def _load_json(path: Path) -> dict | None:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        continue
-    if isinstance(payload, dict) and "reward" in payload:
-        rewards.append(float(payload["reward"]))
-if not rewards:
-    print("No reward.json values found; cannot compute pass rate.", file=sys.stderr)
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _reward_value(trial_dir: Path) -> float | None:
+    payload = _load_json(trial_dir / "verifier" / "reward.json")
+    if payload is None or "reward" not in payload:
+        return None
+    try:
+        return float(payload["reward"])
+    except (TypeError, ValueError):
+        return None
+
+
+def _judge_bits(trial_dir: Path) -> tuple[str | None, str | None]:
+    details = _load_json(trial_dir / "verifier" / "reward-details.json")
+    if not details:
+        return None, None
+    reward = details.get("reward")
+    if not isinstance(reward, dict):
+        return None, None
+    criteria = reward.get("criteria")
+    if not isinstance(criteria, list) or not criteria:
+        return None, None
+    first = criteria[0]
+    if not isinstance(first, dict):
+        return None, None
+    raw = first.get("raw")
+    reasoning = first.get("reasoning")
+    return (
+        str(raw) if raw is not None else None,
+        str(reasoning) if reasoning is not None else None,
+    )
+
+
+def _comment_lines(trial_dir: Path) -> list[str]:
+    candidates = [
+        trial_dir / "artifacts" / "app" / "calculator.py",
+        trial_dir / "artifacts" / "calculator.py",
+    ]
+    for path in candidates:
+        if not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        return [
+            line.rstrip()
+            for line in text.splitlines()
+            if line.lstrip().startswith("#")
+        ]
+    return []
+
+
+def _trial_dirs(jobs_root: Path) -> list[Path]:
+    dirs: list[Path] = []
+    for reward_path in sorted(jobs_root.rglob("verifier/reward.json")):
+        trial_dir = reward_path.parents[1]
+        if trial_dir.is_dir():
+            dirs.append(trial_dir)
+    return dirs
+
+
+jobs_root = Path(sys.argv[1])
+trial_dirs = _trial_dirs(jobs_root)
+if not trial_dirs:
+    print("No trial reward.json files found under", jobs_root, file=sys.stderr)
     raise SystemExit(0)
-passed = sum(1 for value in rewards if value >= 1.0)
-total = len(rewards)
-print(f"pass_rate={passed}/{total} ({100.0 * passed / total:.1f}%)", file=sys.stderr)
+
+print(file=sys.stderr)
+print("=" * 72, file=sys.stderr)
+print(f"Trial results ({len(trial_dirs)}) — {jobs_root}", file=sys.stderr)
+print("=" * 72, file=sys.stderr)
+
+rewards: list[float] = []
+for index, trial_dir in enumerate(trial_dirs, start=1):
+    reward = _reward_value(trial_dir)
+    raw, reasoning = _judge_bits(trial_dir)
+    comments = _comment_lines(trial_dir)
+    if reward is not None:
+        rewards.append(reward)
+
+    verdict = "PASS" if reward is not None and reward >= 1.0 else "FAIL"
+    reward_text = "n/a" if reward is None else f"{reward:g}"
+    print(file=sys.stderr)
+    print(f"[{index}/{len(trial_dirs)}] {trial_dir.name}  {verdict}  reward={reward_text}", file=sys.stderr)
+    if raw is not None:
+        print(f"  judge answer: {raw}", file=sys.stderr)
+    if reasoning:
+        print(f"  judge reason: {reasoning}", file=sys.stderr)
+    if comments:
+        print("  calculator.py comments:", file=sys.stderr)
+        for line in comments:
+            print(f"    {line}", file=sys.stderr)
+    else:
+        print(
+            "  calculator.py comments: (not downloaded; expected artifacts/app/calculator.py)",
+            file=sys.stderr,
+        )
+
+print(file=sys.stderr)
+print("-" * 72, file=sys.stderr)
+if rewards:
+    passed = sum(1 for value in rewards if value >= 1.0)
+    total = len(rewards)
+    print(
+        f"pass_rate={passed}/{total} ({100.0 * passed / total:.1f}%)",
+        file=sys.stderr,
+    )
+else:
+    print("pass_rate=n/a (no numeric rewards)", file=sys.stderr)
+print("-" * 72, file=sys.stderr)
 PY

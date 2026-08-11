@@ -218,8 +218,9 @@ export JOBS="$(mktemp -d)" MOUNTS
 ```
 
 That uses [`harbor.codex.baseline.yaml`](harbor.codex.baseline.yaml)
-(`skills: []`). The wrapper prints each `reward.json` and a
-`pass_rate=X/5 (Y%)` summary. Compare that rate to the with-skill run:
+(`skills: []`). The wrapper prints each trial’s reward, judge reasoning, the
+`#` comments from `calculator.py`, and a `pass_rate=X/5 (Y%)` summary. Compare
+that rate to the with-skill run:
 
 ```bash
 ./run_codex_benchmark.sh --job-name codex-finnish -k 5 -n 5
@@ -260,7 +261,9 @@ export JOBS MOUNTS
 
 `-k 5` schedules five attempts of the task; `-n 5` runs up to five of them at
 once. The wrapper defaults to the same `-k 5 -n 5` when you pass no Harbor
-flags.
+flags. After the job finishes it prints a console summary for every trial:
+reward, judge answer/reasoning, and the `#` comment lines from the downloaded
+`/app/calculator.py` artifact, plus a `pass_rate=…` line.
 
 Equivalent explicit Harbor invocation:
 
