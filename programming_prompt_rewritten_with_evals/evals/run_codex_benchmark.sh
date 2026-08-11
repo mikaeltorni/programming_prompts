@@ -387,34 +387,61 @@ def _per_skill_rewards(trial_dir: Path) -> dict[str, float]:
     return out
 
 
-def _judge_bits(trial_dir: Path) -> tuple[str | None, str | None]:
-    details = _load_json(trial_dir / "verifier" / "reward-details.json")
-    if not details:
-        return None, None
-    reward = details.get("reward")
-    if not isinstance(reward, dict):
-        return None, None
-    criteria = reward.get("criteria")
-    if not isinstance(criteria, list) or not criteria:
-        return None, None
-    first = criteria[0]
-    if not isinstance(first, dict):
-        return None, None
-    raw = first.get("raw")
-    reasoning = first.get("reasoning")
-    if reasoning is None and isinstance(first.get("details"), dict):
-        nested = first["details"].get("reward")
+def _nested_criterion_bits(item: dict) -> tuple[str | None, str | None]:
+    """Pull raw/reasoning from a criterion, including nested rewardkit details."""
+    raw = item.get("raw")
+    reasoning = item.get("reasoning")
+    if (reasoning is None or reasoning == "") and isinstance(item.get("details"), dict):
+        nested = item["details"].get("reward")
         if isinstance(nested, dict):
             nested_criteria = nested.get("criteria")
             if isinstance(nested_criteria, list) and nested_criteria:
                 nested_first = nested_criteria[0]
                 if isinstance(nested_first, dict):
-                    reasoning = nested_first.get("reasoning")
-                    raw = raw or nested_first.get("raw")
+                    if reasoning is None or reasoning == "":
+                        reasoning = nested_first.get("reasoning")
+                    if raw is None:
+                        raw = nested_first.get("raw")
+            if (reasoning is None or reasoning == "") and nested.get("judge_output"):
+                reasoning = nested.get("judge_output")
     return (
         str(raw) if raw is not None else None,
-        str(reasoning) if reasoning is not None else None,
+        str(reasoning) if reasoning else None,
     )
+
+
+def _judge_criteria(trial_dir: Path) -> list[tuple[str, str | None, str | None]]:
+    """Return [(skill, raw, reasoning), ...] for every judge criterion."""
+    details = _load_json(trial_dir / "verifier" / "reward-details.json")
+    if not details:
+        return []
+    reward = details.get("reward")
+    if not isinstance(reward, dict):
+        return []
+    criteria = reward.get("criteria")
+    if not isinstance(criteria, list):
+        return []
+    out: list[tuple[str, str | None, str | None]] = []
+    for item in criteria:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name") or "judge")
+        raw, reasoning = _nested_criterion_bits(item)
+        out.append((name, raw, reasoning))
+        # Also prefer dedicated per-skill details files when present.
+        skill_details = _load_json(
+            trial_dir / "verifier" / f"reward-{name}-details.json"
+        )
+        if skill_details and (reasoning is None or reasoning == ""):
+            nested_reward = skill_details.get("reward")
+            if isinstance(nested_reward, dict):
+                nested_criteria = nested_reward.get("criteria")
+                if isinstance(nested_criteria, list) and nested_criteria:
+                    nested_first = nested_criteria[0]
+                    if isinstance(nested_first, dict):
+                        raw2, reasoning2 = _nested_criterion_bits(nested_first)
+                        out[-1] = (name, raw or raw2, reasoning or reasoning2)
+    return out
 
 
 def _python_sources(trial_dir: Path) -> list[tuple[str, str]]:
@@ -479,7 +506,7 @@ rewards: list[float] = []
 
 for index, trial_dir in enumerate(trial_dirs, start=1):
     reward = _reward_value(trial_dir)
-    raw, reasoning = _judge_bits(trial_dir)
+    judge_rows = _judge_criteria(trial_dir)
     sources = _python_sources(trial_dir)
     task = _task_name(trial_dir)
     per_skill = _per_skill_rewards(trial_dir)
@@ -500,10 +527,14 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
     if per_skill:
         bits = ", ".join(f"{name}={value:g}" for name, value in sorted(per_skill.items()))
         print(f"  per-skill: {bits}", file=sys.stderr)
-    if raw is not None:
-        print(f"  judge answer: {raw}", file=sys.stderr)
-    if reasoning:
-        print(f"  judge reason: {reasoning}", file=sys.stderr)
+    if judge_rows:
+        for skill_name, raw, reasoning in judge_rows:
+            if raw is not None:
+                print(f"  judge[{skill_name}] answer: {raw}", file=sys.stderr)
+            if reasoning:
+                print(f"  judge[{skill_name}] reason: {reasoning}", file=sys.stderr)
+            elif raw is not None:
+                print(f"  judge[{skill_name}] reason: (none recorded)", file=sys.stderr)
     if sources:
         for rel, source in sources:
             print(f"  {rel}:", file=sys.stderr)

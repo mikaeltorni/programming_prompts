@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Run each synced skill judge against /app and write per-skill + aggregate rewards.
+# Preserves each judge's reasoning text into reward-<skill>-details.json and the
+# aggregate reward-details.json so the Harbor summary can print it.
 set -euo pipefail
 
 mkdir -p /logs/verifier
@@ -52,6 +54,12 @@ if [[ -d /tests/judges ]]; then
         out="/logs/verifier/reward-${skill}.json"
         echo "Running judge for skill: $skill" >&2
         run_one_judge "$judge_dir" "$out"
+        # rewardkit always writes sibling reward-details.json; keep it per skill
+        # before the next judge overwrites it.
+        if [[ -f /logs/verifier/reward-details.json ]]; then
+            mv /logs/verifier/reward-details.json \
+                "/logs/verifier/reward-${skill}-details.json"
+        fi
         skill_names+=("$skill")
         reward="$(python3 - "$out" <<'PY'
 import json, sys
@@ -61,6 +69,29 @@ print(float(payload.get("reward", 0)))
 PY
 )"
         skill_rewards+=("$reward")
+        python3 - "$skill" "/logs/verifier/reward-${skill}-details.json" <<'PY'
+import json, sys
+from pathlib import Path
+
+skill, path_s = sys.argv[1], sys.argv[2]
+path = Path(path_s)
+reasoning = ""
+raw = ""
+if path.is_file():
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        payload = {}
+    reward = payload.get("reward")
+    if isinstance(reward, dict):
+        criteria = reward.get("criteria") or []
+        if criteria and isinstance(criteria[0], dict):
+            reasoning = str(criteria[0].get("reasoning") or "")
+            raw = str(criteria[0].get("raw") or "")
+        if not reasoning:
+            reasoning = str(reward.get("judge_output") or "")[:2000]
+print(f"Judge {skill}: raw={raw or '?'} reasoning={reasoning or '(none)'}", flush=True)
+PY
     done
 fi
 
@@ -77,6 +108,25 @@ import json
 import sys
 from pathlib import Path
 
+
+def _extract_bits(details: dict) -> tuple[str, str]:
+    reward = details.get("reward")
+    if not isinstance(reward, dict):
+        return "", ""
+    criteria = reward.get("criteria")
+    if isinstance(criteria, list) and criteria and isinstance(criteria[0], dict):
+        first = criteria[0]
+        raw = first.get("raw")
+        reasoning = first.get("reasoning") or ""
+        if raw is None and first.get("value") is not None:
+            try:
+                raw = "yes" if float(first["value"]) >= 1.0 else "no"
+            except (TypeError, ValueError):
+                raw = first.get("value")
+        return (str(raw) if raw is not None else ""), str(reasoning)
+    return "", str(reward.get("judge_output") or "")
+
+
 args = sys.argv[1:]
 sep = args.index("--")
 out_dir = Path(args[0])
@@ -85,18 +135,22 @@ rewards = [float(value) for value in args[sep + 1 :]]
 
 criteria = []
 for name, reward in zip(names, rewards, strict=True):
-    details_path = out_dir / f"reward-{name}.json"
-    details = {}
+    details_path = out_dir / f"reward-{name}-details.json"
+    details: dict = {}
     if details_path.is_file():
         try:
             details = json.loads(details_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             details = {}
+    raw, reasoning = _extract_bits(details)
+    if not raw:
+        raw = "yes" if reward >= 1.0 else "no"
     criteria.append(
         {
             "name": name,
             "reward": reward,
-            "raw": "yes" if reward >= 1.0 else "no",
+            "raw": raw,
+            "reasoning": reasoning,
             "details": details,
         }
     )
@@ -121,4 +175,11 @@ overall = 1.0 if rewards and all(value >= 1.0 for value in rewards) else 0.0
     encoding="utf-8",
 )
 print(f"Aggregate reward={overall} across skills: {', '.join(names)}", flush=True)
+for item in criteria:
+    reason = item.get("reasoning") or "(none)"
+    print(
+        f"  {item['name']}: raw={item['raw']} reward={item['reward']} "
+        f"reasoning={reason}",
+        flush=True,
+    )
 PY
