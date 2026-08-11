@@ -2,15 +2,17 @@
 # Run rewritten-prompt Harbor jobs with a clean, version-pinned Codex agent.
 #
 # Usage (from this directory):
-#   ./run_codex_benchmark.sh                 # 5x gpt-5.6-luna @ low + skill
-#   ./run_codex_benchmark.sh --baseline      # same, but NO programming skill
+#   ./run_codex_benchmark.sh                 # 5x gpt-5.6-luna @ low + SRP skill
+#   ./run_codex_benchmark.sh --baseline      # same task, NO programming skill
+#   ./run_codex_benchmark.sh --negative      # anti-SRP skill: one monolithic function
 #   ./run_codex_benchmark.sh --install-only  # reinstall/verify Codex pin only
 #   ./run_codex_benchmark.sh -- -m openai/o3 --ak reasoning_effort=medium
 #
 # Default model/effort come from harbor.codex.yaml (openai/gpt-5.6-luna, low).
 # With no Harbor flags, this wrapper runs -k 5 -n 5 (five concurrent attempts).
-# --baseline switches to harbor.codex.baseline.yaml (skills: []) so you can
-# measure baseline pass rate without the programming skill.
+# --baseline switches to harbor.codex.baseline.yaml (skills: []).
+# --negative switches to harbor.codex.negative.yaml (negative-oneshot-skill:
+# put everything in one function; do not follow single-responsibility).
 # After each job, prints a console summary: reward, judge reasoning, and the
 # resulting calculator.py source (downloaded via --artifact).
 # The agent is BenchmarkCodex: fresh CODEX_HOME, wiped skill roots, and only
@@ -45,6 +47,7 @@ echo "PYTHONPATH includes: $SCRIPT_DIR" >&2
 
 INSTALL_ONLY=0
 BASELINE=0
+NEGATIVE=0
 HARBOR_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -54,6 +57,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --baseline|--no-skill)
       BASELINE=1
+      shift
+      ;;
+    --negative|--oneshot|--anti-srp)
+      NEGATIVE=1
       shift
       ;;
     --)
@@ -68,12 +75,21 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ "$BASELINE" -eq 1 && "$NEGATIVE" -eq 1 ]]; then
+  echo "Use only one of --baseline or --negative" >&2
+  exit 1
+fi
+
 CONFIG_FILE="$SCRIPT_DIR/harbor.codex.yaml"
 DEFAULT_JOB_NAME="codex-srp"
 if [[ "$BASELINE" -eq 1 ]]; then
   CONFIG_FILE="$SCRIPT_DIR/harbor.codex.baseline.yaml"
   DEFAULT_JOB_NAME="codex-baseline-no-skill"
   echo "Baseline mode: no programming skill injected" >&2
+elif [[ "$NEGATIVE" -eq 1 ]]; then
+  CONFIG_FILE="$SCRIPT_DIR/harbor.codex.negative.yaml"
+  DEFAULT_JOB_NAME="codex-negative-oneshot"
+  echo "Negative mode: anti-SRP skill (put everything in one function)" >&2
 fi
 
 COMMON=(

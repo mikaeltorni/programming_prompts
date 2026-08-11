@@ -190,7 +190,22 @@ harbor run -p "$TASK" -a oracle --mounts "$MOUNTS" \
 find "$JOBS/positive-oracle" -name reward.json -print -exec cat {} \;
 ```
 
-## Negative test (verifier sanity)
+## Negative test (anti-SRP skill: one monolithic function)
+
+Inject a dedicated negative skill that tells the agent **not** to follow
+single-responsibility and to put parsing, arithmetic, validation, and formatting
+into one function. Expected rewards are mostly `0` (judge should fail the
+monolith).
+
+```bash
+cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
+./run_codex_benchmark.sh --negative -k 5 -n 5
+```
+
+That uses [`harbor.codex.negative.yaml`](harbor.codex.negative.yaml) and
+[`../prompts/negative-oneshot-skill`](../prompts/negative-oneshot-skill).
+
+## Verifier sanity (`nop`)
 
 Harbor's `nop` agent deliberately changes nothing. The calculator still works,
 but it remains one multi-responsibility function, so this must produce reward

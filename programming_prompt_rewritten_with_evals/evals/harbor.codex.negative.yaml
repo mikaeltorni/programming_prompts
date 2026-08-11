@@ -1,0 +1,18 @@
+# Negative Codex job: inject an anti-SRP skill that demands one monolithic function.
+#
+# Use this to check that the judge fails when the agent is told NOT to follow
+# single-responsibility (expected low pass_rate / mostly reward 0).
+#
+#   ./run_codex_benchmark.sh --negative -k 5 -n 5
+
+agents:
+  - import_path: harbor_agents.benchmark_codex:BenchmarkCodex
+    model_name: openai/gpt-5.6-luna
+    skills:
+      - ../prompts/negative-oneshot-skill
+    kwargs:
+      version: "0.147.0"
+      reasoning_effort: low
+
+tasks:
+  - path: tasks/calculator-srp
