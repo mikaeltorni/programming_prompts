@@ -161,9 +161,13 @@ suite goes further:
 - [`harbor_agents/benchmark_claude_code.py`](harbor_agents/benchmark_claude_code.py)
   wipes `$HOME/.claude/skills` and `$CLAUDE_CONFIG_DIR/skills`, then installs
   only the job’s skills (Harbor would otherwise copy host `~/.claude/skills`).
-- Auth: reads `~/.claude/.credentials.json` → `CLAUDE_CODE_OAUTH_TOKEN` with
-  `CLAUDE_FORCE_OAUTH=1` (token never printed). Also bind-mounts the credentials
-  file into the trial.
+- Auth (agent): reads `~/.claude/.credentials.json` → `CLAUDE_CODE_OAUTH_TOKEN`
+  with `CLAUDE_FORCE_OAUTH=1` (token never printed). Also bind-mounts the
+  credentials file into the trial.
+- Auth (verifier): judges still use Codex (`judge = "codex"` in
+  `judges/*/judge.toml`), so **`~/.codex/auth.json` is mounted even for
+  `harness=cc`**. Without it you get `RewardFileNotFoundError` and
+  `Codex authentication is required for the LLM verifier.`
 
 Prefer [`./run_benchmark.sh`](run_benchmark.sh) over bare `-a codex` /
 `-a claude-code` so the clean agents and version pins stay in force.

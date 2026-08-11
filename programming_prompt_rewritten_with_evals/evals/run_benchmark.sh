@@ -315,17 +315,10 @@ yaml_task_entries() {
 }
 
 collect_artifact_flags() {
-  local task_dir artifact
-  local -A seen=()
-  ARTIFACT_FLAGS=()
-  while IFS= read -r task_dir; do
-    artifact="$(task_artifact_path "$task_dir")"
-    if [[ -n "${seen[$artifact]:-}" ]]; then
-      continue
-    fi
-    seen[$artifact]=1
-    ARTIFACT_FLAGS+=(--artifact "$artifact")
-  done < <(list_task_dirs)
+  # One directory download covers every coding-prompt artifact under /app and
+  # avoids Harbor trying unrelated sibling files (e.g. calculator.py on a
+  # counter trial) when multiple --artifact paths are listed.
+  ARTIFACT_FLAGS=(--artifact /app)
 }
 
 skills_yaml_block() {
@@ -374,27 +367,26 @@ import sys
 
 harness = sys.argv[1]
 home = pathlib.Path.home()
-mounts = []
-if harness == "codex":
+# Judges always use Codex (see judges/*/judge.toml). Mount auth.json for every
+# harness so the verifier can score Claude Code trials too.
+mounts = [
+    {
+        "type": "bind",
+        "source": str(home / ".codex" / "auth.json"),
+        "target": "/root/.codex/auth.json",
+        "read_only": True,
+    }
+]
+if harness == "cc":
     mounts.append(
         {
             "type": "bind",
-            "source": str(home / ".codex" / "auth.json"),
-            "target": "/root/.codex/auth.json",
-            "read_only": True,
-        }
-    )
-elif harness == "cc":
-    creds = home / ".claude" / ".credentials.json"
-    mounts.append(
-        {
-            "type": "bind",
-            "source": str(creds),
+            "source": str(home / ".claude" / ".credentials.json"),
             "target": "/root/.claude/.credentials.json",
             "read_only": True,
         }
     )
-else:
+elif harness != "codex":
     raise SystemExit(f"unknown harness {harness}")
 print(json.dumps(mounts))
 PY
