@@ -1,6 +1,7 @@
 # Reward Kit harness config only — edit the prompt in judge-prompt.md.
 # Harbor/Reward Kit require this toml to wire the Codex judge; the human-facing
 # evaluation wording lives in judge-prompt.md (must keep the {criteria} token).
+# run_codex_benchmark.sh syncs these files into every tasks/*/tests/ before runs.
 
 [judge]
 judge = "codex"
@@ -11,7 +12,7 @@ prompt_template = "judge-prompt.md"
 
 [[criterion]]
 name = "single_responsibility"
-description = "calculator.py uses single-responsibility functions/methods"
+description = "workspace Python uses single-responsibility functions/methods"
 type = "binary"
 
 [scoring]

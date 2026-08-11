@@ -1,9 +1,9 @@
 schema_version = "1.4"
 
 [task]
-name = "programming-prompts/calculator-srp"
-version = "0.2.0"
-description = "Checks whether an agent refactors the calculator into single-responsibility functions."
+name = "programming-prompts/todo"
+version = "0.3.0"
+description = "Write a tiny todo CLI; judge scores single-responsibility structure."
 
 [verifier]
 timeout_sec = 300.0

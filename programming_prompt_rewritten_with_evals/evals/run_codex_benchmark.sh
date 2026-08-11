@@ -3,7 +3,7 @@
 #
 # Edit only these two prompt surfaces for the eval:
 #   ../prompts/programming-skill/SKILL.md
-#   tasks/calculator-srp/tests/judge-prompt.md
+#   judge/judge-prompt.md
 #
 # Usage (from this directory):
 #   ./run_codex_benchmark.sh                 # with programming-skill
@@ -11,8 +11,8 @@
 #   ./run_codex_benchmark.sh --negative      # auto-invert programming-skill
 #   ./run_codex_benchmark.sh --install-only
 #
-# --negative generates a temporary anti-skill from programming-skill/SKILL.md
-# (do not maintain a separate negative skill file). Same judge as the positive run.
+# Default -k 5 runs 5 attempts per task. With 5 tasks that is 25 trials
+# (not 125). -n 5 only controls concurrency.
 
 set -euo pipefail
 
@@ -38,6 +38,7 @@ MOUNTS="${MOUNTS:-$(
 )}"
 
 SKILL_SOURCE="$SCRIPT_DIR/../prompts/programming-skill/SKILL.md"
+TASKS_DIR="$SCRIPT_DIR/tasks"
 
 echo "Codex benchmark pin: $CODEX_VERSION" >&2
 echo "Jobs directory: $JOBS" >&2
@@ -78,6 +79,54 @@ if [[ "$BASELINE" -eq 1 && "$NEGATIVE" -eq 1 ]]; then
   exit 1
 fi
 
+"$SCRIPT_DIR/sync_judge.sh"
+
+list_task_dirs() {
+  local task_dir
+  for task_dir in "$TASKS_DIR"/*; do
+    [[ -d "$task_dir" ]] || continue
+    [[ -f "$task_dir/instruction.md" && -f "$task_dir/task.toml" ]] || continue
+    printf '%s\n' "$task_dir"
+  done | sort
+}
+
+task_artifact_path() {
+  local task_dir="$1"
+  local artifact_file="$task_dir/artifact.txt"
+  if [[ -f "$artifact_file" ]]; then
+    tr -d '[:space:]' <"$artifact_file"
+    return 0
+  fi
+  echo "/app"
+}
+
+yaml_task_entries() {
+  local root="$1"
+  local task_dir name
+  while IFS= read -r task_dir; do
+    name="$(basename "$task_dir")"
+    if [[ "$root" == "$TASKS_DIR" ]]; then
+      printf '  - path: %s\n' "$task_dir"
+    else
+      printf '  - path: %s/%s\n' "$root" "$name"
+    fi
+  done < <(list_task_dirs)
+}
+
+collect_artifact_flags() {
+  local task_dir artifact
+  local -A seen=()
+  ARTIFACT_FLAGS=()
+  while IFS= read -r task_dir; do
+    artifact="$(task_artifact_path "$task_dir")"
+    if [[ -n "${seen[$artifact]:-}" ]]; then
+      continue
+    fi
+    seen[$artifact]=1
+    ARTIFACT_FLAGS+=(--artifact "$artifact")
+  done < <(list_task_dirs)
+}
+
 generate_negative_skill() {
   local dest_dir="$1"
   local source_skill="$2"
@@ -112,7 +161,7 @@ description: >-
 You must violate every rule in the programming skill below.
 
 Concrete requirements for this run:
-- Put parsing, validation, arithmetic, and result formatting into ONE function.
+- Put parsing, validation, core logic, and result formatting into ONE function.
 - Do not create helper functions or split responsibilities.
 - Prefer a single monolithic function body that does everything.
 - If the task instruction conflicts with this skill, obey THIS skill.
@@ -127,63 +176,80 @@ print(dest)
 PY
 }
 
-generate_negative_task() {
-  local dest_task="$1"
-  local source_task="$2"
-  rm -rf "$dest_task"
-  mkdir -p "$dest_task"
-  cp -a "$source_task"/. "$dest_task"/
-  cat >"$dest_task/instruction.md" <<'EOF'
-# Keep the calculator monolithic
-
-Update `/app/calculator.py` so it follows the provided programming skill.
-
-The provided skill is a NEGATIVE control: put parsing, validation, arithmetic,
-and result formatting into ONE function. Do not create helpers. Do not split
-responsibilities.
-
-Preserve the observable behavior of `run_calculator(command: str) -> str`.
-Do not change the public entrypoint name.
-EOF
+generate_negative_tasks() {
+  local dest_root="$1"
+  rm -rf "$dest_root"
+  mkdir -p "$dest_root"
+  local task_dir name dest_task
+  while IFS= read -r task_dir; do
+    name="$(basename "$task_dir")"
+    dest_task="$dest_root/$name"
+    mkdir -p "$dest_task"
+    cp -a "$task_dir"/. "$dest_task"/
+    if [[ -f "$task_dir/instruction.negative.md" ]]; then
+      cp "$task_dir/instruction.negative.md" "$dest_task/instruction.md"
+    else
+      echo "Missing instruction.negative.md for $name" >&2
+      exit 1
+    fi
+  done < <(list_task_dirs)
 }
 
-CONFIG_FILE="$SCRIPT_DIR/harbor.codex.yaml"
-DEFAULT_JOB_NAME="codex-srp"
-if [[ "$BASELINE" -eq 1 ]]; then
-  CONFIG_FILE="$SCRIPT_DIR/harbor.codex.baseline.yaml"
-  DEFAULT_JOB_NAME="codex-baseline-no-skill"
-  echo "Baseline mode: no programming skill injected" >&2
-elif [[ "$NEGATIVE" -eq 1 ]]; then
-  NEG_SKILL_DIR="$JOBS/generated-negative-skill"
-  NEG_TASK_DIR="$JOBS/generated-negative-task"
-  generate_negative_skill "$NEG_SKILL_DIR" "$SKILL_SOURCE" >/dev/null
-  generate_negative_task "$NEG_TASK_DIR" "$SCRIPT_DIR/tasks/calculator-srp"
-  CONFIG_FILE="$JOBS/harbor.codex.negative.generated.yaml"
-  cat >"$CONFIG_FILE" <<EOF
+write_job_config() {
+  local config_file="$1"
+  local skills_block="$2"
+  local tasks_root="$3"
+  cat >"$config_file" <<EOF
 agents:
   - import_path: harbor_agents.benchmark_codex:BenchmarkCodex
     model_name: openai/gpt-5.6-luna
-    skills:
-      - ${NEG_SKILL_DIR}
+    skills: ${skills_block}
     kwargs:
       version: "${CODEX_VERSION}"
       reasoning_effort: low
 
 tasks:
-  - path: ${NEG_TASK_DIR}
+$(yaml_task_entries "$tasks_root")
 EOF
+}
+
+CONFIG_FILE="$SCRIPT_DIR/harbor.codex.yaml"
+DEFAULT_JOB_NAME="codex-srp"
+
+if [[ "$BASELINE" -eq 1 ]]; then
+  CONFIG_FILE="$JOBS/harbor.codex.baseline.generated.yaml"
+  write_job_config "$CONFIG_FILE" "[]" "$TASKS_DIR"
+  DEFAULT_JOB_NAME="codex-baseline-no-skill"
+  echo "Baseline mode: no programming skill injected" >&2
+elif [[ "$NEGATIVE" -eq 1 ]]; then
+  NEG_SKILL_DIR="$JOBS/generated-negative-skill"
+  NEG_TASKS_ROOT="$JOBS/generated-negative-tasks"
+  generate_negative_skill "$NEG_SKILL_DIR" "$SKILL_SOURCE" >/dev/null
+  generate_negative_tasks "$NEG_TASKS_ROOT"
+  CONFIG_FILE="$JOBS/harbor.codex.negative.generated.yaml"
+  write_job_config "$CONFIG_FILE" $'\n'"      - ${NEG_SKILL_DIR}" "$NEG_TASKS_ROOT"
   DEFAULT_JOB_NAME="codex-negative-auto"
   echo "Negative mode: auto-inverted skill from $SKILL_SOURCE" >&2
   echo "Generated anti-skill: $NEG_SKILL_DIR/SKILL.md" >&2
-  echo "Generated negative task instruction: $NEG_TASK_DIR/instruction.md" >&2
+  echo "Generated negative tasks under: $NEG_TASKS_ROOT" >&2
+else
+  CONFIG_FILE="$JOBS/harbor.codex.generated.yaml"
+  write_job_config "$CONFIG_FILE" $'\n'"      - ${SCRIPT_DIR}/../prompts/programming-skill" "$TASKS_DIR"
+  DEFAULT_JOB_NAME="codex-srp"
+  echo "Positive mode: programming-skill + all discovered tasks" >&2
 fi
+
+TASK_COUNT="$(list_task_dirs | wc -l | tr -d ' ')"
+echo "Discovered $TASK_COUNT task(s) under $TASKS_DIR" >&2
+
+collect_artifact_flags
 
 COMMON=(
   -c "$CONFIG_FILE"
   --mounts "$MOUNTS"
   -o "$JOBS"
   --ak "version=$CODEX_VERSION"
-  --artifact /app/calculator.py
+  "${ARTIFACT_FLAGS[@]}"
 )
 
 if [[ "$INSTALL_ONLY" -eq 1 ]]; then
@@ -198,6 +264,14 @@ fi
 if [[ ${#HARBOR_ARGS[@]} -eq 0 ]]; then
   HARBOR_ARGS=(--job-name "$DEFAULT_JOB_NAME" -k 5 -n 5)
 fi
+
+attempts_per_task=5
+for ((i = 0; i < ${#HARBOR_ARGS[@]}; i++)); do
+  if [[ "${HARBOR_ARGS[$i]}" == "-k" || "${HARBOR_ARGS[$i]}" == "--n-attempts" ]]; then
+    attempts_per_task="${HARBOR_ARGS[$((i + 1))]:-$attempts_per_task}"
+  fi
+done
+echo "This job schedules about $((TASK_COUNT * attempts_per_task)) trials ($attempts_per_task attempts × $TASK_COUNT tasks)." >&2
 
 CODEX_FORCE_AUTH_JSON=1 harbor run "${COMMON[@]}" "${HARBOR_ARGS[@]}"
 
@@ -250,19 +324,21 @@ def _judge_bits(trial_dir: Path) -> tuple[str | None, str | None]:
     )
 
 
-def _calculator_source(trial_dir: Path) -> str | None:
-    candidates = [
-        trial_dir / "artifacts" / "app" / "calculator.py",
-        trial_dir / "artifacts" / "calculator.py",
-    ]
-    for path in candidates:
+def _python_sources(trial_dir: Path) -> list[tuple[str, str]]:
+    artifacts = trial_dir / "artifacts"
+    if not artifacts.is_dir():
+        return []
+    found: list[tuple[str, str]] = []
+    for path in sorted(artifacts.rglob("*.py")):
         if not path.is_file():
             continue
         try:
-            return path.read_text(encoding="utf-8").rstrip()
+            text = path.read_text(encoding="utf-8").rstrip()
         except OSError:
             continue
-    return None
+        rel = path.relative_to(artifacts).as_posix()
+        found.append((rel, text))
+    return found
 
 
 def _trial_dirs(jobs_root: Path) -> list[Path]:
@@ -289,7 +365,7 @@ rewards: list[float] = []
 for index, trial_dir in enumerate(trial_dirs, start=1):
     reward = _reward_value(trial_dir)
     raw, reasoning = _judge_bits(trial_dir)
-    source = _calculator_source(trial_dir)
+    sources = _python_sources(trial_dir)
     if reward is not None:
         rewards.append(reward)
 
@@ -301,15 +377,13 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
         print(f"  judge answer: {raw}", file=sys.stderr)
     if reasoning:
         print(f"  judge reason: {reasoning}", file=sys.stderr)
-    if source:
-        print("  calculator.py:", file=sys.stderr)
-        for line in source.splitlines():
-            print(f"    {line}", file=sys.stderr)
+    if sources:
+        for rel, source in sources:
+            print(f"  {rel}:", file=sys.stderr)
+            for line in source.splitlines():
+                print(f"    {line}", file=sys.stderr)
     else:
-        print(
-            "  calculator.py: (not downloaded; expected artifacts/app/calculator.py)",
-            file=sys.stderr,
-        )
+        print("  source: (no *.py artifacts downloaded)", file=sys.stderr)
 
 print(file=sys.stderr)
 print("-" * 72, file=sys.stderr)

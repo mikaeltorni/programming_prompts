@@ -15,4 +15,3 @@ RUN apt-get update \
     && rm -rf /root/.agents /root/.codex /etc/codex /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY calculator.py /app/calculator.py
