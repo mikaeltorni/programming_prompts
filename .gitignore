@@ -4,7 +4,8 @@ project_paths.txt
 config.json
 .log/
 
-tests/__pycache__/
+__pycache__/
+*.py[cod]
 
 # BEGIN programming-prompts-cursor (managed by linux_programming_setup)
 # Managed copies from programming_prompts — do not ignore other .cursor/skills/*
