@@ -18,6 +18,8 @@
 #   ./run_benchmark.sh --harness both --skills srp,commenting --run-separately -k 5 -n 5
 #   ./run_benchmark.sh --baseline --skills srp,commenting -k 5 -n 5
 #   ./run_benchmark.sh --negative --skills srp harness=codex
+#   ./run_benchmark.sh --skills srp,logging -k 2 -n 2
+#   ./run_benchmark.sh --skills srp,logging-vague -k 2 -n 2
 #   ./run_benchmark.sh --install-only harness=cc
 #
 # Trial count (rule of thumb): harnesses × (skills if --run-separately else 1)
@@ -183,11 +185,25 @@ normalize_harness() {
 mapfile -t SELECTED_HARNESSES < <(normalize_harness "$HARNESS_ARG")
 echo "Selected harness(es): ${SELECTED_HARNESSES[*]}" >&2
 
+# Control skills named <base>-vague inject a vague SKILL.md but are scored by
+# judges/<base>/ (they have no judge of their own).
+judge_for_skill() {
+  local skill="$1"
+  if [[ "$skill" == *-vague ]]; then
+    printf '%s\n' "${skill%-vague}"
+  else
+    printf '%s\n' "$skill"
+  fi
+}
+
 list_available_skills() {
-  local skill_dir
+  # Default discovery skips *-vague controls; pass them explicitly via --skills.
+  local skill_dir name
   for skill_dir in "$SKILLS_ROOT"/*; do
     [[ -d "$skill_dir" && -f "$skill_dir/SKILL.md" ]] || continue
-    printf '%s\n' "$(basename "$skill_dir")"
+    name="$(basename "$skill_dir")"
+    [[ "$name" == *-vague ]] && continue
+    printf '%s\n' "$name"
   done | sort
 }
 
@@ -211,14 +227,15 @@ resolve_skills() {
     echo "No skills selected under $SKILLS_ROOT" >&2
     exit 1
   fi
-  local skill
+  local skill judge
   for skill in "${selected[@]}"; do
     if [[ ! -f "$SKILLS_ROOT/$skill/SKILL.md" ]]; then
       echo "Unknown skill '$skill' (expected $SKILLS_ROOT/$skill/SKILL.md)" >&2
       exit 1
     fi
-    if [[ ! -f "$JUDGES_ROOT/$skill/prompt.md" && ! -f "$JUDGES_ROOT/$skill/judge-prompt.md" ]]; then
-      echo "Missing judge for skill '$skill' (expected $JUDGES_ROOT/$skill/prompt.md)" >&2
+    judge="$(judge_for_skill "$skill")"
+    if [[ ! -f "$JUDGES_ROOT/$judge/prompt.md" && ! -f "$JUDGES_ROOT/$judge/judge-prompt.md" ]]; then
+      echo "Missing judge for skill '$skill' (expected $JUDGES_ROOT/$judge/prompt.md)" >&2
       exit 1
     fi
   done
@@ -540,7 +557,8 @@ prepare_job_tasks() {
   shift
   local -a skills=("$@")
   local dest="$JOBS/task-trees/$job_name"
-  local task_dir name
+  local task_dir name skill judge
+  local -a judges=()
   rm -rf "$dest"
   mkdir -p "$dest"
   while IFS= read -r task_dir; do
@@ -550,7 +568,22 @@ prepare_job_tasks() {
   if [[ ${#skills[@]} -eq 0 ]]; then
     TASKS_DIR="$dest" "$SCRIPT_DIR/sync_judges.sh"
   else
-    TASKS_DIR="$dest" "$SCRIPT_DIR/sync_judges.sh" "${skills[@]}"
+    # Map *-vague skill names onto their real judge directories; dedupe.
+    local already j
+    for skill in "${skills[@]}"; do
+      judge="$(judge_for_skill "$skill")"
+      already=0
+      for j in "${judges[@]:-}"; do
+        if [[ "$j" == "$judge" ]]; then
+          already=1
+          break
+        fi
+      done
+      if [[ "$already" -eq 0 ]]; then
+        judges+=("$judge")
+      fi
+    done
+    TASKS_DIR="$dest" "$SCRIPT_DIR/sync_judges.sh" "${judges[@]}"
   fi
   local judge_count
   judge_count="$(find "$dest" -type d -path '*/tests/judges/*' 2>/dev/null | wc -l | tr -d ' ')"
