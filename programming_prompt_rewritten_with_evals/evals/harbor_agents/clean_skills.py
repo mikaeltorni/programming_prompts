@@ -66,6 +66,27 @@ def load_claude_version(version_file: Path | None = None) -> str:
     return text or DEFAULT_CLAUDE_VERSION
 
 
+def build_ensure_git_repo_command(repo: str = "/app") -> str:
+    """Build a snippet that git-inits ``repo`` with an empty commit if needed.
+
+    Harbor task images already do this at build time. This is a safety net when
+    ``/app`` was remounted empty.
+
+    Args:
+        repo: Absolute project checkout inside the trial (default ``/app``).
+
+    Returns:
+        A shell command that is a no-op when ``repo/.git`` already exists.
+    """
+    quoted = shlex.quote(repo)
+    return (
+        f"if [ ! -e {quoted}/.git ]; then "
+        f"git -C {quoted} init -b master && "
+        f'git -C {quoted} commit --allow-empty -m "Initial empty commit"; '
+        "fi"
+    )
+
+
 def build_clean_skills_register_command(skills_dir: str | None) -> str:
     """Build a shell snippet that resets Codex skills then installs only *skills_dir*.
 
@@ -83,16 +104,17 @@ def build_clean_skills_register_command(skills_dir: str | None) -> str:
     Returns:
         A shell command string safe to run with ``CODEX_HOME`` already set.
     """
+    ensure = build_ensure_git_repo_command()
     wipe = (
         'rm -rf "$HOME/.agents/skills" /etc/codex/skills "$CODEX_HOME/skills"; '
         'mkdir -p "$HOME/.agents/skills" "$CODEX_HOME/skills"'
     )
     if not skills_dir:
-        return wipe
+        return f"{ensure}; {wipe}"
 
     quoted = shlex.quote(skills_dir)
     return (
-        f"{wipe}; "
+        f"{ensure}; {wipe}; "
         f'cp -a {quoted}/. "$HOME/.agents/skills/"; '
         f'cp -a {quoted}/. "$CODEX_HOME/skills/"'
     )
@@ -113,12 +135,13 @@ def build_clean_claude_skills_register_command(skills_dir: str | None) -> str:
     Returns:
         A shell command string safe to run after ``CLAUDE_CONFIG_DIR`` is set.
     """
+    ensure = build_ensure_git_repo_command()
     wipe = (
         'rm -rf "$HOME/.claude/skills" "$CLAUDE_CONFIG_DIR/skills"; '
         'mkdir -p "$HOME/.claude/skills" "$CLAUDE_CONFIG_DIR/skills"'
     )
     if not skills_dir:
-        return wipe
+        return f"{ensure}; {wipe}"
 
     quoted = shlex.quote(skills_dir)
-    return f"{wipe}; cp -a {quoted}/. \"$CLAUDE_CONFIG_DIR/skills/\""
+    return f"{ensure}; {wipe}; cp -a {quoted}/. \"$CLAUDE_CONFIG_DIR/skills/\""

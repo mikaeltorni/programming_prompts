@@ -1,0 +1,13 @@
+# Programmatic judge — no LLM. The verifier runs check_worktree.py.
+
+[judge]
+judge = "programmatic"
+timeout = 60
+
+[[criterion]]
+name = "worktree_layout"
+description = "sibling .worktrees/<project>/ worktree, incremental commits, no push"
+type = "binary"
+
+[scoring]
+aggregation = "all_pass"

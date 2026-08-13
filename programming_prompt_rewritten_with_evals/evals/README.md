@@ -25,9 +25,12 @@ Skills and judges:
 - [`../prompts/programming-skills/logging/SKILL.md`](../prompts/programming-skills/logging/SKILL.md)
 - [`../prompts/programming-skills/logging-vague/SKILL.md`](../prompts/programming-skills/logging-vague/SKILL.md)
   (control — vague one-liner; scored by the logging judge)
+- [`../prompts/programming-skills/worktree/SKILL.md`](../prompts/programming-skills/worktree/SKILL.md)
 - [`judges/srp/prompt.md`](judges/srp/prompt.md)
 - [`judges/commenting/prompt.md`](judges/commenting/prompt.md)
 - [`judges/logging/prompt.md`](judges/logging/prompt.md)
+- [`judges/worktree/judge.toml`](judges/worktree/judge.toml)
+  (programmatic git-layout checker; no LLM prompt)
 
 Coding tasks — one markdown file each under
 [`coding-prompts/`](coding-prompts/). Harbor task trees are **generated** under
@@ -94,12 +97,15 @@ evals/
 │   ├── commenting/
 │   │   ├── prompt.md
 │   │   └── judge.toml
-│   └── logging/
-│       ├── prompt.md
-│       └── judge.toml
+│   ├── logging/
+│   │   ├── prompt.md
+│   │   └── judge.toml
+│   └── worktree/
+│       └── judge.toml          # programmatic
 ├── verifier/
 │   ├── README.md
-│   └── run_judges.sh
+│   ├── run_judges.sh
+│   └── check_worktree.py       # worktree layout judge + --self-test
 ├── testing/
 ├── sync_tasks.sh           # coding-prompts → .generated/tasks/
 ├── sync_judges.sh          # judges + verifier → .generated/tasks/*/tests/
@@ -419,6 +425,45 @@ export JOBS="$(mktemp -d)"
 ./run_benchmark.sh harness=cc --skills srp,logging-vague -k 2 -n 2
 ```
 
+## Worktree skill (sibling `.worktrees/<project>/`, pair with SRP)
+
+Each trial image starts `/app` as a git repo with **one empty initial commit**.
+The worktree skill requires a feature-branch worktree at
+`/.worktrees/app/<dir>/` (`.worktrees` is next to `/app`, then a folder named
+after the project). Commit each finished part there, merge back, **never push**.
+Scoring is **programmatic** (`verifier/check_worktree.py`), not an LLM judge.
+
+Pair with **`srp`** so there are several helpers to commit one-by-one. Prove the
+checker against every pass/fail layout before a Harbor run:
+
+```bash
+python3 verifier/check_worktree.py --self-test
+```
+
+Recommended four-command smoke set (each `./run_benchmark.sh` in its own
+terminal):
+
+```bash
+cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
+export JOBS="$(mktemp -d)"
+```
+
+```bash
+./run_benchmark.sh harness=codex --baseline --skills srp,worktree -k 2 -n 2
+```
+
+```bash
+./run_benchmark.sh harness=cc --baseline --skills srp,worktree -k 2 -n 2
+```
+
+```bash
+./run_benchmark.sh harness=codex --skills srp,worktree -k 2 -n 2
+```
+
+```bash
+./run_benchmark.sh harness=cc --skills srp,worktree -k 2 -n 2
+```
+
 ## Test the real skill (Codex and/or Claude Code)
 
 **Defaults:** Codex `openai/gpt-5.6-luna` @ **low**; Claude Code `claude-opus-5`
@@ -497,7 +542,9 @@ Keep each new coding task equally small:
 4. add new skills only as `../prompts/programming-skills/<skill>/SKILL.md` plus
    `judges/<skill>/prompt.md` (+ `judge.toml`); for a vague control, add only
    `../prompts/programming-skills/<skill>-vague/SKILL.md` and reuse
-   `judges/<skill>/`; edit the shared verifier at `verifier/run_judges.sh`;
+   `judges/<skill>/`; for a programmatic git-layout skill, use
+   `judge = "programmatic"` in `judge.toml` (no prompt.md) and a checker under
+   `verifier/`; edit the shared verifier at `verifier/run_judges.sh`;
 5. run `./sync_judges.sh` (runtime), then oracle / `nop` / one real model trial.
 
 `./run_benchmark.sh` auto-discovers every selected coding-prompt (materialized

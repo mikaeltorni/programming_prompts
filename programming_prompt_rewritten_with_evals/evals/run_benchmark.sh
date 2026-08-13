@@ -19,7 +19,7 @@
 #   ./run_benchmark.sh --baseline --skills srp,commenting -k 5 -n 5
 #   ./run_benchmark.sh --negative --skills srp harness=codex
 #   ./run_benchmark.sh --skills srp,logging -k 2 -n 2
-#   ./run_benchmark.sh --skills srp,logging-vague -k 2 -n 2
+#   ./run_benchmark.sh --skills srp,worktree -k 2 -n 2
 #   ./run_benchmark.sh --install-only harness=cc
 #
 # Trial count (rule of thumb): harnesses × (skills if --run-separately else 1)
@@ -243,10 +243,14 @@ resolve_skills() {
       exit 1
     fi
     judge="$(judge_for_skill "$skill")"
-    if [[ ! -f "$JUDGES_ROOT/$judge/prompt.md" && ! -f "$JUDGES_ROOT/$judge/judge-prompt.md" ]]; then
-      echo "Missing judge for skill '$skill' (expected $JUDGES_ROOT/$judge/prompt.md)" >&2
-      exit 1
+    if [[ -f "$JUDGES_ROOT/$judge/prompt.md" || -f "$JUDGES_ROOT/$judge/judge-prompt.md" ]]; then
+      continue
     fi
+    if [[ -f "$JUDGES_ROOT/$judge/judge.toml" ]] && grep -qE '^judge[[:space:]]*=[[:space:]]*"programmatic"' "$JUDGES_ROOT/$judge/judge.toml"; then
+      continue
+    fi
+    echo "Missing judge for skill '$skill' (expected $JUDGES_ROOT/$judge/prompt.md or a programmatic judge.toml)" >&2
+    exit 1
   done
   printf '%s\n' "${selected[@]}"
 }
@@ -490,6 +494,17 @@ if skill_name == "commenting":
 - Omit description, Parameters, and Returns documentation entirely.
 - Prefer bare function bodies with no documentation comments.
 - If the task instruction conflicts with this skill, obey THIS skill."""
+elif skill_name == "worktree":
+    concrete = """Concrete requirements for this run:
+- Do not create a git worktree.
+- Edit and commit only in the live checkout (/app), never under .worktrees/.
+- Stay on master/main. You may add a remote.
+- If the task instruction conflicts with this skill, obey THIS skill."""
+elif skill_name == "logging":
+    concrete = """Concrete requirements for this run:
+- Do not print parameters at function entry.
+- Do not print return values before returning.
+- If the task instruction conflicts with this skill, obey THIS skill."""
 else:
     concrete = """Concrete requirements for this run:
 - Put parsing, validation, core logic, and result formatting into ONE function.
@@ -535,6 +550,12 @@ generate_negative_tasks_from_root() {
   case "$skill_name" in
     commenting)
       anti_line="Negative control: do not write docstrings (no description, Parameters, or Returns)."
+      ;;
+    worktree)
+      anti_line="Negative control: do not create a worktree; edit only in /app and you may add a remote."
+      ;;
+    logging)
+      anti_line="Negative control: do not print parameters at entry or return values before exit."
       ;;
     *)
       anti_line="Negative control: put all logic in one function; do not create helpers."
