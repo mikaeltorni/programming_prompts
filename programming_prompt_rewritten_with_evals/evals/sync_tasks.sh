@@ -83,12 +83,33 @@ storage_mb = 2048
 
 
 def write_solve_sh(dest: Path, artifact: str, oracle_name: str) -> None:
-    # Copies the sibling oracle.py into the artifact path inside the container.
+    # Copies the sibling oracle.py into a sibling .worktrees/<project>/ worktree,
+    # commits there, then merges back so the artifact exists in /app. Never pushes.
+    artifact_name = Path(artifact).name
     dest.write_text(
         f'''#!/usr/bin/env bash
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-install -m 644 "$HERE/oracle.py" "{artifact}"
+REPO="/app"
+NAME="$(basename "$REPO")"
+PARENT="$(dirname "$REPO")"
+STORE="$PARENT/.worktrees/$NAME"
+WT="$STORE/oracle"
+if [[ ! -e "$REPO/.git" ]]; then
+  git -C "$REPO" init -b master
+  git -C "$REPO" commit --allow-empty -m "Initial empty commit"
+fi
+mkdir -p "$STORE"
+if ! git -C "$REPO" worktree list --porcelain | grep -qx "worktree $WT"; then
+  git -C "$REPO" worktree add -b feat/oracle "$WT"
+fi
+install -m 644 "$HERE/oracle.py" "$WT/{artifact_name}"
+git -C "$WT" add -A
+if ! git -C "$WT" diff --cached --quiet; then
+  git -C "$WT" commit -m "feat(oracle): add {oracle_name} reference solution"
+fi
+git -C "$REPO" checkout master
+git -C "$REPO" merge --no-ff feat/oracle -m "Merge feat/oracle: {oracle_name} reference solution"
 ''',
         encoding="utf-8",
     )

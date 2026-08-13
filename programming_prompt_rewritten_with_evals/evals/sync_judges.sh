@@ -3,6 +3,7 @@
 # Edit only:
 #   evals/judges/<skill>/prompt.md (+ judge.toml)
 #   evals/verifier/run_judges.sh
+#   evals/verifier/check_worktree.py
 # Never edit the synced copies under .generated/tasks/*/tests/ (generated).
 # Usage: ./sync_judges.sh [skill ...]
 # Prefer ./sync_tasks.sh first so .generated/tasks/ exists.
@@ -11,6 +12,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 JUDGES_ROOT="$SCRIPT_DIR/judges"
 VERIFIER_SRC="$SCRIPT_DIR/verifier/run_judges.sh"
+WORKTREE_CHECK_SRC="$SCRIPT_DIR/verifier/check_worktree.py"
 # Allow callers to target an isolated job copy (see run_benchmark.sh).
 TASKS_DIR="${TASKS_DIR:-$SCRIPT_DIR/.generated/tasks}"
 
@@ -25,6 +27,10 @@ if [[ ! -d "$JUDGES_ROOT" ]]; then
 fi
 if [[ ! -f "$VERIFIER_SRC" ]]; then
   echo "Missing shared verifier: $VERIFIER_SRC" >&2
+  exit 1
+fi
+if [[ ! -f "$WORKTREE_CHECK_SRC" ]]; then
+  echo "Missing worktree checker: $WORKTREE_CHECK_SRC" >&2
   exit 1
 fi
 
@@ -54,14 +60,25 @@ prompt_file_for() {
   return 1
 }
 
+is_programmatic_judge() {
+  local src="$1"
+  [[ -f "$src/judge.toml" ]] && grep -qE '^judge[[:space:]]*=[[:space:]]*"programmatic"' "$src/judge.toml"
+}
+
 copied_tasks=0
 for tests_dir in "$TASKS_DIR"/*/tests; do
   [[ -d "$tests_dir" ]] || continue
   rm -rf "$tests_dir/judges"
   mkdir -p "$tests_dir/judges"
   install -m 755 "$VERIFIER_SRC" "$tests_dir/run_judges.sh"
+  install -m 755 "$WORKTREE_CHECK_SRC" "$tests_dir/check_worktree.py"
   for skill in "${skills[@]}"; do
     src="$JUDGES_ROOT/$skill"
+    if is_programmatic_judge "$src"; then
+      mkdir -p "$tests_dir/judges/$skill"
+      cp "$src/judge.toml" "$tests_dir/judges/$skill/"
+      continue
+    fi
     prompt_src="$(prompt_file_for "$src" || true)"
     if [[ -z "$prompt_src" || ! -f "$src/judge.toml" ]]; then
       echo "Missing prompt.md (or judge-prompt.md) / judge.toml for skill '$skill' under $src" >&2

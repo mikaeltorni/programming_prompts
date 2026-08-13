@@ -12,9 +12,11 @@ judges/
 ├── commenting/
 │   ├── prompt.md
 │   └── judge.toml
-└── logging/
-    ├── prompt.md
-    └── judge.toml
+├── logging/
+│   ├── prompt.md
+│   └── judge.toml
+└── worktree/
+    └── judge.toml     # programmatic (no prompt.md)
 ```
 
 | Skill | Prompt | What it scores |
@@ -22,9 +24,12 @@ judges/
 | [`srp`](srp/prompt.md) | single-responsibility structure | parse + core helpers, thin entrypoint |
 | [`commenting`](commenting/prompt.md) | docstring format | description + `Parameters:` + `Returns:` |
 | [`logging`](logging/prompt.md) | entry/exit prints | plain `print` of params at entry + return value before each `return` (ignore `raise`) |
+| [`worktree`](worktree/judge.toml) | *(programmatic)* | sibling `.worktrees/<project>/` worktree, commits on a feature branch, no remotes/push |
 
 `logging-vague` has **no** judge directory — the runner maps it onto
 `judges/logging/` so the vague one-liner is scored by the real logging criteria.
 
 Add a skill by creating `judges/<name>/prompt.md` + `judge.toml`, and a matching
-`prompts/programming-skills/<name>/SKILL.md`.
+`prompts/programming-skills/<name>/SKILL.md`. For a git-layout skill, use
+`judge = "programmatic"` in `judge.toml` and implement the checker under
+`evals/verifier/` instead of an LLM prompt.

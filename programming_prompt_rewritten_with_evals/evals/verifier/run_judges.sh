@@ -35,6 +35,16 @@ run_one_judge() {
     local judge_dir="$1"
     local output_json="$2"
     local work prompt_file
+    if [[ -f "$judge_dir/judge.toml" ]] && grep -qE '^judge[[:space:]]*=[[:space:]]*"programmatic"' "$judge_dir/judge.toml"; then
+        HERE="$(cd "$(dirname "$0")" && pwd)"
+        checker="$HERE/check_worktree.py"
+        if [[ ! -f "$checker" ]]; then
+            echo "Missing programmatic checker: $checker" >&2
+            return 1
+        fi
+        python3 "$checker" --repo /app --output "$output_json"
+        return 0
+    fi
     work="$(mktemp -d)"
     prompt_file=""
     for candidate in "$judge_dir/prompt.md" "$judge_dir/judge-prompt.md"; do
