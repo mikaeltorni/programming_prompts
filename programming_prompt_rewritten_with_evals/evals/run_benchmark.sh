@@ -7,6 +7,9 @@
 #   cc    → claude-opus-5       @ reasoning_effort=low (Claude CLI --effort)
 #   grok  → grok-4.6            @ reasoning_effort=low (Grok CLI --reasoning-effort)
 #
+# Harness aliases, models, mounts, and pin files live in
+# harbor_agents/harness_spec.py — do not add another case ladder here.
+#
 # Edit surfaces:
 #   ../prompts/programming-skills/<skill>/SKILL.md
 #   judges/<skill>/prompt.md
@@ -66,6 +69,7 @@ if [[ -z "$GROK_VERSION" ]]; then
 fi
 
 export PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
+HARNESS_SPEC="$SCRIPT_DIR/harbor_agents/harness_spec.py"
 
 # Harbor output stays inside the run archive (evals/runs/<stamp>/harbor).
 # Export JOBS=... only to override that; the default is no longer /tmp.
@@ -118,7 +122,7 @@ while [[ $# -gt 0 ]]; do
     --harness)
       HARNESS_ARG="${2:-}"
       if [[ -z "$HARNESS_ARG" ]]; then
-        echo "--harness requires a value: codex | cc | grok | both | all" >&2
+        echo "--harness requires a value: $(python3 "$HARNESS_SPEC" choices)" >&2
         exit 1
       fi
       shift 2
@@ -185,32 +189,12 @@ if [[ "$BASELINE" -eq 1 && "$NEGATIVE" -eq 1 ]]; then
 fi
 
 normalize_harness() {
-  local raw="${1,,}"
-  raw="$(echo "$raw" | tr -d '[:space:]')"
-  case "$raw" in
-    ""|both)
-      printf '%s\n' "codex" "cc"
-      ;;
-    all)
-      printf '%s\n' "codex" "cc" "grok"
-      ;;
-    codex|openai|gpt)
-      printf '%s\n' "codex"
-      ;;
-    cc|claude|claude-code|claudecode|anthropic)
-      printf '%s\n' "cc"
-      ;;
-    grok|xai|grok-build|grok-code|grokcli)
-      printf '%s\n' "grok"
-      ;;
-    *)
-      echo "Unknown harness '$1' (use codex, cc, grok, both, or all)" >&2
-      exit 1
-      ;;
-  esac
+  python3 "$HARNESS_SPEC" normalize "${1:-}"
 }
 
-mapfile -t SELECTED_HARNESSES < <(normalize_harness "$HARNESS_ARG")
+_norm_out="$(normalize_harness "$HARNESS_ARG")" || exit 1
+mapfile -t SELECTED_HARNESSES <<< "$_norm_out"
+unset _norm_out
 echo "Selected harness(es): ${SELECTED_HARNESSES[*]}" >&2
 
 # Control skills named <base>-vague inject a vague SKILL.md but are scored by
@@ -385,76 +369,19 @@ skills_yaml_block() {
 }
 
 harness_import_path() {
-  case "$1" in
-    codex) printf '%s' "harbor_agents.benchmark_codex:BenchmarkCodex" ;;
-    cc) printf '%s' "harbor_agents.benchmark_claude_code:BenchmarkClaudeCode" ;;
-    grok) printf '%s' "harbor_agents.benchmark_grok:BenchmarkGrok" ;;
-    *)
-      echo "Internal error: unknown harness '$1'" >&2
-      exit 1
-      ;;
-  esac
+  python3 "$HARNESS_SPEC" field "$1" import_path
 }
 
 harness_model_name() {
-  case "$1" in
-    codex) printf '%s' "openai/gpt-5.6-luna" ;;
-    cc) printf '%s' "claude-opus-5" ;;
-    grok) printf '%s' "grok-4.6" ;;
-  esac
+  python3 "$HARNESS_SPEC" field "$1" model_name
 }
 
 harness_cli_version() {
-  case "$1" in
-    codex) printf '%s' "$CODEX_VERSION" ;;
-    cc) printf '%s' "$CLAUDE_VERSION" ;;
-    grok) printf '%s' "$GROK_VERSION" ;;
-  esac
+  python3 "$HARNESS_SPEC" version "$1"
 }
 
 harness_mounts_json() {
-  local harness="$1"
-  python3 - "$harness" <<'PY'
-import json
-import pathlib
-import sys
-
-harness = sys.argv[1]
-home = pathlib.Path.home()
-# Judges always use Codex (see judges/*/judge.toml). Mount auth.json for every
-# harness so the verifier can score Claude Code trials too.
-mounts = [
-    {
-        "type": "bind",
-        "source": str(home / ".codex" / "auth.json"),
-        "target": "/root/.codex/auth.json",
-        "read_only": True,
-    }
-]
-if harness == "cc":
-    mounts.append(
-        {
-            "type": "bind",
-            "source": str(home / ".claude" / ".credentials.json"),
-            "target": "/root/.claude/.credentials.json",
-            "read_only": True,
-        }
-    )
-elif harness == "grok":
-    grok_auth = home / ".grok" / "auth.json"
-    if grok_auth.is_file():
-        mounts.append(
-            {
-                "type": "bind",
-                "source": str(grok_auth),
-                "target": "/root/.grok/auth.json",
-                "read_only": True,
-            }
-        )
-elif harness != "codex":
-    raise SystemExit(f"unknown harness {harness}")
-print(json.dumps(mounts))
-PY
+  python3 "$HARNESS_SPEC" mounts "$1"
 }
 
 claude_oauth_token() {
@@ -701,6 +628,9 @@ from collections import defaultdict
 from pathlib import Path
 
 
+from harbor_agents.harness_spec import identify_harness
+
+
 def _load_json(path: Path) -> dict | None:
     try:
         text = path.read_text(encoding="utf-8")
@@ -901,14 +831,7 @@ def _harness_of(trial_dir: Path, jobs_root: Path) -> str:
         top = rel.parts[0] if rel.parts else ""
     except ValueError:
         top = trial_dir.parent.name
-    for candidate in (top, trial_dir.parent.name, *trial_dir.parts):
-        if candidate.startswith("cc-") or candidate.startswith("claude"):
-            return "cc"
-        if candidate.startswith("codex-"):
-            return "codex"
-        if candidate.startswith("grok-"):
-            return "grok"
-    return "unknown"
+    return identify_harness(top, trial_dir.parent.name, *trial_dir.parts)
 
 
 def _fmt_rate(passed: int, total: int) -> str:
@@ -1147,14 +1070,17 @@ run_harbor_for_harness() {
   mounts="$(harness_mounts_json "$harness")"
   version="$(harness_cli_version "$harness")"
   local -a env_flags=()
-  case "$harness" in
-    codex)
-      # Use "true", not "1": Harbor scrubs sensitive env VALUES from trial
-      # outputs (keys matching AUTH/TOKEN/…). Value "1" rewrites every reward
-      # 1.0 into invalid JSON ("[REDACTED].0") and breaks our summary.
-      env_flags+=(CODEX_FORCE_AUTH_JSON=true)
-      ;;
-    cc)
+  local line oauth
+  # Static pairs must use "true", not "1": Harbor scrubs sensitive env VALUES
+  # from trial outputs (keys matching AUTH/TOKEN/…). Value "1" rewrites every
+  # reward 1.0 into invalid JSON ("[REDACTED].0") and breaks our summary.
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && env_flags+=("$line")
+  done < <(python3 "$HARNESS_SPEC" static-env "$harness")
+  oauth="$(python3 "$HARNESS_SPEC" oauth "$harness")"
+  case "$oauth" in
+    none) ;;
+    claude)
       local token
       token="$(claude_oauth_token || true)"
       if [[ -z "$token" ]]; then
@@ -1162,10 +1088,7 @@ run_harbor_for_harness() {
           "(or export CLAUDE_CODE_OAUTH_TOKEN before running)." >&2
         exit 1
       fi
-      env_flags+=(
-        CLAUDE_FORCE_OAUTH=true
-        "CLAUDE_CODE_OAUTH_TOKEN=$token"
-      )
+      env_flags+=("CLAUDE_CODE_OAUTH_TOKEN=$token")
       ;;
     grok)
       local grok_key
@@ -1181,6 +1104,10 @@ run_harbor_for_harness() {
         echo "Grok auth: using SuperGrok key from ~/.grok/auth.json (value not logged)" >&2
       fi
       env_flags+=("XAI_API_KEY=$grok_key")
+      ;;
+    *)
+      echo "Internal error: unknown oauth kind '$oauth' for harness $harness" >&2
+      exit 1
       ;;
   esac
   # Env vars must be visible to Harbor's agent process; export for this call only.
