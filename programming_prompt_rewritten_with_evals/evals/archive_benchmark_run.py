@@ -8,6 +8,10 @@ Layout (explorer-friendly, timestamp-first directory name):
       00-meta.json
       01-SUMMARY.txt
       02-command.txt
+      Projects/<trial-name>/
+        app/                    # cloned repo reset to the empty initial commit
+        .worktrees/<project>/<dir>/   # worktree files (the actual work)
+      harbor/                   # raw Harbor -o output (not /tmp)
       jobs/<job-name>/
         00-job-result.json
         00-harbor-config.yaml   # when present next to the job
@@ -28,9 +32,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
+import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -107,7 +114,124 @@ def _write_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def archive_trial(trial_dir: Path, dest_trial: Path) -> dict:
+SKIP_JOB_DIR_NAMES = {
+    "task-trees",
+    "generated-negative-skill",
+    "generated-negative-tasks",
+    "Projects",
+    "harbor",
+    "jobs",
+}
+
+
+def _copy_tree(src: Path, dest: Path) -> None:
+    """Copy a directory tree, replacing *dest* if it already exists."""
+    if dest.exists():
+        shutil.rmtree(dest)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(src, dest, symlinks=True, ignore_dangling_symlinks=True)
+
+
+def _projects_source(artifacts: Path) -> Path | None:
+    """Return the directory that holds ``app/`` and/or ``.worktrees/``.
+
+    Harbor stores ``--artifact /Projects`` as ``artifacts/Projects/``. Older
+    jobs stored ``--artifact /app`` as ``artifacts/app/``.
+    """
+    if not artifacts.is_dir():
+        return None
+    nested = artifacts / "Projects"
+    if nested.is_dir() and ((nested / "app").exists() or (nested / ".worktrees").exists()):
+        return nested
+    if (artifacts / "app").exists() or (artifacts / ".worktrees").exists():
+        return artifacts
+    return None
+
+
+def _reset_clone_to_initial(repo: Path) -> None:
+    """Reset a copied git checkout to its empty initial commit.
+
+    The archived ``Projects/<trial>/app`` folder is the cloned initial state.
+    Work lives next to it under ``.worktrees/``.
+    """
+    if not (repo / ".git").exists():
+        return
+    proc = subprocess.run(
+        ["git", "-C", str(repo), "rev-list", "--max-parents=0", "HEAD"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    roots = [line.strip() for line in (proc.stdout or "").splitlines() if line.strip()]
+    if proc.returncode != 0 or not roots:
+        return
+    subprocess.run(
+        ["git", "-C", str(repo), "reset", "--hard", roots[0]],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(repo), "clean", "-fd"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(repo), "worktree", "prune"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    extra = repo / ".git" / "worktrees"
+    if extra.is_dir():
+        shutil.rmtree(extra, ignore_errors=True)
+
+
+def archive_projects_layout(trial_dir: Path, dest_projects: Path) -> bool:
+    """Copy one trial's simulated ``Projects/`` tree (clone + worktrees).
+
+    Args:
+        trial_dir: Harbor trial directory that contains ``artifacts/``.
+        dest_projects: Destination ``<run>/Projects/<trial>/`` folder.
+
+    Returns:
+        True when a Projects tree was written.
+    """
+    source = _projects_source(trial_dir / "artifacts")
+    if source is None:
+        return False
+    dest_projects.mkdir(parents=True, exist_ok=True)
+    src_app = source / "app"
+    src_wt = source / ".worktrees"
+    if src_app.exists():
+        _copy_tree(src_app, dest_projects / "app")
+        _reset_clone_to_initial(dest_projects / "app")
+    if src_wt.exists():
+        _copy_tree(src_wt, dest_projects / ".worktrees")
+    return (dest_projects / "app").exists() or (dest_projects / ".worktrees").exists()
+
+
+def _flatten_code_rel(rel: Path) -> Path:
+    """Map an artifacts-relative path to a flat ``code/`` path."""
+    parts = rel.parts
+    if not parts:
+        return rel
+    if parts[0] == "Projects":
+        parts = parts[1:]
+    if parts and parts[0] == "app":
+        return Path(*parts[1:]) if len(parts) > 1 else Path(rel.name)
+    if ".worktrees" in parts:
+        return Path(rel.name)
+    return Path(*parts)
+
+
+def archive_trial(
+    trial_dir: Path,
+    dest_trial: Path,
+    *,
+    projects_root: Path | None = None,
+) -> dict:
     """Copy one Harbor trial into a sorted, inspectable folder."""
     dest_trial.mkdir(parents=True, exist_ok=True)
     info: dict[str, object] = {"trial": trial_dir.name, "files": []}
@@ -162,15 +286,16 @@ def archive_trial(trial_dir: Path, dest_trial: Path) -> dict:
             if not path.is_file():
                 continue
             rel = path.relative_to(artifacts)
-            # Prefer flat code/<file.py> when Harbor stored under artifacts/app/.
-            if len(rel.parts) >= 2 and rel.parts[0] == "app":
-                out_rel = Path(*rel.parts[1:])
-            else:
-                out_rel = rel
+            out_rel = _flatten_code_rel(rel)
             _copy_file(path, code_dest / out_rel)
             copied_code += 1
             info["files"].append(f"code/{out_rel.as_posix()}")
     info["code_files"] = copied_code
+
+    if projects_root is not None:
+        dest_projects = projects_root / trial_dir.name
+        if archive_projects_layout(trial_dir, dest_projects):
+            info["projects"] = dest_projects.as_posix()
 
     agent = trial_dir / "agent"
     agent_dest = dest_trial / "agent"
@@ -196,6 +321,7 @@ def archive_job(
     dest_job: Path,
     *,
     jobs_root: Path | None = None,
+    projects_root: Path | None = None,
 ) -> dict:
     """Archive one Harbor job directory (e.g. codex-skills)."""
     dest_job.mkdir(parents=True, exist_ok=True)
@@ -222,7 +348,11 @@ def archive_job(
             continue
         if not (trial_dir / "verifier").is_dir() and not (trial_dir / "result.json").is_file():
             continue
-        trial_info = archive_trial(trial_dir, dest_job / "trials" / trial_dir.name)
+        trial_info = archive_trial(
+            trial_dir,
+            dest_job / "trials" / trial_dir.name,
+            projects_root=projects_root,
+        )
         index["trials"].append(trial_info)
 
     _write_json(dest_job / "00-job-index.json", index)
@@ -241,11 +371,9 @@ def archive_jobs_root(
     for job_dir in sorted(jobs_root.iterdir()):
         if not job_dir.is_dir():
             continue
-        if job_dir.name in {"task-trees", "generated-negative-skill", "generated-negative-tasks"}:
+        if job_dir.name in SKIP_JOB_DIR_NAMES:
             continue
         if job_dir.name.startswith("generated-negative-"):
-            continue
-        if job_dir.name == "task-trees":
             continue
         if only_job is not None and job_dir.name != only_job:
             continue
@@ -258,7 +386,14 @@ def archive_jobs_root(
         )
         if not has_result and not has_trials:
             continue
-        archived.append(archive_job(job_dir, run_dir / "jobs" / job_dir.name, jobs_root=jobs_root))
+        archived.append(
+            archive_job(
+                job_dir,
+                run_dir / "jobs" / job_dir.name,
+                jobs_root=jobs_root,
+                projects_root=run_dir / "Projects",
+            )
+        )
     return archived
 
 
@@ -277,6 +412,108 @@ def append_summary(run_dir: Path, text: str, *, name: str = "01-SUMMARY.txt") ->
         handle.write(text)
         if not text.endswith("\n"):
             handle.write("\n")
+
+
+def _git(cwd: Path, *args: str) -> None:
+    """Run a git command with a local identity for archive fixtures."""
+    env = os.environ.copy()
+    env["GIT_AUTHOR_NAME"] = "Eval Agent"
+    env["GIT_AUTHOR_EMAIL"] = "eval@local"
+    env["GIT_COMMITTER_NAME"] = "Eval Agent"
+    env["GIT_COMMITTER_EMAIL"] = "eval@local"
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(cwd),
+            "-c",
+            "user.email=eval@local",
+            "-c",
+            "user.name=Eval Agent",
+            *args,
+        ],
+        check=True,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+
+def _self_test() -> int:
+    """Build a fake Harbor trial and check the Projects/ archive layout.
+
+    Returns:
+        0 when the clone is reset to the empty initial commit and the
+        worktree files are copied beside it.
+    """
+    cases: list[tuple[str, bool, str]] = []
+
+    def record(name: str, ok: bool, detail: str) -> None:
+        cases.append((name, ok, detail))
+
+    with tempfile.TemporaryDirectory(prefix="archive-projects-") as raw:
+        root = Path(raw)
+        job = root / "harbor" / "cc-skills"
+        trial = job / "calculator__abc123"
+        artifacts = trial / "artifacts" / "Projects"
+        app = artifacts / "app"
+        wt = artifacts / ".worktrees" / "app" / "feat-calculator"
+        trial.mkdir(parents=True)
+        (trial / "result.json").write_text("{}\n", encoding="utf-8")
+        (trial / "verifier").mkdir()
+        (trial / "verifier" / "reward.json").write_text(
+            '{"reward": 1.0}\n', encoding="utf-8"
+        )
+        app.mkdir(parents=True)
+        _git(app, "init", "-b", "master")
+        _git(app, "commit", "--allow-empty", "-m", "Initial empty commit")
+        wt.parent.mkdir(parents=True)
+        _git(app, "worktree", "add", "-b", "feat/calculator", str(wt))
+        (wt / "calculator.py").write_text("def run_calculator(c):\n    return c\n", encoding="utf-8")
+        _git(wt, "add", "calculator.py")
+        _git(wt, "commit", "-m", "feat(calculator): add calculator")
+        _git(app, "merge", "--no-ff", "feat/calculator", "-m", "Merge feat/calculator")
+        if not (app / "calculator.py").is_file():
+            record("fixture_merged_clone", False, "expected calculator.py in clone after merge")
+        else:
+            record("fixture_merged_clone", True, "clone has merged file before archive")
+
+        run_dir = root / "run"
+        archive_jobs_root(root / "harbor", run_dir)
+        dest_app = run_dir / "Projects" / trial.name / "app"
+        dest_wt = run_dir / "Projects" / trial.name / ".worktrees" / "app" / "feat-calculator"
+        dest_code = run_dir / "jobs" / "cc-skills" / "trials" / trial.name / "code" / "calculator.py"
+
+        record(
+            "projects_clone_exists",
+            dest_app.is_dir(),
+            str(dest_app),
+        )
+        record(
+            "clone_reset_empty",
+            dest_app.is_dir() and not (dest_app / "calculator.py").exists(),
+            "cloned app must be the empty initial commit, not the merge",
+        )
+        record(
+            "worktree_has_code",
+            (dest_wt / "calculator.py").is_file(),
+            str(dest_wt / "calculator.py"),
+        )
+        record(
+            "jobs_code_copy",
+            dest_code.is_file(),
+            str(dest_code),
+        )
+
+    failed = [(name, msg) for name, ok, msg in cases if not ok]
+    for name, ok, msg in cases:
+        status = "PASS" if ok else "FAIL"
+        print(f"{status}  {name}: {msg}", flush=True)
+    if failed:
+        print(f"{len(failed)}/{len(cases)} archive layout case(s) failed", flush=True)
+        return 1
+    print(f"{len(cases)}/{len(cases)} archive layout cases passed", flush=True)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -308,6 +545,8 @@ def main(argv: list[str] | None = None) -> int:
     finalize.add_argument("--jobs-root", type=Path, required=True)
     finalize.add_argument("--summary-file", type=Path, default=None)
 
+    sub.add_parser("self-test", help="Check Projects/ archive layout fixtures")
+
     args = parser.parse_args(argv)
 
     if args.cmd == "init":
@@ -331,6 +570,7 @@ def main(argv: list[str] | None = None) -> int:
             "tasks": args.task or ["all"],
             "attempts_per_task": args.attempts,
             "concurrent": args.concurrent,
+            "jobs_dir": args.jobs_temp,
             "jobs_temp": args.jobs_temp,
             "command": args.command,
             "dirname": dirname,
@@ -367,10 +607,14 @@ def main(argv: list[str] | None = None) -> int:
         meta_path = args.run_dir / "00-meta.json"
         meta = _load_json_lenient(meta_path) or {}
         meta["archived_at"] = datetime.now(timezone.utc).isoformat()
+        meta["jobs_dir"] = str(args.jobs_root)
         meta["jobs_temp"] = str(args.jobs_root)
         write_meta(args.run_dir, meta)
         print(args.run_dir)
         return 0
+
+    if args.cmd == "self-test":
+        return _self_test()
 
     return 1
 

@@ -1,6 +1,7 @@
 # Benchmark run archives
 
 Each `./run_benchmark.sh` invocation writes an inspectable folder here.
+Harbor jobs land in this folder too (`harbor/`), not under `/tmp`.
 
 Directory names sort by start time in the file explorer:
 
@@ -8,9 +9,10 @@ Directory names sort by start time in the file explorer:
 YYYY-MM-DD_HHMMSS_<pid>__harness-…__mode-…__skills-…__separately-…__tasks-…__kN-nN/
 ```
 
-Harbor job dirs under the temp `$JOBS` tree use the same stamp suffix
-(`codex-skills__YYYY-MM-DD_HHMMSS_<pid>`) so sharing `$JOBS` across terminals
-is safe.
+Harbor job dirs under `harbor/` use the same stamp suffix
+(`codex-skills__YYYY-MM-DD_HHMMSS_<pid>`) so sharing one run across terminals
+is unnecessary — each invocation gets its own archive.
+
 ## Layout
 
 ```text
@@ -18,6 +20,10 @@ is safe.
 01-SUMMARY.txt            # console summaries (appended per job)
 02-command.txt            # exact argv used
 03-COMBINED-SUMMARY.txt   # present when multiple jobs were rolled up
+Projects/<trial-name>/
+  app/                    # cloned repo at the empty initial commit
+  .worktrees/<project>/<dir>/   # worktree with the agent's files
+harbor/                   # raw Harbor -o output (not /tmp)
 jobs/<harbor-job-name>/
   00-job-result.json
   00-harbor-config.yaml
@@ -38,5 +44,6 @@ jobs/<harbor-job-name>/
 
 The runner prints `written to: <absolute-path>` when the archive is ready.
 
-Harbor still uses a temp `$JOBS` tree for execution; this folder is the durable
-copy under the rewritten-prompts package.
+Open `Projects/<trial>/` to see the simulated host: the cloned `app` repo
+beside `.worktrees/app/<worktree>/`.
+

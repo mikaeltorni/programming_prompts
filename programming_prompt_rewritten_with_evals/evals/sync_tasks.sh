@@ -83,14 +83,15 @@ storage_mb = 2048
 
 
 def write_solve_sh(dest: Path, artifact: str, oracle_name: str) -> None:
-    # Copies the sibling oracle.py into a sibling .worktrees/<project>/ worktree,
-    # commits there, then merges back so the artifact exists in /app. Never pushes.
+    # Copies the sibling oracle.py into /Projects/.worktrees/app/oracle,
+    # commits there, then merges back so the artifact exists in /Projects/app.
+    # Never pushes.
     artifact_name = Path(artifact).name
     dest.write_text(
         f'''#!/usr/bin/env bash
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-REPO="/app"
+REPO="/Projects/app"
 NAME="$(basename "$REPO")"
 PARENT="$(dirname "$REPO")"
 STORE="$PARENT/.worktrees/$NAME"

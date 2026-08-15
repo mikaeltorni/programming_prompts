@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Programmatic worktree-layout checker for Harbor evals.
 
-The live repo (Harbor: /app) must already be a git repository with an empty
-initial commit. A valid agent run then:
+The live repo (Harbor: /Projects/app, also linked from /app) must already be
+a git repository with an empty initial commit. A valid agent run then:
 
 * adds a worktree under ``<parent>/.worktrees/<project>/<dir>/`` (sibling of
   the repo, never inside it);
@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-DEFAULT_REPO = Path("/app")
+DEFAULT_REPO = Path("/Projects/app")
 INITIAL_SUBJECT = "Initial empty commit"
 
 
@@ -173,7 +173,7 @@ def check_repo(repo: Path) -> CheckResult:
 
     Args:
         repo: Project checkout that should already have been ``git init``'d
-            with an empty initial commit (Harbor: ``/app``).
+            with an empty initial commit (Harbor: ``/Projects/app``).
 
     Returns:
         Pass/fail plus a reasoning string the verifier stores.
@@ -553,6 +553,17 @@ def _self_test() -> int:
         _cmd(wt, "git", "commit", "-m", "named project")
         record("pass_matching_project_name", True, repo)
 
+        # Pass: simulated Projects/ parent (the Harbor eval layout).
+        parent = root / "Projects"
+        repo = parent / "app"
+        _init_empty_repo(repo)
+        wt = parent / ".worktrees" / "app" / "feat-calc"
+        _add_worktree(repo, wt, "-b", "feat/calc")
+        _write_py(wt / "calculator.py")
+        _cmd(wt, "git", "add", "calculator.py")
+        _cmd(wt, "git", "commit", "-m", "feat(calc): add calculator")
+        record("pass_projects_parent", True, repo)
+
     failed = [(name, msg) for name, ok, msg in cases if not ok]
     for name, ok, msg in cases:
         status = "PASS" if ok else "FAIL"
@@ -574,7 +585,12 @@ def main(argv: list[str] | None = None) -> int:
         Process exit code (0 success).
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repo", type=Path, default=DEFAULT_REPO, help="project checkout (default /app)")
+    parser.add_argument(
+        "--repo",
+        type=Path,
+        default=DEFAULT_REPO,
+        help="project checkout (default /Projects/app)",
+    )
     parser.add_argument(
         "--output",
         type=Path,

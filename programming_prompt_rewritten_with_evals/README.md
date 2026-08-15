@@ -52,13 +52,13 @@ Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
 - `evals/run_benchmark.sh` — multi-harness runner (`harness=codex|cc|both`)
 - `evals/run_codex_benchmark.sh` — shim → `run_benchmark.sh harness=codex`
 - `evals/runs/` — timestamped archives of results, code, and summaries
-- `evals/testing/` — open a new terminal to verify `/tmp` job roots with `ca` / `cca`
+- `evals/testing/` — open a new terminal to verify `evals/runs/…/harbor` job roots with `ca` / `cca`
 
 After each Harbor job the runner prints per-skill **judge answer + reasoning**
 in the console summary. To audit a finished positive/baseline pair:
 
 ```bash
 cd programming_prompt_rewritten_with_evals/evals/testing
-./verify_with_ca.sh  /tmp/tmp.POSITIVE /tmp/tmp.BASELINE
-./verify_with_cca.sh /tmp/tmp.POSITIVE /tmp/tmp.BASELINE
+./verify_with_ca.sh  ../runs/<positive-stamp>/harbor ../runs/<baseline-stamp>/harbor
+./verify_with_cca.sh ../runs/<positive-stamp>/harbor ../runs/<baseline-stamp>/harbor
 ```

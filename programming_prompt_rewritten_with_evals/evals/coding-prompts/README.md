@@ -23,7 +23,8 @@ Write `/app/calculator.py` with …
 ```
 
 The filename stem is the task name (`calculator.md` → task `calculator`).
-Do **not** edit generated `../.generated/tasks/` — it is rebuilt from these files.
+`/app` is a symlink to `/Projects/app` inside the trial image. Do **not** edit
+generated `../.generated/tasks/` — it is rebuilt from these files.
 Oracle reference implementations live in [`../oracles/`](../oracles/).
 
 Select a subset when running the benchmark (default is all):
