@@ -742,7 +742,16 @@ from collections import defaultdict
 from pathlib import Path
 
 
-from harbor_agents.harness_spec import identify_harness
+from harbor_agents.harness_spec import HARNESSES, identify_harness
+
+
+def _eval_agent_from_reward_name(skill: str) -> tuple[str, str] | None:
+    """Return (skill, eval_agent) when *skill* is a per-eval-agent reward file stem."""
+    for agent in HARNESSES:
+        suffix = f"-{agent}"
+        if skill.endswith(suffix) and skill != agent:
+            return skill[: -len(suffix)], agent
+    return None
 
 
 def _load_json(path: Path) -> dict | None:
@@ -820,6 +829,8 @@ def _per_skill_rewards(trial_dir: Path) -> dict[str, float]:
         skill = path.name[len("reward-") : -len(".json")]
         if skill.endswith("-details"):
             continue
+        if _eval_agent_from_reward_name(skill) is not None:
+            continue
         payload = _load_json(path)
         if payload is None or "reward" not in payload:
             continue
@@ -852,7 +863,59 @@ def _per_skill_rewards(trial_dir: Path) -> dict[str, float]:
     return out
 
 
-def _nested_criterion_bits(item: dict) -> tuple[str | None, str | None]:
+def _per_eval_agent_rewards(trial_dir: Path) -> dict[tuple[str, str], float]:
+    """Map (skill, eval_agent) to that agent's reward for one trial."""
+    out: dict[tuple[str, str], float] = {}
+    verifier = trial_dir / "verifier"
+    if not verifier.is_dir():
+        return out
+    for path in sorted(verifier.glob("reward-*.json")):
+        stem = path.name[len("reward-") : -len(".json")]
+        if stem.endswith("-details"):
+            continue
+        parsed = _eval_agent_from_reward_name(stem)
+        if parsed is None:
+            continue
+        skill, agent = parsed
+        payload = _load_json(path)
+        if payload is None or "reward" not in payload:
+            continue
+        try:
+            out[(skill, agent)] = float(payload["reward"])
+        except (TypeError, ValueError):
+            continue
+    if out:
+        return out
+    details = _load_json(verifier / "reward-details.json")
+    if not details:
+        return out
+    reward = details.get("reward")
+    if not isinstance(reward, dict):
+        return out
+    criteria = reward.get("criteria")
+    if not isinstance(criteria, list):
+        return out
+    for item in criteria:
+        if not isinstance(item, dict):
+            continue
+        skill = str(item.get("name") or "")
+        agents = item.get("eval_agents")
+        if not isinstance(agents, list):
+            agents = reward.get("eval_agents")
+        if not isinstance(agents, list) or not skill:
+            continue
+        for agent_item in agents:
+            if not isinstance(agent_item, dict):
+                continue
+            agent = str(agent_item.get("agent") or "")
+            value = agent_item.get("reward")
+            if not agent or value is None:
+                continue
+            try:
+                out[(skill, agent)] = float(value)
+            except (TypeError, ValueError):
+                continue
+    return out
     raw = item.get("raw")
     reasoning = item.get("reasoning")
     if (reasoning is None or reasoning == "") and isinstance(item.get("details"), dict):
@@ -903,6 +966,31 @@ def _judge_criteria(trial_dir: Path) -> list[tuple[str, str | None, str | None]]
                     if isinstance(nested_first, dict):
                         raw2, reasoning2 = _nested_criterion_bits(nested_first)
                         out[-1] = (name, raw or raw2, reasoning or reasoning2)
+        agents = item.get("eval_agents")
+        if not isinstance(agents, list) and isinstance(skill_details, dict):
+            nested_reward = skill_details.get("reward")
+            if isinstance(nested_reward, dict):
+                agents = nested_reward.get("eval_agents")
+                if not isinstance(agents, list):
+                    nested_criteria = nested_reward.get("criteria")
+                    if isinstance(nested_criteria, list) and nested_criteria:
+                        agents = nested_criteria[0].get("eval_agents") if isinstance(nested_criteria[0], dict) else None
+        if isinstance(agents, list):
+            for agent_item in agents:
+                if not isinstance(agent_item, dict):
+                    continue
+                agent = str(agent_item.get("agent") or "")
+                if not agent:
+                    continue
+                agent_raw = agent_item.get("raw")
+                agent_reason = agent_item.get("reasoning")
+                out.append(
+                    (
+                        f"{name}/{agent}",
+                        str(agent_raw) if agent_raw is not None else None,
+                        str(agent_reason) if agent_reason else None,
+                    )
+                )
     return out
 
 
@@ -983,6 +1071,9 @@ by_harness: dict[str, list[float]] = defaultdict(list)
 by_harness_skill: dict[tuple[str, str], list[float]] = defaultdict(list)
 by_harness_task: dict[tuple[str, str], list[float]] = defaultdict(list)
 by_harness_task_skill: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+by_eval_agent: dict[str, list[float]] = defaultdict(list)
+by_harness_eval: dict[tuple[str, str], list[float]] = defaultdict(list)
+by_harness_eval_skill: dict[tuple[str, str, str], list[float]] = defaultdict(list)
 by_skill: dict[str, list[float]] = defaultdict(list)
 by_task: dict[str, list[float | None]] = defaultdict(list)
 rewards: list[float] = []
@@ -994,6 +1085,7 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
     task = _task_name(trial_dir)
     harness = _harness_of(trial_dir, jobs_root)
     per_skill = _per_skill_rewards(trial_dir)
+    per_eval = _per_eval_agent_rewards(trial_dir)
     by_task[task].append(reward)
     if reward is not None:
         rewards.append(reward)
@@ -1003,6 +1095,10 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
         by_skill[skill].append(value)
         by_harness_skill[(harness, skill)].append(value)
         by_harness_task_skill[(harness, task, skill)].append(value)
+    for (skill, agent), value in per_eval.items():
+        by_eval_agent[agent].append(value)
+        by_harness_eval[(harness, agent)].append(value)
+        by_harness_eval_skill[(harness, agent, skill)].append(value)
 
     verdict = "PASS" if reward is not None and reward >= 1.0 else "FAIL"
     reward_text = "n/a" if reward is None else f"{reward:g}"
@@ -1017,6 +1113,12 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
             f"{name}={value:g}" for name, value in sorted(per_skill.items())
         )
         print(f"  per-skill: {bits}", file=sys.stderr)
+    if per_eval:
+        bits = ", ".join(
+            f"{skill}/{agent}={value:g}"
+            for (skill, agent), value in sorted(per_eval.items())
+        )
+        print(f"  per-evalAgent: {bits}", file=sys.stderr)
     if judge_rows:
         for skill_name, raw, reasoning in judge_rows:
             if raw is not None:
@@ -1039,6 +1141,22 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
 _section(f"By harness (mode={run_mode})")
 for harness in sorted(by_harness):
     _rate_line(harness, by_harness[harness])
+
+if by_eval_agent:
+    _section(f"By eval agent (mode={run_mode})")
+    for agent in sorted(by_eval_agent):
+        _rate_line(agent, by_eval_agent[agent])
+
+    _section(f"By harness × eval agent (mode={run_mode})")
+    for harness, agent in sorted(by_harness_eval):
+        _rate_line(f"{harness} / evalAgent={agent}", by_harness_eval[(harness, agent)])
+
+    _section(f"By harness × eval agent × skill (mode={run_mode})")
+    for harness, agent, skill in sorted(by_harness_eval_skill):
+        _rate_line(
+            f"{harness} / evalAgent={agent} / {skill}",
+            by_harness_eval_skill[(harness, agent, skill)],
+        )
 
 _section(f"By harness × skill (mode={run_mode})")
 for harness, skill in sorted(by_harness_skill):
@@ -1157,6 +1275,12 @@ init_run_archive() {
   for _h in "${SELECTED_HARNESSES[@]}"; do
     archive_init_args+=(--harness "$_h")
   done
+  if [[ ${#SELECTED_EVAL_AGENTS[@]} -gt 0 ]]; then
+    local _e
+    for _e in "${SELECTED_EVAL_AGENTS[@]}"; do
+      archive_init_args+=(--eval-agent "$_e")
+    done
+  fi
   for _s in "${SELECTED_SKILLS[@]}"; do
     archive_init_args+=(--skill "$_s")
   done
