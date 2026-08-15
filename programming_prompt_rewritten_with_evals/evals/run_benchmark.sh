@@ -26,10 +26,14 @@
 #   ./run_benchmark.sh --skills srp,logging -k 2 -n 2
 #   ./run_benchmark.sh --skills srp,worktree -k 2 -n 2
 #   ./run_benchmark.sh --install-only harness=grok
+#   ./run_benchmark.sh harness=codex evalAgent=cc,codex
+#   ./run_benchmark.sh harness=cc evalAgent=grok evalAgentModel=grok-4.6 \
+#       evalAgentReasoningEffort=low
 #
 # Trial count (rule of thumb): harnesses × (skills if --run-separately else 1)
 # × tasks × -k. Example: both harnesses, 2 skills separately, 5 tasks, -k 5
-# → 2 × 2 × 5 × 5 = 100 trials.
+# → 2 × 2 × 5 × 5 = 100 trials. evalAgent does not multiply trials; it reruns
+# the LLM judge on each trial (2–3× verifier cost when several agents).
 
 set -euo pipefail
 
@@ -99,6 +103,9 @@ RUN_SEPARATELY=0
 SKILLS_ARG=""
 TASKS_ARG=""
 HARNESS_ARG=""
+EVAL_AGENT_ARG=""
+EVAL_AGENT_MODEL_ARG=""
+EVAL_AGENT_EFFORT_ARG=""
 HARBOR_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -133,6 +140,54 @@ while [[ $# -gt 0 ]]; do
       ;;
     harness=*)
       HARNESS_ARG="${1#harness=}"
+      shift
+      ;;
+    --evalAgent|--eval-agent)
+      EVAL_AGENT_ARG="${2:-}"
+      if [[ -z "$EVAL_AGENT_ARG" ]]; then
+        echo "--evalAgent requires a value: $(python3 "$HARNESS_SPEC" choices)" >&2
+        exit 1
+      fi
+      shift 2
+      ;;
+    --evalAgent=*|--eval-agent=*)
+      EVAL_AGENT_ARG="${1#*=}"
+      shift
+      ;;
+    evalAgent=*|eval-agent=*)
+      EVAL_AGENT_ARG="${1#*=}"
+      shift
+      ;;
+    --evalAgentModel|--eval-agent-model)
+      EVAL_AGENT_MODEL_ARG="${2:-}"
+      if [[ -z "$EVAL_AGENT_MODEL_ARG" ]]; then
+        echo "--evalAgentModel requires a model id (same idea as -m / --model)" >&2
+        exit 1
+      fi
+      shift 2
+      ;;
+    --evalAgentModel=*|--eval-agent-model=*)
+      EVAL_AGENT_MODEL_ARG="${1#*=}"
+      shift
+      ;;
+    evalAgentModel=*|eval-agent-model=*)
+      EVAL_AGENT_MODEL_ARG="${1#*=}"
+      shift
+      ;;
+    --evalAgentReasoningEffort|--eval-agent-reasoning-effort)
+      EVAL_AGENT_EFFORT_ARG="${2:-}"
+      if [[ -z "$EVAL_AGENT_EFFORT_ARG" ]]; then
+        echo "--evalAgentReasoningEffort requires low, medium, or high (same as --ak reasoning_effort=)" >&2
+        exit 1
+      fi
+      shift 2
+      ;;
+    --evalAgentReasoningEffort=*|--eval-agent-reasoning-effort=*)
+      EVAL_AGENT_EFFORT_ARG="${1#*=}"
+      shift
+      ;;
+    evalAgentReasoningEffort=*|eval-agent-reasoning-effort=*)
+      EVAL_AGENT_EFFORT_ARG="${1#*=}"
       shift
       ;;
     --skills)
@@ -196,6 +251,39 @@ _norm_out="$(normalize_harness "$HARNESS_ARG")" || exit 1
 mapfile -t SELECTED_HARNESSES <<< "$_norm_out"
 unset _norm_out
 echo "Selected harness(es): ${SELECTED_HARNESSES[*]}" >&2
+
+# Empty evalAgent → inherit the coding harness for each job. Explicit values
+# use the same aliases/groups as harness= (comma lists, both, all).
+_eval_out="$(python3 "$HARNESS_SPEC" eval-agents "$EVAL_AGENT_ARG")" || exit 1
+SELECTED_EVAL_AGENTS=()
+if [[ -n "$_eval_out" ]]; then
+  mapfile -t SELECTED_EVAL_AGENTS <<< "$_eval_out"
+fi
+unset _eval_out
+if [[ ${#SELECTED_EVAL_AGENTS[@]} -eq 0 ]]; then
+  echo "Eval agent: inherit coding harness (same CLI as harness=)" >&2
+else
+  echo "Eval agent(s): ${SELECTED_EVAL_AGENTS[*]}" >&2
+fi
+if [[ -n "$EVAL_AGENT_MODEL_ARG" ]]; then
+  echo "Eval agent model override: $EVAL_AGENT_MODEL_ARG" >&2
+fi
+if [[ -n "$EVAL_AGENT_EFFORT_ARG" ]]; then
+  echo "Eval agent reasoning effort override: $EVAL_AGENT_EFFORT_ARG" >&2
+fi
+# Fail fast on zip/length/effort errors before Harbor starts.
+if [[ ${#SELECTED_EVAL_AGENTS[@]} -gt 0 ]]; then
+  _eval_csv="$(IFS=','; printf '%s' "${SELECTED_EVAL_AGENTS[*]}")"
+  python3 "$HARNESS_SPEC" eval-models "$_eval_csv" "$EVAL_AGENT_MODEL_ARG" >/dev/null || exit 1
+  python3 "$HARNESS_SPEC" eval-efforts "$_eval_csv" "$EVAL_AGENT_EFFORT_ARG" >/dev/null || exit 1
+  unset _eval_csv
+else
+  for _h in "${SELECTED_HARNESSES[@]}"; do
+    python3 "$HARNESS_SPEC" eval-models "$_h" "$EVAL_AGENT_MODEL_ARG" >/dev/null || exit 1
+    python3 "$HARNESS_SPEC" eval-efforts "$_h" "$EVAL_AGENT_EFFORT_ARG" >/dev/null || exit 1
+  done
+  unset _h
+fi
 
 # Control skills named <base>-vague inject a vague SKILL.md but are scored by
 # judges/<base>/ (they have no judge of their own).
@@ -381,7 +469,33 @@ harness_cli_version() {
 }
 
 harness_mounts_json() {
-  python3 "$HARNESS_SPEC" mounts "$1"
+  python3 "$HARNESS_SPEC" mounts "$@"
+}
+
+eval_agents_for_harness() {
+  # Inherit the coding harness when evalAgent was omitted.
+  if [[ ${#SELECTED_EVAL_AGENTS[@]} -eq 0 ]]; then
+    printf '%s\n' "$1"
+  else
+    printf '%s\n' "${SELECTED_EVAL_AGENTS[@]}"
+  fi
+}
+
+eval_agents_csv_for_harness() {
+  local -a agents=()
+  mapfile -t agents < <(eval_agents_for_harness "$1")
+  local IFS=','
+  printf '%s' "${agents[*]}"
+}
+
+resolve_eval_models_csv() {
+  local agents_csv="$1"
+  python3 "$HARNESS_SPEC" eval-models "$agents_csv" "$EVAL_AGENT_MODEL_ARG"
+}
+
+resolve_eval_efforts_csv() {
+  local agents_csv="$1"
+  python3 "$HARNESS_SPEC" eval-efforts "$agents_csv" "$EVAL_AGENT_EFFORT_ARG"
 }
 
 claude_oauth_token() {
@@ -1063,20 +1177,11 @@ init_run_archive() {
   echo "Jobs directory: $JOBS" >&2
 }
 
-run_harbor_for_harness() {
+append_oauth_env() {
+  # Append secret env pairs for *harness* into the nameref array. Never log values.
   local harness="$1"
-  shift
-  local mounts version
-  mounts="$(harness_mounts_json "$harness")"
-  version="$(harness_cli_version "$harness")"
-  local -a env_flags=()
-  local line oauth
-  # Static pairs must use "true", not "1": Harbor scrubs sensitive env VALUES
-  # from trial outputs (keys matching AUTH/TOKEN/…). Value "1" rewrites every
-  # reward 1.0 into invalid JSON ("[REDACTED].0") and breaks our summary.
-  while IFS= read -r line; do
-    [[ -n "$line" ]] && env_flags+=("$line")
-  done < <(python3 "$HARNESS_SPEC" static-env "$harness")
+  local -n _env_ref="$2"
+  local oauth
   oauth="$(python3 "$HARNESS_SPEC" oauth "$harness")"
   case "$oauth" in
     none) ;;
@@ -1084,38 +1189,116 @@ run_harbor_for_harness() {
       local token
       token="$(claude_oauth_token || true)"
       if [[ -z "$token" ]]; then
-        echo "Claude harness needs ~/.claude/.credentials.json with claudeAiOauth.accessToken" \
-          "(or export CLAUDE_CODE_OAUTH_TOKEN before running)." >&2
+        echo "Claude needs ~/.claude/.credentials.json with claudeAiOauth.accessToken" \
+          "(or export CLAUDE_CODE_OAUTH_TOKEN) for harness/evalAgent=$harness." >&2
         exit 1
       fi
-      env_flags+=("CLAUDE_CODE_OAUTH_TOKEN=$token")
+      _env_ref+=("CLAUDE_CODE_OAUTH_TOKEN=$token")
       ;;
     grok)
       local grok_key
       grok_key="$(grok_xai_api_key || true)"
       if [[ -z "$grok_key" ]]; then
-        echo "Grok harness needs SuperGrok login (~/.grok/auth.json) or XAI_API_KEY." >&2
+        echo "Grok needs SuperGrok login (~/.grok/auth.json) or XAI_API_KEY for harness/evalAgent=$harness." >&2
         echo "Run: grok login --oauth   (then retry), or export XAI_API_KEY=..." >&2
         exit 1
       fi
       if [[ -n "${XAI_API_KEY:-}" ]]; then
-        echo "Grok auth: using host XAI_API_KEY (value not logged)" >&2
+        echo "Grok auth ($harness): using host XAI_API_KEY (value not logged)" >&2
       else
-        echo "Grok auth: using SuperGrok key from ~/.grok/auth.json (value not logged)" >&2
+        echo "Grok auth ($harness): using SuperGrok key from ~/.grok/auth.json (value not logged)" >&2
       fi
-      env_flags+=("XAI_API_KEY=$grok_key")
+      _env_ref+=("XAI_API_KEY=$grok_key")
       ;;
     *)
       echo "Internal error: unknown oauth kind '$oauth' for harness $harness" >&2
       exit 1
       ;;
   esac
+}
+
+harbor_args_have_flag() {
+  local flag="$1"
+  local item
+  for item in "${HARBOR_ARGS[@]:-}"; do
+    if [[ "$item" == "$flag" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+run_harbor_for_harness() {
+  local harness="$1"
+  shift
+  local -a eval_agents=()
+  mapfile -t eval_agents < <(eval_agents_for_harness "$harness")
+  local eval_csv models_csv efforts_csv
+  eval_csv="$(eval_agents_csv_for_harness "$harness")"
+  models_csv="$(resolve_eval_models_csv "$eval_csv")" || exit 1
+  efforts_csv="$(resolve_eval_efforts_csv "$eval_csv")" || exit 1
+  echo "Job evalAgent(s): ${eval_agents[*]} models=$models_csv effort=$efforts_csv" >&2
+
+  local mounts version
+  mounts="$(harness_mounts_json "$harness" "${eval_agents[@]}")"
+  version="$(harness_cli_version "$harness")"
+  local -a env_flags=()
+  local -a seen_env_keys=()
+  local line oauth_harness pair key
+  # Static pairs must use "true", not "1": Harbor scrubs sensitive env VALUES
+  # from trial outputs (keys matching AUTH/TOKEN/…). Value "1" rewrites every
+  # reward 1.0 into invalid JSON ("[REDACTED].0") and breaks our summary.
+  add_env_pair() {
+    local candidate="$1"
+    local cand_key="${candidate%%=*}"
+    local existing
+    for existing in "${seen_env_keys[@]:-}"; do
+      if [[ "$existing" == "$cand_key" ]]; then
+        return 0
+      fi
+    done
+    seen_env_keys+=("$cand_key")
+    env_flags+=("$candidate")
+  }
+
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && add_env_pair "$line"
+  done < <(python3 "$HARNESS_SPEC" static-env "$harness")
+  append_oauth_env "$harness" env_flags
+  for oauth_harness in "${eval_agents[@]}"; do
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && add_env_pair "$line"
+    done < <(python3 "$HARNESS_SPEC" static-env "$oauth_harness")
+    if [[ "$oauth_harness" != "$harness" ]]; then
+      append_oauth_env "$oauth_harness" env_flags
+    fi
+  done
+  add_env_pair "EVAL_AGENTS=$eval_csv"
+  add_env_pair "EVAL_AGENT_MODELS=$models_csv"
+  add_env_pair "EVAL_AGENT_REASONING_EFFORT=$efforts_csv"
+  # Verifier must see the same secrets (--ve). Agent phase still uses --ae.
+  local -a ve_flags=(
+    --ve "EVAL_AGENTS=$eval_csv"
+    --ve "EVAL_AGENT_MODELS=$models_csv"
+    --ve "EVAL_AGENT_REASONING_EFFORT=$efforts_csv"
+  )
+  for pair in "${env_flags[@]}"; do
+    key="${pair%%=*}"
+    case "$key" in
+      EVAL_AGENTS|EVAL_AGENT_MODELS|EVAL_AGENT_REASONING_EFFORT) ;;
+      *) ve_flags+=(--ve "$pair") ;;
+    esac
+  done
+
+  local -a timeout_flags=()
+  if ! harbor_args_have_flag "--verifier-timeout-multiplier"; then
+    timeout_flags=(--verifier-timeout-multiplier "${#eval_agents[@]}")
+  fi
+
   # Env vars must be visible to Harbor's agent process; export for this call only.
   (
     export "${env_flags[@]}"
-    # Also pass through Harbor --ae so the trial container sees them.
     local -a ae_flags=()
-    local pair
     for pair in "${env_flags[@]}"; do
       ae_flags+=(--ae "$pair")
     done
@@ -1123,6 +1306,8 @@ run_harbor_for_harness() {
       --mounts "$mounts" \
       --ak "version=$version" \
       "${ae_flags[@]}" \
+      "${ve_flags[@]}" \
+      "${timeout_flags[@]}" \
       "$@"
   )
 }
@@ -1195,6 +1380,7 @@ run_one_job() {
   echo "Job $job_name [$harness] schedules about $((task_count * attempts_per_task)) trials ($attempts_per_task attempts × $task_count tasks)." >&2
   echo "Job $job_name judges: ${SELECTED_SKILLS_FOR_JOB[*]:-(none)} (isolated under $tasks_root)" >&2
   echo "Model default: $(harness_model_name "$harness") @ reasoning_effort=low (CLI $(harness_cli_version "$harness"))" >&2
+  echo "Job $job_name evalAgent: $(eval_agents_csv_for_harness "$harness") (inherit if evalAgent omitted)" >&2
 
   run_harbor_for_harness "$harness" "${common[@]}" "${harbor_args[@]}"
   capture_print_summary "$JOBS/$job_name" "$run_mode" "$skills_csv"
