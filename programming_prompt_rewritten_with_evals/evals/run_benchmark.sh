@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Run rewritten-prompt Harbor jobs with clean, version-pinned coding agents.
 #
-# Harnesses: Codex (`codex`) and Claude Code (`cc`). Omit --harness / harness=
-# to run both. Defaults:
+# Harnesses: Codex (`codex`), Claude Code (`cc`), and Grok CLI (`grok`).
+# Omit --harness / harness= to run Codex and Claude Code. Defaults:
 #   codex → openai/gpt-5.6-luna @ reasoning_effort=low
 #   cc    → claude-opus-5       @ reasoning_effort=low (Claude CLI --effort)
+#   grok  → grok-4.6            @ reasoning_effort=low (Grok CLI --reasoning-effort)
 #
 # Edit surfaces:
 #   ../prompts/programming-skills/<skill>/SKILL.md
@@ -15,12 +16,13 @@
 #   ./run_benchmark.sh
 #   ./run_benchmark.sh harness=codex
 #   ./run_benchmark.sh harness=cc
+#   ./run_benchmark.sh harness=grok
 #   ./run_benchmark.sh --harness both --skills srp,commenting --run-separately -k 5 -n 5
 #   ./run_benchmark.sh --baseline --skills srp,commenting -k 5 -n 5
 #   ./run_benchmark.sh --negative --skills srp harness=codex
 #   ./run_benchmark.sh --skills srp,logging -k 2 -n 2
 #   ./run_benchmark.sh --skills srp,worktree -k 2 -n 2
-#   ./run_benchmark.sh --install-only harness=cc
+#   ./run_benchmark.sh --install-only harness=grok
 #
 # Trial count (rule of thumb): harnesses × (skills if --run-separately else 1)
 # × tasks × -k. Example: both harnesses, 2 skills separately, 5 tasks, -k 5
@@ -34,6 +36,7 @@ ORIGINAL_ARGV=("$@")
 
 CODEX_VERSION_FILE="$SCRIPT_DIR/codex-version.txt"
 CLAUDE_VERSION_FILE="$SCRIPT_DIR/claude-version.txt"
+GROK_VERSION_FILE="$SCRIPT_DIR/grok-version.txt"
 if [[ ! -f "$CODEX_VERSION_FILE" ]]; then
   echo "Missing Codex version pin: $CODEX_VERSION_FILE" >&2
   exit 1
@@ -42,14 +45,23 @@ if [[ ! -f "$CLAUDE_VERSION_FILE" ]]; then
   echo "Missing Claude Code version pin: $CLAUDE_VERSION_FILE" >&2
   exit 1
 fi
+if [[ ! -f "$GROK_VERSION_FILE" ]]; then
+  echo "Missing Grok CLI version pin: $GROK_VERSION_FILE" >&2
+  exit 1
+fi
 CODEX_VERSION="$(tr -d '[:space:]' <"$CODEX_VERSION_FILE")"
 CLAUDE_VERSION="$(tr -d '[:space:]' <"$CLAUDE_VERSION_FILE")"
+GROK_VERSION="$(tr -d '[:space:]' <"$GROK_VERSION_FILE")"
 if [[ -z "$CODEX_VERSION" ]]; then
   echo "Empty Codex version pin: $CODEX_VERSION_FILE" >&2
   exit 1
 fi
 if [[ -z "$CLAUDE_VERSION" ]]; then
   echo "Empty Claude Code version pin: $CLAUDE_VERSION_FILE" >&2
+  exit 1
+fi
+if [[ -z "$GROK_VERSION" ]]; then
+  echo "Empty Grok CLI version pin: $GROK_VERSION_FILE" >&2
   exit 1
 fi
 
@@ -67,7 +79,7 @@ JUDGES_ROOT="$SCRIPT_DIR/judges"
 CODING_PROMPTS_DIR="$SCRIPT_DIR/coding-prompts"
 TASKS_DIR="$SCRIPT_DIR/.generated/tasks"
 
-echo "Codex pin: $CODEX_VERSION | Claude Code pin: $CLAUDE_VERSION" >&2
+echo "Codex pin: $CODEX_VERSION | Claude Code pin: $CLAUDE_VERSION | Grok pin: $GROK_VERSION" >&2
 echo "Run stamp: $RUN_STAMP" >&2
 echo "PYTHONPATH includes: $SCRIPT_DIR" >&2
 
@@ -106,7 +118,7 @@ while [[ $# -gt 0 ]]; do
     --harness)
       HARNESS_ARG="${2:-}"
       if [[ -z "$HARNESS_ARG" ]]; then
-        echo "--harness requires a value: codex | cc | both" >&2
+        echo "--harness requires a value: codex | cc | grok | both | all" >&2
         exit 1
       fi
       shift 2
@@ -176,8 +188,11 @@ normalize_harness() {
   local raw="${1,,}"
   raw="$(echo "$raw" | tr -d '[:space:]')"
   case "$raw" in
-    ""|both|all)
+    ""|both)
       printf '%s\n' "codex" "cc"
+      ;;
+    all)
+      printf '%s\n' "codex" "cc" "grok"
       ;;
     codex|openai|gpt)
       printf '%s\n' "codex"
@@ -185,8 +200,11 @@ normalize_harness() {
     cc|claude|claude-code|claudecode|anthropic)
       printf '%s\n' "cc"
       ;;
+    grok|xai|grok-build|grok-code|grokcli)
+      printf '%s\n' "grok"
+      ;;
     *)
-      echo "Unknown harness '$1' (use codex, cc, or both)" >&2
+      echo "Unknown harness '$1' (use codex, cc, grok, both, or all)" >&2
       exit 1
       ;;
   esac
@@ -370,6 +388,7 @@ harness_import_path() {
   case "$1" in
     codex) printf '%s' "harbor_agents.benchmark_codex:BenchmarkCodex" ;;
     cc) printf '%s' "harbor_agents.benchmark_claude_code:BenchmarkClaudeCode" ;;
+    grok) printf '%s' "harbor_agents.benchmark_grok:BenchmarkGrok" ;;
     *)
       echo "Internal error: unknown harness '$1'" >&2
       exit 1
@@ -381,6 +400,7 @@ harness_model_name() {
   case "$1" in
     codex) printf '%s' "openai/gpt-5.6-luna" ;;
     cc) printf '%s' "claude-opus-5" ;;
+    grok) printf '%s' "grok-4.6" ;;
   esac
 }
 
@@ -388,6 +408,7 @@ harness_cli_version() {
   case "$1" in
     codex) printf '%s' "$CODEX_VERSION" ;;
     cc) printf '%s' "$CLAUDE_VERSION" ;;
+    grok) printf '%s' "$GROK_VERSION" ;;
   esac
 }
 
@@ -419,6 +440,17 @@ if harness == "cc":
             "read_only": True,
         }
     )
+elif harness == "grok":
+    grok_auth = home / ".grok" / "auth.json"
+    if grok_auth.is_file():
+        mounts.append(
+            {
+                "type": "bind",
+                "source": str(grok_auth),
+                "target": "/root/.grok/auth.json",
+                "read_only": True,
+            }
+        )
 elif harness != "codex":
     raise SystemExit(f"unknown harness {harness}")
 print(json.dumps(mounts))
@@ -440,6 +472,34 @@ oauth = data.get("claudeAiOauth") or {}
 token = oauth.get("accessToken") if isinstance(oauth, dict) else None
 if isinstance(token, str) and token.strip():
     print(token.strip(), end="")
+PY
+}
+
+grok_xai_api_key() {
+  # Prints the SuperGrok OAuth access key only — never log this value.
+  # Prefer an explicit XAI_API_KEY; otherwise read ~/.grok/auth.json.
+  if [[ -n "${XAI_API_KEY:-}" ]]; then
+    printf '%s' "$XAI_API_KEY"
+    return 0
+  fi
+  python3 - <<'PY'
+import json
+from pathlib import Path
+
+path = Path.home() / ".grok" / "auth.json"
+try:
+    data = json.loads(path.read_text(encoding="utf-8"))
+except OSError:
+    raise SystemExit(0)
+if not isinstance(data, dict):
+    raise SystemExit(0)
+for entry in data.values():
+    if not isinstance(entry, dict):
+        continue
+    key = entry.get("key")
+    if isinstance(key, str) and key.strip():
+        print(key.strip(), end="")
+        break
 PY
 }
 
@@ -846,6 +906,8 @@ def _harness_of(trial_dir: Path, jobs_root: Path) -> str:
             return "cc"
         if candidate.startswith("codex-"):
             return "codex"
+        if candidate.startswith("grok-"):
+            return "grok"
     return "unknown"
 
 
@@ -1104,6 +1166,21 @@ run_harbor_for_harness() {
         CLAUDE_FORCE_OAUTH=true
         "CLAUDE_CODE_OAUTH_TOKEN=$token"
       )
+      ;;
+    grok)
+      local grok_key
+      grok_key="$(grok_xai_api_key || true)"
+      if [[ -z "$grok_key" ]]; then
+        echo "Grok harness needs SuperGrok login (~/.grok/auth.json) or XAI_API_KEY." >&2
+        echo "Run: grok login --oauth   (then retry), or export XAI_API_KEY=..." >&2
+        exit 1
+      fi
+      if [[ -n "${XAI_API_KEY:-}" ]]; then
+        echo "Grok auth: using host XAI_API_KEY (value not logged)" >&2
+      else
+        echo "Grok auth: using SuperGrok key from ~/.grok/auth.json (value not logged)" >&2
+      fi
+      env_flags+=("XAI_API_KEY=$grok_key")
       ;;
   esac
   # Env vars must be visible to Harbor's agent process; export for this call only.

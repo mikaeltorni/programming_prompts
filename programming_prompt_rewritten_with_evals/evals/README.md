@@ -1,7 +1,7 @@
 # Harbor evaluation
 
-Five small write-from-scratch tasks measure whether Codex and/or Claude Code
-follow selected programming skills while implementing tiny Python programs:
+Five small write-from-scratch tasks measure whether Codex, Claude Code, and/or
+Grok follow selected programming skills while implementing tiny Python programs:
 
 | Prompt | Entrypoint |
 | --- | --- |
@@ -42,8 +42,8 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 
 | Flag | Meaning |
 | --- | --- |
-| `harness=codex` / `--harness cc` | Agent harness: `codex`, `cc` (Claude Code), or `both` |
-| *(omit harness)* | Runs **both** Codex and Claude Code |
+| `harness=codex` / `--harness cc` / `harness=grok` | Agent harness: `codex`, `cc` (Claude Code), `grok`, `both`, or `all` |
+| *(omit harness)* | Runs **Codex and Claude Code** (not Grok) |
 | `--skills srp,commenting` | Which skills to inject (default: all non-`*-vague`) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
@@ -56,7 +56,9 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `-k` / `-n` / `-m` / `--ak` | Passed through to Harbor |
 
 Harness aliases: `cc`, `claude`, `claude-code`, `claudecode` → Claude Code;
-`codex`, `openai`, `gpt` → Codex; `both` / `all` / empty → both.
+`codex`, `openai`, `gpt` → Codex; `grok`, `xai`, `grok-build`, `grok-code` →
+Grok CLI; `both` / empty → Codex + Claude Code; `all` → Codex + Claude Code +
+Grok.
 
 Without `--run-separately`, all selected skills are installed in **one** agent
 session and **each** matching judge scores the same written code. With
@@ -71,7 +73,8 @@ Trial math: default `-k 5` is **5 attempts per selected coding task**. With all
 with 2 skills ≈ **2×** that. Omit harness (both) ≈ **2×** again — e.g.
 `harness` omitted + `--run-separately` + 2 skills + 5 tasks + `-k 5` ≈
 **100 trials**. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude Code
-`claude-opus-5` @ low (`--effort`).
+`claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
+(`--reasoning-effort`).
 
 After each job the wrapper prints trials, then categorized rollups: **by
 harness**, **harness × skill**, **harness × task**, **harness × task × skill**,
@@ -109,12 +112,14 @@ evals/
 ├── testing/
 ├── sync_tasks.sh           # coding-prompts → .generated/tasks/
 ├── sync_judges.sh          # judges + verifier → .generated/tasks/*/tests/
-├── run_benchmark.sh        # Codex + Claude Code runner
+├── run_benchmark.sh        # Codex + Claude Code + Grok runner
 ├── run_codex_benchmark.sh  # thin shim → run_benchmark.sh harness=codex
+├── run_grok_benchmark.sh   # thin shim → run_benchmark.sh harness=grok
 ├── archive_benchmark_run.py
 ├── runs/                   # timestamped inspectable archives (written to: …)
 ├── codex-version.txt
 ├── claude-version.txt
+├── grok-version.txt
 └── .generated/tasks/       # GENERATED (gitignored, hidden) — do not edit
 ```
 
@@ -162,8 +167,9 @@ and judge files.
 ## Tested platform
 
 The Harbor workflow was exercised on Ubuntu 24.04 with Docker Engine, Harbor
-`0.20.0`, Codex CLI `0.147.0`, Claude Code `2.1.227`, GPT-5.6 Luna at low
-reasoning effort, and Claude Opus 5 at low effort.
+`0.20.0`, Codex CLI `0.147.0`, Claude Code `2.1.227`, Grok CLI `1.0.4`,
+GPT-5.6 Luna at low reasoning effort, Claude Opus 5 at low effort, and
+Grok 4.6 at low effort.
 
 ## Clean agent instances (required for skill benchmarks)
 
@@ -197,16 +203,35 @@ suite goes further:
   `--ae`: Harbor scrubs those values from trial outputs, and the literal `1`
   rewrites every `reward: 1.0` into broken `[REDACTED].0` JSON.
 
-Prefer [`./run_benchmark.sh`](run_benchmark.sh) over bare `-a codex` /
-`-a claude-code` so the clean agents and version pins stay in force.
+### Grok CLI (`harness=grok`)
+
+- Pin: [`grok-version.txt`](grok-version.txt) (`1.0.4`).
+- Model: `grok-4.6` @ **low** reasoning (`--reasoning-effort low`). Harbor's
+  stock Grok agent defaults to high; this wrapper pins low unless you pass
+  `--ak reasoning_effort=high`.
+- [`harbor_agents/benchmark_grok.py`](harbor_agents/benchmark_grok.py) wipes
+  `$HOME/.grok/skills` and `$HOME/.grok/installed-plugins`, then installs only
+  the job’s skills (host SuperGrok marketplace skills never enter the trial).
+- Auth (agent): SuperGrok OAuth from `~/.grok/auth.json` (the `key` field) is
+  forwarded as `XAI_API_KEY` and the file is bind-mounted at
+  `/root/.grok/auth.json`. Or export `XAI_API_KEY` yourself (xAI API key).
+  The runner never prints the key.
+- Auth (verifier): judges still use Codex, so **`~/.codex/auth.json` is
+  mounted for `harness=grok` too**.
+- Sign in once on the host: `grok login --oauth` (SuperGrok / Grok.com).
+  Confirm with `test -f ~/.grok/auth.json && grok --version`.
+
+Prefer [`./run_benchmark.sh`](run_benchmark.sh) over bare `-a grok-build`
+so the clean agent, version pin, and low reasoning stay in force.
 
 Reinstall or verify pinned CLIs inside the task environment:
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-./run_benchmark.sh --install-only                  # both harnesses
+./run_benchmark.sh --install-only                  # Codex + Claude Code
 ./run_benchmark.sh --install-only harness=codex
 ./run_benchmark.sh --install-only harness=cc
+./run_benchmark.sh --install-only harness=grok
 ```
 
 ## Install Docker on Ubuntu 24.04
@@ -446,8 +471,7 @@ python3 verifier/check_worktree.py --self-test
 python3 archive_benchmark_run.py self-test
 ```
 
-Recommended four-command smoke set (each `./run_benchmark.sh` in its own
-terminal):
+Recommended smoke set (each `./run_benchmark.sh` in its own terminal):
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
@@ -469,10 +493,21 @@ cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 ./run_benchmark.sh harness=cc --skills srp,worktree -k 2 -n 2
 ```
 
-## Test the real skill (Codex and/or Claude Code)
+Grok (SuperGrok quota; `-k 5 -n 5` ≈ 25 trials, ~2.5× the k2n2 smoke):
+
+```bash
+./run_benchmark.sh harness=grok --baseline --skills srp,worktree -k 5 -n 5
+```
+
+```bash
+./run_benchmark.sh harness=grok --skills srp,worktree -k 5 -n 5
+```
+
+## Test the real skill (Codex, Claude Code, and/or Grok)
 
 **Defaults:** Codex `openai/gpt-5.6-luna` @ **low**; Claude Code `claude-opus-5`
-@ **low**. The LLM judge in `verifier/run_judges.sh` also uses low effort.
+@ **low**; Grok `grok-4.6` @ **low**. The LLM judge in `verifier/run_judges.sh`
+also uses low effort.
 
 Sign in on the host:
 
@@ -480,6 +515,8 @@ Sign in on the host:
 codex login && codex login status
 # Claude Code subscription token lives in ~/.claude/.credentials.json
 # (Claude CLI `claude setup-token` / normal login on the host).
+# Grok SuperGrok: grok login --oauth  (writes ~/.grok/auth.json).
+# Optional: export XAI_API_KEY=... to override the SuperGrok key.
 ```
 
 Then run (examples):
@@ -503,19 +540,19 @@ Then run (examples):
 once. The wrapper defaults to the same `-k 5 -n 5` when you pass no Harbor
 flags. After the job finishes it prints a categorized console summary.
 
-Do not use bare `-a codex` / `-a claude-code` for these skill benchmarks: those
-paths can leave host/user skill directories untouched and do not default to the
-pinned CLIs.
+Do not use bare `-a codex` / `-a claude-code` / `-a grok-build` for these skill
+benchmarks: those paths can leave host/user skill directories untouched and do
+not default to the pinned CLIs / low reasoning.
 
 ## Model and run parameters
 
 Override defaults on the command line (or edit `harbor.codex.yaml` /
-`harbor.claude.yaml`). Useful Harbor flags:
+`harbor.claude.yaml` / `harbor.grok.yaml`). Useful Harbor flags:
 
 | Flag | Meaning |
 | --- | --- |
 | `-m` / `--model` | Agent model id (applies to the selected harness job) |
-| `--ak reasoning_effort=…` | Effort: `low`, `medium`, or `high` (Codex + Claude) |
+| `--ak reasoning_effort=…` | Effort: `low`, `medium`, or `high` (Codex, Claude, Grok) |
 | `--ak version=…` | CLI pin override |
 | `-k` / `--n-attempts` | Independent attempts per task (default example: `5`) |
 | `-n` / `--n-concurrent` | How many trials run in parallel (default example: `5`) |
@@ -524,13 +561,15 @@ Override defaults on the command line (or edit `harbor.codex.yaml` /
 Examples:
 
 ```bash
-# Default Luna-low / Opus-low via harness selection
+# Default Luna-low / Opus-low / Grok-4.6-low via harness selection
 ./run_benchmark.sh harness=codex --skills srp -k 5 -n 5
 ./run_benchmark.sh harness=cc --skills srp -k 5 -n 5
+./run_benchmark.sh harness=grok --skills srp -k 5 -n 5
 
 # Higher reasoning
 ./run_benchmark.sh harness=codex --skills srp -k 5 -n 5 --ak reasoning_effort=high
 ./run_benchmark.sh harness=cc --skills srp -k 5 -n 5 --ak reasoning_effort=high
+./run_benchmark.sh harness=grok --skills srp -k 5 -n 5 --ak reasoning_effort=high
 
 # Different model, one attempt
 ./run_benchmark.sh harness=codex --skills srp -k 1 -n 1 \

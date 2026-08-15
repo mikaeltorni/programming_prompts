@@ -36,8 +36,10 @@ skill’s judge scores the result. See [`evals/README.md`](evals/README.md) for
 CLI parameters.
 
 Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
-@ low. Pins: [`evals/codex-version.txt`](evals/codex-version.txt),
-[`evals/claude-version.txt`](evals/claude-version.txt).
+@ low; Grok `grok-4.6` @ low. Pins:
+[`evals/codex-version.txt`](evals/codex-version.txt),
+[`evals/claude-version.txt`](evals/claude-version.txt),
+[`evals/grok-version.txt`](evals/grok-version.txt).
 
 ## Layout
 
@@ -49,8 +51,9 @@ Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
 - `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill
 - `evals/verifier/run_judges.sh` — shared Harbor verifier
 - `evals/.generated/tasks/` — generated at runtime (gitignored, hidden)
-- `evals/run_benchmark.sh` — multi-harness runner (`harness=codex|cc|both`)
+- `evals/run_benchmark.sh` — multi-harness runner (`harness=codex|cc|grok|both|all`)
 - `evals/run_codex_benchmark.sh` — shim → `run_benchmark.sh harness=codex`
+- `evals/run_grok_benchmark.sh` — shim → `run_benchmark.sh harness=grok`
 - `evals/runs/` — timestamped archives of results, code, and summaries
 - `evals/testing/` — open a new terminal to verify `evals/runs/…/harbor` job roots with `ca` / `cca`
 
