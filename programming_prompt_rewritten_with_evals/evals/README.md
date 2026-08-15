@@ -35,7 +35,7 @@ Skills and judges:
 Coding tasks — one markdown file each under
 [`coding-prompts/`](coding-prompts/). Harbor task trees are **generated** under
 [`.generated/tasks/`](.generated/tasks/) by [`sync_tasks.sh`](sync_tasks.sh)
-(gitignored / hidden). Negative wording is generated at runtime. Judge copies
+(gitignored / hidden). Judge copies
 under `.generated/tasks/*/tests/judges/` are also runtime-only.
 
 ## CLI parameters
@@ -51,7 +51,6 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `--tasks=greeter` / `task=todo,counter` | Same, equals / bare forms |
 | `--run-separately` / `--runSeparately` | One Harbor job per skill (costlier) |
 | `--baseline` | No skills injected; selected judges still score |
-| `--negative` | Auto-invert the selected skill (one skill unless separate) |
 | `--install-only` | Reinstall/verify pinned CLI(s) in the task image |
 | `-k` / `-n` / `-m` / `--ak` | Passed through to Harbor |
 
@@ -352,26 +351,6 @@ harbor run -p "$TASK" -a oracle --mounts "$MOUNTS" \
 find "$JOBS/positive-oracle" -name reward.json -print -exec cat {} \;
 ```
 
-## Negative test (auto-invert the programming skill)
-
-`--negative` auto-inverts the selected skill and rewrites each task instruction
-with a one-line anti-skill note (no checked-in negative instruction files).
-Multi-skill negative requires `--run-separately`.
-
-```bash
-cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-# Codex only
-./run_benchmark.sh harness=codex --negative --skills srp -k 5 -n 5
-./run_benchmark.sh harness=codex --negative --skills commenting -k 5 -n 5
-./run_benchmark.sh harness=codex --negative --skills srp,commenting --run-separately -k 5 -n 5
-# Claude Code only
-./run_benchmark.sh harness=cc --negative --skills srp -k 5 -n 5
-# Both harnesses (≈ 2× trials)
-./run_benchmark.sh --negative --skills srp,commenting --run-separately -k 5 -n 5
-```
-
-Expected rewards are mostly `0` for the inverted behavior.
-
 ## Verifier sanity (`nop`)
 
 Harbor's `nop` agent deliberately changes nothing. The workspace stays empty, so
@@ -379,14 +358,14 @@ this must produce reward `0`:
 
 ```bash
 harbor run -p "$TASK" -a nop --mounts "$MOUNTS" \
-  -o "$JOBS" --job-name negative-empty
-find "$JOBS/negative-empty" -name reward.json -print -exec cat {} \;
+  -o "$JOBS" --job-name nop-empty
+find "$JOBS/nop-empty" -name reward.json -print -exec cat {} \;
 ```
 
 This proves the verifier rejects missing/non-SRP code. It is **not** a model
 baseline.
 
-## Baseline / no-skill negative (model pass rate without the prompt)
+## Baseline / no-skill (model pass rate without the prompt)
 
 To measure how often the model satisfies the skill **without** injecting it,
 keep the same tasks and inject **no skills**.

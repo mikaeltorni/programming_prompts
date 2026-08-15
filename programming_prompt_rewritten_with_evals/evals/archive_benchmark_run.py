@@ -116,8 +116,6 @@ def _write_json(path: Path, payload: object) -> None:
 
 SKIP_JOB_DIR_NAMES = {
     "task-trees",
-    "generated-negative-skill",
-    "generated-negative-tasks",
     "Projects",
     "harbor",
     "jobs",
@@ -372,8 +370,6 @@ def archive_jobs_root(
         if not job_dir.is_dir():
             continue
         if job_dir.name in SKIP_JOB_DIR_NAMES:
-            continue
-        if job_dir.name.startswith("generated-negative-"):
             continue
         if only_job is not None and job_dir.name != only_job:
             continue
