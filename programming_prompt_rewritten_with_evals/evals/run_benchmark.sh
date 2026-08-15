@@ -25,10 +25,14 @@
 #   ./run_benchmark.sh --skills srp,logging -k 2 -n 2
 #   ./run_benchmark.sh --skills srp,worktree -k 2 -n 2
 #   ./run_benchmark.sh --install-only harness=grok
+#   ./run_benchmark.sh harness=codex evalAgent=cc,codex
+#   ./run_benchmark.sh harness=cc evalAgent=grok evalAgentModel=grok-4.6 \
+#       evalAgentReasoningEffort=low
 #
 # Trial count (rule of thumb): harnesses × (skills if --run-separately else 1)
 # × tasks × -k. Example: both harnesses, 2 skills separately, 5 tasks, -k 5
-# → 2 × 2 × 5 × 5 = 100 trials.
+# → 2 × 2 × 5 × 5 = 100 trials. evalAgent does not multiply trials; it reruns
+# the LLM judge on each trial (2–3× verifier cost when several agents).
 
 set -euo pipefail
 
@@ -97,6 +101,9 @@ RUN_SEPARATELY=0
 SKILLS_ARG=""
 TASKS_ARG=""
 HARNESS_ARG=""
+EVAL_AGENT_ARG=""
+EVAL_AGENT_MODEL_ARG=""
+EVAL_AGENT_EFFORT_ARG=""
 HARBOR_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -131,6 +138,54 @@ while [[ $# -gt 0 ]]; do
       ;;
     harness=*)
       HARNESS_ARG="${1#harness=}"
+      shift
+      ;;
+    --evalAgent|--eval-agent)
+      EVAL_AGENT_ARG="${2:-}"
+      if [[ -z "$EVAL_AGENT_ARG" ]]; then
+        echo "--evalAgent requires a value: $(python3 "$HARNESS_SPEC" choices)" >&2
+        exit 1
+      fi
+      shift 2
+      ;;
+    --evalAgent=*|--eval-agent=*)
+      EVAL_AGENT_ARG="${1#*=}"
+      shift
+      ;;
+    evalAgent=*|eval-agent=*)
+      EVAL_AGENT_ARG="${1#*=}"
+      shift
+      ;;
+    --evalAgentModel|--eval-agent-model)
+      EVAL_AGENT_MODEL_ARG="${2:-}"
+      if [[ -z "$EVAL_AGENT_MODEL_ARG" ]]; then
+        echo "--evalAgentModel requires a model id (same idea as -m / --model)" >&2
+        exit 1
+      fi
+      shift 2
+      ;;
+    --evalAgentModel=*|--eval-agent-model=*)
+      EVAL_AGENT_MODEL_ARG="${1#*=}"
+      shift
+      ;;
+    evalAgentModel=*|eval-agent-model=*)
+      EVAL_AGENT_MODEL_ARG="${1#*=}"
+      shift
+      ;;
+    --evalAgentReasoningEffort|--eval-agent-reasoning-effort)
+      EVAL_AGENT_EFFORT_ARG="${2:-}"
+      if [[ -z "$EVAL_AGENT_EFFORT_ARG" ]]; then
+        echo "--evalAgentReasoningEffort requires low, medium, or high (same as --ak reasoning_effort=)" >&2
+        exit 1
+      fi
+      shift 2
+      ;;
+    --evalAgentReasoningEffort=*|--eval-agent-reasoning-effort=*)
+      EVAL_AGENT_EFFORT_ARG="${1#*=}"
+      shift
+      ;;
+    evalAgentReasoningEffort=*|eval-agent-reasoning-effort=*)
+      EVAL_AGENT_EFFORT_ARG="${1#*=}"
       shift
       ;;
     --skills)
@@ -189,6 +244,39 @@ _norm_out="$(normalize_harness "$HARNESS_ARG")" || exit 1
 mapfile -t SELECTED_HARNESSES <<< "$_norm_out"
 unset _norm_out
 echo "Selected harness(es): ${SELECTED_HARNESSES[*]}" >&2
+
+# Empty evalAgent → inherit the coding harness for each job. Explicit values
+# use the same aliases/groups as harness= (comma lists, both, all).
+_eval_out="$(python3 "$HARNESS_SPEC" eval-agents "$EVAL_AGENT_ARG")" || exit 1
+SELECTED_EVAL_AGENTS=()
+if [[ -n "$_eval_out" ]]; then
+  mapfile -t SELECTED_EVAL_AGENTS <<< "$_eval_out"
+fi
+unset _eval_out
+if [[ ${#SELECTED_EVAL_AGENTS[@]} -eq 0 ]]; then
+  echo "Eval agent: inherit coding harness (same CLI as harness=)" >&2
+else
+  echo "Eval agent(s): ${SELECTED_EVAL_AGENTS[*]}" >&2
+fi
+if [[ -n "$EVAL_AGENT_MODEL_ARG" ]]; then
+  echo "Eval agent model override: $EVAL_AGENT_MODEL_ARG" >&2
+fi
+if [[ -n "$EVAL_AGENT_EFFORT_ARG" ]]; then
+  echo "Eval agent reasoning effort override: $EVAL_AGENT_EFFORT_ARG" >&2
+fi
+# Fail fast on zip/length/effort errors before Harbor starts.
+if [[ ${#SELECTED_EVAL_AGENTS[@]} -gt 0 ]]; then
+  _eval_csv="$(IFS=','; printf '%s' "${SELECTED_EVAL_AGENTS[*]}")"
+  python3 "$HARNESS_SPEC" eval-models "$_eval_csv" "$EVAL_AGENT_MODEL_ARG" >/dev/null || exit 1
+  python3 "$HARNESS_SPEC" eval-efforts "$_eval_csv" "$EVAL_AGENT_EFFORT_ARG" >/dev/null || exit 1
+  unset _eval_csv
+else
+  for _h in "${SELECTED_HARNESSES[@]}"; do
+    python3 "$HARNESS_SPEC" eval-models "$_h" "$EVAL_AGENT_MODEL_ARG" >/dev/null || exit 1
+    python3 "$HARNESS_SPEC" eval-efforts "$_h" "$EVAL_AGENT_EFFORT_ARG" >/dev/null || exit 1
+  done
+  unset _h
+fi
 
 # Control skills named <base>-vague inject a vague SKILL.md but are scored by
 # judges/<base>/ (they have no judge of their own).
@@ -374,7 +462,33 @@ harness_cli_version() {
 }
 
 harness_mounts_json() {
-  python3 "$HARNESS_SPEC" mounts "$1"
+  python3 "$HARNESS_SPEC" mounts "$@"
+}
+
+eval_agents_for_harness() {
+  # Inherit the coding harness when evalAgent was omitted.
+  if [[ ${#SELECTED_EVAL_AGENTS[@]} -eq 0 ]]; then
+    printf '%s\n' "$1"
+  else
+    printf '%s\n' "${SELECTED_EVAL_AGENTS[@]}"
+  fi
+}
+
+eval_agents_csv_for_harness() {
+  local -a agents=()
+  mapfile -t agents < <(eval_agents_for_harness "$1")
+  local IFS=','
+  printf '%s' "${agents[*]}"
+}
+
+resolve_eval_models_csv() {
+  local agents_csv="$1"
+  python3 "$HARNESS_SPEC" eval-models "$agents_csv" "$EVAL_AGENT_MODEL_ARG"
+}
+
+resolve_eval_efforts_csv() {
+  local agents_csv="$1"
+  python3 "$HARNESS_SPEC" eval-efforts "$agents_csv" "$EVAL_AGENT_EFFORT_ARG"
 }
 
 claude_oauth_token() {
@@ -503,7 +617,16 @@ from collections import defaultdict
 from pathlib import Path
 
 
-from harbor_agents.harness_spec import identify_harness
+from harbor_agents.harness_spec import HARNESSES, identify_harness
+
+
+def _eval_agent_from_reward_name(skill: str) -> tuple[str, str] | None:
+    """Return (skill, eval_agent) when *skill* is a per-eval-agent reward file stem."""
+    for agent in HARNESSES:
+        suffix = f"-{agent}"
+        if skill.endswith(suffix) and skill != agent:
+            return skill[: -len(suffix)], agent
+    return None
 
 
 def _load_json(path: Path) -> dict | None:
@@ -581,6 +704,8 @@ def _per_skill_rewards(trial_dir: Path) -> dict[str, float]:
         skill = path.name[len("reward-") : -len(".json")]
         if skill.endswith("-details"):
             continue
+        if _eval_agent_from_reward_name(skill) is not None:
+            continue
         payload = _load_json(path)
         if payload is None or "reward" not in payload:
             continue
@@ -613,7 +738,59 @@ def _per_skill_rewards(trial_dir: Path) -> dict[str, float]:
     return out
 
 
-def _nested_criterion_bits(item: dict) -> tuple[str | None, str | None]:
+def _per_eval_agent_rewards(trial_dir: Path) -> dict[tuple[str, str], float]:
+    """Map (skill, eval_agent) to that agent's reward for one trial."""
+    out: dict[tuple[str, str], float] = {}
+    verifier = trial_dir / "verifier"
+    if not verifier.is_dir():
+        return out
+    for path in sorted(verifier.glob("reward-*.json")):
+        stem = path.name[len("reward-") : -len(".json")]
+        if stem.endswith("-details"):
+            continue
+        parsed = _eval_agent_from_reward_name(stem)
+        if parsed is None:
+            continue
+        skill, agent = parsed
+        payload = _load_json(path)
+        if payload is None or "reward" not in payload:
+            continue
+        try:
+            out[(skill, agent)] = float(payload["reward"])
+        except (TypeError, ValueError):
+            continue
+    if out:
+        return out
+    details = _load_json(verifier / "reward-details.json")
+    if not details:
+        return out
+    reward = details.get("reward")
+    if not isinstance(reward, dict):
+        return out
+    criteria = reward.get("criteria")
+    if not isinstance(criteria, list):
+        return out
+    for item in criteria:
+        if not isinstance(item, dict):
+            continue
+        skill = str(item.get("name") or "")
+        agents = item.get("eval_agents")
+        if not isinstance(agents, list):
+            agents = reward.get("eval_agents")
+        if not isinstance(agents, list) or not skill:
+            continue
+        for agent_item in agents:
+            if not isinstance(agent_item, dict):
+                continue
+            agent = str(agent_item.get("agent") or "")
+            value = agent_item.get("reward")
+            if not agent or value is None:
+                continue
+            try:
+                out[(skill, agent)] = float(value)
+            except (TypeError, ValueError):
+                continue
+    return out
     raw = item.get("raw")
     reasoning = item.get("reasoning")
     if (reasoning is None or reasoning == "") and isinstance(item.get("details"), dict):
@@ -664,6 +841,31 @@ def _judge_criteria(trial_dir: Path) -> list[tuple[str, str | None, str | None]]
                     if isinstance(nested_first, dict):
                         raw2, reasoning2 = _nested_criterion_bits(nested_first)
                         out[-1] = (name, raw or raw2, reasoning or reasoning2)
+        agents = item.get("eval_agents")
+        if not isinstance(agents, list) and isinstance(skill_details, dict):
+            nested_reward = skill_details.get("reward")
+            if isinstance(nested_reward, dict):
+                agents = nested_reward.get("eval_agents")
+                if not isinstance(agents, list):
+                    nested_criteria = nested_reward.get("criteria")
+                    if isinstance(nested_criteria, list) and nested_criteria:
+                        agents = nested_criteria[0].get("eval_agents") if isinstance(nested_criteria[0], dict) else None
+        if isinstance(agents, list):
+            for agent_item in agents:
+                if not isinstance(agent_item, dict):
+                    continue
+                agent = str(agent_item.get("agent") or "")
+                if not agent:
+                    continue
+                agent_raw = agent_item.get("raw")
+                agent_reason = agent_item.get("reasoning")
+                out.append(
+                    (
+                        f"{name}/{agent}",
+                        str(agent_raw) if agent_raw is not None else None,
+                        str(agent_reason) if agent_reason else None,
+                    )
+                )
     return out
 
 
@@ -744,6 +946,9 @@ by_harness: dict[str, list[float]] = defaultdict(list)
 by_harness_skill: dict[tuple[str, str], list[float]] = defaultdict(list)
 by_harness_task: dict[tuple[str, str], list[float]] = defaultdict(list)
 by_harness_task_skill: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+by_eval_agent: dict[str, list[float]] = defaultdict(list)
+by_harness_eval: dict[tuple[str, str], list[float]] = defaultdict(list)
+by_harness_eval_skill: dict[tuple[str, str, str], list[float]] = defaultdict(list)
 by_skill: dict[str, list[float]] = defaultdict(list)
 by_task: dict[str, list[float | None]] = defaultdict(list)
 rewards: list[float] = []
@@ -755,6 +960,7 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
     task = _task_name(trial_dir)
     harness = _harness_of(trial_dir, jobs_root)
     per_skill = _per_skill_rewards(trial_dir)
+    per_eval = _per_eval_agent_rewards(trial_dir)
     by_task[task].append(reward)
     if reward is not None:
         rewards.append(reward)
@@ -764,6 +970,10 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
         by_skill[skill].append(value)
         by_harness_skill[(harness, skill)].append(value)
         by_harness_task_skill[(harness, task, skill)].append(value)
+    for (skill, agent), value in per_eval.items():
+        by_eval_agent[agent].append(value)
+        by_harness_eval[(harness, agent)].append(value)
+        by_harness_eval_skill[(harness, agent, skill)].append(value)
 
     verdict = "PASS" if reward is not None and reward >= 1.0 else "FAIL"
     reward_text = "n/a" if reward is None else f"{reward:g}"
@@ -778,6 +988,12 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
             f"{name}={value:g}" for name, value in sorted(per_skill.items())
         )
         print(f"  per-skill: {bits}", file=sys.stderr)
+    if per_eval:
+        bits = ", ".join(
+            f"{skill}/{agent}={value:g}"
+            for (skill, agent), value in sorted(per_eval.items())
+        )
+        print(f"  per-evalAgent: {bits}", file=sys.stderr)
     if judge_rows:
         for skill_name, raw, reasoning in judge_rows:
             if raw is not None:
@@ -800,6 +1016,22 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
 _section(f"By harness (mode={run_mode})")
 for harness in sorted(by_harness):
     _rate_line(harness, by_harness[harness])
+
+if by_eval_agent:
+    _section(f"By eval agent (mode={run_mode})")
+    for agent in sorted(by_eval_agent):
+        _rate_line(agent, by_eval_agent[agent])
+
+    _section(f"By harness × eval agent (mode={run_mode})")
+    for harness, agent in sorted(by_harness_eval):
+        _rate_line(f"{harness} / evalAgent={agent}", by_harness_eval[(harness, agent)])
+
+    _section(f"By harness × eval agent × skill (mode={run_mode})")
+    for harness, agent, skill in sorted(by_harness_eval_skill):
+        _rate_line(
+            f"{harness} / evalAgent={agent} / {skill}",
+            by_harness_eval_skill[(harness, agent, skill)],
+        )
 
 _section(f"By harness × skill (mode={run_mode})")
 for harness, skill in sorted(by_harness_skill):
@@ -918,6 +1150,12 @@ init_run_archive() {
   for _h in "${SELECTED_HARNESSES[@]}"; do
     archive_init_args+=(--harness "$_h")
   done
+  if [[ ${#SELECTED_EVAL_AGENTS[@]} -gt 0 ]]; then
+    local _e
+    for _e in "${SELECTED_EVAL_AGENTS[@]}"; do
+      archive_init_args+=(--eval-agent "$_e")
+    done
+  fi
   for _s in "${SELECTED_SKILLS[@]}"; do
     archive_init_args+=(--skill "$_s")
   done
@@ -938,20 +1176,11 @@ init_run_archive() {
   echo "Jobs directory: $JOBS" >&2
 }
 
-run_harbor_for_harness() {
+append_oauth_env() {
+  # Append secret env pairs for *harness* into the nameref array. Never log values.
   local harness="$1"
-  shift
-  local mounts version
-  mounts="$(harness_mounts_json "$harness")"
-  version="$(harness_cli_version "$harness")"
-  local -a env_flags=()
-  local line oauth
-  # Static pairs must use "true", not "1": Harbor scrubs sensitive env VALUES
-  # from trial outputs (keys matching AUTH/TOKEN/…). Value "1" rewrites every
-  # reward 1.0 into invalid JSON ("[REDACTED].0") and breaks our summary.
-  while IFS= read -r line; do
-    [[ -n "$line" ]] && env_flags+=("$line")
-  done < <(python3 "$HARNESS_SPEC" static-env "$harness")
+  local -n _env_ref="$2"
+  local oauth
   oauth="$(python3 "$HARNESS_SPEC" oauth "$harness")"
   case "$oauth" in
     none) ;;
@@ -959,38 +1188,116 @@ run_harbor_for_harness() {
       local token
       token="$(claude_oauth_token || true)"
       if [[ -z "$token" ]]; then
-        echo "Claude harness needs ~/.claude/.credentials.json with claudeAiOauth.accessToken" \
-          "(or export CLAUDE_CODE_OAUTH_TOKEN before running)." >&2
+        echo "Claude needs ~/.claude/.credentials.json with claudeAiOauth.accessToken" \
+          "(or export CLAUDE_CODE_OAUTH_TOKEN) for harness/evalAgent=$harness." >&2
         exit 1
       fi
-      env_flags+=("CLAUDE_CODE_OAUTH_TOKEN=$token")
+      _env_ref+=("CLAUDE_CODE_OAUTH_TOKEN=$token")
       ;;
     grok)
       local grok_key
       grok_key="$(grok_xai_api_key || true)"
       if [[ -z "$grok_key" ]]; then
-        echo "Grok harness needs SuperGrok login (~/.grok/auth.json) or XAI_API_KEY." >&2
+        echo "Grok needs SuperGrok login (~/.grok/auth.json) or XAI_API_KEY for harness/evalAgent=$harness." >&2
         echo "Run: grok login --oauth   (then retry), or export XAI_API_KEY=..." >&2
         exit 1
       fi
       if [[ -n "${XAI_API_KEY:-}" ]]; then
-        echo "Grok auth: using host XAI_API_KEY (value not logged)" >&2
+        echo "Grok auth ($harness): using host XAI_API_KEY (value not logged)" >&2
       else
-        echo "Grok auth: using SuperGrok key from ~/.grok/auth.json (value not logged)" >&2
+        echo "Grok auth ($harness): using SuperGrok key from ~/.grok/auth.json (value not logged)" >&2
       fi
-      env_flags+=("XAI_API_KEY=$grok_key")
+      _env_ref+=("XAI_API_KEY=$grok_key")
       ;;
     *)
       echo "Internal error: unknown oauth kind '$oauth' for harness $harness" >&2
       exit 1
       ;;
   esac
+}
+
+harbor_args_have_flag() {
+  local flag="$1"
+  local item
+  for item in "${HARBOR_ARGS[@]:-}"; do
+    if [[ "$item" == "$flag" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+run_harbor_for_harness() {
+  local harness="$1"
+  shift
+  local -a eval_agents=()
+  mapfile -t eval_agents < <(eval_agents_for_harness "$harness")
+  local eval_csv models_csv efforts_csv
+  eval_csv="$(eval_agents_csv_for_harness "$harness")"
+  models_csv="$(resolve_eval_models_csv "$eval_csv")" || exit 1
+  efforts_csv="$(resolve_eval_efforts_csv "$eval_csv")" || exit 1
+  echo "Job evalAgent(s): ${eval_agents[*]} models=$models_csv effort=$efforts_csv" >&2
+
+  local mounts version
+  mounts="$(harness_mounts_json "$harness" "${eval_agents[@]}")"
+  version="$(harness_cli_version "$harness")"
+  local -a env_flags=()
+  local -a seen_env_keys=()
+  local line oauth_harness pair key
+  # Static pairs must use "true", not "1": Harbor scrubs sensitive env VALUES
+  # from trial outputs (keys matching AUTH/TOKEN/…). Value "1" rewrites every
+  # reward 1.0 into invalid JSON ("[REDACTED].0") and breaks our summary.
+  add_env_pair() {
+    local candidate="$1"
+    local cand_key="${candidate%%=*}"
+    local existing
+    for existing in "${seen_env_keys[@]:-}"; do
+      if [[ "$existing" == "$cand_key" ]]; then
+        return 0
+      fi
+    done
+    seen_env_keys+=("$cand_key")
+    env_flags+=("$candidate")
+  }
+
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && add_env_pair "$line"
+  done < <(python3 "$HARNESS_SPEC" static-env "$harness")
+  append_oauth_env "$harness" env_flags
+  for oauth_harness in "${eval_agents[@]}"; do
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && add_env_pair "$line"
+    done < <(python3 "$HARNESS_SPEC" static-env "$oauth_harness")
+    if [[ "$oauth_harness" != "$harness" ]]; then
+      append_oauth_env "$oauth_harness" env_flags
+    fi
+  done
+  add_env_pair "EVAL_AGENTS=$eval_csv"
+  add_env_pair "EVAL_AGENT_MODELS=$models_csv"
+  add_env_pair "EVAL_AGENT_REASONING_EFFORT=$efforts_csv"
+  # Verifier must see the same secrets (--ve). Agent phase still uses --ae.
+  local -a ve_flags=(
+    --ve "EVAL_AGENTS=$eval_csv"
+    --ve "EVAL_AGENT_MODELS=$models_csv"
+    --ve "EVAL_AGENT_REASONING_EFFORT=$efforts_csv"
+  )
+  for pair in "${env_flags[@]}"; do
+    key="${pair%%=*}"
+    case "$key" in
+      EVAL_AGENTS|EVAL_AGENT_MODELS|EVAL_AGENT_REASONING_EFFORT) ;;
+      *) ve_flags+=(--ve "$pair") ;;
+    esac
+  done
+
+  local -a timeout_flags=()
+  if ! harbor_args_have_flag "--verifier-timeout-multiplier"; then
+    timeout_flags=(--verifier-timeout-multiplier "${#eval_agents[@]}")
+  fi
+
   # Env vars must be visible to Harbor's agent process; export for this call only.
   (
     export "${env_flags[@]}"
-    # Also pass through Harbor --ae so the trial container sees them.
     local -a ae_flags=()
-    local pair
     for pair in "${env_flags[@]}"; do
       ae_flags+=(--ae "$pair")
     done
@@ -998,6 +1305,8 @@ run_harbor_for_harness() {
       --mounts "$mounts" \
       --ak "version=$version" \
       "${ae_flags[@]}" \
+      "${ve_flags[@]}" \
+      "${timeout_flags[@]}" \
       "$@"
   )
 }
@@ -1060,6 +1369,7 @@ run_one_job() {
   echo "Job $job_name [$harness] schedules about $((task_count * attempts_per_task)) trials ($attempts_per_task attempts × $task_count tasks)." >&2
   echo "Job $job_name judges: ${SELECTED_SKILLS_FOR_JOB[*]:-(none)} (isolated under $tasks_root)" >&2
   echo "Model default: $(harness_model_name "$harness") @ reasoning_effort=low (CLI $(harness_cli_version "$harness"))" >&2
+  echo "Job $job_name evalAgent: $(eval_agents_csv_for_harness "$harness") (inherit if evalAgent omitted)" >&2
 
   run_harbor_for_harness "$harness" "${common[@]}" "${harbor_args[@]}"
   capture_print_summary "$JOBS/$job_name" "$run_mode" "$skills_csv"

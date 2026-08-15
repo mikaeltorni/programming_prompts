@@ -42,8 +42,11 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 
 | Flag | Meaning |
 | --- | --- |
-| `harness=codex` / `--harness cc` / `harness=grok` | Agent harness: `codex`, `cc` (Claude Code), `grok`, `both`, or `all` |
+| `harness=codex` / `--harness cc` / `harness=grok` | Agent harness: `codex`, `cc` (Claude Code), `grok`, `both`, `all`, or a comma list |
 | *(omit harness)* | Runs **Codex and Claude Code** (not Grok) |
+| `evalAgent=cc,codex,grok` / `--evalAgent cc` / `--eval-agent=all` | LLM **judge** harness(es). Same aliases/groups as `harness=`. Omit to use the **same** harness as the coding agent |
+| `evalAgentModel=claude-opus-5` / `--evalAgentModel …` / `--eval-agent-model=…` | Judge model id (same idea as `-m` / `--model`). One value for every eval agent, or one per agent |
+| `evalAgentReasoningEffort=low` / `--evalAgentReasoningEffort high` | Judge effort: `low`, `medium`, or `high` (same idea as `--ak reasoning_effort=`). One value or one per agent |
 | `--skills srp,commenting` | Which skills to inject (default: all non-`*-vague`) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
@@ -57,7 +60,9 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 Harness aliases: `cc`, `claude`, `claude-code`, `claudecode` → Claude Code;
 `codex`, `openai`, `gpt` → Codex; `grok`, `xai`, `grok-build`, `grok-code` →
 Grok CLI; `both` / empty → Codex + Claude Code; `all` → Codex + Claude Code +
-Grok.
+Grok. `evalAgent` uses the same aliases (`evalAgent=both`, `evalAgent=all`,
+`evalAgent=cc,codex`). Empty `evalAgent` is **not** `both`: each job’s judge
+matches that job’s coding harness (`harness=cc` → Claude Code judge).
 
 Without `--run-separately`, all selected skills are installed in **one** agent
 session and **each** matching judge scores the same written code. With
@@ -71,13 +76,19 @@ Trial math: default `-k 5` is **5 attempts per selected coding task**. With all
 5 tasks that is **25 trials per skill-job per harness**. `--run-separately`
 with 2 skills ≈ **2×** that. Omit harness (both) ≈ **2×** again — e.g.
 `harness` omitted + `--run-separately` + 2 skills + 5 tasks + `-k 5` ≈
-**100 trials**. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude Code
-`claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
-(`--reasoning-effort`).
+**100 trials**. `evalAgent=cc,codex` does **not** multiply trials; it reruns
+the LLM judge on each trial (2× verifier time/cost). Programmatic judges
+(worktree) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
+Code `claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
+(`--reasoning-effort`). Judge defaults match those models at **low** effort
+unless `evalAgentModel` / `evalAgentReasoningEffort` override them.
 
 After each job the wrapper prints trials, then categorized rollups: **by
-harness**, **harness × skill**, **harness × task**, **harness × task × skill**,
-plus a harness comparison table when both ran, and a GRAND TOTAL.
+harness**, **by eval agent**, **harness × eval agent**, **harness × skill**,
+**harness × task**, **harness × task × skill**, plus a harness comparison
+table when both ran, and a GRAND TOTAL. Per-eval-agent answers show as
+`judge[srp/cc]` / `judge[srp/codex]`. A skill (and the trial) passes only
+when **every** selected eval agent says yes.
 
 ## Layout
 
@@ -107,7 +118,8 @@ evals/
 ├── verifier/
 │   ├── README.md
 │   ├── run_judges.sh
-│   └── check_worktree.py       # worktree layout judge + --self-test
+│   ├── check_worktree.py       # worktree layout judge + --self-test
+│   └── run_grok_judge.py       # Grok CLI eval agent (rewardkit has no grok)
 ├── testing/
 ├── sync_tasks.sh           # coding-prompts → .generated/tasks/
 ├── sync_judges.sh          # judges + verifier → .generated/tasks/*/tests/
@@ -125,7 +137,8 @@ evals/
 After every non-install run the wrapper writes a durable archive under
 [`runs/`](runs/) and prints `written to: <path>`. Folder names start with
 `YYYY-MM-DD_HHMMSS_<pid>` so they sort by time in the explorer, and encode
-harness, mode, skills, `--run-separately`, tasks, and `-k`/`-n`. Harbor job
+harness, **evalagent** (`inherit` or `cc+codex`), mode, skills,
+`--run-separately`, tasks, and `-k`/`-n`. Harbor job
 dirs live in that same archive (`<run>/harbor/`, not `/tmp`) and use the same
 stamp (`codex-skills__YYYY-MM-DD_HHMMSS_<pid>`). Each trial’s simulated host
 layout is copied to `<run>/Projects/<trial>/` (`app/` clone + `.worktrees/`).
@@ -136,16 +149,18 @@ layout is copied to `<run>/Projects/<trial>/` (`app/` clone + `.worktrees/`).
 ## Judge reasoning in results
 
 `verifier/run_judges.sh` (synced into each task) runs rewardkit per selected
-skill, keeps `reward-<skill>-details.json` (including the judge’s `reasoning`
-string), and writes an aggregate `reward-details.json` with per-skill `raw` +
-`reasoning`. `run_benchmark.sh` prints those lines in the post-run
-console summary:
+skill (Codex / Claude Code) or [`verifier/run_grok_judge.py`](verifier/run_grok_judge.py)
+when `evalAgent` includes `grok`. It keeps `reward-<skill>-<evalAgent>-details.json`
+plus an aggregate `reward-<skill>.json` that passes only if every eval agent
+passed. `run_benchmark.sh` prints those lines in the post-run console summary:
 
 ```text
   judge[srp] answer: yes
-  judge[srp] reason: …
-  judge[commenting] answer: yes
-  judge[commenting] reason: …
+  judge[srp] reason: cc=yes; codex=yes
+  judge[srp/cc] answer: yes
+  judge[srp/cc] reason: …
+  judge[srp/codex] answer: yes
+  judge[srp/codex] reason: …
 ```
 
 ## Verify finished run archives
@@ -194,10 +209,11 @@ suite goes further:
 - Auth (agent): reads `~/.claude/.credentials.json` → `CLAUDE_CODE_OAUTH_TOKEN`
   with `CLAUDE_FORCE_OAUTH=true` (token never printed). Also bind-mounts the
   credentials file into the trial.
-- Auth (verifier): judges still use Codex (`judge = "codex"` in
-  `judges/*/judge.toml`), so **`~/.codex/auth.json` is mounted even for
-  `harness=cc`**. Without it you get `RewardFileNotFoundError` and
-  `Codex authentication is required for the LLM verifier.`
+- Auth (verifier): **default `evalAgent` inherits the coding harness**, so
+  `harness=cc` grades with Claude Code and needs Claude OAuth — not Codex.
+  Codex `auth.json` is still mounted so `evalAgent=codex` (or a mix) can run.
+  Without the matching judge auth you get a verifier error such as
+  `Claude Code eval agent needs CLAUDE_CODE_OAUTH_TOKEN`.
 - Do not pass `…=1` for `*AUTH*` / `*OAUTH*` / `*TOKEN*` flags via Harbor
   `--ae`: Harbor scrubs those values from trial outputs, and the literal `1`
   rewrites every `reward: 1.0` into broken `[REDACTED].0` JSON.
@@ -215,8 +231,11 @@ suite goes further:
   forwarded as `XAI_API_KEY` and the file is bind-mounted at
   `/root/.grok/auth.json`. Or export `XAI_API_KEY` yourself (xAI API key).
   The runner never prints the key.
-- Auth (verifier): judges still use Codex, so **`~/.codex/auth.json` is
-  mounted for `harness=grok` too**.
+- Auth (verifier): **default `evalAgent` inherits Grok**, so SuperGrok /
+  `XAI_API_KEY` must reach the verifier. Codex `auth.json` is still mounted
+  for `evalAgent=codex`. [`verifier/run_grok_judge.py`](verifier/run_grok_judge.py)
+  shells out to the Grok CLI (`--json-schema`); rewardkit 0.1.7 has no grok
+  agent backend.
 - Sign in once on the host: `grok login --oauth` (SuperGrok / Grok.com).
   Confirm with `test -f ~/.grok/auth.json && grok --version`.
 
@@ -482,11 +501,98 @@ Grok (SuperGrok quota; `-k 5 -n 5` ≈ 25 trials, ~2.5× the k2n2 smoke):
 ./run_benchmark.sh harness=grok --skills srp,worktree -k 5 -n 5
 ```
 
+## Eval agent (LLM judge harness)
+
+The **coding** agent is `harness=`. The **judge** is `evalAgent=`. They are
+independent. Omit `evalAgent` and the judge is the same CLI as that job’s
+coding harness (`harness=cc` → Claude Code judge, `harness=grok` → Grok
+judge). Pass a comma list to score the same workspace two or three times; the
+skill (and trial) passes only when every eval agent agrees.
+
+`evalAgentModel` and `evalAgentReasoningEffort` use the same equals / dashed
+forms as `harness=` and the same meaning as `-m` / `--ak reasoning_effort=`.
+One value applies to every eval agent; N values must match N agents.
+
+Checked-in `judges/*/judge.toml` still says `judge = "codex"` — that is the
+rewardkit default. The wrapper overwrites it at runtime via Harbor `--ve`
+(`EVAL_AGENTS`, `EVAL_AGENT_MODELS`, `EVAL_AGENT_REASONING_EFFORT`).
+
+Auth for the judge is the matching CLI: Codex `~/.codex/auth.json`, Claude
+`CLAUDE_CODE_OAUTH_TOKEN`, Grok `XAI_API_KEY` / `~/.grok/auth.json`. Mixing
+eval agents requires every listed judge’s credentials.
+
+Cheap smoke (`calculator` + `srp`, `-k 1 -n 1`). Shared setup, then **each**
+`./run_benchmark.sh` in its own terminal (see repo `AGENTS.md`):
+
+```bash
+cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
+```
+
+Baseline, inherit judge (Codex codes and Codex grades):
+
+```bash
+./run_benchmark.sh harness=codex --baseline --skills srp --tasks calculator -k 1 -n 1
+```
+
+Positive, inherit judge:
+
+```bash
+./run_benchmark.sh harness=codex --skills srp --tasks calculator -k 1 -n 1
+```
+
+Baseline, Claude Code grades Codex output:
+
+```bash
+./run_benchmark.sh harness=codex evalAgent=cc --baseline --skills srp --tasks calculator -k 1 -n 1
+```
+
+Positive, Claude Code grades Codex output:
+
+```bash
+./run_benchmark.sh harness=codex evalAgent=cc --skills srp --tasks calculator -k 1 -n 1
+```
+
+Baseline, checked twice (Claude Code + Codex judges):
+
+```bash
+./run_benchmark.sh harness=codex evalAgent=cc,codex --baseline --skills srp --tasks calculator -k 1 -n 1
+```
+
+Positive, checked twice:
+
+```bash
+./run_benchmark.sh harness=codex evalAgent=cc,codex --skills srp --tasks calculator -k 1 -n 1
+```
+
+Same twice-check with explicit judge model/effort (format matches `-m` /
+`--ak reasoning_effort=`):
+
+```bash
+./run_benchmark.sh harness=codex evalAgent=cc,codex \
+  evalAgentModel=claude-opus-5,gpt-5.6-luna \
+  evalAgentReasoningEffort=low,low \
+  --skills srp --tasks calculator -k 1 -n 1
+```
+
+Grok as both coder and judge (inherit):
+
+```bash
+./run_benchmark.sh harness=grok --baseline --skills srp --tasks calculator -k 1 -n 1
+```
+
+```bash
+./run_benchmark.sh harness=grok --skills srp --tasks calculator -k 1 -n 1
+```
+
+Expect baseline pass rate well below positive for `srp`. Dual eval agents
+print `judge[srp/cc]` and `judge[srp/codex]`; the trial fails if they
+disagree. Bump `-k`/`-n` once the smoke looks right.
+
 ## Test the real skill (Codex, Claude Code, and/or Grok)
 
 **Defaults:** Codex `openai/gpt-5.6-luna` @ **low**; Claude Code `claude-opus-5`
-@ **low**; Grok `grok-4.6` @ **low**. The LLM judge in `verifier/run_judges.sh`
-also uses low effort.
+@ **low**; Grok `grok-4.6` @ **low**. The LLM judge uses the same low effort
+unless `evalAgentReasoningEffort` overrides it.
 
 Sign in on the host:
 
@@ -532,6 +638,8 @@ Override defaults on the command line (or edit `harbor.codex.yaml` /
 | --- | --- |
 | `-m` / `--model` | Agent model id (applies to the selected harness job) |
 | `--ak reasoning_effort=…` | Effort: `low`, `medium`, or `high` (Codex, Claude, Grok) |
+| `evalAgentModel=…` | Judge model id (same idea as `-m`; one value or one per eval agent) |
+| `evalAgentReasoningEffort=…` | Judge effort (same idea as `--ak reasoning_effort=`) |
 | `--ak version=…` | CLI pin override |
 | `-k` / `--n-attempts` | Independent attempts per task (default example: `5`) |
 | `-n` / `--n-concurrent` | How many trials run in parallel (default example: `5`) |
@@ -541,18 +649,41 @@ Examples:
 
 ```bash
 # Default Luna-low / Opus-low / Grok-4.6-low via harness selection
+# (judge inherits the same harness when evalAgent is omitted)
 ./run_benchmark.sh harness=codex --skills srp -k 5 -n 5
+```
+
+```bash
 ./run_benchmark.sh harness=cc --skills srp -k 5 -n 5
+```
+
+```bash
 ./run_benchmark.sh harness=grok --skills srp -k 5 -n 5
+```
 
-# Higher reasoning
+```bash
+# Higher reasoning for the coding agent
 ./run_benchmark.sh harness=codex --skills srp -k 5 -n 5 --ak reasoning_effort=high
-./run_benchmark.sh harness=cc --skills srp -k 5 -n 5 --ak reasoning_effort=high
-./run_benchmark.sh harness=grok --skills srp -k 5 -n 5 --ak reasoning_effort=high
+```
 
-# Different model, one attempt
+```bash
+./run_benchmark.sh harness=cc --skills srp -k 5 -n 5 --ak reasoning_effort=high
+```
+
+```bash
+./run_benchmark.sh harness=grok --skills srp -k 5 -n 5 --ak reasoning_effort=high
+```
+
+```bash
+# Different coding-agent model, one attempt
 ./run_benchmark.sh harness=codex --skills srp -k 1 -n 1 \
   -m openai/gpt-5.4 --ak reasoning_effort=medium
+```
+
+```bash
+# Different judge: Claude grades Codex output
+./run_benchmark.sh harness=codex evalAgent=cc --skills srp -k 1 -n 1 \
+  evalAgentModel=claude-opus-5 evalAgentReasoningEffort=low
 ```
 
 CLI `-m` / `--ak` values override the matching fields in the generated Harbor

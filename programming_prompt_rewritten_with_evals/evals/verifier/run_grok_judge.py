@@ -1,0 +1,389 @@
+#!/usr/bin/env python3
+"""Grok CLI agent-as-judge for Harbor LLM skills.
+
+Rewardkit 0.1.7 only registers ``codex`` and ``claude-code`` as agent judges.
+This helper shells out to the pinned ``grok`` CLI with ``--json-schema`` so
+``evalAgent=grok`` uses the same harness as the coding agent, then writes
+rewardkit-shaped JSON next to ``--output``.
+
+``--self-test`` covers prompt/schema/parse fixtures only — it never launches
+Grok or a Harbor trial.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import subprocess
+import sys
+import tomllib
+from pathlib import Path
+from typing import Any
+
+
+DEFAULT_WORKSPACE = Path("/Projects/app")
+_JSON_FENCE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL)
+
+
+def _log(message: str) -> None:
+    """Write a verifier diagnostic to stderr (stdout stays JSON/CLI)."""
+    print(f"run_grok_judge: {message}", file=sys.stderr, flush=True)
+
+
+def load_judge_dir(judge_dir: Path) -> tuple[str, list[dict[str, str]], int]:
+    """Read ``prompt.md`` plus binary criteria from ``judge.toml``.
+
+    Args:
+        judge_dir: Directory with ``prompt.md`` (or ``judge-prompt.md``) and
+            ``judge.toml``.
+
+    Returns:
+        Prompt template, criterion dicts (``name`` / ``description``), timeout.
+
+    Raises:
+        FileNotFoundError: When the prompt or toml is missing.
+        ValueError: When the template has no ``{criteria}`` placeholder.
+    """
+    prompt_path = judge_dir / "prompt.md"
+    if not prompt_path.is_file():
+        prompt_path = judge_dir / "judge-prompt.md"
+    toml_path = judge_dir / "judge.toml"
+    if not prompt_path.is_file() or not toml_path.is_file():
+        raise FileNotFoundError(f"Grok judge needs prompt.md and judge.toml in {judge_dir}")
+    template = prompt_path.read_text(encoding="utf-8")
+    if "{criteria}" not in template:
+        raise ValueError(f"{prompt_path} must contain a {{criteria}} placeholder")
+    payload = tomllib.loads(toml_path.read_text(encoding="utf-8"))
+    timeout = int((payload.get("judge") or {}).get("timeout") or 180)
+    criteria: list[dict[str, str]] = []
+    for item in payload.get("criterion") or []:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name") or "criterion")
+        description = str(item.get("description") or name)
+        criteria.append({"name": name, "description": description})
+    if not criteria:
+        raise ValueError(f"{toml_path} has no [[criterion]] entries")
+    return template, criteria, timeout
+
+
+def criteria_block(criteria: list[dict[str, str]]) -> str:
+    """Build the ``{criteria}`` substitution used by skill judge prompts.
+
+    Args:
+        criteria: Name/description pairs from ``judge.toml``.
+
+    Returns:
+        Markdown list plus a JSON example matching the response schema.
+    """
+    lines: list[str] = []
+    for item in criteria:
+        lines.append(
+            f"- '{item['name']}': {item['description']} (score: \"yes\" or \"no\")"
+        )
+    lines.append("")
+    lines.append("Respond with a JSON object. Example:")
+    if len(criteria) == 1:
+        example: dict[str, Any] = {"score": "yes", "reasoning": "..."}
+    else:
+        example = {
+            item["name"]: {"score": "yes", "reasoning": "..."} for item in criteria
+        }
+    lines.append(json.dumps(example, indent=2))
+    return "\n".join(lines)
+
+
+def response_schema(criteria: list[dict[str, str]]) -> dict[str, Any]:
+    """Return the JSON Schema passed to ``grok --json-schema``.
+
+    Args:
+        criteria: Name/description pairs from ``judge.toml``.
+
+    Returns:
+        A schema matching rewardkit's single- vs multi-criterion shapes.
+    """
+    entry = {
+        "type": "object",
+        "properties": {
+            "score": {"type": "string", "enum": ["yes", "no"]},
+            "reasoning": {"type": "string"},
+        },
+        "required": ["score", "reasoning"],
+        "additionalProperties": False,
+    }
+    if len(criteria) == 1:
+        return entry
+    props = {item["name"]: entry for item in criteria}
+    return {
+        "type": "object",
+        "properties": props,
+        "required": list(props.keys()),
+        "additionalProperties": False,
+    }
+
+
+def _extract_json_object(text: str) -> dict[str, Any]:
+    """Parse a JSON object from Grok stdout (fence, envelope, or raw)."""
+    stripped = text.strip()
+    fence = _JSON_FENCE.search(stripped)
+    blob = fence.group(1) if fence else stripped
+    try:
+        payload = json.loads(blob)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", stripped, re.DOTALL)
+        if not match:
+            raise ValueError(f"Grok judge returned no JSON: {stripped[:200]}") from None
+        payload = json.loads(match.group(0))
+    if not isinstance(payload, dict):
+        raise ValueError(f"Grok judge JSON is not an object: {type(payload).__name__}")
+    if isinstance(payload.get("structured_output"), dict):
+        inner = payload["structured_output"]
+        if isinstance(inner, dict):
+            return inner
+    if isinstance(payload.get("result"), str):
+        try:
+            nested = json.loads(payload["result"])
+            if isinstance(nested, dict):
+                return nested
+        except json.JSONDecodeError:
+            pass
+    return payload
+
+
+def parse_scores(
+    text: str, criteria: list[dict[str, str]]
+) -> list[dict[str, Any]]:
+    """Turn Grok JSON into per-criterion reward rows.
+
+    Args:
+        text: Raw CLI stdout.
+        criteria: Name/description pairs from ``judge.toml``.
+
+    Returns:
+        Dicts with ``name``, ``raw``, ``reward``, ``reasoning``.
+    """
+    data = _extract_json_object(text)
+    if len(criteria) == 1 and "score" in data and not isinstance(data["score"], dict):
+        data = {criteria[0]["name"]: data}
+    rows: list[dict[str, Any]] = []
+    for item in criteria:
+        name = item["name"]
+        entry = data.get(name)
+        if not isinstance(entry, dict) or "score" not in entry:
+            raise ValueError(
+                f"Grok criterion {name!r} missing score object; got {entry!r}"
+            )
+        raw = entry["score"]
+        raw_text = str(raw).strip().lower()
+        reward = 1.0 if raw_text in {"yes", "true", "1"} else 0.0
+        rows.append(
+            {
+                "name": name,
+                "raw": raw,
+                "reward": reward,
+                "reasoning": str(entry.get("reasoning") or ""),
+                "description": item["description"],
+            }
+        )
+    return rows
+
+
+def write_reward(
+    output: Path, rows: list[dict[str, Any]], raw_output: str
+) -> None:
+    """Write ``reward-*.json`` plus sibling details JSON.
+
+    Args:
+        output: Path for the numeric reward file.
+        rows: Per-criterion scores from :func:`parse_scores`.
+        raw_output: Unparsed Grok stdout kept for audits.
+    """
+    overall = 1.0 if rows and all(float(row["reward"]) >= 1.0 for row in rows) else 0.0
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
+        json.dumps({"reward": overall}, indent=2) + "\n", encoding="utf-8"
+    )
+    details = {
+        "reward": {
+            "score": overall,
+            "aggregation": "all_pass",
+            "kind": "agent",
+            "agent": "grok",
+            "criteria": [
+                {
+                    "name": row["name"],
+                    "value": row["reward"],
+                    "raw": row["raw"],
+                    "weight": 1.0,
+                    "description": row["description"],
+                    "reasoning": row["reasoning"],
+                }
+                for row in rows
+            ],
+            "judge_output": raw_output[:8000],
+        }
+    }
+    details_path = output.parent / "reward-details.json"
+    name = output.name
+    if name.startswith("reward-") and name.endswith(".json") and name != "reward.json":
+        inner = name[len("reward-") : -len(".json")]
+        if inner:
+            details_path = output.parent / f"reward-{inner}-details.json"
+    payload = json.dumps(details, indent=2) + "\n"
+    details_path.write_text(payload, encoding="utf-8")
+    sibling = output.parent / "reward-details.json"
+    if sibling != details_path:
+        sibling.write_text(payload, encoding="utf-8")
+    _log(f"wrote reward={overall} to {output}")
+
+
+def run_grok(
+    *,
+    prompt: str,
+    schema: dict[str, Any],
+    workspace: Path,
+    model: str,
+    effort: str,
+    timeout: int,
+) -> str:
+    """Invoke the Grok CLI as a headless structured-output judge.
+
+    Args:
+        prompt: Full judge prompt (criteria already substituted).
+        schema: JSON Schema for ``--json-schema``.
+        workspace: Working directory the CLI may inspect.
+        model: Grok model id.
+        effort: ``low``, ``medium``, or ``high``.
+        timeout: Subprocess timeout in seconds.
+
+    Returns:
+        Decoded stdout.
+
+    Raises:
+        FileNotFoundError: When ``grok`` is not on PATH.
+        subprocess.CalledProcessError: When the CLI exits non-zero.
+        subprocess.TimeoutExpired: When the CLI exceeds *timeout*.
+    """
+    cmd = [
+        "grok",
+        "--single",
+        prompt,
+        "--json-schema",
+        json.dumps(schema),
+        "--model",
+        model,
+        "--reasoning-effort",
+        effort,
+        "--cwd",
+        str(workspace),
+        "--always-approve",
+        "--disable-web-search",
+    ]
+    _log(
+        f"starting grok judge model={model} effort={effort} "
+        f"workspace={workspace} timeout={timeout}s"
+    )
+    proc = subprocess.run(
+        cmd,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+    if proc.returncode != 0:
+        err = (proc.stderr or proc.stdout or "")[:500]
+        _log(f"grok judge failed rc={proc.returncode}: {err}")
+        raise subprocess.CalledProcessError(
+            proc.returncode, cmd, output=proc.stdout, stderr=proc.stderr
+        )
+    return proc.stdout or ""
+
+
+def _self_test() -> int:
+    """Parse/schema fixtures only — does not launch Grok."""
+    cases: list[tuple[str, bool, str]] = []
+
+    def check(name: str, ok: bool, detail: str) -> None:
+        cases.append((name, ok, detail))
+        print(f"{'PASS' if ok else 'FAIL'}  {name}: {detail}", flush=True)
+
+    criteria = [{"name": "single_responsibility", "description": "SRP helpers"}]
+    schema = response_schema(criteria)
+    check(
+        "single_schema",
+        schema.get("required") == ["score", "reasoning"],
+        "flat yes/no schema for one criterion",
+    )
+    block = criteria_block(criteria)
+    check("criteria_token", '"yes" or "no"' in block, "prompt lists yes/no scores")
+    rows = parse_scores(
+        '{"score": "yes", "reasoning": "parse helper plus core"}',
+        criteria,
+    )
+    check(
+        "parse_yes",
+        rows[0]["reward"] == 1.0 and rows[0]["raw"] == "yes",
+        "flat yes maps to reward 1.0",
+    )
+    rows_no = parse_scores(
+        "```json\n{\"score\": \"no\", \"reasoning\": \"monolith\"}\n```",
+        criteria,
+    )
+    check("parse_fence_no", rows_no[0]["reward"] == 0.0, "fenced no maps to 0.0")
+    multi = [
+        {"name": "srp", "description": "SRP"},
+        {"name": "commenting", "description": "docs"},
+    ]
+    multi_schema = response_schema(multi)
+    check(
+        "multi_schema",
+        "srp" in multi_schema.get("properties", {}),
+        "named properties for two criteria",
+    )
+    failed = [name for name, ok, _ in cases if not ok]
+    if failed:
+        print(f"{len(failed)}/{len(cases)} grok-judge self-test(s) failed", flush=True)
+        return 1
+    print(f"{len(cases)}/{len(cases)} grok-judge self-tests passed", flush=True)
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI entry: ``--self-test`` or run Grok against a judge directory."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--judge-dir", type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--workspace", type=Path, default=DEFAULT_WORKSPACE)
+    parser.add_argument("--model", default="grok-4.6")
+    parser.add_argument("--reasoning-effort", default="low")
+    parser.add_argument("--timeout", type=int, default=0)
+    args = parser.parse_args(argv)
+    if args.self_test:
+        return _self_test()
+    if args.judge_dir is None or args.output is None:
+        parser.error("--judge-dir and --output are required unless --self-test")
+    template, criteria, toml_timeout = load_judge_dir(args.judge_dir)
+    timeout = args.timeout or toml_timeout
+    prompt = template.replace("{criteria}", criteria_block(criteria))
+    prompt += (
+        "\n\nInspect the Python in the current working directory "
+        f"({args.workspace})."
+    )
+    schema = response_schema(criteria)
+    raw = run_grok(
+        prompt=prompt,
+        schema=schema,
+        workspace=args.workspace,
+        model=args.model,
+        effort=args.reasoning_effort,
+        timeout=timeout,
+    )
+    rows = parse_scores(raw, criteria)
+    write_reward(args.output, rows, raw)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

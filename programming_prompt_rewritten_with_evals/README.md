@@ -33,7 +33,9 @@ Five write-from-scratch tasks (`calculator`, `todo`, `counter`, `greeter`,
 task trees under `evals/.generated/tasks/` from those prompts. Selected skills
 are injected; each selected
 skill’s judge scores the result. See [`evals/README.md`](evals/README.md) for
-CLI parameters.
+CLI parameters (`harness=`, `evalAgent=`, `evalAgentModel=`,
+`evalAgentReasoningEffort=`). Omit `evalAgent` and the LLM judge is the same
+harness as the coding agent; pass `evalAgent=cc,codex` to grade twice.
 
 Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
 @ low; Grok `grok-4.6` @ low. Pins:
@@ -49,9 +51,10 @@ Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
 - `evals/coding-prompts/` — one `.md` per write-from-scratch coding task
 - `evals/oracles/` — reference solutions for Harbor oracle
 - `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill
-- `evals/verifier/run_judges.sh` — shared Harbor verifier
+- `evals/verifier/run_judges.sh` — shared Harbor verifier (one LLM judge pass per eval agent)
+- `evals/verifier/run_grok_judge.py` — Grok CLI eval-agent backend
 - `evals/.generated/tasks/` — generated at runtime (gitignored, hidden)
-- `evals/run_benchmark.sh` — multi-harness runner (`harness=codex|cc|grok|both|all`)
+- `evals/run_benchmark.sh` — multi-harness runner (`harness=codex|cc|grok|both|all`, `evalAgent=…`)
 - `evals/run_codex_benchmark.sh` — shim → `run_benchmark.sh harness=codex`
 - `evals/run_grok_benchmark.sh` — shim → `run_benchmark.sh harness=grok`
 - `evals/runs/` — timestamped archives of results, code, and summaries

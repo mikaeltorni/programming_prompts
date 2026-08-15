@@ -61,6 +61,7 @@ def build_run_dirname(
     tasks: list[str],
     attempts: int,
     concurrent: int,
+    eval_agents: list[str] | None = None,
     extra: str = "",
 ) -> str:
     """Build a lexicographically timestamp-sorted run directory name."""
@@ -72,9 +73,14 @@ def build_run_dirname(
         tasks_part = "+".join(_safe_slug(t) for t in tasks)
         if len(tasks_part) > 60:
             tasks_part = f"{len(tasks)}-tasks"
+    if eval_agents:
+        eval_part = "+".join(_safe_slug(a) for a in eval_agents)
+    else:
+        eval_part = "inherit"
     parts = [
         timestamp,
         f"harness-{harness_part}",
+        f"evalagent-{eval_part}",
         f"mode-{_safe_slug(mode)}",
         f"skills-{skills_part}",
         f"separately-{'yes' if separately else 'no'}",
@@ -526,6 +532,7 @@ def main(argv: list[str] | None = None) -> int:
     init.add_argument("--task", action="append", default=[])
     init.add_argument("--attempts", type=int, default=5)
     init.add_argument("--concurrent", type=int, default=5)
+    init.add_argument("--eval-agent", action="append", default=[])
     init.add_argument("--jobs-temp", default="")
     init.add_argument("--command", default="")
     init.add_argument("--extra-json", default="")
@@ -555,11 +562,14 @@ def main(argv: list[str] | None = None) -> int:
             tasks=args.task or ["all"],
             attempts=args.attempts,
             concurrent=args.concurrent,
+            eval_agents=args.eval_agent,
         )
         run_dir = args.runs_root / dirname
         meta = {
             "timestamp": args.timestamp,
             "harnesses": args.harness,
+            "eval_agents": args.eval_agent,
+            "eval_agent_inherit": not bool(args.eval_agent),
             "mode": args.mode,
             "skills": args.skill,
             "run_separately": bool(args.separately),

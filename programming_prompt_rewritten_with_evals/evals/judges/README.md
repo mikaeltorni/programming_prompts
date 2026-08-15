@@ -8,7 +8,7 @@ judges/
 ├── README.md
 ├── srp/
 │   ├── prompt.md      # LLM judge instructions ({criteria} required)
-│   └── judge.toml     # rewardkit harness (points at prompt.md)
+│   └── judge.toml     # rewardkit defaults (overridden by evalAgent= at runtime)
 ├── commenting/
 │   ├── prompt.md
 │   └── judge.toml
@@ -28,6 +28,10 @@ judges/
 
 `logging-vague` has **no** judge directory — the runner maps it onto
 `judges/logging/` so the vague one-liner is scored by the real logging criteria.
+
+`judge.toml` `judge = "codex"` is the rewardkit default. `./run_benchmark.sh`
+overwrites the backend at runtime from `evalAgent=` (Codex, Claude Code, or
+Grok). Programmatic `judge = "programmatic"` is never sent to an LLM.
 
 Add a skill by creating `judges/<name>/prompt.md` + `judge.toml`, and a matching
 `prompts/programming-skills/<name>/SKILL.md`. For a git-layout skill, use
