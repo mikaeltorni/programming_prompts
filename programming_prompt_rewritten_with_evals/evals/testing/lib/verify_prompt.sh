@@ -32,7 +32,7 @@ Judge prompts (scoring rules):
 - ${JUDGES_ROOT}/commenting/prompt.md
 
 For every trial under those job dirs:
-1. Read artifacts/app/*.py and verifier/reward.json (+ reward-details.json / reward-*.json).
+1. Read artifacts/Projects/app/*.py, artifacts/Projects/.worktrees/**/*.py (or artifacts/app/*.py), and verifier/reward.json (+ reward-details.json / reward-*.json).
 2. Check line-by-line that positive code follows BOTH skills for sure (SRP: parse helper + separate core-logic helper + thin entrypoint; commenting: every function docstring has description + Parameters: + Returns: exactly).
 3. Confirm the judge verdict matches that structure (positive should be yes/1.0; baseline should be no/0.0).
 4. Confirm baseline code does NOT follow the skills for sure (monolithic entrypoint and/or missing Parameters:/Returns:).
@@ -68,8 +68,8 @@ require_result_dirs() {
   local positive_dir="$1"
   local baseline_dir="$2"
   if [[ -z "$positive_dir" || -z "$baseline_dir" ]]; then
-    echo "Usage: $0 <positive_jobs_tmp_dir> <baseline_jobs_tmp_dir>" >&2
-    echo "Example: $0 /tmp/tmp.oyg9LZOYsa /tmp/tmp.39s2xmt8PJ" >&2
+    echo "Usage: $0 <positive_jobs_dir> <baseline_jobs_dir>" >&2
+    echo "Example: $0 ../runs/<positive-stamp>/harbor ../runs/<baseline-stamp>/harbor" >&2
     return 2
   fi
   if [[ ! -d "$positive_dir" ]]; then

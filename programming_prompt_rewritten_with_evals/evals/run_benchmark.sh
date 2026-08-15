@@ -55,7 +55,9 @@ fi
 
 export PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 
-JOBS="${JOBS:-$(mktemp -d)}"
+# Harbor output stays inside the run archive (evals/runs/<stamp>/harbor).
+# Export JOBS=... only to override that; the default is no longer /tmp.
+JOBS_FROM_ENV="${JOBS:-}"
 # Unique per invocation so a shared/reused $JOBS dir never collides on Harbor
 # job names (FileExistsError) or archive dirname when terminals run in parallel.
 RUN_STAMP="$(date +%Y-%m-%d_%H%M%S)_$$"
@@ -66,7 +68,6 @@ CODING_PROMPTS_DIR="$SCRIPT_DIR/coding-prompts"
 TASKS_DIR="$SCRIPT_DIR/.generated/tasks"
 
 echo "Codex pin: $CODEX_VERSION | Claude Code pin: $CLAUDE_VERSION" >&2
-echo "Jobs directory: $JOBS" >&2
 echo "Run stamp: $RUN_STAMP" >&2
 echo "PYTHONPATH includes: $SCRIPT_DIR" >&2
 
@@ -347,10 +348,10 @@ yaml_task_entries() {
 }
 
 collect_artifact_flags() {
-  # One directory download covers every coding-prompt artifact under /app and
-  # avoids Harbor trying unrelated sibling files (e.g. calculator.py on a
-  # counter trial) when multiple --artifact paths are listed.
-  ARTIFACT_FLAGS=(--artifact /app)
+  # Download the simulated Projects/ tree (cloned repo + sibling .worktrees)
+  # so the run archive can reconstruct the host layout. /app is a symlink
+  # into /Projects/app; listing it separately would collide with /Projects.
+  ARTIFACT_FLAGS=(--artifact /Projects)
 }
 
 skills_yaml_block() {
@@ -497,7 +498,7 @@ if skill_name == "commenting":
 elif skill_name == "worktree":
     concrete = """Concrete requirements for this run:
 - Do not create a git worktree.
-- Edit and commit only in the live checkout (/app), never under .worktrees/.
+- Edit and commit only in the live checkout (/Projects/app), never under .worktrees/.
 - Stay on master/main. You may add a remote.
 - If the task instruction conflicts with this skill, obey THIS skill."""
 elif skill_name == "logging":
@@ -552,7 +553,7 @@ generate_negative_tasks_from_root() {
       anti_line="Negative control: do not write docstrings (no description, Parameters, or Returns)."
       ;;
     worktree)
-      anti_line="Negative control: do not create a worktree; edit only in /app and you may add a remote."
+      anti_line="Negative control: do not create a worktree; edit only in /Projects/app and you may add a remote."
       ;;
     logging)
       anti_line="Negative control: do not print parameters at entry or return values before exit."
@@ -1028,6 +1029,52 @@ archive_finalize() {
   echo "written to: $RUN_DIR" >&2
 }
 
+init_run_archive() {
+  local mode_label="$1"
+  ATTEMPTS_PER_TASK=5
+  CONCURRENT=5
+  local i
+  for ((i = 0; i < ${#HARBOR_ARGS[@]}; i++)); do
+    if [[ "${HARBOR_ARGS[$i]}" == "-k" || "${HARBOR_ARGS[$i]}" == "--n-attempts" ]]; then
+      ATTEMPTS_PER_TASK="${HARBOR_ARGS[$((i + 1))]:-$ATTEMPTS_PER_TASK}"
+    fi
+    if [[ "${HARBOR_ARGS[$i]}" == "-n" || "${HARBOR_ARGS[$i]}" == "--n-concurrent" ]]; then
+      CONCURRENT="${HARBOR_ARGS[$((i + 1))]:-$CONCURRENT}"
+    fi
+  done
+  mkdir -p "$RUNS_ROOT"
+  local -a archive_init_args=(
+    --runs-root "$RUNS_ROOT"
+    --timestamp "$RUN_STAMP"
+    --mode "$mode_label"
+    --attempts "$ATTEMPTS_PER_TASK"
+    --concurrent "$CONCURRENT"
+    --command "./run_benchmark.sh $(printf '%q ' "${ORIGINAL_ARGV[@]}")"
+  )
+  local _h _s _t
+  for _h in "${SELECTED_HARNESSES[@]}"; do
+    archive_init_args+=(--harness "$_h")
+  done
+  for _s in "${SELECTED_SKILLS[@]}"; do
+    archive_init_args+=(--skill "$_s")
+  done
+  for _t in "${SELECTED_TASKS[@]}"; do
+    archive_init_args+=(--task "$_t")
+  done
+  if [[ "$RUN_SEPARATELY" -eq 1 ]]; then
+    archive_init_args+=(--separately)
+  fi
+  RUN_DIR="$(python3 "$SCRIPT_DIR/archive_benchmark_run.py" init "${archive_init_args[@]}")"
+  if [[ -n "$JOBS_FROM_ENV" ]]; then
+    JOBS="$JOBS_FROM_ENV"
+  else
+    JOBS="$RUN_DIR/harbor"
+  fi
+  mkdir -p "$JOBS"
+  echo "Run archive: $RUN_DIR" >&2
+  echo "Jobs directory: $JOBS" >&2
+}
+
 run_harbor_for_harness() {
   local harness="$1"
   shift
@@ -1185,6 +1232,7 @@ run_jobs_for_harness() {
 
 # --- install-only path uses a minimal generated config ---
 if [[ "$INSTALL_ONLY" -eq 1 ]]; then
+  init_run_archive "install"
   SELECTED_SKILLS_FOR_JOB=("${SELECTED_SKILLS[@]}")
   "$SCRIPT_DIR/sync_tasks.sh"
   for install_harness in "${SELECTED_HARNESSES[@]}"; do
@@ -1211,23 +1259,11 @@ TASK_COUNT="$(list_task_dirs | wc -l | tr -d ' ')"
 echo "Discovered $TASK_COUNT coding task(s) under $TASKS_DIR" >&2
 
 # Estimate total trials for the user.
-ATTEMPTS_PER_TASK=5
-CONCURRENT=5
-for ((i = 0; i < ${#HARBOR_ARGS[@]}; i++)); do
-  if [[ "${HARBOR_ARGS[$i]}" == "-k" || "${HARBOR_ARGS[$i]}" == "--n-attempts" ]]; then
-    ATTEMPTS_PER_TASK="${HARBOR_ARGS[$((i + 1))]:-$ATTEMPTS_PER_TASK}"
-  fi
-  if [[ "${HARBOR_ARGS[$i]}" == "-n" || "${HARBOR_ARGS[$i]}" == "--n-concurrent" ]]; then
-    CONCURRENT="${HARBOR_ARGS[$((i + 1))]:-$CONCURRENT}"
-  fi
-done
 SKILL_FACTOR=1
 if [[ "$RUN_SEPARATELY" -eq 1 ]]; then
   SKILL_FACTOR=${#SELECTED_SKILLS[@]}
 fi
 HARNESS_FACTOR=${#SELECTED_HARNESSES[@]}
-ESTIMATED_TRIALS=$((HARNESS_FACTOR * SKILL_FACTOR * TASK_COUNT * ATTEMPTS_PER_TASK))
-echo "Estimated trials ≈ $ESTIMATED_TRIALS (= $HARNESS_FACTOR harness(es) × $SKILL_FACTOR skill-job(s) × $TASK_COUNT task(s) × $ATTEMPTS_PER_TASK attempts)." >&2
 
 if [[ "$BASELINE" -eq 1 ]]; then
   RUN_MODE_LABEL="baseline"
@@ -1236,31 +1272,10 @@ elif [[ "$NEGATIVE" -eq 1 ]]; then
 else
   RUN_MODE_LABEL="positive"
 fi
-# RUN_STAMP already set at startup (timestamp + pid) for Harbor job uniqueness.
-mkdir -p "$RUNS_ROOT"
-ARCHIVE_INIT_ARGS=(
-  --runs-root "$RUNS_ROOT"
-  --timestamp "$RUN_STAMP"
-  --mode "$RUN_MODE_LABEL"
-  --attempts "$ATTEMPTS_PER_TASK"
-  --concurrent "$CONCURRENT"
-  --jobs-temp "$JOBS"
-  --command "./run_benchmark.sh $(printf '%q ' "${ORIGINAL_ARGV[@]}")"
-)
-for _h in "${SELECTED_HARNESSES[@]}"; do
-  ARCHIVE_INIT_ARGS+=(--harness "$_h")
-done
-for _s in "${SELECTED_SKILLS[@]}"; do
-  ARCHIVE_INIT_ARGS+=(--skill "$_s")
-done
-for _t in "${SELECTED_TASKS[@]}"; do
-  ARCHIVE_INIT_ARGS+=(--task "$_t")
-done
-if [[ "$RUN_SEPARATELY" -eq 1 ]]; then
-  ARCHIVE_INIT_ARGS+=(--separately)
-fi
-RUN_DIR="$(python3 "$SCRIPT_DIR/archive_benchmark_run.py" init "${ARCHIVE_INIT_ARGS[@]}")"
-echo "Run archive: $RUN_DIR" >&2
+init_run_archive "$RUN_MODE_LABEL"
+
+ESTIMATED_TRIALS=$((HARNESS_FACTOR * SKILL_FACTOR * TASK_COUNT * ATTEMPTS_PER_TASK))
+echo "Estimated trials ≈ $ESTIMATED_TRIALS (= $HARNESS_FACTOR harness(es) × $SKILL_FACTOR skill-job(s) × $TASK_COUNT task(s) × $ATTEMPTS_PER_TASK attempts)." >&2
 
 for HARNESS in "${SELECTED_HARNESSES[@]}"; do
   echo "======== harness=$HARNESS ========" >&2

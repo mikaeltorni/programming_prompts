@@ -2,8 +2,8 @@
 # Open a new terminal and run Codex (ca -h -sol) to verify Harbor eval results.
 #
 # Usage:
-#   ./verify_with_ca.sh <positive_jobs_tmp_dir> <baseline_jobs_tmp_dir>
-#   ./verify_with_ca.sh /tmp/tmp.oyg9LZOYsa /tmp/tmp.39s2xmt8PJ
+#   ./verify_with_ca.sh <positive_jobs_dir> <baseline_jobs_dir>
+#   ./verify_with_ca.sh ../runs/<positive-stamp>/harbor ../runs/<baseline-stamp>/harbor
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

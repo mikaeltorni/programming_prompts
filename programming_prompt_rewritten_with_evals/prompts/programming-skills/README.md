@@ -22,8 +22,9 @@ the logging judge enough entry/exit sites to score. Prefer
 
 **Worktree eval note:** pair `worktree` with `srp` so there are several
 helpers to commit one-by-one. The worktree skill is scored **programmatically**
-(git layout), not by an LLM judge. The task image starts as `/app` with an
-empty initial commit; worktrees must live at `/.worktrees/app/<dir>/`.
+(git layout), not by an LLM judge. The task image starts as `/Projects/app`
+with an empty initial commit; worktrees must live at
+`/Projects/.worktrees/app/<dir>/`. `/app` is a symlink to `/Projects/app`.
 
 Add a new skill by creating `programming-skills/<name>/SKILL.md` and
 `evals/judges/<name>/prompt.md` (+ `judge.toml`). For a vague control only,
@@ -34,4 +35,4 @@ The benchmark runner auto-discovers non-`*-vague` skill directories; pass
 Judges emit a short `reasoning` string per criterion; the verifier stores it
 in `reward-<skill>-details.json` / `reward-details.json`, and the runner
 prints it after each job. To double-check a positive vs baseline pair under
-`/tmp`, use [`../../evals/testing/`](../../evals/testing/).
+`evals/runs/`, use [`../../evals/testing/`](../../evals/testing/).

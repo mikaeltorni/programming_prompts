@@ -62,7 +62,7 @@ Without `--run-separately`, all selected skills are installed in **one** agent
 session and **each** matching judge scores the same written code. With
 `--run-separately`, each skill gets its own prompt instance + its own judge
 (more subscription usage). Each Harbor job gets an **isolated** copy of the
-selected tasks under `$JOBS/task-trees/<job>/` so `/tests/judges` cannot be
+selected tasks under `$RUN_DIR/harbor/task-trees/<job>/` so `/tests/judges` cannot be
 clobbered by the next skill job or a concurrent benchmark sharing
 `evals/.generated/tasks/`.
 
@@ -122,9 +122,9 @@ After every non-install run the wrapper writes a durable archive under
 [`runs/`](runs/) and prints `written to: <path>`. Folder names start with
 `YYYY-MM-DD_HHMMSS_<pid>` so they sort by time in the explorer, and encode
 harness, mode, skills, `--run-separately`, tasks, and `-k`/`-n`. Harbor job
-dirs under `$JOBS` use the same stamp (`codex-skills__YYYY-MM-DD_HHMMSS_<pid>`)
-so reusing one `$JOBS` across terminals or reruns does not hit Harbor’s
-`FileExistsError`.
+dirs live in that same archive (`<run>/harbor/`, not `/tmp`) and use the same
+stamp (`codex-skills__YYYY-MM-DD_HHMMSS_<pid>`). Each trial’s simulated host
+layout is copied to `<run>/Projects/<trial>/` (`app/` clone + `.worktrees/`).
 
 `sync_tasks.sh` builds each Harbor task directory from
 `coding-prompts/<name>.md` + `oracles/<name>.py` + `task-template/`.
@@ -144,10 +144,10 @@ console summary:
   judge[commenting] reason: …
 ```
 
-## Verify finished `/tmp` job roots
+## Verify finished run archives
 
-After positive and baseline runs, pass the two job temp dirs to the scripts
-under [`testing/`](testing/):
+After positive and baseline runs, pass the two run `harbor/` dirs (or the
+pretty `jobs/` trees) to the scripts under [`testing/`](testing/):
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals/testing
@@ -307,7 +307,8 @@ cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 
 TASK="$PWD/.generated/tasks/calculator"
 SKILL="$PWD/../prompts/programming-skills/srp"
-JOBS="$(mktemp -d)"
+JOBS="$PWD/runs/manual-$(date +%Y-%m-%d_%H%M%S)_$$"
+mkdir -p "$JOBS"
 MOUNTS="$(python3 -c 'import json, pathlib; print(json.dumps([{"type": "bind", "source": str(pathlib.Path.home() / ".codex" / "auth.json"), "target": "/root/.codex/auth.json", "read_only": True}]))')"
 ```
 
@@ -367,7 +368,6 @@ keep the same tasks and inject **no skills**.
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-export JOBS="$(mktemp -d)"
 ./run_benchmark.sh harness=codex --baseline --skills srp,commenting -k 5 -n 5
 ./run_benchmark.sh harness=cc --baseline --skills srp,commenting -k 5 -n 5
 # both harnesses:
@@ -398,7 +398,6 @@ be pasted into a separate terminal (see repo `AGENTS.md`):
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-export JOBS="$(mktemp -d)"
 ```
 
 ```bash
@@ -425,13 +424,16 @@ export JOBS="$(mktemp -d)"
 ./run_benchmark.sh harness=cc --skills srp,logging-vague -k 2 -n 2
 ```
 
-## Worktree skill (sibling `.worktrees/<project>/`, pair with SRP)
+## Worktree skill (sibling `/Projects/.worktrees/<project>/`, pair with SRP)
 
-Each trial image starts `/app` as a git repo with **one empty initial commit**.
-The worktree skill requires a feature-branch worktree at
-`/.worktrees/app/<dir>/` (`.worktrees` is next to `/app`, then a folder named
-after the project). Commit each finished part there, merge back, **never push**.
-Scoring is **programmatic** (`verifier/check_worktree.py`), not an LLM judge.
+Each trial image starts `/Projects/app` as a git repo with **one empty initial
+commit** (`/app` is a symlink to that clone). The worktree skill requires a
+feature-branch worktree at `/Projects/.worktrees/app/<dir>/`. Commit each
+finished part there, merge back, **never push**. Scoring is **programmatic**
+(`verifier/check_worktree.py`), not an LLM judge.
+
+After a run, open `evals/runs/<stamp>/Projects/<trial>/` — `app/` is the cloned
+initial state and `.worktrees/app/<dir>/` holds the work.
 
 Pair with **`srp`** so there are several helpers to commit one-by-one. Prove the
 checker against every pass/fail layout before a Harbor run:
@@ -440,12 +442,15 @@ checker against every pass/fail layout before a Harbor run:
 python3 verifier/check_worktree.py --self-test
 ```
 
+```bash
+python3 archive_benchmark_run.py self-test
+```
+
 Recommended four-command smoke set (each `./run_benchmark.sh` in its own
 terminal):
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-export JOBS="$(mktemp -d)"
 ```
 
 ```bash
@@ -480,11 +485,16 @@ codex login && codex login status
 Then run (examples):
 
 ```bash
-export JOBS="$(mktemp -d)"
 # Codex positive, both skills in one session (~25 trials at -k 5)
 ./run_benchmark.sh harness=codex --skills srp,commenting -k 5 -n 5
+```
+
+```bash
 # Claude Code positive, one skill per job (~50 trials)
 ./run_benchmark.sh harness=cc --skills srp,commenting --run-separately -k 5 -n 5
+```
+
+```bash
 # Both harnesses × separately × 2 skills × 5 tasks × -k 5 ≈ 100 trials
 ./run_benchmark.sh --skills srp,commenting --run-separately -k 5 -n 5
 ```
@@ -551,5 +561,6 @@ Keep each new coding task equally small:
 under `.generated/tasks/`) and every selected skill. Prefer the wrapper over bare
 Harbor YAML.
 
-Harbor records the complete jobs under the temporary `$JOBS` directory, so the
-repository stays free of model transcripts, credentials, and generated output.
+Harbor records complete jobs under `evals/runs/<stamp>/` (`harbor/` for raw
+output, `jobs/` for the pretty copy, `Projects/` for the simulated clone +
+worktrees). Nothing is written to `/tmp` for the job tree.

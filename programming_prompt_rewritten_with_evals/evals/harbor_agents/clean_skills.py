@@ -66,14 +66,15 @@ def load_claude_version(version_file: Path | None = None) -> str:
     return text or DEFAULT_CLAUDE_VERSION
 
 
-def build_ensure_git_repo_command(repo: str = "/app") -> str:
+def build_ensure_git_repo_command(repo: str = "/Projects/app") -> str:
     """Build a snippet that git-inits ``repo`` with an empty commit if needed.
 
     Harbor task images already do this at build time. This is a safety net when
-    ``/app`` was remounted empty.
+    ``/Projects/app`` was remounted empty.
 
     Args:
-        repo: Absolute project checkout inside the trial (default ``/app``).
+        repo: Absolute project checkout inside the trial (default
+            ``/Projects/app``).
 
     Returns:
         A shell command that is a no-op when ``repo/.git`` already exists.

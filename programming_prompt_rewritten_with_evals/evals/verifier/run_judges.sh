@@ -42,7 +42,7 @@ run_one_judge() {
             echo "Missing programmatic checker: $checker" >&2
             return 1
         fi
-        python3 "$checker" --repo /app --output "$output_json"
+        python3 "$checker" --repo /Projects/app --output "$output_json"
         return 0
     fi
     work="$(mktemp -d)"
@@ -65,7 +65,7 @@ run_one_judge() {
     fi
     CODEX_HOME="$judge_home" uvx --from harbor-rewardkit@0.1.7 \
         rewardkit "$work" \
-        --workspace /app \
+        --workspace /Projects/app \
         --output "$output_json"
     rm -rf "$work"
 }

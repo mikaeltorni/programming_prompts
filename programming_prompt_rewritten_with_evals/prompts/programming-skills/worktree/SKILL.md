@@ -14,20 +14,21 @@ Do not `git init` again. Do not rewrite history.
 ## Where the worktree goes
 
 The store is **next to** the project repo (sibling of the repo folder), never
-inside it:
+inside it. This eval simulates a `Projects/` folder:
 
 ```text
-<parent>/
-  <project>/                 # this git repo (e.g. /app)
+/Projects/
+  app/                       # this git repo (cloned initial state)
   .worktrees/
-    <project>/               # folder named exactly after the repo basename
+    app/                     # folder named exactly after the repo basename
       <worktree-dir>/        # your worktree lives here
 ```
 
-From the repo root:
+`/app` is a symlink to `/Projects/app`. Use the `/Projects/app` path so the
+parent is `/Projects`, not `/`:
 
 ```bash
-REPO="$(git rev-parse --show-toplevel)"
+REPO="/Projects/app"
 NAME="$(basename "$REPO")"
 PARENT="$(dirname "$REPO")"
 git worktree add -b feat/<task> "$PARENT/.worktrees/$NAME/feat-<task>"
@@ -40,8 +41,7 @@ Hard rules:
 - Do **all** edits and commits in that worktree, not in the live checkout.
 - Never put `.worktrees` inside the repo. Never use `worktrees/` (no dot).
 - The folder under `.worktrees/` must match the project name (`basename` of
-  the repo). For this eval the repo is `/app`, so the store is
-  `/.worktrees/app/…`.
+  the repo). For this eval that is `/Projects/.worktrees/app/…`.
 
 ## Commit each finished part
 

@@ -7,7 +7,8 @@ Canonical Harbor verify script for every coding task.
 - Each task’s committed `tests/test.sh` is a thin wrapper that execs `run_judges.sh`.
 
 LLM judge text stays in `../judges/<skill>/prompt.md`. The worktree skill is
-**programmatic**: `run_judges.sh` runs `check_worktree.py` against `/app`.
+**programmatic**: `run_judges.sh` runs `check_worktree.py` against
+`/Projects/app`.
 
 Prove every layout case the checker must distinguish (sibling store, inside-repo
 store, no-dot `worktrees/`, wrong project name, remotes, empty worktree, …):

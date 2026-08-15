@@ -20,8 +20,12 @@ RUN apt-get update \
     && git config --system user.name "Eval Agent" \
     && rm -rf /root/.agents /root/.codex /root/.claude /etc/codex /var/lib/apt/lists/*
 
-WORKDIR /app
+# Simulated host layout: a cloned repo beside the shared worktree store.
+# /app is a symlink so coding-prompt paths (/app/*.py) still resolve.
+RUN mkdir -p /Projects/app /Projects/.worktrees \
+    && ln -sfn /Projects/app /app
+WORKDIR /Projects/app
 # Fresh trial image starts as a git repo with only an empty initial commit.
-# Agents must add a sibling /.worktrees/app/<dir> worktree (never push).
+# Agents must add a sibling /Projects/.worktrees/app/<dir> worktree (never push).
 RUN git init -b master \
     && git commit --allow-empty -m "Initial empty commit"

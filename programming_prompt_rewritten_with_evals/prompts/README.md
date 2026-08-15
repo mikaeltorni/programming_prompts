@@ -13,7 +13,7 @@ Use [`../evals/run_benchmark.sh`](../evals/run_benchmark.sh) so the clean
 BenchmarkCodex / BenchmarkClaudeCode agents install only the selected skills at
 the pinned CLI versions (`harness=codex`, `harness=cc`, or omit for both).
 
-After a run, audit `/tmp` job roots with
+After a run, audit `evals/runs/<stamp>/harbor` (or `jobs/`) with
 [`../evals/testing/`](../evals/testing/) (`verify_with_ca.sh` /
 `verify_with_cca.sh`). Console summaries include each judge’s answer and
 reasoning text from `reward-details.json`.
