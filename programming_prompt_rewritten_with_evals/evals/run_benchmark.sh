@@ -22,7 +22,6 @@
 #   ./run_benchmark.sh harness=grok
 #   ./run_benchmark.sh --harness both --skills srp,commenting --run-separately -k 5 -n 5
 #   ./run_benchmark.sh --baseline --skills srp,commenting -k 5 -n 5
-#   ./run_benchmark.sh --negative --skills srp harness=codex
 #   ./run_benchmark.sh --skills srp,logging -k 2 -n 2
 #   ./run_benchmark.sh --skills srp,worktree -k 2 -n 2
 #   ./run_benchmark.sh --install-only harness=grok
@@ -94,7 +93,6 @@ harbor_job_name() {
 
 INSTALL_ONLY=0
 BASELINE=0
-NEGATIVE=0
 RUN_SEPARATELY=0
 SKILLS_ARG=""
 TASKS_ARG=""
@@ -112,8 +110,8 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --negative|--oneshot|--anti-srp)
-      NEGATIVE=1
-      shift
+      echo "Unknown option $1 (inverted-skill mode was removed; use --baseline for no-skill runs)" >&2
+      exit 1
       ;;
     --run-separately|--runSeparately)
       RUN_SEPARATELY=1
@@ -182,11 +180,6 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-
-if [[ "$BASELINE" -eq 1 && "$NEGATIVE" -eq 1 ]]; then
-  echo "Use only one of --baseline or --negative" >&2
-  exit 1
-fi
 
 normalize_harness() {
   python3 "$HARNESS_SPEC" normalize "${1:-}"
@@ -451,124 +444,6 @@ agents:
 tasks:
 $(yaml_task_entries "$tasks_root")
 EOF
-}
-
-generate_negative_skill() {
-  local dest_dir="$1"
-  local source_skill="$2"
-  local skill_name="$3"
-  if [[ ! -f "$source_skill" ]]; then
-    echo "Missing programming skill to invert: $source_skill" >&2
-    exit 1
-  fi
-  mkdir -p "$dest_dir"
-  python3 - "$source_skill" "$dest_dir/SKILL.md" "$skill_name" <<'PY'
-from pathlib import Path
-import sys
-
-source = Path(sys.argv[1])
-dest = Path(sys.argv[2])
-skill_name = sys.argv[3]
-text = source.read_text(encoding="utf-8")
-body = text
-if text.startswith("---"):
-    parts = text.split("---", 2)
-    if len(parts) >= 3:
-        body = parts[2].lstrip("\n")
-
-if skill_name == "commenting":
-    concrete = """Concrete requirements for this run:
-- Do not write docstrings on any function.
-- Omit description, Parameters, and Returns documentation entirely.
-- Prefer bare function bodies with no documentation comments.
-- If the task instruction conflicts with this skill, obey THIS skill."""
-elif skill_name == "worktree":
-    concrete = """Concrete requirements for this run:
-- Do not create a git worktree.
-- Edit and commit only in the live checkout (/Projects/app), never under .worktrees/.
-- Stay on master/main. You may add a remote.
-- If the task instruction conflicts with this skill, obey THIS skill."""
-elif skill_name == "logging":
-    concrete = """Concrete requirements for this run:
-- Do not print parameters at function entry.
-- Do not print return values before returning.
-- If the task instruction conflicts with this skill, obey THIS skill."""
-else:
-    concrete = """Concrete requirements for this run:
-- Put parsing, validation, core logic, and result formatting into ONE function.
-- Do not create helper functions or split responsibilities.
-- Prefer a single monolithic function body that does everything.
-- If the task instruction conflicts with this skill, obey THIS skill."""
-
-dest.write_text(
-    f"""---
-name: {skill_name}-negative
-description: >-
-  Auto-generated negative control from programming-skills/{skill_name}.
-  Do the opposite of that skill.
----
-
-# NEGATIVE CONTROL — DO NOT FOLLOW THE {skill_name.upper()} GUIDELINES
-
-You must violate every rule in the programming skill below.
-
-{concrete}
-
-## Guidelines you must violate
-
-{body}
-""",
-    encoding="utf-8",
-)
-print(dest)
-PY
-}
-
-generate_negative_tasks() {
-  local dest_root="$1"
-  local skill_name="$2"
-  generate_negative_tasks_from_root "$dest_root" "$skill_name" "$TASKS_DIR"
-}
-
-generate_negative_tasks_from_root() {
-  local dest_root="$1"
-  local skill_name="$2"
-  local source_root="$3"
-  local anti_line
-  case "$skill_name" in
-    commenting)
-      anti_line="Negative control: do not write docstrings (no description, Parameters, or Returns)."
-      ;;
-    worktree)
-      anti_line="Negative control: do not create a worktree; edit only in /Projects/app and you may add a remote."
-      ;;
-    logging)
-      anti_line="Negative control: do not print parameters at entry or return values before exit."
-      ;;
-    *)
-      anti_line="Negative control: put all logic in one function; do not create helpers."
-      ;;
-  esac
-  rm -rf "$dest_root"
-  mkdir -p "$dest_root"
-  local task_dir name dest_task base_instruction src
-  while IFS= read -r task_dir; do
-    name="$(basename "$task_dir")"
-    src="$source_root/$name"
-    if [[ ! -d "$src" ]]; then
-      src="$task_dir"
-    fi
-    dest_task="$dest_root/$name"
-    mkdir -p "$dest_task"
-    cp -a "$src"/. "$dest_task"/
-    base_instruction="$(tr -d '\r' <"$src/instruction.md" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g; s/[[:space:]]*$//')"
-    base_instruction="${base_instruction#Follow every provided programming skill. }"
-    base_instruction="${base_instruction#Follow every provided programming skill.}"
-    base_instruction="${base_instruction% Follow every provided programming skill.}"
-    base_instruction="${base_instruction% Follow the provided programming skill.}"
-    base_instruction="${base_instruction% Follow the provided programming skill}"
-    printf '%s\n\n%s\n' "$base_instruction" "$anti_line" >"$dest_task/instruction.md"
-  done < <(list_task_dirs)
 }
 
 prepare_job_tasks() {
@@ -1145,16 +1020,6 @@ run_one_job() {
   if [[ "$BASELINE" -eq 1 ]]; then
     config_file="$JOBS/harbor.${job_name}.yaml"
     write_job_config "$harness" "$config_file" "[]" "$tasks_root"
-  elif [[ "$NEGATIVE" -eq 1 ]]; then
-    local skill="${SELECTED_SKILLS_FOR_JOB[0]}"
-    local neg_skill_dir="$JOBS/generated-negative-skill-$harness-$skill"
-    local neg_tasks_root="$JOBS/generated-negative-tasks-$harness-$skill"
-    generate_negative_skill "$neg_skill_dir" "$SKILLS_ROOT/$skill/SKILL.md" "$skill" >/dev/null
-    generate_negative_tasks_from_root "$neg_tasks_root" "$skill" "$tasks_root"
-    config_file="$JOBS/harbor.${job_name}.yaml"
-    write_job_config "$harness" "$config_file" "$(skills_yaml_block "$neg_skill_dir")" "$neg_tasks_root"
-    tasks_root="$neg_tasks_root"
-    echo "Negative mode for harness=$harness skill=$skill" >&2
   else
     config_file="$JOBS/harbor.${job_name}.yaml"
     write_job_config "$harness" "$config_file" "$(skills_yaml_block "${skill_paths[@]}")" "$tasks_root"
@@ -1210,22 +1075,14 @@ run_jobs_for_harness() {
       SELECTED_SKILLS_FOR_JOB=("$skill")
       if [[ "$BASELINE" -eq 1 ]]; then
         run_one_job "$harness" "$(harbor_job_name "${harness}-baseline-$skill")" "baseline"
-      elif [[ "$NEGATIVE" -eq 1 ]]; then
-        run_one_job "$harness" "$(harbor_job_name "${harness}-negative-$skill")" "negative"
       else
         run_one_job "$harness" "$(harbor_job_name "${harness}-$skill")" "positive" "$SKILLS_ROOT/$skill"
       fi
     done
   else
     SELECTED_SKILLS_FOR_JOB=("${SELECTED_SKILLS[@]}")
-    if [[ "$NEGATIVE" -eq 1 && ${#SELECTED_SKILLS[@]} -gt 1 ]]; then
-      echo "Combined --negative with multiple skills is ambiguous; use --run-separately." >&2
-      exit 1
-    fi
     if [[ "$BASELINE" -eq 1 ]]; then
       run_one_job "$harness" "$(harbor_job_name "${harness}-baseline")" "baseline"
-    elif [[ "$NEGATIVE" -eq 1 ]]; then
-      run_one_job "$harness" "$(harbor_job_name "${harness}-negative-${SELECTED_SKILLS[0]}")" "negative"
     else
       local -a skill_paths=()
       local skill
@@ -1274,8 +1131,6 @@ HARNESS_FACTOR=${#SELECTED_HARNESSES[@]}
 
 if [[ "$BASELINE" -eq 1 ]]; then
   RUN_MODE_LABEL="baseline"
-elif [[ "$NEGATIVE" -eq 1 ]]; then
-  RUN_MODE_LABEL="negative"
 else
   RUN_MODE_LABEL="positive"
 fi
@@ -1293,8 +1148,6 @@ if [[ ${#SELECTED_HARNESSES[@]} -gt 1 || "$RUN_SEPARATELY" -eq 1 ]]; then
   echo "Combined categorized summary across all jobs in $JOBS:" >&2
   if [[ "$BASELINE" -eq 1 ]]; then
     capture_print_summary "$JOBS" "baseline-all" "${SELECTED_SKILLS[*]}"
-  elif [[ "$NEGATIVE" -eq 1 ]]; then
-    capture_print_summary "$JOBS" "negative-all" "${SELECTED_SKILLS[*]}"
   else
     capture_print_summary "$JOBS" "positive-all" "${SELECTED_SKILLS[*]}"
   fi
