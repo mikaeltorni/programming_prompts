@@ -34,5 +34,7 @@ Inspect the simulated host layout at
 ## Related: judge reasoning in the runner
 
 New Harbor runs keep per-skill judge reasoning in
-`verifier/reward-<skill>-details.json` and print
-`judge[<skill>] answer/reason` lines from `run_benchmark.sh`.
+`verifier/reward-<skill>-details.json` (and
+`reward-<skill>-<evalAgent>-details.json` when several judges ran) and print
+`judge[<skill>]` plus `judge[<skill>/<evalAgent>]` answer/reason lines from
+`run_benchmark.sh`.
