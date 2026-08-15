@@ -13,6 +13,8 @@ from pathlib import Path
 DEFAULT_CODEX_VERSION = "0.147.0"
 # Fallback when claude-version.txt is missing; keep in sync with that file.
 DEFAULT_CLAUDE_VERSION = "2.1.227"
+# Fallback when grok-version.txt is missing; keep in sync with that file.
+DEFAULT_GROK_VERSION = "1.0.4"
 
 
 def codex_version_file() -> Path:
@@ -26,6 +28,11 @@ def codex_version_file() -> Path:
 def claude_version_file() -> Path:
     """Return the path of the evals Claude Code version pin file."""
     return Path(__file__).resolve().parents[1] / "claude-version.txt"
+
+
+def grok_version_file() -> Path:
+    """Return the path of the evals Grok CLI version pin file."""
+    return Path(__file__).resolve().parents[1] / "grok-version.txt"
 
 
 def load_codex_version(version_file: Path | None = None) -> str:
@@ -64,6 +71,25 @@ def load_claude_version(version_file: Path | None = None) -> str:
     except OSError:
         return DEFAULT_CLAUDE_VERSION
     return text or DEFAULT_CLAUDE_VERSION
+
+
+def load_grok_version(version_file: Path | None = None) -> str:
+    """Load the pinned Grok CLI version from disk.
+
+    Args:
+        version_file: Optional override path. Defaults to
+            :func:`grok_version_file`.
+
+    Returns:
+        A stripped version string such as ``1.0.4``. Falls back to
+        :data:`DEFAULT_GROK_VERSION` when the file is absent or empty.
+    """
+    path = version_file or grok_version_file()
+    try:
+        text = path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return DEFAULT_GROK_VERSION
+    return text or DEFAULT_GROK_VERSION
 
 
 def build_ensure_git_repo_command(repo: str = "/Projects/app") -> str:
@@ -146,3 +172,31 @@ def build_clean_claude_skills_register_command(skills_dir: str | None) -> str:
 
     quoted = shlex.quote(skills_dir)
     return f"{ensure}; {wipe}; cp -a {quoted}/. \"$CLAUDE_CONFIG_DIR/skills/\""
+
+
+def build_clean_grok_skills_register_command(skills_dir: str | None) -> str:
+    """Build a shell snippet that resets Grok skills then installs only *skills_dir*.
+
+    Grok discovers skills from ``$HOME/.grok/skills`` (and may auto-install
+    marketplace plugins). This command wipes those trees and — when Harbor
+    uploaded benchmark skills — copies only that upload into
+    ``$HOME/.grok/skills``. Host SuperGrok marketplace skills never enter
+    the trial.
+
+    Args:
+        skills_dir: Absolute path inside the trial where Harbor uploaded the
+            configured skills, or ``None`` for baseline jobs.
+
+    Returns:
+        A shell command string safe to run after ``$HOME/.grok`` exists.
+    """
+    ensure = build_ensure_git_repo_command()
+    wipe = (
+        'rm -rf "$HOME/.grok/skills" "$HOME/.grok/installed-plugins"; '
+        'mkdir -p "$HOME/.grok/skills"'
+    )
+    if not skills_dir:
+        return f"{ensure}; {wipe}"
+
+    quoted = shlex.quote(skills_dir)
+    return f"{ensure}; {wipe}; cp -a {quoted}/. \"$HOME/.grok/skills/\""
