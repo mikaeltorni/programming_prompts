@@ -575,6 +575,9 @@ generate_negative_tasks_from_root() {
     mkdir -p "$dest_task"
     cp -a "$src"/. "$dest_task"/
     base_instruction="$(tr -d '\r' <"$src/instruction.md" | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g; s/[[:space:]]*$//')"
+    base_instruction="${base_instruction#Follow every provided programming skill. }"
+    base_instruction="${base_instruction#Follow every provided programming skill.}"
+    base_instruction="${base_instruction% Follow every provided programming skill.}"
     base_instruction="${base_instruction% Follow the provided programming skill.}"
     base_instruction="${base_instruction% Follow the provided programming skill}"
     printf '%s\n\n%s\n' "$base_instruction" "$anti_line" >"$dest_task/instruction.md"
