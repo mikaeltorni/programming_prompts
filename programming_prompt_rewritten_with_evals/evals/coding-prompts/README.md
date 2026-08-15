@@ -19,7 +19,7 @@ Frontmatter (required):
 artifact: /app/calculator.py
 description: Short Harbor task description.
 ---
-Write `/app/calculator.py` with …
+Follow every provided programming skill. Write `/app/calculator.py` with …
 ```
 
 The filename stem is the task name (`calculator.md` → task `calculator`).

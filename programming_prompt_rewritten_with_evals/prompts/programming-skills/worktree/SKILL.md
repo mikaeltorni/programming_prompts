@@ -1,15 +1,27 @@
 ---
 name: worktree
 description: >-
-  Use whenever writing or editing code in a git repository: create a sibling
-  .worktrees/<project>/ worktree, commit each finished part there, merge back,
-  and never push. Apply on every coding task, including new files from scratch.
+  MUST invoke before the first file Write or Edit in this git repo (including
+  /app and /Projects/app). Create a sibling .worktrees/<project>/ worktree, do
+  all coding and commits there, merge back, never push. Skipping this fails the
+  task even if the code is correct. Apply on every coding task, including new
+  files from scratch. Not a substitute: Claude EnterWorktree / ExitWorktree.
 ---
 
 # Git worktree + incremental commits
 
 The workspace is already a git repository with one **empty initial commit**.
 Do not `git init` again. Do not rewrite history.
+
+## Do this first
+
+Invoke this skill at the start of the task, even if you already loaded `srp`
+or another skill. The first state-changing action is `git worktree add` —
+never `Write` `/app/*.py` (or `/Projects/app/*.py`) in the live checkout.
+
+Writing the program in `/app` without a worktree is a **fail**, even if the
+code is correct. Claude's `EnterWorktree` / `ExitWorktree` tools are not a
+substitute for `git worktree add`.
 
 ## Where the worktree goes
 
