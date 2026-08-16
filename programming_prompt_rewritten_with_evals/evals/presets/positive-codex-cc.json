@@ -1,6 +1,6 @@
 {
   "name": "positive-codex-cc",
-  "description": "positive (skills injected); one coding run each for codex and cc; evalAgent=codex,cc; grok is not a coder and not a judge; all skills; k=5 n=5 (2 terminals)",
+  "description": "positive; judges=codex,cc on each coding run; no grok; k=5 n=5",
   "jobs": [
     {
       "title": "codex x codex,cc",

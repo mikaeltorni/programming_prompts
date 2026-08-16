@@ -1,6 +1,6 @@
 {
   "name": "baseline-cc",
-  "description": "baseline / no skills (negative control); only cc as coder and as judge; all skills; k=5 n=5 (1 terminal)",
+  "description": "baseline; judges=cc on each coding run; no codex,grok; k=5 n=5",
   "jobs": [
     {
       "title": "cc x cc",

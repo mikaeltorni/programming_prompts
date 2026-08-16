@@ -692,22 +692,23 @@ cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 ./launch_benchmarks.sh
 ```
 
-Pick a numbered preset (positive vs **baseline** / no skills; 3-, 2-, or
-1-harness slices). Each terminal is **one coding harness**; every included
-harness judges that same tree (`evalAgent=codex,cc,grok` on a 3-way job). If
-you drop grok because of a rate limit, grok is not a coder and not a judge.
+The menu prints ``[N coding × judges=…]`` so a two-harness slice shows both
+judges on the same coding runs (not one job per judge). Each terminal is
+**one coding harness**; every included harness judges that same tree
+(`evalAgent=codex,cc,grok` on a 3-way job). If you drop grok because of a
+rate limit, grok is not a coder and not a judge.
 
 Shipped files under [`presets/`](presets/):
 
-| Preset | Terminals |
-| --- | ---: |
-| `positive-all-harnesses-all-judges` / `baseline-all-harnesses-all-judges` | 3 |
-| `positive-codex-cc` / `baseline-codex-cc` (no grok) | 2 |
-| `positive-codex-grok` / `baseline-codex-grok` (no cc) | 2 |
-| `positive-cc-grok` / `baseline-cc-grok` (no codex) | 2 |
-| `positive-codex` / `baseline-codex` | 1 |
-| `positive-cc` / `baseline-cc` | 1 |
-| `positive-grok` / `baseline-grok` | 1 |
+| Preset | Coding runs | Judges |
+| --- | ---: | --- |
+| `positive-all-harnesses-all-judges` / `baseline-all-harnesses-all-judges` | 3 | codex,cc,grok |
+| `positive-codex-cc` / `baseline-codex-cc` (no grok) | 2 | codex,cc |
+| `positive-codex-grok` / `baseline-codex-grok` (no cc) | 2 | codex,grok |
+| `positive-cc-grok` / `baseline-cc-grok` (no codex) | 2 | cc,grok |
+| `positive-codex` / `baseline-codex` | 1 | codex |
+| `positive-cc` / `baseline-cc` | 1 | cc |
+| `positive-grok` / `baseline-grok` | 1 | grok |
 
 Each job is `harness=… evalAgent=<included harnesses> --skills srp,commenting,logging,worktree -k 5 -n 5`
 (baseline adds `--baseline`). Windows open at a
