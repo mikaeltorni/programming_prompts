@@ -33,6 +33,12 @@
 # × tasks × -k. Example: both harnesses, 2 skills separately, 5 tasks, -k 5
 # → 2 × 2 × 5 × 5 = 100 trials. evalAgent does not multiply trials; it reruns
 # the LLM judge on each trial (2–3× verifier cost when several agents).
+#
+# Parallel terminals: each Harbor trial creates a Docker network. Docker's
+# default IPAM only has ~30 user-defined /16 slots, so a dozen -n 5 jobs
+# crash with "all predefined address pools have been fully subnetted".
+# docker_networks.py prunes leftover Harbor nets and holds a cross-process
+# slot lock so extra jobs wait instead of exhausting IPAM.
 
 set -euo pipefail
 
@@ -73,6 +79,44 @@ fi
 
 export PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 HARNESS_SPEC="$SCRIPT_DIR/harbor_agents/harness_spec.py"
+DOCKER_NETWORKS="$SCRIPT_DIR/docker_networks.py"
+_docker_slot_holder=""
+
+release_docker_slots() {
+  # Drop this process's Harbor IPAM reservation. EXIT trap calls this so a
+  # killed Harbor job does not leak slots to the next terminal.
+  if [[ -n "${_docker_slot_holder}" ]]; then
+    python3 "$DOCKER_NETWORKS" release --holder "$_docker_slot_holder" || true
+    _docker_slot_holder=""
+  fi
+}
+trap release_docker_slots EXIT
+
+acquire_docker_slots() {
+  # Reserve *slots* trial networks for *holder* (blocks until IPAM has room).
+  local holder="$1"
+  local slots="$2"
+  local granted
+  granted="$(python3 "$DOCKER_NETWORKS" acquire --slots "$slots" --holder "$holder" --pid "$$")"
+  _docker_slot_holder="$holder"
+  printf '%s\n' "$granted"
+}
+
+set_harbor_n_concurrent() {
+  # Rewrite -n / --n-concurrent in the nameref array, or append -n.
+  local -n _n_args="$1"
+  local n="$2"
+  local i found=0
+  for ((i = 0; i < ${#_n_args[@]}; i++)); do
+    if [[ "${_n_args[$i]}" == "-n" || "${_n_args[$i]}" == "--n-concurrent" ]]; then
+      _n_args[$((i + 1))]="$n"
+      found=1
+    fi
+  done
+  if [[ "$found" -eq 0 ]]; then
+    _n_args+=(-n "$n")
+  fi
+}
 
 # Harbor output stays inside the run archive (evals/runs/<stamp>/harbor).
 # Export JOBS=... only to override that; the default is no longer /tmp.
@@ -1387,7 +1431,22 @@ run_one_job() {
   echo "Model default: $(harness_model_name "$harness") @ reasoning_effort=low (CLI $(harness_cli_version "$harness"))" >&2
   echo "Job $job_name evalAgent: $(eval_agents_csv_for_harness "$harness") (inherit if evalAgent omitted)" >&2
 
+  local concurrent_for_job=5
+  for ((i = 0; i < ${#harbor_args[@]}; i++)); do
+    if [[ "${harbor_args[$i]}" == "-n" || "${harbor_args[$i]}" == "--n-concurrent" ]]; then
+      concurrent_for_job="${harbor_args[$((i + 1))]:-$concurrent_for_job}"
+    fi
+  done
+  local docker_holder="${RUN_STAMP}:${job_name}"
+  local granted_slots
+  granted_slots="$(acquire_docker_slots "$docker_holder" "$concurrent_for_job")"
+  if [[ "$granted_slots" != "$concurrent_for_job" ]]; then
+    echo "Docker IPAM clamped job $job_name -n $concurrent_for_job → $granted_slots" >&2
+    set_harbor_n_concurrent harbor_args "$granted_slots"
+  fi
+
   run_harbor_for_harness "$harness" "${common[@]}" "${harbor_args[@]}"
+  release_docker_slots
   capture_print_summary "$JOBS/$job_name" "$run_mode" "$skills_csv"
   archive_sync_job "$job_name"
 }
@@ -1433,6 +1492,7 @@ if [[ "$INSTALL_ONLY" -eq 1 ]]; then
     install_config="$JOBS/harbor.${install_job_name}.yaml"
     write_job_config "$install_harness" "$install_config" "$(skills_yaml_block "$SKILLS_ROOT/${SELECTED_SKILLS[0]}")" "$install_tasks_root"
     echo "Reinstalling/verifying $install_harness @$install_version inside the task environment" >&2
+    acquire_docker_slots "${RUN_STAMP}:${install_job_name}" 1 >/dev/null
     run_harbor_for_harness "$install_harness" \
       -c "$install_config" \
       -o "$JOBS" \
@@ -1440,6 +1500,7 @@ if [[ "$INSTALL_ONLY" -eq 1 ]]; then
       --install-only \
       --job-name "$install_job_name" \
       "${HARBOR_ARGS[@]}"
+    release_docker_slots
   done
   exit 0
 fi

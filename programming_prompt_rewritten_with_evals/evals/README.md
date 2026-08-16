@@ -129,6 +129,7 @@ evals/
 ├── run_codex_benchmark.sh  # thin shim → run_benchmark.sh harness=codex
 ├── run_grok_benchmark.sh   # thin shim → run_benchmark.sh harness=grok
 ├── archive_benchmark_run.py
+├── docker_networks.py      # prune leftover Harbor nets + cross-process IPAM slots
 ├── runs/                   # timestamped archives; RESULTS.txt is the one-line index
 ├── codex-version.txt
 ├── claude-version.txt
@@ -302,6 +303,48 @@ sudo apt install -y \
 
 sudo systemctl enable --now docker
 sudo usermod -aG docker "$USER"
+```
+
+Docker's built-in IPAM gives each user-defined network a whole `/16` (~30
+networks on the host). Harbor creates one network **per trial**, so twelve
+terminals at `-n 5` exhaust the pool (`all predefined address pools have been
+fully subnetted`) and crash in `_prepare`. [`docker_networks.py`](docker_networks.py)
+prunes leftover empty Harbor networks and makes concurrent `./run_benchmark.sh`
+processes **wait for a slot** instead of stampeding. Optional: give Docker
+thousands of `/24` trial networks (254 hosts each — enough for a Harbor
+compose project) so many jobs can run at full `-n` in parallel. Merge these
+pools into `/etc/docker/daemon.json` (keep any other keys) and restart Docker
+when no Harbor jobs are running:
+
+```bash
+python3 docker_networks.py recommended-daemon-json
+```
+
+```json
+{
+  "default-address-pools": [
+    {"base": "172.18.0.0/16", "size": 24},
+    {"base": "172.19.0.0/16", "size": 24},
+    {"base": "172.20.0.0/14", "size": 24},
+    {"base": "172.24.0.0/13", "size": 24},
+    {"base": "192.168.0.0/16", "size": 24}
+  ]
+}
+```
+
+Do not overlap `172.17.0.0/16` (the default `bridge`). Prove the helper without
+Harbor:
+
+```bash
+python3 docker_networks.py self-test
+```
+
+```bash
+python3 docker_networks.py prune
+```
+
+```bash
+python3 docker_networks.py capacity
 ```
 
 ## Activate Docker access in VS Code, Cursor, and tmux
@@ -485,6 +528,10 @@ python3 verifier/check_worktree.py --self-test
 python3 archive_benchmark_run.py self-test
 ```
 
+```bash
+python3 docker_networks.py self-test
+```
+
 Rebuild the newest-first one-line index (also happens automatically at the
 end of each `./run_benchmark.sh`):
 
@@ -647,6 +694,9 @@ Then run (examples):
 `-k 5` schedules five attempts **per task**; `-n 5` runs up to five trials at
 once. The wrapper defaults to the same `-k 5 -n 5` when you pass no Harbor
 flags. After the job finishes it prints a categorized console summary.
+Several terminals may start at once: the wrapper serializes Docker networks
+across processes when the daemon's address pool is tight (see
+[Install Docker](#install-docker-on-ubuntu-2404)).
 
 Do not use bare `-a codex` / `-a claude-code` / `-a grok-build` for these skill
 benchmarks: those paths can leave host/user skill directories untouched and do
