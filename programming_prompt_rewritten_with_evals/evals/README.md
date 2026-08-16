@@ -129,7 +129,7 @@ evals/
 ├── run_codex_benchmark.sh  # thin shim → run_benchmark.sh harness=codex
 ├── run_grok_benchmark.sh   # thin shim → run_benchmark.sh harness=grok
 ├── archive_benchmark_run.py
-├── runs/                   # timestamped inspectable archives (written to: …)
+├── runs/                   # timestamped archives; RESULTS.txt is the one-line index
 ├── codex-version.txt
 ├── claude-version.txt
 ├── grok-version.txt
@@ -137,7 +137,10 @@ evals/
 ```
 
 After every non-install run the wrapper writes a durable archive under
-[`runs/`](runs/) and prints `written to: <path>`. Folder names start with
+[`runs/`](runs/) and prints `written to: <path>`. [`runs/RESULTS.txt`](runs/RESULTS.txt)
+is one compact line per archive (newest first): mode, harness, evalAgent,
+skills, tasks, k/n, trial/scored/pass counts, and per-skill plus per-task
+rates. Folder names start with
 `YYYY-MM-DD_HHMMSS_<pid>` so they sort by time in the explorer, and encode
 harness, **evalagent** (`inherit` or `cc+codex`), mode, skills,
 `--run-separately`, tasks, and `-k`/`-n`. Harbor job
@@ -480,6 +483,13 @@ python3 verifier/check_worktree.py --self-test
 
 ```bash
 python3 archive_benchmark_run.py self-test
+```
+
+Rebuild the newest-first one-line index (also happens automatically at the
+end of each `./run_benchmark.sh`):
+
+```bash
+python3 archive_benchmark_run.py results-index --runs-root runs
 ```
 
 Recommended smoke set (each `./run_benchmark.sh` in its own terminal):
