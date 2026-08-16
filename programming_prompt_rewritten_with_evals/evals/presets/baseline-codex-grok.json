@@ -1,13 +1,13 @@
 {
   "name": "baseline-codex-grok",
-  "description": "baseline / no skills (negative control); codex and grok only; cc is not a coder and not a judge; all skills; k=5 n=5 (4 terminals)",
+  "description": "baseline / no skills (negative control); one coding run each for codex and grok; evalAgent=codex,grok; cc is not a coder and not a judge; all skills; k=5 n=5 (2 terminals)",
   "jobs": [
     {
-      "title": "codex x codex",
+      "title": "codex x codex,grok",
       "args": [
         "./run_benchmark.sh",
         "harness=codex",
-        "evalAgent=codex",
+        "evalAgent=codex,grok",
         "--baseline",
         "--skills",
         "srp,commenting,logging,worktree",
@@ -18,41 +18,11 @@
       ]
     },
     {
-      "title": "codex x grok",
-      "args": [
-        "./run_benchmark.sh",
-        "harness=codex",
-        "evalAgent=grok",
-        "--baseline",
-        "--skills",
-        "srp,commenting,logging,worktree",
-        "-k",
-        "5",
-        "-n",
-        "5"
-      ]
-    },
-    {
-      "title": "grok x codex",
+      "title": "grok x codex,grok",
       "args": [
         "./run_benchmark.sh",
         "harness=grok",
-        "evalAgent=codex",
-        "--baseline",
-        "--skills",
-        "srp,commenting,logging,worktree",
-        "-k",
-        "5",
-        "-n",
-        "5"
-      ]
-    },
-    {
-      "title": "grok x grok",
-      "args": [
-        "./run_benchmark.sh",
-        "harness=grok",
-        "evalAgent=grok",
+        "evalAgent=codex,grok",
         "--baseline",
         "--skills",
         "srp,commenting,logging,worktree",

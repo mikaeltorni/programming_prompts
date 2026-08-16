@@ -247,9 +247,11 @@ def cascade_rects(
 
 
 def matrix_jobs(harnesses: Sequence[str], *, baseline: bool) -> tuple[Job, ...]:
-    """Every included harness as coder × every included harness as judge.
+    """One coding job per included harness; every included harness judges that run.
 
     The omitted harness is not a coder and not a judge (rate-limit slices).
+    ``evalAgent`` is a comma list so Harbor writes the app once per harness
+    and the verifier re-scores that same tree.
 
     Args:
         harnesses: Coders and judges for this slice (same set).
@@ -257,18 +259,18 @@ def matrix_jobs(harnesses: Sequence[str], *, baseline: bool) -> tuple[Job, ...]:
     """
     if not harnesses:
         raise ValueError("need at least one harness")
+    judges = ",".join(harnesses)
     jobs: list[Job] = []
     for harness in harnesses:
-        for agent in harnesses:
-            args = [
-                f"./{RUN_SCRIPT}",
-                f"harness={harness}",
-                f"evalAgent={agent}",
-            ]
-            if baseline:
-                args.append("--baseline")
-            args.extend(["--skills", DEFAULT_SKILLS, "-k", "5", "-n", "5"])
-            jobs.append(Job(title=f"{harness} x {agent}", args=tuple(args)))
+        args = [
+            f"./{RUN_SCRIPT}",
+            f"harness={harness}",
+            f"evalAgent={judges}",
+        ]
+        if baseline:
+            args.append("--baseline")
+        args.extend(["--skills", DEFAULT_SKILLS, "-k", "5", "-n", "5"])
+        jobs.append(Job(title=f"{harness} x {judges}", args=tuple(args)))
     return tuple(jobs)
 
 
@@ -293,19 +295,20 @@ def matrix_description(harnesses: Sequence[str], *, baseline: bool) -> str:
         baseline: Positive vs baseline.
     """
     count = len(harnesses)
-    jobs = count * count
+    jobs = count
+    judges = ",".join(harnesses)
     mode = (
         "baseline / no skills (negative control)"
         if baseline
         else "positive (skills injected)"
     )
     if count == 3:
-        who = "codex, cc, grok as coder and as judge"
+        who = "one coding run per harness; all three judge that same tree"
     elif count == 2:
         excluded = next(h for h in HARNESS_ORDER if h not in harnesses)
         who = (
-            f"{' and '.join(harnesses)} only; "
-            f"{excluded} is not a coder and not a judge"
+            f"one coding run each for {' and '.join(harnesses)}; "
+            f"evalAgent={judges}; {excluded} is not a coder and not a judge"
         )
     else:
         who = f"only {harnesses[0]} as coder and as judge"
@@ -514,6 +517,31 @@ def _title_from_args(args: Sequence[str], *, fallback: str) -> str:
     if harness == "harness" and agent == "inherit":
         return fallback
     return f"{harness} x {agent}"
+
+
+def _job_eval_agents(job: Job) -> set[str]:
+    """Return evalAgent ids listed on *job* (comma list or empty).
+
+    Args:
+        job: One launcher job.
+    """
+    for item in job.args:
+        if item.startswith("evalAgent=") or item.startswith("eval-agent="):
+            raw = item.split("=", 1)[1]
+            return {token for token in raw.split(",") if token}
+    return set()
+
+
+def _job_harness(job: Job) -> str:
+    """Return the coding harness id on *job*, or empty.
+
+    Args:
+        job: One launcher job.
+    """
+    for item in job.args:
+        if item.startswith("harness="):
+            return item.split("=", 1)[1]
+    return ""
 
 
 def shell_command(args: Sequence[str]) -> str:
@@ -1003,30 +1031,31 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
         preset: Preset, harnesses: Sequence[str], *, baseline: bool
     ) -> str:
         issues: list[str] = []
-        if len(preset.jobs) != len(harnesses) ** 2:
+        if len(preset.jobs) != len(harnesses):
             issues.append(f"jobs={len(preset.jobs)}")
         if any(("--baseline" in job.args) is not baseline for job in preset.jobs):
             issues.append("baseline-flag")
         if any(DEFAULT_SKILLS not in job.args for job in preset.jobs):
             issues.append("skills")
+        judges = ",".join(harnesses)
         excluded = [item for item in HARNESS_ORDER if item not in harnesses]
         for harness in excluded:
             leaked = any(
-                f"harness={harness}" in job.args or f"evalAgent={harness}" in job.args
+                _job_harness(job) == harness or harness in _job_eval_agents(job)
                 for job in preset.jobs
             )
             if leaked:
                 issues.append(f"leaked-{harness}")
         for harness in harnesses:
-            if not any(f"harness={harness}" in job.args for job in preset.jobs):
+            if not any(_job_harness(job) == harness for job in preset.jobs):
                 issues.append(f"no-coder-{harness}")
-            if not any(f"evalAgent={harness}" in job.args for job in preset.jobs):
+            if any(harness not in _job_eval_agents(job) for job in preset.jobs):
                 issues.append(f"no-judge-{harness}")
-        expected_titles = {
-            f"{left} x {right}" for left in harnesses for right in harnesses
-        }
+        expected_titles = {f"{harness} x {judges}" for harness in harnesses}
         if {job.title for job in preset.jobs} != expected_titles:
             issues.append("titles")
+        if any(f"evalAgent={judges}" not in job.args for job in preset.jobs):
+            issues.append("shared-evalAgent")
         return ",".join(issues)
 
     for harnesses in shipped_matrix_groups():
@@ -1066,14 +1095,19 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
     preset: Preset | None = None
     try:
         preset = load_preset_file(PRESETS_DIR / "positive-all-harnesses-all-judges.json")
-        record("shipped_nine", len(preset.jobs) == 9, f"jobs={len(preset.jobs)}")
+        record("shipped_three", len(preset.jobs) == 3, f"jobs={len(preset.jobs)}")
+        record(
+            "shipped_shared_judges",
+            all("evalAgent=codex,cc,grok" in job.args for job in preset.jobs),
+            "one coding run, three judges",
+        )
         record(
             "shipped_positive",
             all("--baseline" not in job.args for job in preset.jobs),
             "no --baseline",
         )
     except (ValueError, OSError) as exc:
-        record("shipped_nine", False, str(exc))
+        record("shipped_three", False, str(exc))
 
     parsed = jobs_from_command_lines(
         [
@@ -1097,11 +1131,11 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
     if preset is not None:
         launched = launch_preset(preset, fake, dry_run=False)
         record("fake_monitor", launched.name == "DP-4", launched.name)
-        record("fake_spawn_count", len(fake.spawned) == 9, str(len(fake.spawned)))
-        record("fake_placed_count", len(fake.placed) == 9, str(len(fake.placed)))
+        record("fake_spawn_count", len(fake.spawned) == 3, str(len(fake.spawned)))
+        record("fake_placed_count", len(fake.placed) == 3, str(len(fake.placed)))
         record(
             "spawn_all_first",
-            fake.events[:9] == ["spawn"] * 9 and fake.events[9:] == ["place"] * 9,
+            fake.events[:3] == ["spawn"] * 3 and fake.events[3:] == ["place"] * 3,
             str(fake.events),
         )
         record(
@@ -1161,9 +1195,10 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
         two = load_preset_file(folder / "positive-cc-grok.json")
         record(
             "write_two_harness_excludes_codex",
-            len(two.jobs) == 4
-            and all("harness=codex" not in job.args for job in two.jobs)
-            and all("evalAgent=codex" not in job.args for job in two.jobs)
+            len(two.jobs) == 2
+            and {_job_harness(job) for job in two.jobs} == {"cc", "grok"}
+            and all(_job_eval_agents(job) == {"cc", "grok"} for job in two.jobs)
+            and all("evalAgent=cc,grok" in job.args for job in two.jobs)
             and all("--baseline" not in job.args for job in two.jobs),
             str(len(two.jobs)),
         )
