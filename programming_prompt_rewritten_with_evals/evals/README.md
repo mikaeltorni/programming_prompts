@@ -212,6 +212,9 @@ suite goes further:
 - Auth (verifier): **default `evalAgent` inherits the coding harness**, so
   `harness=cc` grades with Claude Code and needs Claude OAuth — not Codex.
   Codex `auth.json` is still mounted so `evalAgent=codex` (or a mix) can run.
+  The verifier copies credentials into a writable `CLAUDE_CONFIG_DIR` (the
+  trial mount is read-only) and runs `claude -p` with `IS_SANDBOX=1` plus
+  `--permission-mode bypassPermissions`, matching Harbor's coding agent.
   Without the matching judge auth you get a verifier error such as
   `Claude Code eval agent needs CLAUDE_CODE_OAUTH_TOKEN`.
 - Do not pass `…=1` for `*AUTH*` / `*OAUTH*` / `*TOKEN*` flags via Harbor
