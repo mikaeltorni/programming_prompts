@@ -133,7 +133,7 @@ evals/
 ├── launch_benchmarks.sh    # interactive preset menu; normal windows on this monitor
 ├── launch_benchmarks.py
 ├── presets/                # git-tracked launch presets (positive/baseline matrices)
-├── runs/                   # timestamped archives; RESULTS.txt is the one-line index
+├── runs/                   # timestamped archives; RESULTS.txt is the table index
 ├── codex-version.txt
 ├── claude-version.txt
 ├── grok-version.txt
@@ -142,9 +142,9 @@ evals/
 
 After every non-install run the wrapper writes a durable archive under
 [`runs/`](runs/) and prints `written to: <path>`. [`runs/RESULTS.txt`](runs/RESULTS.txt)
-is one compact line per archive (newest first): mode, harness, evalAgent,
-skills, tasks, k/n, trial/scored/pass counts, and per-skill plus per-task
-rates. Folder names start with
+is an aligned table (newest row at the top, under the header): mode, harness,
+judge, skills, tasks, k/n, separately, trial/scored/pass counts, and per-skill
+plus per-task rates. Folder names start with
 `YYYY-MM-DD_HHMMSS_<pid>` so they sort by time in the explorer, and encode
 harness, **evalagent** (`inherit` or `cc+codex`), mode, skills,
 `--run-separately`, tasks, and `-k`/`-n`. Harbor job
@@ -539,7 +539,7 @@ python3 docker_networks.py self-test
 python3 launch_benchmarks.py --self-test
 ```
 
-Rebuild the newest-first one-line index (also happens automatically at the
+Rebuild the newest-first table index (also happens automatically at the
 end of each `./run_benchmark.sh`):
 
 ```bash

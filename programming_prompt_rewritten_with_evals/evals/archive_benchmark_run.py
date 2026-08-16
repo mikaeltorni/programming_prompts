@@ -4,7 +4,7 @@
 Layout (explorer-friendly, timestamp-first directory name):
 
   evals/runs/
-    RESULTS.txt                 # one compact line per run, newest first
+    RESULTS.txt                 # aligned table, newest row at the top
     YYYY-MM-DD_HHMMSS__harness-…__mode-…__skills-…__separately-…__kN-nN/
       00-meta.json
       01-SUMMARY.txt
@@ -44,6 +44,26 @@ from pathlib import Path
 
 
 RESULTS_INDEX_NAME = "RESULTS.txt"
+RESULTS_COL_SEP = " | "
+RESULTS_FIXED_COLUMNS = (
+    "Run",
+    "Mode",
+    "Harness",
+    "Judge",
+    "Skills",
+    "Tasks",
+    "k",
+    "n",
+    "Sep",
+    "Trials",
+    "Scored",
+    "Pass",
+)
+RESULTS_SKILL_ORDER = ("srp", "commenting", "logging", "worktree", "logging-vague")
+RESULTS_TASK_ORDER = ("calculator", "counter", "greeter", "temperature", "todo")
+RESULTS_LEFT_ALIGN = frozenset(
+    {"Run", "Mode", "Harness", "Judge", "Skills", "Tasks", "Sep"}
+)
 
 
 def _safe_slug(value: str, *, max_len: int = 80) -> str:
@@ -501,16 +521,21 @@ def collect_run_scores(run_dir: Path) -> dict[str, object]:
     }
 
 
-def format_results_line(run_dir: Path) -> str:
-    """Build one compact RESULTS.txt line for *run_dir*.
+def _rate_cell(rate: object | None) -> str:
+    """Format ``(passed, total)`` as ``passed/total``, or ``n/a``."""
+    if not isinstance(rate, tuple) or len(rate) != 2:
+        return "n/a"
+    return f"{rate[0]}/{rate[1]}"
+
+
+def format_results_row(run_dir: Path) -> dict[str, str]:
+    """Build one RESULTS.txt row (column name → cell) for *run_dir*.
 
     Args:
         run_dir: One ``evals/runs/<stamp>/`` archive.
 
     Returns:
-        A single line: timestamp, mode, harness, evalAgent, skills, tasks,
-        k/n, separately, trial counts, pass rate, then per-skill and
-        per-task ``name=passed/total`` fields.
+        Fixed columns plus per-skill and per-task pass rates.
     """
     meta = _load_json_lenient(run_dir / "00-meta.json") or {}
     scores = collect_run_scores(run_dir)
@@ -521,36 +546,127 @@ def format_results_line(run_dir: Path) -> str:
     tasks_meta = meta.get("tasks") if isinstance(meta.get("tasks"), list) else []
     scored = int(scores["scored"])
     passed = int(scores["passed"])
-    pass_text = "n/a" if scored <= 0 else f"{passed}/{scored}"
-    fields = [
-        stamp,
-        f"mode={meta.get('mode') or '-'}",
-        f"harness={_csv(list(harnesses))}",
-        f"evalAgent={_csv(list(eval_agents)) if eval_agents else 'inherit'}",
-        f"skills={_csv(list(skills_meta))}",
-        f"tasks={_csv(list(tasks_meta))}",
-        f"k={int(meta.get('attempts_per_task') or 0)}",
-        f"n={int(meta.get('concurrent') or 0)}",
-        f"separately={'yes' if meta.get('run_separately') else 'no'}",
-        f"trials={int(scores['trials'])}",
-        f"scored={scored}",
-        f"pass={pass_text}",
-    ]
+    row: dict[str, str] = {
+        "Run": stamp,
+        "Mode": str(meta.get("mode") or "-"),
+        "Harness": _csv(list(harnesses)),
+        "Judge": _csv(list(eval_agents)) if eval_agents else "inherit",
+        "Skills": _csv(list(skills_meta)),
+        "Tasks": _csv(list(tasks_meta)),
+        "k": str(int(meta.get("attempts_per_task") or 0)),
+        "n": str(int(meta.get("concurrent") or 0)),
+        "Sep": "yes" if meta.get("run_separately") else "no",
+        "Trials": str(int(scores["trials"])),
+        "Scored": str(scored),
+        "Pass": "n/a" if scored <= 0 else f"{passed}/{scored}",
+    }
     skill_rates = scores["skills"]
     skill_names = list(skills_meta) + [
         name for name in sorted(skill_rates) if name not in skills_meta
     ]
     for name in skill_names:
-        rate = skill_rates.get(name)
-        fields.append(f"{name}={rate[0]}/{rate[1]}" if rate else f"{name}=n/a")
+        row[str(name)] = _rate_cell(skill_rates.get(name))
     task_rates = scores["tasks"]
     task_names = [name for name in tasks_meta if name != "all"] + [
         name for name in sorted(task_rates) if name not in tasks_meta
     ]
     for name in task_names:
-        rate = task_rates.get(name)
-        fields.append(f"{name}={rate[0]}/{rate[1]}" if rate else f"{name}=n/a")
-    return " ".join(fields)
+        row[str(name)] = _rate_cell(task_rates.get(name))
+    return row
+
+
+def results_table_columns(rows: list[dict[str, str]]) -> list[str]:
+    """Return header names: fixed columns, then skills, then tasks.
+
+    Args:
+        rows: Newest-first result rows.
+    """
+    seen = {key for row in rows for key in row}
+    extras = seen - set(RESULTS_FIXED_COLUMNS)
+    skills = [name for name in RESULTS_SKILL_ORDER if name in extras]
+    leftover = extras - set(RESULTS_SKILL_ORDER) - set(RESULTS_TASK_ORDER)
+    skills.extend(sorted(leftover))
+    tasks = [name for name in RESULTS_TASK_ORDER if name in extras]
+    return [*RESULTS_FIXED_COLUMNS, *skills, *tasks]
+
+
+def _pad_cell(text: str, width: int, *, column: str) -> str:
+    """Pad *text* to *width* (rates and counts right-aligned)."""
+    text = text.strip()
+    if column in RESULTS_LEFT_ALIGN:
+        return text.ljust(width)
+    return text.rjust(width)
+
+
+def render_results_table(rows: list[dict[str, str]]) -> str:
+    """Render an aligned pipe table. Newest row is the first body line.
+
+    Args:
+        rows: Newest-first result rows (may be empty).
+    """
+    columns = results_table_columns(rows) if rows else list(RESULTS_FIXED_COLUMNS)
+    widths = {column: len(column) for column in columns}
+    for row in rows:
+        for column in columns:
+            widths[column] = max(widths[column], len(row.get(column, "-")))
+    header = RESULTS_COL_SEP.join(
+        _pad_cell(column, widths[column], column=column) for column in columns
+    )
+    rule = RESULTS_COL_SEP.join("-" * widths[column] for column in columns)
+    body = [
+        RESULTS_COL_SEP.join(
+            _pad_cell(row.get(column, "-"), widths[column], column=column)
+            for column in columns
+        )
+        for row in rows
+    ]
+    return "\n".join([header, rule, *body]) + "\n"
+
+
+def looks_like_results_table(text: str) -> bool:
+    """Return True when *text* is the aligned RESULTS.txt table."""
+    first = next((line for line in text.splitlines() if line.strip()), "")
+    return first.startswith("Run") and RESULTS_COL_SEP in first
+
+
+def _is_table_rule_line(line: str) -> bool:
+    stripped = line.strip()
+    return bool(stripped) and all(char in "-| " for char in stripped)
+
+
+def parse_results_table(text: str) -> list[dict[str, str]]:
+    """Parse body rows from an aligned RESULTS.txt table.
+
+    Args:
+        text: Full file contents.
+    """
+    lines = [line.rstrip() for line in text.splitlines() if line.strip()]
+    if len(lines) < 2 or not looks_like_results_table(text):
+        return []
+    headers = [cell.strip() for cell in lines[0].split(RESULTS_COL_SEP)]
+    rows: list[dict[str, str]] = []
+    for line in lines[1:]:
+        if _is_table_rule_line(line):
+            continue
+        cells = [cell.strip() for cell in line.split(RESULTS_COL_SEP)]
+        row = {
+            header: cells[index] if index < len(cells) else "-"
+            for index, header in enumerate(headers)
+        }
+        if row.get("Run"):
+            rows.append(row)
+    return rows
+
+
+def write_results_table(path: Path, rows: list[dict[str, str]]) -> None:
+    """Overwrite *path* with an aligned table.
+
+    Args:
+        path: ``evals/runs/RESULTS.txt``.
+        rows: Newest-first result rows.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(render_results_table(rows), encoding="utf-8")
 
 
 def list_run_dirs(runs_root: Path) -> list[Path]:
@@ -571,7 +687,7 @@ def list_run_dirs(runs_root: Path) -> list[Path]:
 
 
 def rebuild_results_index(runs_root: Path) -> Path:
-    """Rewrite ``RESULTS.txt`` with one newest-first line per archived run.
+    """Rewrite ``RESULTS.txt`` as an aligned table of every archived run.
 
     Args:
         runs_root: ``evals/runs/``.
@@ -581,14 +697,17 @@ def rebuild_results_index(runs_root: Path) -> Path:
     """
     runs_root.mkdir(parents=True, exist_ok=True)
     path = runs_root / RESULTS_INDEX_NAME
-    lines = [format_results_line(run_dir) for run_dir in list_run_dirs(runs_root)]
-    path.write_text(("\n".join(lines) + "\n") if lines else "", encoding="utf-8")
-    _log(f"wrote {path} lines={len(lines)}")
+    rows = [format_results_row(run_dir) for run_dir in list_run_dirs(runs_root)]
+    write_results_table(path, rows)
+    _log(f"wrote {path} rows={len(rows)}")
     return path
 
 
 def prepend_results_line(runs_root: Path, run_dir: Path) -> Path:
-    """Put *run_dir*'s line at the top of ``RESULTS.txt``, dropping a prior copy.
+    """Put *run_dir* on the first body row of ``RESULTS.txt``, dropping a prior copy.
+
+    Legacy one-line indexes are replaced (not merged). The whole table is
+    rewritten so columns stay aligned.
 
     Args:
         runs_root: ``evals/runs/``.
@@ -597,16 +716,19 @@ def prepend_results_line(runs_root: Path, run_dir: Path) -> Path:
     Returns:
         Path to ``RESULTS.txt``.
     """
-    line = format_results_line(run_dir)
+    row = format_results_row(run_dir)
     path = runs_root / RESULTS_INDEX_NAME
-    existing: list[str] = []
+    existing: list[dict[str, str]] = []
     if path.is_file():
-        existing = [item for item in path.read_text(encoding="utf-8").splitlines() if item.strip()]
-    stamp = line.split(" ", 1)[0]
-    kept = [item for item in existing if not item.startswith(stamp + " ")]
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join([line, *kept]) + "\n", encoding="utf-8")
-    _log(f"prepended {path} stamp={stamp} pass={line.split('pass=', 1)[-1].split(' ', 1)[0]}")
+        text = path.read_text(encoding="utf-8")
+        if looks_like_results_table(text):
+            existing = parse_results_table(text)
+        elif text.strip():
+            _log(f"replacing legacy {path} with an aligned table")
+    stamp = row["Run"]
+    kept = [item for item in existing if item.get("Run") != stamp]
+    write_results_table(path, [row, *kept])
+    _log(f"prepended {path} stamp={stamp} pass={row['Pass']}")
     return path
 
 
@@ -758,31 +880,37 @@ def _self_test() -> int:
             skill_ok=1.0,
         )
         index = rebuild_results_index(runs_root)
-        lines = index.read_text(encoding="utf-8").splitlines()
+        text = index.read_text(encoding="utf-8")
+        rows = parse_results_table(text)
         record(
             "results_newest_first",
-            len(lines) == 2 and lines[0].startswith("2026-08-16_110000_2 "),
-            f"lines={len(lines)} first={lines[0][:40] if lines else ''}",
+            len(rows) == 2 and rows[0]["Run"] == "2026-08-16_110000_2",
+            f"rows={len(rows)} first={rows[0]['Run'] if rows else ''}",
         )
         record(
-            "results_compact_pass",
-            "pass=1/1" in lines[0]
-            and "srp=1/1" in lines[0]
-            and "calculator=1/1" in lines[0]
-            and "mode=positive" in lines[0]
-            and "harness=grok" in lines[0]
-            and "evalAgent=grok" in lines[0],
-            lines[0] if lines else "missing",
+            "results_has_header",
+            looks_like_results_table(text) and text.splitlines()[0].startswith("Run"),
+            text.splitlines()[0] if text else "missing",
+        )
+        record(
+            "results_table_pass",
+            rows[0]["Pass"] == "1/1"
+            and rows[0]["srp"] == "1/1"
+            and rows[0]["calculator"] == "1/1"
+            and rows[0]["Mode"] == "positive"
+            and rows[0]["Harness"] == "grok"
+            and rows[0]["Judge"] == "grok",
+            str(rows[0]) if rows else "missing",
         )
         record(
             "results_skips_agent_skill_file",
-            "srp-codex" not in lines[0],
+            "srp-codex" not in text.splitlines()[0],
             "per-agent 03-reward-srp-codex.json is not a column",
         )
         record(
             "results_baseline_fail",
-            "pass=0/1" in lines[1] and "mode=baseline" in lines[1],
-            lines[1] if len(lines) > 1 else "missing",
+            rows[1]["Pass"] == "0/1" and rows[1]["Mode"] == "baseline",
+            str(rows[1]) if len(rows) > 1 else "missing",
         )
         extra = write_run(
             "2026-08-16_120000_3",
@@ -794,16 +922,30 @@ def _self_test() -> int:
         )
         prepend_results_line(runs_root, extra)
         prepend_results_line(runs_root, extra)
-        lines = index.read_text(encoding="utf-8").splitlines()
+        rows = parse_results_table(index.read_text(encoding="utf-8"))
         record(
             "results_prepend_dedupes",
-            len(lines) == 3 and lines[0].startswith("2026-08-16_120000_3 "),
-            f"lines={len(lines)} first={lines[0][:40] if lines else ''}",
+            len(rows) == 3 and rows[0]["Run"] == "2026-08-16_120000_3",
+            f"rows={len(rows)} first={rows[0]['Run'] if rows else ''}",
         )
         record(
-            "results_no_header",
-            all(" " in line and not line.startswith("#") for line in lines),
-            "file is only result lines",
+            "results_body_below_header",
+            index.read_text(encoding="utf-8").splitlines()[2].startswith("2026-08-16_120000_3"),
+            "newest data row sits under the header",
+        )
+        index.write_text(
+            "2026-08-11_old mode=positive harness=codex pass=1/1\n",
+            encoding="utf-8",
+        )
+        prepend_results_line(runs_root, extra)
+        replaced = index.read_text(encoding="utf-8")
+        record(
+            "results_replaces_legacy",
+            looks_like_results_table(replaced)
+            and "mode=positive" not in replaced.splitlines()[0]
+            and len(parse_results_table(replaced)) == 1
+            and parse_results_table(replaced)[0]["Run"] == "2026-08-16_120000_3",
+            "legacy one-liners are wiped",
         )
         del older, newer
 
@@ -852,7 +994,7 @@ def main(argv: list[str] | None = None) -> int:
 
     index = sub.add_parser(
         "results-index",
-        help="Rewrite runs/RESULTS.txt from every archived run (newest first)",
+        help="Rewrite runs/RESULTS.txt as an aligned table of every archived run (newest first)",
     )
     index.add_argument("--runs-root", type=Path, required=True)
 

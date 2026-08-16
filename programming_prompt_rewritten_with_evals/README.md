@@ -61,7 +61,7 @@ Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
 - `evals/docker_networks.py` — prune leftover Harbor nets; slot lock so parallel terminals do not exhaust Docker IPAM
 - `evals/run_codex_benchmark.sh` — shim → `run_benchmark.sh harness=codex`
 - `evals/run_grok_benchmark.sh` — shim → `run_benchmark.sh harness=grok`
-- `evals/runs/` — timestamped archives; `RESULTS.txt` is one compact line per run
+- `evals/runs/` — timestamped archives; `RESULTS.txt` is a newest-first table
 - `evals/testing/` — open a new terminal to verify `evals/runs/…/harbor` job roots with `ca` / `cca`
 
 After each Harbor job the runner prints per-skill **judge answer + reasoning**
