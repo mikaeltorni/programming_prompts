@@ -3,7 +3,7 @@
 # Synced into tasks/*/tests/run_judges.sh by sync_judges.sh; task test.sh execs it.
 # Each skill keeps its own prompt at evals/judges/<skill>/prompt.md.
 #
-# LLM judges run once per eval agent. Harbor --ve sets:
+# LLM judges run once per eval agent via run_llm_judge.py (pin + retry).
 #   EVAL_AGENTS=codex            (default when unset — same as historical Codex)
 #   EVAL_AGENTS=cc,codex,grok    (score the same workspace two/three times)
 #   EVAL_AGENT_MODELS=...        (one value, or one per agent)
@@ -14,7 +14,7 @@ set -euo pipefail
 mkdir -p /logs/verifier
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-GROK_HELPER="$HERE/run_grok_judge.py"
+LLM_HELPER="$HERE/run_llm_judge.py"
 
 csv_trim_lower() {
   local raw="${1:-}"
@@ -35,14 +35,6 @@ default_eval_model() {
     cc) printf '%s' "claude-opus-5" ;;
     grok) printf '%s' "grok-4.6" ;;
     *) printf '%s' "gpt-5.6-luna" ;;
-  esac
-}
-
-rewardkit_backend() {
-  case "$1" in
-    cc) printf '%s' "claude-code" ;;
-    grok) printf '%s' "grok" ;;
-    *) printf '%s' "codex" ;;
   esac
 }
 
@@ -150,6 +142,12 @@ find_codex_auth() {
   return 1
 }
 
+if [[ "$has_llm_judge" -eq 1 ]]; then
+  if [[ ! -f "$LLM_HELPER" ]]; then
+    echo "Missing LLM judge helper: $LLM_HELPER" >&2
+    exit 1
+  fi
+fi
 if [[ "$has_llm_judge" -eq 1 && "$needs_codex" -eq 1 ]]; then
   if ! find_codex_auth; then
     echo "Codex authentication is required for the Codex eval agent." >&2
@@ -167,140 +165,11 @@ if [[ "$has_llm_judge" -eq 1 && "$needs_grok" -eq 1 ]]; then
     echo "Grok eval agent needs XAI_API_KEY or ~/.grok/auth.json" >&2
     exit 1
   fi
-  if [[ ! -f "$GROK_HELPER" ]]; then
-    echo "Missing Grok judge helper: $GROK_HELPER" >&2
-    exit 1
-  fi
   if ! command -v grok >/dev/null 2>&1; then
     echo "Grok eval agent needs the grok CLI on PATH" >&2
     exit 1
   fi
 fi
-
-setup_codex_home() {
-  local effort="$1"
-  local judge_home
-  judge_home="$(mktemp -d)"
-  if [[ -n "$codex_auth_source" && -f "$codex_auth_source" ]]; then
-    install -m 600 "$codex_auth_source" "$judge_home/auth.json"
-  fi
-  printf '%s\n' \
-      "model_reasoning_effort = \"${effort}\"" \
-      'sandbox_mode = "danger-full-access"' \
-      > "$judge_home/config.toml"
-  printf '%s' "$judge_home"
-}
-
-# Writable Claude config for the judge. The trial bind-mounts
-# /root/.claude/.credentials.json read-only; `claude -p` also writes sessions
-# and may refresh that file, which is what produced is_error with 0 tokens.
-setup_claude_home() {
-  local judge_home cred_src="" candidate token=""
-  judge_home="$(mktemp -d)"
-  mkdir -p "$judge_home/debug" "$judge_home/projects" "$judge_home/skills"
-  for candidate in \
-      "${HOME}/.claude/.credentials.json" \
-      /root/.claude/.credentials.json
-  do
-    if [[ -f "$candidate" ]]; then
-      cred_src="$candidate"
-      break
-    fi
-  done
-  if [[ -n "$cred_src" ]]; then
-    install -m 600 "$cred_src" "$judge_home/.credentials.json"
-    echo "Claude eval agent: copied credentials.json into writable CLAUDE_CONFIG_DIR (value not logged)" >&2
-  fi
-  if [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" && -f "$judge_home/.credentials.json" ]]; then
-    token="$(python3 - "$judge_home/.credentials.json" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-path = Path(sys.argv[1])
-try:
-    data = json.loads(path.read_text(encoding="utf-8"))
-except (OSError, json.JSONDecodeError):
-    raise SystemExit(0)
-oauth = data.get("claudeAiOauth") if isinstance(data, dict) else None
-token = oauth.get("accessToken") if isinstance(oauth, dict) else None
-if isinstance(token, str) and token.strip():
-    sys.stdout.write(token.strip())
-PY
-)"
-    if [[ -n "$token" ]]; then
-      CLAUDE_CODE_OAUTH_TOKEN="$token"
-      export CLAUDE_CODE_OAUTH_TOKEN
-      echo "Claude eval agent: loaded CLAUDE_CODE_OAUTH_TOKEN from credentials.json (value not logged)" >&2
-    fi
-  fi
-  if [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" && ! -f "$judge_home/.credentials.json" ]]; then
-    python3 - "$judge_home/.credentials.json" <<'PY'
-import json
-import os
-import sys
-from pathlib import Path
-
-token = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", "").strip()
-path = Path(sys.argv[1])
-path.write_text(
-    json.dumps({"claudeAiOauth": {"accessToken": token}}) + "\n",
-    encoding="utf-8",
-)
-path.chmod(0o600)
-PY
-    echo "Claude eval agent: wrote credentials.json from CLAUDE_CODE_OAUTH_TOKEN (value not logged)" >&2
-  fi
-  if [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" && ! -f "$judge_home/.credentials.json" ]]; then
-    echo "Claude Code eval agent needs CLAUDE_CODE_OAUTH_TOKEN or ~/.claude/.credentials.json" >&2
-    rm -rf "$judge_home"
-    return 1
-  fi
-  if [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]; then
-    umask 077
-    printf '%s' "$CLAUDE_CODE_OAUTH_TOKEN" >"$judge_home/oauth_token"
-  fi
-  echo "Claude eval agent: CLAUDE_CONFIG_DIR=${judge_home} token_set=$([[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]] && echo yes || echo no) credentials=$([[ -f "$judge_home/.credentials.json" ]] && echo yes || echo no)" >&2
-  printf '%s' "$judge_home"
-}
-
-# Inject --effort and bypassPermissions for Claude -p judge calls without
-# breaking `claude --version`.
-with_claude_effort() {
-  local effort="$1"
-  shift
-  local real wrapper_dir
-  real="$(command -v claude)"
-  if [[ -z "$real" ]]; then
-    echo "claude CLI not found on PATH for the Claude Code eval agent" >&2
-    return 1
-  fi
-  wrapper_dir="$(mktemp -d)"
-  cat >"$wrapper_dir/claude" <<EOF
-#!/usr/bin/env bash
-set -euo pipefail
-real=$(printf '%q' "$real")
-effort=$(printf '%q' "$effort")
-for arg in "\$@"; do
-  if [[ "\$arg" == "-p" || "\$arg" == "--print" ]]; then
-    exec "\$real" --effort "\$effort" --permission-mode bypassPermissions "\$@"
-  fi
-done
-exec "\$real" "\$@"
-EOF
-  chmod 755 "$wrapper_dir/claude"
-  PATH="$wrapper_dir:$PATH" "$@"
-  local rc=$?
-  rm -rf "$wrapper_dir"
-  return "$rc"
-}
-
-stash_rewardkit_details() {
-  local dest="$1"
-  if [[ -f /logs/verifier/reward-details.json ]]; then
-    cp /logs/verifier/reward-details.json "$dest"
-  fi
-}
 
 run_llm_eval_agent() {
   local judge_dir="$1"
@@ -308,75 +177,14 @@ run_llm_eval_agent() {
   local eval_agent="$3"
   local model="$4"
   local effort="$5"
-  local backend work
-  backend="$(rewardkit_backend "$eval_agent")"
-  echo "Running $eval_agent eval agent (backend=$backend model=$model effort=$effort)" >&2
-  if [[ "$eval_agent" == "grok" ]]; then
-    python3 "$GROK_HELPER" \
-      --judge-dir "$judge_dir" \
-      --output "$output_json" \
-      --workspace /Projects/app \
-      --model "$model" \
-      --reasoning-effort "$effort"
-    return 0
-  fi
-  work="$(mktemp -d)"
-  local prompt_file=""
-  local candidate
-  for candidate in "$judge_dir/prompt.md" "$judge_dir/judge-prompt.md"; do
-    if [[ -f "$candidate" ]]; then
-      prompt_file="$candidate"
-      break
-    fi
-  done
-  if [[ -z "$prompt_file" || ! -f "$judge_dir/judge.toml" ]]; then
-    echo "Judge dir missing prompt.md/judge-prompt.md or judge.toml: $judge_dir" >&2
-    rm -rf "$work"
-    return 1
-  fi
-  cp "$prompt_file" "$judge_dir/judge.toml" "$work/"
-  if [[ "$(basename "$prompt_file")" != "prompt.md" ]]; then
-    cp "$prompt_file" "$work/prompt.md"
-  fi
-  if [[ "$eval_agent" == "cc" ]]; then
-    local judge_home
-    judge_home="$(setup_claude_home)" || return 1
-    if [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" && -f "$judge_home/oauth_token" ]]; then
-      CLAUDE_CODE_OAUTH_TOKEN="$(cat "$judge_home/oauth_token")"
-      export CLAUDE_CODE_OAUTH_TOKEN
-    fi
-    local -a claude_env=(
-      "CLAUDE_FORCE_OAUTH=true"
-      "REWARDKIT_FORCE_OAUTH=true"
-      "CLAUDE_CONFIG_DIR=$judge_home"
-      "IS_SANDBOX=1"
-      "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1"
-    )
-    if [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]; then
-      claude_env+=("CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}")
-    fi
-    with_claude_effort "$effort" \
-      env "${claude_env[@]}" \
-      uvx --from harbor-rewardkit@0.1.7 \
-        rewardkit "$work" \
-        --workspace /Projects/app \
-        --output "$output_json" \
-        --judge "$backend" \
-        --model "$model"
-    rm -rf "$judge_home"
-  else
-    local judge_home
-    judge_home="$(setup_codex_home "$effort")"
-    CODEX_HOME="$judge_home" \
-      uvx --from harbor-rewardkit@0.1.7 \
-        rewardkit "$work" \
-        --workspace /Projects/app \
-        --output "$output_json" \
-        --judge "$backend" \
-        --model "$model"
-    rm -rf "$judge_home"
-  fi
-  rm -rf "$work"
+  echo "Running $eval_agent eval agent (model=$model effort=$effort)" >&2
+  python3 "$LLM_HELPER" \
+    --agent "$eval_agent" \
+    --judge-dir "$judge_dir" \
+    --output "$output_json" \
+    --workspace /Projects/app \
+    --model "$model" \
+    --reasoning-effort "$effort"
 }
 
 run_programmatic_judge() {
@@ -508,7 +316,6 @@ run_one_judge() {
         agent_out="/logs/verifier/reward-${skill}-${agent}.json"
         echo "Running judge for skill=$skill evalAgent=$agent" >&2
         run_llm_eval_agent "$judge_dir" "$agent_out" "$agent" "$model" "$effort"
-        stash_rewardkit_details "/logs/verifier/reward-${skill}-${agent}-details.json"
     done
     aggregate_eval_agent_rewards "$skill" "$output_json"
 }

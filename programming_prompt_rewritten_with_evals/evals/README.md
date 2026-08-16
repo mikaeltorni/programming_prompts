@@ -119,7 +119,8 @@ evals/
 │   ├── README.md
 │   ├── run_judges.sh
 │   ├── check_worktree.py       # worktree layout judge + --self-test
-│   ├── run_grok_judge.py       # Grok CLI eval agent (rewardkit has no grok)
+│   ├── run_llm_judge.py        # Codex / Claude Code / Grok eval agent
+│   ├── run_grok_judge.py       # shim → run_llm_judge.py --agent grok
 │   └── llm_judge/              # shared pin-and-retry helpers for every eval agent
 ├── testing/
 ├── sync_tasks.sh           # coding-prompts → .generated/tasks/
@@ -149,11 +150,15 @@ layout is copied to `<run>/Projects/<trial>/` (`app/` clone + `.worktrees/`).
 
 ## Judge reasoning in results
 
-`verifier/run_judges.sh` (synced into each task) runs rewardkit per selected
-skill (Codex / Claude Code) or [`verifier/run_grok_judge.py`](verifier/run_grok_judge.py)
-when `evalAgent` includes `grok`. It keeps `reward-<skill>-<evalAgent>-details.json`
-plus an aggregate `reward-<skill>.json` that passes only if every eval agent
-passed. `run_benchmark.sh` prints those lines in the post-run console summary:
+`verifier/run_judges.sh` (synced into each task) runs
+[`verifier/run_llm_judge.py`](verifier/run_llm_judge.py) once per selected
+skill and eval agent (Codex, Claude Code, or Grok). Codex and Claude Code
+still go through pinned harbor-rewardkit; Grok uses the CLI because
+rewardkit 0.1.7 has no grok backend. Every agent gets the same workspace
+`*.py` listing and one retry on skip-inspect / invented paths. It keeps
+`reward-<skill>-<evalAgent>-details.json` plus an aggregate
+`reward-<skill>.json` that passes only if every eval agent passed.
+`run_benchmark.sh` prints those lines in the post-run console summary:
 
 ```text
   judge[srp] answer: yes
@@ -237,14 +242,11 @@ suite goes further:
   The runner never prints the key.
 - Auth (verifier): **default `evalAgent` inherits Grok**, so SuperGrok /
   `XAI_API_KEY` must reach the verifier. Codex `auth.json` is still mounted
-  for `evalAgent=codex`. [`verifier/run_grok_judge.py`](verifier/run_grok_judge.py)
-  shells out to the Grok CLI (`--json-schema`). That flag implies
-  `--output-format json`, so the helper unwraps `structured_output` from the
-  result envelope (rewardkit 0.1.7 has no grok agent backend). The judge gets
-  `--max-turns 16` so it can read workspace files before scoring; without
-  that it often answered no as "not yet inspected". Shared helpers in
+  for `evalAgent=codex`. [`verifier/run_llm_judge.py`](verifier/run_llm_judge.py)
+  runs every eval agent. Grok shells out to the CLI (`--json-schema`); Codex
+  and Claude Code use pinned harbor-rewardkit. Shared helpers in
   [`verifier/llm_judge/`](verifier/llm_judge/) list and inline the real
-  `*.py` files under `/Projects/app` so the model cannot score a hallucinated
+  `*.py` files under `/Projects/app` so no agent can score a hallucinated
   `app.py`. A no whose reasoning admits non-inspection or cites a `.py` path
   that is not in that listing is retried once (still inside the judge timeout).
 - Sign in once on the host: `grok login --oauth` (SuperGrok / Grok.com).

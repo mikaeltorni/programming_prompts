@@ -31,7 +31,9 @@ judges/
 
 `judge.toml` `judge = "codex"` is the rewardkit default. `./run_benchmark.sh`
 overwrites the backend at runtime from `evalAgent=` (Codex, Claude Code, or
-Grok). Programmatic `judge = "programmatic"` is never sent to an LLM.
+Grok). Every LLM eval agent is pinned to the real workspace `*.py` files and
+retries once on skip-inspect / invented paths. Programmatic
+`judge = "programmatic"` is never sent to an LLM.
 
 Add a skill by creating `judges/<name>/prompt.md` + `judge.toml`, and a matching
 `prompts/programming-skills/<name>/SKILL.md`. For a git-layout skill, use
