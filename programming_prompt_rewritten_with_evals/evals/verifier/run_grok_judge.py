@@ -8,6 +8,8 @@ rewardkit-shaped JSON next to ``--output``. ``--json-schema`` implies
 ``--output-format json``; scores live in ``structured_output``. The CLI is
 given ``--max-turns`` so it can read workspace files before filling the
 schema (a single-turn JSON dump was scoring no as "not yet inspected").
+The prompt also lists and inlines the real ``*.py`` files under
+``--workspace`` so the model cannot invent paths such as ``app.py``.
 
 ``--self-test`` covers prompt/schema/parse fixtures only — it never launches
 Grok or a Harbor trial.
@@ -20,6 +22,7 @@ import json
 import re
 import subprocess
 import sys
+import tempfile
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -34,11 +37,152 @@ _INSPECT_BEFORE_SCORE = (
     "inspected the source yet — inspect first. 'If unsure, answer no' "
     "applies only after you have read the Python."
 )
+_SKIP_DIR_NAMES = frozenset(
+    {
+        "__pycache__",
+        ".git",
+        ".hg",
+        ".svn",
+        ".venv",
+        "venv",
+        "site-packages",
+        ".worktrees",
+        "node_modules",
+        ".tox",
+        ".mypy_cache",
+        ".pytest_cache",
+    }
+)
+_MAX_LISTED_FILES = 40
+_MAX_FILE_BYTES = 80_000
+_MAX_TOTAL_BYTES = 200_000
 
 
 def _log(message: str) -> None:
     """Write a verifier diagnostic to stderr (stdout stays JSON/CLI)."""
     print(f"run_grok_judge: {message}", file=sys.stderr, flush=True)
+
+
+def _is_skipped_python(path: Path, workspace: Path) -> bool:
+    """Return True when *path* lives under junk/hidden dirs, not solution code.
+
+    Args:
+        path: Candidate ``*.py`` file.
+        workspace: Judge ``--workspace`` root.
+
+    Returns:
+        True to omit the file from the prompt listing.
+    """
+    try:
+        relative = path.resolve().relative_to(workspace.resolve())
+    except ValueError:
+        return True
+    for part in relative.parts:
+        if part in _SKIP_DIR_NAMES:
+            return True
+        if part.startswith(".") and part not in {".", ".."}:
+            return True
+    return False
+
+
+def list_workspace_python(workspace: Path) -> list[Path]:
+    """Return solution ``*.py`` files under *workspace*, junk dirs omitted.
+
+    Harbor trials keep the agent program at ``/Projects/app`` (often one
+    file such as ``temperature.py``). Listing those paths in the prompt
+    stops the judge from scoring a hallucinated ``app.py``.
+
+    Args:
+        workspace: Directory passed as ``--cwd`` to the Grok CLI.
+
+    Returns:
+        Sorted real files, capped at ``_MAX_LISTED_FILES``.
+    """
+    if not workspace.is_dir():
+        _log(f"workspace is not a directory: {workspace}")
+        return []
+    found: list[Path] = []
+    for path in sorted(workspace.rglob("*.py")):
+        if not path.is_file():
+            continue
+        if _is_skipped_python(path, workspace):
+            continue
+        found.append(path.resolve())
+        if len(found) >= _MAX_LISTED_FILES:
+            _log(
+                f"python listing capped at {_MAX_LISTED_FILES} files "
+                f"under {workspace}"
+            )
+            break
+    _log(
+        f"listed {len(found)} python file(s) under {workspace}: "
+        + ", ".join(p.name for p in found[:12])
+        + ("…" if len(found) > 12 else "")
+    )
+    return found
+
+
+def workspace_python_context(workspace: Path, files: list[Path]) -> str:
+    """Build the prompt block that names and inlines workspace Python.
+
+    Args:
+        workspace: Judge ``--workspace`` root (shown as absolute paths).
+        files: Paths from :func:`list_workspace_python`.
+
+    Returns:
+        Markdown listing every path and (budget permitting) file contents.
+    """
+    if not files:
+        _log(f"no python files to inline under {workspace}")
+        return (
+            f"No `*.py` files were found under {workspace}. "
+            "Do not invent paths such as app.py. Score only files that exist."
+        )
+    lines: list[str] = [
+        "Score ONLY these Python files. Do not invent other paths "
+        f"(for example {workspace / 'app.py'} is not a file unless listed):",
+    ]
+    root = workspace.resolve()
+    for path in files:
+        try:
+            relative = path.resolve().relative_to(root)
+        except ValueError:
+            relative = path.name
+        lines.append(f"- {path.resolve()}  (relative: {relative.as_posix()})")
+    lines.append("")
+    lines.append(
+        "File contents below are the workspace source. Score this text. "
+        "Do not substitute a different filename."
+    )
+    total = 0
+    for path in files:
+        try:
+            relative = path.resolve().relative_to(root)
+        except ValueError:
+            relative = Path(path.name)
+        rel_text = relative.as_posix()
+        try:
+            data = path.read_bytes()
+        except OSError as exc:
+            _log(f"unreadable python file {rel_text}: {exc}")
+            lines.append(f"\n### {rel_text}\n(unreadable: {exc})")
+            continue
+        truncated = False
+        if len(data) > _MAX_FILE_BYTES:
+            data = data[:_MAX_FILE_BYTES]
+            truncated = True
+            _log(f"truncated {rel_text} to {_MAX_FILE_BYTES} bytes")
+        if total + len(data) > _MAX_TOTAL_BYTES:
+            _log(f"omitted {rel_text}: inline budget {_MAX_TOTAL_BYTES} bytes")
+            lines.append(
+                f"\n### {rel_text}\n(omitted: remaining inline budget exhausted)"
+            )
+            continue
+        total += len(data)
+        text = data.decode("utf-8", errors="replace")
+        note = " (truncated)" if truncated else ""
+        lines.append(f"\n### {rel_text}{note}\n```python\n{text}\n```")
+    return "\n".join(lines)
 
 
 def load_judge_dir(judge_dir: Path) -> tuple[str, list[dict[str, str]], int]:
@@ -384,21 +528,32 @@ def build_grok_command(
     ]
 
 
-def inspect_prompt(template: str, criteria: list[dict[str, str]], workspace: Path) -> str:
-    """Fill ``{criteria}`` and require a file-read before scoring.
+def inspect_prompt(
+    template: str,
+    criteria: list[dict[str, str]],
+    workspace: Path,
+    python_files: list[Path] | None = None,
+) -> str:
+    """Fill ``{criteria}`` and pin scoring to real workspace Python files.
 
     Args:
         template: Judge prompt with a ``{criteria}`` placeholder.
         criteria: Name/description pairs from ``judge.toml``.
         workspace: Path shown in the inspect instruction.
+        python_files: Optional precomputed listing; ``None`` walks *workspace*.
 
     Returns:
         The full prompt passed to ``grok --single``.
     """
+    files = (
+        python_files if python_files is not None else list_workspace_python(workspace)
+    )
     return (
         template.replace("{criteria}", criteria_block(criteria))
         + f"\n\nInspect the Python in the current working directory ({workspace}).\n"
         + _INSPECT_BEFORE_SCORE
+        + "\n\n"
+        + workspace_python_context(workspace, files)
     )
 
 
@@ -545,12 +700,47 @@ def _self_test() -> int:
         "Score it.\n{criteria}\n",
         criteria,
         Path("/Projects/app"),
+        python_files=[],
     )
     check(
         "inspect_before_score",
         "Read every `*.py` file" in filled and "inspect first" in filled,
         "prompt forbids no-as-not-inspected",
     )
+    with tempfile.TemporaryDirectory(prefix="grok-judge-") as raw:
+        root = Path(raw)
+        (root / "temperature.py").write_text(
+            "def convert():\n    return 0\n", encoding="utf-8"
+        )
+        cache = root / "__pycache__"
+        cache.mkdir()
+        (cache / "ignored.py").write_text("# junk\n", encoding="utf-8")
+        venv_pkg = root / ".venv" / "lib"
+        venv_pkg.mkdir(parents=True)
+        (venv_pkg / "site.py").write_text("# venv\n", encoding="utf-8")
+        listed = list_workspace_python(root)
+        check(
+            "list_skips_junk",
+            [p.name for p in listed] == ["temperature.py"],
+            "listing keeps solution py and drops pycache/venv",
+        )
+        context = workspace_python_context(root, listed)
+        check(
+            "context_inlines_source",
+            "def convert():" in context and "Score ONLY these Python files" in context,
+            "prompt names and inlines the real file",
+        )
+        check(
+            "context_forbids_app_py",
+            "Do not invent other paths" in context and "ignored.py" not in context,
+            "prompt forbids invented paths and omits junk files",
+        )
+        pinned = inspect_prompt("Score it.\n{criteria}\n", criteria, root)
+        check(
+            "inspect_lists_temperature",
+            "temperature.py" in pinned and "def convert():" in pinned,
+            "full prompt includes the workspace path and source",
+        )
     failed = [name for name, ok, _ in cases if not ok]
     if failed:
         print(f"{len(failed)}/{len(cases)} grok-judge self-test(s) failed", flush=True)

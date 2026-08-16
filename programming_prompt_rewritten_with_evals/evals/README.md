@@ -241,7 +241,9 @@ suite goes further:
   `--output-format json`, so the helper unwraps `structured_output` from the
   result envelope (rewardkit 0.1.7 has no grok agent backend). The judge gets
   `--max-turns 16` so it can read workspace files before scoring; without
-  that it often answered no as "not yet inspected".
+  that it often answered no as "not yet inspected". The helper also lists
+  and inlines the real `*.py` files under `/Projects/app` in the prompt so
+  the model cannot score a hallucinated `app.py`.
 - Sign in once on the host: `grok login --oauth` (SuperGrok / Grok.com).
   Confirm with `test -f ~/.grok/auth.json && grok --version`.
 
