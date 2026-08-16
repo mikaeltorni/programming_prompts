@@ -4,6 +4,7 @@
 Layout (explorer-friendly, timestamp-first directory name):
 
   evals/runs/
+    RESULTS.txt                 # one compact line per run, newest first
     YYYY-MM-DD_HHMMSS__harness-…__mode-…__skills-…__separately-…__kN-nN/
       00-meta.json
       01-SUMMARY.txt
@@ -40,6 +41,9 @@ import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+
+
+RESULTS_INDEX_NAME = "RESULTS.txt"
 
 
 def _safe_slug(value: str, *, max_len: int = 80) -> str:
@@ -416,6 +420,196 @@ def append_summary(run_dir: Path, text: str, *, name: str = "01-SUMMARY.txt") ->
             handle.write("\n")
 
 
+def _log(message: str) -> None:
+    """Write an archive diagnostic to stderr (stdout stays paths/CLI)."""
+    print(f"archive: {message}", file=sys.stderr, flush=True)
+
+
+def _csv(values: list[str]) -> str:
+    """Join names with commas and no spaces."""
+    return ",".join(str(item).strip() for item in values if str(item).strip()) or "-"
+
+
+def _reward_float(path: Path) -> float | None:
+    """Return the numeric ``reward`` from a JSON file, if present."""
+    payload = _load_json_lenient(path)
+    if not payload or "reward" not in payload:
+        return None
+    try:
+        return float(payload["reward"])
+    except (TypeError, ValueError):
+        return None
+
+
+def _trial_task_name(trial_dir: Path) -> str:
+    """Return the coding-task prefix from a Harbor trial folder name."""
+    name = trial_dir.name
+    if "__" in name:
+        return name.split("__", 1)[0]
+    return name
+
+
+def collect_run_scores(run_dir: Path) -> dict[str, object]:
+    """Count pass rates from archived trial reward files.
+
+    Args:
+        run_dir: One ``evals/runs/<stamp>/`` archive.
+
+    Returns:
+        ``trials``, ``scored``, ``passed``, ``skills`` and ``tasks`` maps of
+        ``(passed, total)``.
+    """
+    trials = 0
+    scored = 0
+    passed = 0
+    skills: dict[str, list[int]] = {}
+    tasks: dict[str, list[int]] = {}
+    for trial in sorted(run_dir.glob("jobs/*/trials/*")):
+        if not trial.is_dir():
+            continue
+        trials += 1
+        task = _trial_task_name(trial)
+        task_bits = tasks.setdefault(task, [0, 0])
+        reward_path = trial / "01-reward.json"
+        value = _reward_float(reward_path) if reward_path.is_file() else None
+        if value is not None:
+            scored += 1
+            task_bits[1] += 1
+            if value >= 1.0:
+                passed += 1
+                task_bits[0] += 1
+        for path in sorted(trial.glob("03-reward-*.json")):
+            name = path.name
+            if name.endswith("-details.json"):
+                continue
+            skill = name[len("03-reward-") : -len(".json")]
+            if "-" in skill:
+                continue
+            skill_value = _reward_float(path)
+            if skill_value is None:
+                continue
+            bits = skills.setdefault(skill, [0, 0])
+            bits[1] += 1
+            if skill_value >= 1.0:
+                bits[0] += 1
+    return {
+        "trials": trials,
+        "scored": scored,
+        "passed": passed,
+        "skills": {name: (bits[0], bits[1]) for name, bits in skills.items()},
+        "tasks": {name: (bits[0], bits[1]) for name, bits in tasks.items()},
+    }
+
+
+def format_results_line(run_dir: Path) -> str:
+    """Build one compact RESULTS.txt line for *run_dir*.
+
+    Args:
+        run_dir: One ``evals/runs/<stamp>/`` archive.
+
+    Returns:
+        A single line: timestamp, mode, harness, evalAgent, skills, tasks,
+        k/n, separately, trial counts, pass rate, then per-skill and
+        per-task ``name=passed/total`` fields.
+    """
+    meta = _load_json_lenient(run_dir / "00-meta.json") or {}
+    scores = collect_run_scores(run_dir)
+    stamp = str(meta.get("timestamp") or run_dir.name.split("__", 1)[0])
+    harnesses = meta.get("harnesses") if isinstance(meta.get("harnesses"), list) else []
+    eval_agents = meta.get("eval_agents") if isinstance(meta.get("eval_agents"), list) else []
+    skills_meta = meta.get("skills") if isinstance(meta.get("skills"), list) else []
+    tasks_meta = meta.get("tasks") if isinstance(meta.get("tasks"), list) else []
+    scored = int(scores["scored"])
+    passed = int(scores["passed"])
+    pass_text = "n/a" if scored <= 0 else f"{passed}/{scored}"
+    fields = [
+        stamp,
+        f"mode={meta.get('mode') or '-'}",
+        f"harness={_csv(list(harnesses))}",
+        f"evalAgent={_csv(list(eval_agents)) if eval_agents else 'inherit'}",
+        f"skills={_csv(list(skills_meta))}",
+        f"tasks={_csv(list(tasks_meta))}",
+        f"k={int(meta.get('attempts_per_task') or 0)}",
+        f"n={int(meta.get('concurrent') or 0)}",
+        f"separately={'yes' if meta.get('run_separately') else 'no'}",
+        f"trials={int(scores['trials'])}",
+        f"scored={scored}",
+        f"pass={pass_text}",
+    ]
+    skill_rates = scores["skills"]
+    skill_names = list(skills_meta) + [
+        name for name in sorted(skill_rates) if name not in skills_meta
+    ]
+    for name in skill_names:
+        rate = skill_rates.get(name)
+        fields.append(f"{name}={rate[0]}/{rate[1]}" if rate else f"{name}=n/a")
+    task_rates = scores["tasks"]
+    task_names = [name for name in tasks_meta if name != "all"] + [
+        name for name in sorted(task_rates) if name not in tasks_meta
+    ]
+    for name in task_names:
+        rate = task_rates.get(name)
+        fields.append(f"{name}={rate[0]}/{rate[1]}" if rate else f"{name}=n/a")
+    return " ".join(fields)
+
+
+def list_run_dirs(runs_root: Path) -> list[Path]:
+    """Return archive directories under *runs_root*, newest first."""
+    found: list[Path] = []
+    if not runs_root.is_dir():
+        return found
+    for path in runs_root.iterdir():
+        if not path.is_dir():
+            continue
+        if path.name.startswith("."):
+            continue
+        if not (path / "00-meta.json").is_file():
+            continue
+        found.append(path)
+    found.sort(key=lambda item: item.name, reverse=True)
+    return found
+
+
+def rebuild_results_index(runs_root: Path) -> Path:
+    """Rewrite ``RESULTS.txt`` with one newest-first line per archived run.
+
+    Args:
+        runs_root: ``evals/runs/``.
+
+    Returns:
+        Path to ``RESULTS.txt``.
+    """
+    runs_root.mkdir(parents=True, exist_ok=True)
+    path = runs_root / RESULTS_INDEX_NAME
+    lines = [format_results_line(run_dir) for run_dir in list_run_dirs(runs_root)]
+    path.write_text(("\n".join(lines) + "\n") if lines else "", encoding="utf-8")
+    _log(f"wrote {path} lines={len(lines)}")
+    return path
+
+
+def prepend_results_line(runs_root: Path, run_dir: Path) -> Path:
+    """Put *run_dir*'s line at the top of ``RESULTS.txt``, dropping a prior copy.
+
+    Args:
+        runs_root: ``evals/runs/``.
+        run_dir: The run that just finished.
+
+    Returns:
+        Path to ``RESULTS.txt``.
+    """
+    line = format_results_line(run_dir)
+    path = runs_root / RESULTS_INDEX_NAME
+    existing: list[str] = []
+    if path.is_file():
+        existing = [item for item in path.read_text(encoding="utf-8").splitlines() if item.strip()]
+    stamp = line.split(" ", 1)[0]
+    kept = [item for item in existing if not item.startswith(stamp + " ")]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join([line, *kept]) + "\n", encoding="utf-8")
+    _log(f"prepended {path} stamp={stamp} pass={line.split('pass=', 1)[-1].split(' ', 1)[0]}")
+    return path
+
+
 def _git(cwd: Path, *args: str) -> None:
     """Run a git command with a local identity for archive fixtures."""
     env = os.environ.copy()
@@ -507,6 +701,112 @@ def _self_test() -> int:
             str(dest_code),
         )
 
+    with tempfile.TemporaryDirectory(prefix="archive-results-") as raw:
+        runs_root = Path(raw)
+
+        def write_run(
+            stamp: str,
+            *,
+            mode: str,
+            harness: str,
+            eval_agent: str,
+            overall: float,
+            skill_ok: float,
+        ) -> Path:
+            run_dir = runs_root / f"{stamp}__harness-{harness}__mode-{mode}"
+            trial = run_dir / "jobs" / f"{harness}-skills" / "trials" / "calculator__abc"
+            trial.mkdir(parents=True)
+            (trial / "01-reward.json").write_text(
+                json.dumps({"reward": overall}) + "\n", encoding="utf-8"
+            )
+            (trial / "03-reward-srp.json").write_text(
+                json.dumps({"reward": skill_ok}) + "\n", encoding="utf-8"
+            )
+            (trial / "03-reward-srp-codex.json").write_text(
+                json.dumps({"reward": skill_ok}) + "\n", encoding="utf-8"
+            )
+            write_meta(
+                run_dir,
+                {
+                    "timestamp": stamp,
+                    "harnesses": [harness],
+                    "eval_agents": [eval_agent],
+                    "mode": mode,
+                    "skills": ["srp"],
+                    "tasks": ["calculator"],
+                    "attempts_per_task": 5,
+                    "concurrent": 5,
+                    "run_separately": False,
+                },
+            )
+            return run_dir
+
+        older = write_run(
+            "2026-08-16_100000_1",
+            mode="baseline",
+            harness="codex",
+            eval_agent="cc",
+            overall=0.0,
+            skill_ok=0.0,
+        )
+        newer = write_run(
+            "2026-08-16_110000_2",
+            mode="positive",
+            harness="grok",
+            eval_agent="grok",
+            overall=1.0,
+            skill_ok=1.0,
+        )
+        index = rebuild_results_index(runs_root)
+        lines = index.read_text(encoding="utf-8").splitlines()
+        record(
+            "results_newest_first",
+            len(lines) == 2 and lines[0].startswith("2026-08-16_110000_2 "),
+            f"lines={len(lines)} first={lines[0][:40] if lines else ''}",
+        )
+        record(
+            "results_compact_pass",
+            "pass=1/1" in lines[0]
+            and "srp=1/1" in lines[0]
+            and "calculator=1/1" in lines[0]
+            and "mode=positive" in lines[0]
+            and "harness=grok" in lines[0]
+            and "evalAgent=grok" in lines[0],
+            lines[0] if lines else "missing",
+        )
+        record(
+            "results_skips_agent_skill_file",
+            "srp-codex" not in lines[0],
+            "per-agent 03-reward-srp-codex.json is not a column",
+        )
+        record(
+            "results_baseline_fail",
+            "pass=0/1" in lines[1] and "mode=baseline" in lines[1],
+            lines[1] if len(lines) > 1 else "missing",
+        )
+        extra = write_run(
+            "2026-08-16_120000_3",
+            mode="positive",
+            harness="codex",
+            eval_agent="codex",
+            overall=1.0,
+            skill_ok=1.0,
+        )
+        prepend_results_line(runs_root, extra)
+        prepend_results_line(runs_root, extra)
+        lines = index.read_text(encoding="utf-8").splitlines()
+        record(
+            "results_prepend_dedupes",
+            len(lines) == 3 and lines[0].startswith("2026-08-16_120000_3 "),
+            f"lines={len(lines)} first={lines[0][:40] if lines else ''}",
+        )
+        record(
+            "results_no_header",
+            all(" " in line and not line.startswith("#") for line in lines),
+            "file is only result lines",
+        )
+        del older, newer
+
     failed = [(name, msg) for name, ok, msg in cases if not ok]
     for name, ok, msg in cases:
         status = "PASS" if ok else "FAIL"
@@ -549,6 +849,12 @@ def main(argv: list[str] | None = None) -> int:
     finalize.add_argument("--summary-file", type=Path, default=None)
 
     sub.add_parser("self-test", help="Check Projects/ archive layout fixtures")
+
+    index = sub.add_parser(
+        "results-index",
+        help="Rewrite runs/RESULTS.txt from every archived run (newest first)",
+    )
+    index.add_argument("--runs-root", type=Path, required=True)
 
     args = parser.parse_args(argv)
 
@@ -616,11 +922,17 @@ def main(argv: list[str] | None = None) -> int:
         meta["jobs_dir"] = str(args.jobs_root)
         meta["jobs_temp"] = str(args.jobs_root)
         write_meta(args.run_dir, meta)
+        prepend_results_line(args.run_dir.parent, args.run_dir)
         print(args.run_dir)
         return 0
 
     if args.cmd == "self-test":
         return _self_test()
+
+    if args.cmd == "results-index":
+        path = rebuild_results_index(args.runs_root)
+        print(path)
+        return 0
 
     return 1
 
