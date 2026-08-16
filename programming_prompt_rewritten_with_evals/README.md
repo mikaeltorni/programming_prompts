@@ -52,7 +52,8 @@ Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
 - `evals/oracles/` — reference solutions for Harbor oracle
 - `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill
 - `evals/verifier/run_judges.sh` — shared Harbor verifier (one LLM judge pass per eval agent)
-- `evals/verifier/run_grok_judge.py` — Grok CLI eval-agent backend
+- `evals/verifier/run_llm_judge.py` — Codex / Claude Code / Grok eval-agent runner
+- `evals/verifier/llm_judge/` — pin workspace `*.py` files and retry skip-inspect scores
 - `evals/.generated/tasks/` — generated at runtime (gitignored, hidden)
 - `evals/run_benchmark.sh` — multi-harness runner (`harness=codex|cc|grok|both|all`, `evalAgent=…`)
 - `evals/run_codex_benchmark.sh` — shim → `run_benchmark.sh harness=codex`

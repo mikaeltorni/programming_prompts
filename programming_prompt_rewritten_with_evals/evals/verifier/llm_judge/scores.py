@@ -210,6 +210,23 @@ def parse_scores(
     return rows
 
 
+def _rewardkit_score_object(details: dict[str, Any]) -> dict[str, Any]:
+    """Unwrap rewardkit details to the object that holds ``criteria``.
+
+    Rewardkit writes ``{<reward_name>: {score, criteria, ...}}``. Our writer
+    uses ``{"reward": {score, criteria, ...}}``.
+    """
+    inner = details.get("reward")
+    if isinstance(inner, dict) and (
+        "criteria" in inner or "score" in inner or "judge_output" in inner
+    ):
+        return inner
+    for value in details.values():
+        if isinstance(value, dict) and isinstance(value.get("criteria"), list):
+            return value
+    return details
+
+
 def rows_from_rewardkit_details(
     details: dict[str, Any], criteria: list[dict[str, str]]
 ) -> list[dict[str, Any]]:
@@ -222,7 +239,7 @@ def rows_from_rewardkit_details(
     Returns:
         Dicts with ``name``, ``raw``, ``reward``, ``reasoning``.
     """
-    payload = details.get("reward") if isinstance(details.get("reward"), dict) else details
+    payload = _rewardkit_score_object(details)
     listed = payload.get("criteria") if isinstance(payload, dict) else None
     by_name: dict[str, dict[str, Any]] = {}
     if isinstance(listed, list):
