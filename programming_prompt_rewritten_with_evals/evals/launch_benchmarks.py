@@ -10,7 +10,7 @@ Usage (from ``evals/``)::
 
     ./launch_benchmarks.sh
     ./launch_benchmarks.sh --preset positive-all-harnesses-all-judges
-    ./launch_benchmarks.sh --preset baseline-codex-cc --yes
+    ./launch_benchmarks.sh --preset baseline-codex-cc
     ./launch_benchmarks.sh --list
     ./launch_benchmarks.sh --write-presets
     ./launch_benchmarks.sh --self-test
@@ -891,11 +891,6 @@ def menu_loop(display: Display, *, directory: Path = PRESETS_DIR) -> int:
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
             continue
-        confirm = _prompt(
-            f"Launch {len(preset.jobs)} job(s) on this monitor? [Y/n] "
-        ).strip().lower()
-        if confirm in {"n", "no"}:
-            continue
         launch_preset(preset, display)
     return 0
 
@@ -1241,7 +1236,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--yes",
         action="store_true",
-        help="With --preset: skip the launch confirmation",
+        help="With --preset: accepted for compatibility (confirmation is gone)",
     )
     args = parser.parse_args(argv)
 
@@ -1258,13 +1253,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.preset:
         path = resolve_preset(args.preset)
         preset = load_preset_file(path)
-        if not args.yes and not args.dry_run and sys.stdin.isatty():
-            answer = _prompt(
-                f"Launch {len(preset.jobs)} job(s) from {preset.name} "
-                "on this monitor? [Y/n] "
-            ).strip().lower()
-            if answer in {"n", "no"}:
-                return 0
+        _ = args.yes
         launch_preset(preset, display, dry_run=args.dry_run)
         return 0
 
