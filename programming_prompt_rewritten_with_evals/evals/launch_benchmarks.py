@@ -2,8 +2,9 @@
 """Interactive Harbor benchmark launcher with git-tracked presets.
 
 Opens one graphical terminal per job on the **same monitor** as the window
-that started this program (the menu / ``./launch_benchmarks.sh``). Presets
-live as JSON under ``evals/presets/`` and are safe to commit.
+that started this program (the menu / ``./launch_benchmarks.sh``). Windows are
+normal-sized and cascaded (not maximised or monitor-tiled). Presets live as
+JSON under ``evals/presets/`` and are safe to commit.
 
 Usage (from ``evals/``)::
 
@@ -41,10 +42,14 @@ XRANDR_CONNECTED_RE = re.compile(
     r"^(\S+)\s+connected(?:\s+primary)?\s+(\d+)x(\d+)\+(\d+)\+(\d+)",
     re.MULTILINE,
 )
-TILE_MARGIN_PX = 12
-TITLEBAR_PX = 36
-PLACE_RETRIES = 8
-PLACE_WAIT_SEC = 0.25
+# Ordinary terminal size — do not stretch to fill a monitor tile.
+NORMAL_WIDTH_PX = 1100
+NORMAL_HEIGHT_PX = 700
+GNOME_COLS = 100
+GNOME_ROWS = 32
+CASCADE_STEP_PX = 56
+PLACE_RETRIES = 3
+PLACE_WAIT_SEC = 0.15
 
 
 def log(message: str) -> None:
@@ -125,7 +130,7 @@ class Preset:
 
 @dataclass(frozen=True)
 class Rect:
-    """Pixel rectangle for a tiled terminal.
+    """Pixel rectangle for a cascaded terminal.
 
     Attributes:
         x: Left.
@@ -197,32 +202,41 @@ def monitor_for_point(monitors: Sequence[Monitor], px: int, py: int) -> Monitor 
     return min(monitors, key=lambda item: item.center_distance(px, py))
 
 
-def tile_rects(monitor: Monitor, count: int, *, margin: int = TILE_MARGIN_PX) -> list[Rect]:
-    """Pack *count* windows into *monitor* as a near-square grid.
+def cascade_rects(
+    monitor: Monitor,
+    count: int,
+    *,
+    width: int = NORMAL_WIDTH_PX,
+    height: int = NORMAL_HEIGHT_PX,
+    step: int = CASCADE_STEP_PX,
+) -> list[Rect]:
+    """Stack *count* normal-sized windows with a small offset on *monitor*.
 
     Args:
         monitor: Target display.
         count: Number of windows.
-        margin: Gap between tiles and the screen edge.
+        width: Desired pixel width (clamped to the monitor).
+        height: Desired pixel height (clamped to the monitor).
+        step: Cascade offset in pixels.
     """
     if count < 1:
         return []
-    cols = math.ceil(math.sqrt(count))
-    rows = math.ceil(count / cols)
-    inner_w = max(200, monitor.width - margin * (cols + 1))
-    inner_h = max(160, monitor.height - margin * (rows + 1) - TITLEBAR_PX)
-    cell_w = inner_w // cols
-    cell_h = inner_h // rows
+    width = min(width, max(640, monitor.width - 80))
+    height = min(height, max(400, monitor.height - 80))
+    max_x = monitor.x + max(0, monitor.width - width - 16)
+    max_y = monitor.y + max(0, monitor.height - height - 16)
+    start_x = min(monitor.x + 48, max_x)
+    start_y = min(monitor.y + 48, max_y)
+    span_x = max(step, max_x - start_x)
+    span_y = max(step, max_y - start_y)
     rects: list[Rect] = []
     for index in range(count):
-        col = index % cols
-        row = index // cols
         rects.append(
             Rect(
-                x=monitor.x + margin + col * (cell_w + margin),
-                y=monitor.y + margin + row * (cell_h + margin),
-                width=cell_w,
-                height=cell_h,
+                x=start_x + (index * step) % span_x,
+                y=start_y + (index * step) % span_y,
+                width=width,
+                height=height,
             )
         )
     return rects
@@ -421,7 +435,9 @@ class Display:
     def preferred_terminal(self) -> str:
         raise NotImplementedError
 
-    def spawn_terminal(self, title: str, cwd: Path, script: str) -> None:
+    def spawn_terminal(
+        self, title: str, cwd: Path, script: str, rect: Rect | None = None
+    ) -> None:
         raise NotImplementedError
 
     def place_window(self, title: str, rect: Rect) -> None:
@@ -470,7 +486,9 @@ class X11Display(Display):
             return "kitty"
         raise RuntimeError("need gnome-terminal or kitty on PATH")
 
-    def spawn_terminal(self, title: str, cwd: Path, script: str) -> None:
+    def spawn_terminal(
+        self, title: str, cwd: Path, script: str, rect: Rect | None = None
+    ) -> None:
         kind = self.preferred_terminal()
         if kind == "kitty":
             cmd = [
@@ -480,24 +498,36 @@ class X11Display(Display):
                 "--detach",
                 "--directory",
                 str(cwd),
+                "-o",
+                "remember_window_size=no",
+                "-o",
+                f"initial_window_width={rect.width if rect else NORMAL_WIDTH_PX}",
+                "-o",
+                f"initial_window_height={rect.height if rect else NORMAL_HEIGHT_PX}",
                 "bash",
                 "-lc",
                 script,
             ]
         else:
+            if rect is not None:
+                geometry = f"{GNOME_COLS}x{GNOME_ROWS}+{rect.x}+{rect.y}"
+            else:
+                geometry = f"{GNOME_COLS}x{GNOME_ROWS}"
             cmd = [
                 "gnome-terminal",
                 f"--title={title}",
+                f"--geometry={geometry}",
                 f"--working-directory={cwd}",
                 "--",
                 "bash",
                 "-lc",
                 script,
             ]
-        log(f"spawn {kind} title={title!r}")
+        log(f"spawn {kind} title={title!r} geometry={rect}")
         subprocess.Popen(cmd, cwd=str(cwd), env=os.environ.copy(), start_new_session=True)
 
     def place_window(self, title: str, rect: Rect) -> None:
+        """Move an already-normal-sized window; never stretch it to fill a tile."""
         last_error = ""
         for attempt in range(PLACE_RETRIES):
             try:
@@ -513,20 +543,14 @@ class X11Display(Display):
                         "windowmove",
                         str(rect.x),
                         str(rect.y),
-                        "windowsize",
-                        str(rect.width),
-                        str(rect.height),
                     ]
                 )
-                log(
-                    f"placed {title!r} at {rect.x},{rect.y} "
-                    f"{rect.width}x{rect.height}"
-                )
+                log(f"moved {title!r} to {rect.x},{rect.y}")
                 return
             except RuntimeError as exc:
                 last_error = str(exc)
                 time.sleep(PLACE_WAIT_SEC * (attempt + 1))
-        log(f"could not place {title!r} on this monitor: {last_error}")
+        log(f"could not move {title!r} onto this monitor: {last_error}")
 
 
 class FakeDisplay(Display):
@@ -543,6 +567,7 @@ class FakeDisplay(Display):
         self.terminal = terminal
         self.spawned: list[tuple[str, str]] = []
         self.placed: list[tuple[str, Rect]] = []
+        self.events: list[str] = []
 
     def active_window_center(self) -> tuple[int, int]:
         return self.center
@@ -553,10 +578,14 @@ class FakeDisplay(Display):
     def preferred_terminal(self) -> str:
         return self.terminal
 
-    def spawn_terminal(self, title: str, cwd: Path, script: str) -> None:
+    def spawn_terminal(
+        self, title: str, cwd: Path, script: str, rect: Rect | None = None
+    ) -> None:
+        self.events.append("spawn")
         self.spawned.append((title, script))
 
     def place_window(self, title: str, rect: Rect) -> None:
+        self.events.append("place")
         self.placed.append((title, rect))
 
 
@@ -585,7 +614,10 @@ def launch_preset(
     cwd: Path = EVALS_DIR,
     dry_run: bool = False,
 ) -> Monitor:
-    """Open each job on the monitor that contains this terminal.
+    """Open each job as a normal-sized window on this terminal's monitor.
+
+    Spawns every window first so they appear together, then nudges them
+    onto the monitor. Does not stretch windows to fill the display.
 
     Args:
         preset: Jobs to start.
@@ -605,15 +637,20 @@ def launch_preset(
         f"this window centre {cx},{cy} is on {monitor.name} "
         f"{monitor.width}x{monitor.height} at {monitor.x},{monitor.y}"
     )
-    rects = tile_rects(monitor, len(preset.jobs))
+    rects = cascade_rects(monitor, len(preset.jobs))
     for job, rect in zip(preset.jobs, rects, strict=True):
         title = window_title(job.title)
         script = terminal_script(title, job.args)
-        log(f"job {job.title}: {shell_command(job.args)} -> {rect.x},{rect.y}")
+        log(
+            f"job {job.title}: {shell_command(job.args)} "
+            f"-> {rect.x},{rect.y} {rect.width}x{rect.height}"
+        )
         if dry_run:
             continue
-        display.spawn_terminal(title, cwd, script)
-        display.place_window(title, rect)
+        display.spawn_terminal(title, cwd, script, rect)
+    if not dry_run:
+        for job, rect in zip(preset.jobs, rects, strict=True):
+            display.place_window(window_title(job.title), rect)
     log(f"launched {len(preset.jobs)} job(s) on {monitor.name}")
     return monitor
 
@@ -774,17 +811,32 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
         "portrait output",
     )
     dp4 = by_name["DP-4"]
-    tiles = tile_rects(dp4, 9)
-    record("tile_count", len(tiles) == 9, str(len(tiles)))
+    tiles = cascade_rects(dp4, 9)
+    record("cascade_count", len(tiles) == 9, str(len(tiles)))
     record(
-        "tiles_inside",
+        "cascade_normal_size",
+        all(rect.width == NORMAL_WIDTH_PX and rect.height == NORMAL_HEIGHT_PX for rect in tiles),
+        f"{tiles[0].width}x{tiles[0].height}" if tiles else "none",
+    )
+    record(
+        "cascade_not_maximized",
+        all(rect.height < dp4.height // 2 and rect.width < dp4.width // 2 for rect in tiles),
+        "smaller than half the monitor",
+    )
+    record(
+        "cascade_inside",
         all(
             dp4.contains(rect.x, rect.y)
             and rect.x + rect.width <= dp4.right
             and rect.y + rect.height <= dp4.bottom
             for rect in tiles
         ),
-        "3x3 stays on DP-4",
+        "cascade stays on DP-4",
+    )
+    record(
+        "cascade_offset",
+        len(tiles) >= 2 and (tiles[0].x != tiles[1].x or tiles[0].y != tiles[1].y),
+        "windows are staggered",
     )
     shipped = EVALS_DIR / "presets" / "positive-all-harnesses-all-judges.json"
     preset: Preset | None = None
@@ -844,6 +896,11 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
         record("fake_monitor", launched.name == "DP-4", launched.name)
         record("fake_spawn_count", len(fake.spawned) == 9, str(len(fake.spawned)))
         record("fake_placed_count", len(fake.placed) == 9, str(len(fake.placed)))
+        record(
+            "spawn_all_first",
+            fake.events[:9] == ["spawn"] * 9 and fake.events[9:] == ["place"] * 9,
+            str(fake.events),
+        )
         record(
             "fake_titles_prefixed",
             all(title.startswith(WINDOW_TITLE_PREFIX) for title, _ in fake.spawned),
