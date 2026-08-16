@@ -130,7 +130,7 @@ evals/
 ├── run_grok_benchmark.sh   # thin shim → run_benchmark.sh harness=grok
 ├── archive_benchmark_run.py
 ├── docker_networks.py      # prune leftover Harbor nets + cross-process IPAM slots
-├── launch_benchmarks.sh    # interactive preset menu; windows open on this monitor
+├── launch_benchmarks.sh    # interactive preset menu; normal windows on this monitor
 ├── launch_benchmarks.py
 ├── presets/                # git-tracked launch presets (JSON)
 ├── runs/                   # timestamped archives; RESULTS.txt is the one-line index
@@ -694,7 +694,8 @@ cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 
 Pick `1` for the shipped preset
 [`presets/positive-all-harnesses-all-judges.json`](presets/positive-all-harnesses-all-judges.json)
-(3 harnesses × 3 judges, all skills, positive, `-k 5 -n 5`). Or skip the menu:
+(3 harnesses × 3 judges, all skills, positive, `-k 5 -n 5`). Windows open at a
+normal size on this monitor (cascaded, not maximised). Or skip the menu:
 
 ```bash
 ./launch_benchmarks.sh --preset positive-all-harnesses-all-judges --yes
