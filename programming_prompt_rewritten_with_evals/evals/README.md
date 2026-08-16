@@ -119,7 +119,8 @@ evals/
 │   ├── README.md
 │   ├── run_judges.sh
 │   ├── check_worktree.py       # worktree layout judge + --self-test
-│   └── run_grok_judge.py       # Grok CLI eval agent (rewardkit has no grok)
+│   ├── run_grok_judge.py       # Grok CLI eval agent (rewardkit has no grok)
+│   └── llm_judge/              # shared pin-and-retry helpers for every eval agent
 ├── testing/
 ├── sync_tasks.sh           # coding-prompts → .generated/tasks/
 ├── sync_judges.sh          # judges + verifier → .generated/tasks/*/tests/
@@ -241,11 +242,11 @@ suite goes further:
   `--output-format json`, so the helper unwraps `structured_output` from the
   result envelope (rewardkit 0.1.7 has no grok agent backend). The judge gets
   `--max-turns 16` so it can read workspace files before scoring; without
-  that it often answered no as "not yet inspected". The helper also lists
-  and inlines the real `*.py` files under `/Projects/app` in the prompt so
-  the model cannot score a hallucinated `app.py`. A no whose reasoning
-  admits non-inspection or cites a `.py` path that is not in that listing
-  is retried once (still inside the judge timeout).
+  that it often answered no as "not yet inspected". Shared helpers in
+  [`verifier/llm_judge/`](verifier/llm_judge/) list and inline the real
+  `*.py` files under `/Projects/app` so the model cannot score a hallucinated
+  `app.py`. A no whose reasoning admits non-inspection or cites a `.py` path
+  that is not in that listing is retried once (still inside the judge timeout).
 - Sign in once on the host: `grok login --oauth` (SuperGrok / Grok.com).
   Confirm with `test -f ~/.grok/auth.json && grok --version`.
 
