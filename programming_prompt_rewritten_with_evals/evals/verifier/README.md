@@ -11,7 +11,10 @@ Canonical Harbor verify script for every coding task.
 LLM judges run once per Harbor `--ve EVAL_AGENTS=…` entry (`codex`, `cc`,
 `grok`). Unset `EVAL_AGENTS` keeps the historical Codex judge. Multiple agents
 score the same workspace independently; the skill passes only when every eval
-agent says yes. [`run_llm_judge.py`](run_llm_judge.py) pins the real workspace
+agent says yes. If one eval agent exits non-zero, the verifier continues the
+other agents and skills so Harbor still gets a reward file. Grok CLI envelopes
+that fail constrained decode still score when the yes/no JSON is in ``text``.
+[`run_llm_judge.py`](run_llm_judge.py) pins the real workspace
 `*.py` files into the prompt for every agent and retries once on skip-inspect
 or invented paths. Codex and Claude Code still use pinned harbor-rewardkit
 (with a writable `CLAUDE_CONFIG_DIR` / `CODEX_HOME`). Grok uses the CLI.

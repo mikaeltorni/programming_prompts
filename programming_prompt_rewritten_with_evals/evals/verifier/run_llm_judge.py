@@ -144,6 +144,34 @@ def _self_test() -> int:
         env_rows[0]["reward"] == 1.0,
         "unwrap structured_output from --output-format json",
     )
+    text_envelope = {
+        "modelUsage": {},
+        "num_turns": 1,
+        "requestId": "req",
+        "sessionId": "sess",
+        "stopReason": "stop",
+        "structuredOutput": {},
+        "structuredOutputError": "schema mismatch",
+        "text": json.dumps(
+            {
+                "function_commenting": {
+                    "score": "yes",
+                    "reasoning": (
+                        "All seven functions in counter.py have a short "
+                        "description plus exact Parameters: and Returns: labels"
+                    ),
+                }
+            }
+        ),
+        "thought": "",
+        "usage": {},
+    }
+    text_rows = parse_scores(json.dumps(text_envelope), commenting)
+    check(
+        "parse_grok_text_when_structured_output_fails",
+        text_rows[0]["reward"] == 1.0 and "counter.py" in text_rows[0]["reasoning"],
+        "unwrap scores from envelope text after structuredOutputError",
+    )
     named = parse_scores(
         '{"function_commenting": {"score": "no", "reasoning": "Args:"}}',
         commenting,

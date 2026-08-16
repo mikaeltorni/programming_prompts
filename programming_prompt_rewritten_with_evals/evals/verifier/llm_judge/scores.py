@@ -68,18 +68,34 @@ def _as_object(value: Any) -> dict[str, Any] | None:
     return None
 
 
+def _looks_like_scores(data: dict[str, Any]) -> bool:
+    """Return True when *data* is a yes/no score object or criterion map."""
+    if "score" in data and not isinstance(data.get("score"), dict):
+        return True
+    return any(isinstance(value, dict) and "score" in value for value in data.values())
+
+
 def _unwrap_agent_payload(payload: dict[str, Any]) -> dict[str, Any]:
     """Peel CLI ``--output-format json`` envelopes down to score JSON.
 
     Grok and Claude Code write
     ``{"type": "result", "structured_output": {...}, "result": "..."}``.
+    When constrained decode fails, Grok still puts the scores in ``text``
+    (with ``structuredOutputError`` set) — unwrap that string too.
+
+    Args:
+        payload: Parsed CLI JSON object.
     """
     for key in ("structured_output", "structuredOutput"):
         inner = _as_object(payload.get(key))
-        if inner:
+        if inner and _looks_like_scores(inner):
             return inner
     inner = _as_object(payload.get("result"))
-    if inner:
+    if inner and _looks_like_scores(inner):
+        return inner
+    inner = _as_object(payload.get("text"))
+    if inner and _looks_like_scores(inner):
+        log("unwrap scores from envelope text (structured output missing)")
         return inner
     return payload
 
