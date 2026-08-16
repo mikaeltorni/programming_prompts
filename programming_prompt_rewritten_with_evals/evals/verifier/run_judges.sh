@@ -191,7 +191,81 @@ setup_codex_home() {
   printf '%s' "$judge_home"
 }
 
-# Inject --effort for Claude -p judge calls without breaking `claude --version`.
+# Writable Claude config for the judge. The trial bind-mounts
+# /root/.claude/.credentials.json read-only; `claude -p` also writes sessions
+# and may refresh that file, which is what produced is_error with 0 tokens.
+setup_claude_home() {
+  local judge_home cred_src="" candidate token=""
+  judge_home="$(mktemp -d)"
+  mkdir -p "$judge_home/debug" "$judge_home/projects" "$judge_home/skills"
+  for candidate in \
+      "${HOME}/.claude/.credentials.json" \
+      /root/.claude/.credentials.json
+  do
+    if [[ -f "$candidate" ]]; then
+      cred_src="$candidate"
+      break
+    fi
+  done
+  if [[ -n "$cred_src" ]]; then
+    install -m 600 "$cred_src" "$judge_home/.credentials.json"
+    echo "Claude eval agent: copied credentials.json into writable CLAUDE_CONFIG_DIR (value not logged)" >&2
+  fi
+  if [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" && -f "$judge_home/.credentials.json" ]]; then
+    token="$(python3 - "$judge_home/.credentials.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    data = json.loads(path.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError):
+    raise SystemExit(0)
+oauth = data.get("claudeAiOauth") if isinstance(data, dict) else None
+token = oauth.get("accessToken") if isinstance(oauth, dict) else None
+if isinstance(token, str) and token.strip():
+    sys.stdout.write(token.strip())
+PY
+)"
+    if [[ -n "$token" ]]; then
+      CLAUDE_CODE_OAUTH_TOKEN="$token"
+      export CLAUDE_CODE_OAUTH_TOKEN
+      echo "Claude eval agent: loaded CLAUDE_CODE_OAUTH_TOKEN from credentials.json (value not logged)" >&2
+    fi
+  fi
+  if [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" && ! -f "$judge_home/.credentials.json" ]]; then
+    python3 - "$judge_home/.credentials.json" <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+token = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", "").strip()
+path = Path(sys.argv[1])
+path.write_text(
+    json.dumps({"claudeAiOauth": {"accessToken": token}}) + "\n",
+    encoding="utf-8",
+)
+path.chmod(0o600)
+PY
+    echo "Claude eval agent: wrote credentials.json from CLAUDE_CODE_OAUTH_TOKEN (value not logged)" >&2
+  fi
+  if [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" && ! -f "$judge_home/.credentials.json" ]]; then
+    echo "Claude Code eval agent needs CLAUDE_CODE_OAUTH_TOKEN or ~/.claude/.credentials.json" >&2
+    rm -rf "$judge_home"
+    return 1
+  fi
+  if [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]; then
+    umask 077
+    printf '%s' "$CLAUDE_CODE_OAUTH_TOKEN" >"$judge_home/oauth_token"
+  fi
+  echo "Claude eval agent: CLAUDE_CONFIG_DIR=${judge_home} token_set=$([[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]] && echo yes || echo no) credentials=$([[ -f "$judge_home/.credentials.json" ]] && echo yes || echo no)" >&2
+  printf '%s' "$judge_home"
+}
+
+# Inject --effort and bypassPermissions for Claude -p judge calls without
+# breaking `claude --version`.
 with_claude_effort() {
   local effort="$1"
   shift
@@ -209,7 +283,7 @@ real=$(printf '%q' "$real")
 effort=$(printf '%q' "$effort")
 for arg in "\$@"; do
   if [[ "\$arg" == "-p" || "\$arg" == "--print" ]]; then
-    exec "\$real" --effort "\$effort" "\$@"
+    exec "\$real" --effort "\$effort" --permission-mode bypassPermissions "\$@"
   fi
 done
 exec "\$real" "\$@"
@@ -265,14 +339,31 @@ run_llm_eval_agent() {
     cp "$prompt_file" "$work/prompt.md"
   fi
   if [[ "$eval_agent" == "cc" ]]; then
+    local judge_home
+    judge_home="$(setup_claude_home)" || return 1
+    if [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" && -f "$judge_home/oauth_token" ]]; then
+      CLAUDE_CODE_OAUTH_TOKEN="$(cat "$judge_home/oauth_token")"
+      export CLAUDE_CODE_OAUTH_TOKEN
+    fi
+    local -a claude_env=(
+      "CLAUDE_FORCE_OAUTH=true"
+      "REWARDKIT_FORCE_OAUTH=true"
+      "CLAUDE_CONFIG_DIR=$judge_home"
+      "IS_SANDBOX=1"
+      "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1"
+    )
+    if [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]; then
+      claude_env+=("CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}")
+    fi
     with_claude_effort "$effort" \
-      env CLAUDE_FORCE_OAUTH=true REWARDKIT_FORCE_OAUTH=true \
+      env "${claude_env[@]}" \
       uvx --from harbor-rewardkit@0.1.7 \
         rewardkit "$work" \
         --workspace /Projects/app \
         --output "$output_json" \
         --judge "$backend" \
         --model "$model"
+    rm -rf "$judge_home"
   else
     local judge_home
     judge_home="$(setup_codex_home "$effort")"
