@@ -10,6 +10,8 @@ given ``--max-turns`` so it can read workspace files before filling the
 schema (a single-turn JSON dump was scoring no as "not yet inspected").
 The prompt also lists and inlines the real ``*.py`` files under
 ``--workspace`` so the model cannot invent paths such as ``app.py``.
+A failing score that admits non-inspection or cites a ``.py`` path
+outside that listing is retried once.
 
 ``--self-test`` covers prompt/schema/parse fixtures only — it never launches
 Grok or a Harbor trial.
@@ -23,6 +25,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -56,6 +59,18 @@ _SKIP_DIR_NAMES = frozenset(
 _MAX_LISTED_FILES = 40
 _MAX_FILE_BYTES = 80_000
 _MAX_TOTAL_BYTES = 200_000
+MIN_RETRY_SECONDS = 40
+_NOT_INSPECTED = re.compile(
+    r"not inspected|withheld until|have not yet(?:\s+\w+){0,8}\s+inspect"
+    r"|have not inspected|until the workspace python is inspected"
+    r"|scoring is withheld|have not yet verified"
+    r"|without (?:an? )?actual file",
+    re.IGNORECASE,
+)
+_PY_MENTION = re.compile(
+    r"(?:(?:\.{0,2}/)?[\w.-]+(?:/[\w.-]+)*)\.py",
+    re.IGNORECASE,
+)
 
 
 def _log(message: str) -> None:
@@ -183,6 +198,109 @@ def workspace_python_context(workspace: Path, files: list[Path]) -> str:
         note = " (truncated)" if truncated else ""
         lines.append(f"\n### {rel_text}{note}\n```python\n{text}\n```")
     return "\n".join(lines)
+
+
+def listed_python_keys(files: list[Path], workspace: Path) -> set[str]:
+    """Lowercased names and paths the judge is allowed to cite.
+
+    Args:
+        files: Paths from :func:`list_workspace_python`.
+        workspace: Judge ``--workspace`` root.
+
+    Returns:
+        Absolute paths, relative paths, and basenames.
+    """
+    keys: set[str] = set()
+    root = workspace.resolve()
+    for path in files:
+        resolved = path.resolve()
+        keys.add(resolved.name.lower())
+        keys.add(str(resolved).lower())
+        keys.add(resolved.as_posix().lower())
+        keys.add(str(workspace / resolved.name).lower())
+        keys.add(f"{workspace.as_posix()}/{resolved.name}".lower())
+        try:
+            relative = resolved.relative_to(root)
+            keys.add(relative.as_posix().lower())
+            keys.add(str(relative).lower())
+        except ValueError:
+            pass
+    return keys
+
+
+def mentioned_python_paths(reasoning: str) -> list[str]:
+    """Return ``.py`` paths cited in judge reasoning.
+
+    Args:
+        reasoning: Free-text ``reasoning`` field from Grok.
+
+    Returns:
+        Path-like strings in mention order (trailing punctuation stripped).
+    """
+    found: list[str] = []
+    for match in _PY_MENTION.findall(reasoning):
+        cleaned = match.rstrip(")'\".,;:")
+        if cleaned:
+            found.append(cleaned)
+    return found
+
+
+def _path_is_listed(mentioned: str, keys: set[str]) -> bool:
+    """Return True when *mentioned* matches a listed workspace Python file."""
+    text = mentioned.strip().lower()
+    if text in keys:
+        return True
+    return Path(text).name.lower() in keys
+
+
+def unreliable_score_reason(
+    rows: list[dict[str, Any]], listed_keys: set[str]
+) -> str | None:
+    """Return why a failing score looks untrustworthy, or None.
+
+    Triggers on skip-inspect wording or ``.py`` citations that are not in
+    the workspace listing. Passing criteria are ignored.
+
+    Args:
+        rows: Parsed criterion scores from :func:`parse_scores`.
+        listed_keys: Lowercased names from :func:`listed_python_keys`.
+
+    Returns:
+        ``not_inspected:<criterion>`` or ``wrong_path:<criterion>:<file>``.
+    """
+    for row in rows:
+        if float(row["reward"]) >= 1.0:
+            continue
+        reasoning = str(row.get("reasoning") or "")
+        name = str(row["name"])
+        if _NOT_INSPECTED.search(reasoning):
+            return f"not_inspected:{name}"
+        mentioned = mentioned_python_paths(reasoning)
+        if not mentioned:
+            continue
+        if any(_path_is_listed(item, listed_keys) for item in mentioned):
+            continue
+        return f"wrong_path:{name}:{Path(mentioned[0]).name}"
+    return None
+
+
+def retry_prompt(prompt: str, reason: str) -> str:
+    """Append a one-shot correction after an unusable first score.
+
+    Args:
+        prompt: Original judge prompt (criteria and files already filled).
+        reason: Short token from :func:`unreliable_score_reason` (no secrets).
+
+    Returns:
+        Prompt for the retry ``grok --single`` call.
+    """
+    return (
+        prompt
+        + "\n\nRETRY: the previous JSON score was unusable "
+        + f"({reason}). Score ONLY the Python files listed above. "
+        + "Do not invent app.py. Do not answer no because you have not "
+        + "inspected — the source is in this prompt.\n"
+    )
 
 
 def load_judge_dir(judge_dir: Path) -> tuple[str, list[dict[str, str]], int]:
@@ -614,6 +732,79 @@ def run_grok(
     return proc.stdout or ""
 
 
+def run_grok_until_reliable(
+    *,
+    prompt: str,
+    schema: dict[str, Any],
+    workspace: Path,
+    model: str,
+    effort: str,
+    timeout: int,
+    max_turns: int,
+    criteria: list[dict[str, str]],
+    listed_keys: set[str],
+    invoke: Any | None = None,
+) -> tuple[str, list[dict[str, Any]]]:
+    """Run the Grok judge, retrying once on skip-inspect or invented paths.
+
+    Args:
+        prompt: Full judge prompt (criteria and files already filled).
+        schema: JSON Schema for ``--json-schema``.
+        workspace: Working directory the CLI may inspect.
+        model: Grok model id.
+        effort: ``low``, ``medium``, or ``high``.
+        timeout: Wall budget in seconds for both attempts combined.
+        max_turns: Agent rounds per attempt.
+        criteria: Name/description pairs from ``judge.toml``.
+        listed_keys: Allowed ``.py`` citations from :func:`listed_python_keys`.
+        invoke: Optional runner (``--self-test`` injects a fake; default
+            :func:`run_grok`). Must accept the same keyword args as
+            :func:`run_grok` and return stdout text.
+
+    Returns:
+        Raw stdout and parsed rows from the last attempt used.
+    """
+    runner = invoke or run_grok
+    started = time.monotonic()
+    raw = runner(
+        prompt=prompt,
+        schema=schema,
+        workspace=workspace,
+        model=model,
+        effort=effort,
+        timeout=timeout,
+        max_turns=max_turns,
+    )
+    rows = parse_scores(raw, criteria)
+    reason = unreliable_score_reason(rows, listed_keys)
+    if reason is None:
+        return raw, rows
+    remaining = timeout - (time.monotonic() - started) - 5
+    if remaining < MIN_RETRY_SECONDS:
+        _log(
+            f"skip retry reason={reason} remaining_s={remaining:.0f} "
+            f"min_s={MIN_RETRY_SECONDS}"
+        )
+        return raw, rows
+    _log(f"retrying grok judge once reason={reason} remaining_s={remaining:.0f}")
+    raw_retry = runner(
+        prompt=retry_prompt(prompt, reason),
+        schema=schema,
+        workspace=workspace,
+        model=model,
+        effort=effort,
+        timeout=int(remaining),
+        max_turns=max_turns,
+    )
+    rows_retry = parse_scores(raw_retry, criteria)
+    second = unreliable_score_reason(rows_retry, listed_keys)
+    if second:
+        _log(f"retry still unreliable reason={second}")
+    else:
+        _log("retry produced a usable score")
+    return raw_retry, rows_retry
+
+
 def _self_test() -> int:
     """Parse/schema fixtures only — does not launch Grok."""
     cases: list[tuple[str, bool, str]] = []
@@ -741,6 +932,142 @@ def _self_test() -> int:
             "temperature.py" in pinned and "def convert():" in pinned,
             "full prompt includes the workspace path and source",
         )
+        listed_keys = listed_python_keys(listed, root)
+        withheld = [
+            {
+                "name": "single_responsibility",
+                "reward": 0.0,
+                "reasoning": (
+                    "Scoring is withheld until the workspace Python is inspected."
+                ),
+            }
+        ]
+        check(
+            "retry_not_inspected",
+            unreliable_score_reason(withheld, listed_keys)
+            == "not_inspected:single_responsibility",
+            "skip-inspect no is flagged for retry",
+        )
+        invented = [
+            {
+                "name": "function_commenting",
+                "reward": 0.0,
+                "reasoning": (
+                    "Checked /Projects/app/app.py; Parameters: and Returns: missing."
+                ),
+            }
+        ]
+        invented_reason = unreliable_score_reason(invented, listed_keys)
+        check(
+            "retry_wrong_path",
+            invented_reason == "wrong_path:function_commenting:app.py",
+            "hallucinated app.py is flagged for retry",
+        )
+        legitimate = [
+            {
+                "name": "function_commenting",
+                "reward": 0.0,
+                "reasoning": "temperature.py uses Args: instead of Parameters:",
+            }
+        ]
+        check(
+            "retry_skips_real_file_no",
+            unreliable_score_reason(legitimate, listed_keys) is None,
+            "a no that cites the real file is not retried",
+        )
+        passing = [
+            {
+                "name": "single_responsibility",
+                "reward": 1.0,
+                "reasoning": "Scoring is withheld until inspected",
+            }
+        ]
+        check(
+            "retry_ignores_passing",
+            unreliable_score_reason(passing, listed_keys) is None,
+            "yes scores are not retried even with skip-inspect wording",
+        )
+        calls: list[str] = []
+
+        def fake_retry(**kwargs: Any) -> str:
+            calls.append(str(kwargs["prompt"]))
+            if len(calls) == 1:
+                return json.dumps(
+                    {
+                        "single_responsibility": {
+                            "score": "no",
+                            "reasoning": (
+                                "Scoring is withheld until the workspace "
+                                "Python is inspected."
+                            ),
+                        }
+                    }
+                )
+            return json.dumps(
+                {
+                    "single_responsibility": {
+                        "score": "yes",
+                        "reasoning": "temperature.py splits parse and core",
+                    }
+                }
+            )
+
+        retried_raw, retried_rows = run_grok_until_reliable(
+            prompt="score it",
+            schema=schema,
+            workspace=root,
+            model="grok-4.6",
+            effort="low",
+            timeout=180,
+            max_turns=16,
+            criteria=criteria,
+            listed_keys=listed_keys,
+            invoke=fake_retry,
+        )
+        check(
+            "retry_loop_second_call",
+            len(calls) == 2
+            and "RETRY" in calls[1]
+            and retried_rows[0]["reward"] == 1.0
+            and "yes" in retried_raw,
+            "one retry replaces skip-inspect no with a usable yes",
+        )
+        skip_calls: list[str] = []
+
+        def fake_too_slow(**kwargs: Any) -> str:
+            skip_calls.append("called")
+            time.sleep(0.05)
+            return json.dumps(
+                {
+                    "single_responsibility": {
+                        "score": "no",
+                        "reasoning": (
+                            "Scoring is withheld until the workspace "
+                            "Python is inspected."
+                        ),
+                    }
+                }
+            )
+
+        skipped_raw, skipped_rows = run_grok_until_reliable(
+            prompt="score it",
+            schema=schema,
+            workspace=root,
+            model="grok-4.6",
+            effort="low",
+            timeout=1,
+            max_turns=16,
+            criteria=criteria,
+            listed_keys=listed_keys,
+            invoke=fake_too_slow,
+        )
+        check(
+            "retry_skipped_when_budget_low",
+            len(skip_calls) == 1
+            and skipped_rows[0]["reward"] == 0.0
+            and "withheld" in skipped_raw,
+            "no second grok call when remaining timeout is under the floor",
+        )
     failed = [name for name, ok, _ in cases if not ok]
     if failed:
         print(f"{len(failed)}/{len(cases)} grok-judge self-test(s) failed", flush=True)
@@ -772,9 +1099,12 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--judge-dir and --output are required unless --self-test")
     template, criteria, toml_timeout = load_judge_dir(args.judge_dir)
     timeout = args.timeout or toml_timeout
-    prompt = inspect_prompt(template, criteria, args.workspace)
+    files = list_workspace_python(args.workspace)
+    prompt = inspect_prompt(
+        template, criteria, args.workspace, python_files=files
+    )
     schema = response_schema(criteria)
-    raw = run_grok(
+    raw, rows = run_grok_until_reliable(
         prompt=prompt,
         schema=schema,
         workspace=args.workspace,
@@ -782,8 +1112,9 @@ def main(argv: list[str] | None = None) -> int:
         effort=args.reasoning_effort,
         timeout=timeout,
         max_turns=args.max_turns,
+        criteria=criteria,
+        listed_keys=listed_python_keys(files, args.workspace),
     )
-    rows = parse_scores(raw, criteria)
     write_reward(args.output, rows, raw)
     return 0
 
