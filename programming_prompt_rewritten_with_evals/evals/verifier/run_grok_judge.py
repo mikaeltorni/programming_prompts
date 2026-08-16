@@ -4,7 +4,8 @@
 Rewardkit 0.1.7 only registers ``codex`` and ``claude-code`` as agent judges.
 This helper shells out to the pinned ``grok`` CLI with ``--json-schema`` so
 ``evalAgent=grok`` uses the same harness as the coding agent, then writes
-rewardkit-shaped JSON next to ``--output``.
+rewardkit-shaped JSON next to ``--output``. ``--json-schema`` implies
+``--output-format json``; scores live in ``structured_output``.
 
 ``--self-test`` covers prompt/schema/parse fixtures only — it never launches
 Grok or a Harbor trial.
@@ -84,26 +85,16 @@ def criteria_block(criteria: list[dict[str, str]]) -> str:
         )
     lines.append("")
     lines.append("Respond with a JSON object. Example:")
-    if len(criteria) == 1:
-        example: dict[str, Any] = {"score": "yes", "reasoning": "..."}
-    else:
-        example = {
-            item["name"]: {"score": "yes", "reasoning": "..."} for item in criteria
-        }
+    example = {
+        item["name"]: {"score": "yes", "reasoning": "..."} for item in criteria
+    }
     lines.append(json.dumps(example, indent=2))
     return "\n".join(lines)
 
 
-def response_schema(criteria: list[dict[str, str]]) -> dict[str, Any]:
-    """Return the JSON Schema passed to ``grok --json-schema``.
-
-    Args:
-        criteria: Name/description pairs from ``judge.toml``.
-
-    Returns:
-        A schema matching rewardkit's single- vs multi-criterion shapes.
-    """
-    entry = {
+def _score_entry_schema() -> dict[str, Any]:
+    """JSON Schema for one yes/no criterion object."""
+    return {
         "type": "object",
         "properties": {
             "score": {"type": "string", "enum": ["yes", "no"]},
@@ -112,9 +103,23 @@ def response_schema(criteria: list[dict[str, str]]) -> dict[str, Any]:
         "required": ["score", "reasoning"],
         "additionalProperties": False,
     }
-    if len(criteria) == 1:
-        return entry
-    props = {item["name"]: entry for item in criteria}
+
+
+def response_schema(criteria: list[dict[str, str]]) -> dict[str, Any]:
+    """Return the JSON Schema passed to ``grok --json-schema``.
+
+    Always keyed by criterion name (including a single criterion). Grok's
+    constrained decode drops unknown keys; a flat ``{score, reasoning}``
+    schema therefore yielded ``structured_output: {}`` when the model used
+    the criterion name, and ``parse_scores`` saw ``None``.
+
+    Args:
+        criteria: Name/description pairs from ``judge.toml``.
+
+    Returns:
+        An object schema whose properties are the criterion names.
+    """
+    props = {item["name"]: _score_entry_schema() for item in criteria}
     return {
         "type": "object",
         "properties": props,
@@ -123,38 +128,114 @@ def response_schema(criteria: list[dict[str, str]]) -> dict[str, Any]:
     }
 
 
-def _extract_json_object(text: str) -> dict[str, Any]:
-    """Parse a JSON object from Grok stdout (fence, envelope, or raw)."""
-    stripped = text.strip()
-    fence = _JSON_FENCE.search(stripped)
-    blob = fence.group(1) if fence else stripped
-    try:
-        payload = json.loads(blob)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", stripped, re.DOTALL)
-        if not match:
-            raise ValueError(f"Grok judge returned no JSON: {stripped[:200]}") from None
-        payload = json.loads(match.group(0))
-    if not isinstance(payload, dict):
-        raise ValueError(f"Grok judge JSON is not an object: {type(payload).__name__}")
-    if isinstance(payload.get("structured_output"), dict):
-        inner = payload["structured_output"]
-        if isinstance(inner, dict):
-            return inner
-    if isinstance(payload.get("result"), str):
+def _as_object(value: Any) -> dict[str, Any] | None:
+    """Return *value* as a dict, parsing a JSON object string when needed."""
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        stripped = value.strip()
         try:
-            nested = json.loads(payload["result"])
-            if isinstance(nested, dict):
-                return nested
+            parsed = json.loads(stripped)
         except json.JSONDecodeError:
-            pass
+            fence = _JSON_FENCE.search(stripped)
+            if not fence:
+                return None
+            try:
+                parsed = json.loads(fence.group(1))
+            except json.JSONDecodeError:
+                return None
+        return parsed if isinstance(parsed, dict) else None
+    return None
+
+
+def _unwrap_grok_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    """Peel Grok ``--output-format json`` envelopes down to score JSON.
+
+    ``--json-schema`` implies that format. The CLI writes
+    ``{"type": "result", "structured_output": {...}, "result": "..."}``.
+    """
+    for key in ("structured_output", "structuredOutput"):
+        inner = _as_object(payload.get(key))
+        if inner:
+            return inner
+    inner = _as_object(payload.get("result"))
+    if inner:
+        return inner
     return payload
+
+
+def _json_objects_from_text(text: str) -> list[dict[str, Any]]:
+    """Collect JSON objects from a blob, JSONL stream, or fenced block."""
+    stripped = text.strip()
+    found: list[dict[str, Any]] = []
+    fence = _JSON_FENCE.search(stripped)
+    if fence:
+        obj = _as_object(fence.group(1))
+        if obj is not None:
+            found.append(obj)
+    try:
+        payload = json.loads(stripped)
+        if isinstance(payload, dict):
+            found.append(payload)
+        return found
+    except json.JSONDecodeError:
+        pass
+    for line in stripped.splitlines():
+        obj = _as_object(line.strip())
+        if obj is not None:
+            found.append(obj)
+    if found:
+        return found
+    match = re.search(r"\{.*\}", stripped, re.DOTALL)
+    if match:
+        obj = _as_object(match.group(0))
+        if obj is not None:
+            found.append(obj)
+    return found
+
+
+def _extract_json_object(text: str) -> dict[str, Any]:
+    """Parse score JSON from Grok stdout (fence, JSONL, envelope, or raw)."""
+    objects = _json_objects_from_text(text)
+    if not objects:
+        raise ValueError(f"Grok judge returned no JSON: {text.strip()[:200]}")
+    chosen = objects[-1]
+    for candidate in reversed(objects):
+        if candidate.get("structured_output") or candidate.get("type") == "result":
+            chosen = candidate
+            break
+    unwrapped = _unwrap_grok_payload(chosen)
+    if unwrapped is chosen and chosen.get("type") == "result":
+        _log(
+            "grok envelope has no structured_output "
+            f"subtype={chosen.get('subtype')!r} is_error={chosen.get('is_error')!r} "
+            f"keys={sorted(chosen)}"
+        )
+    return unwrapped
+
+
+def _criterion_entry(data: dict[str, Any], name: str) -> dict[str, Any] | None:
+    """Return the score object for *name*, including a flat yes/no payload."""
+    entry = data.get(name)
+    if isinstance(entry, dict) and "score" in entry:
+        return entry
+    if isinstance(entry, str):
+        return {"score": entry, "reasoning": str(data.get("reasoning") or "")}
+    if "score" in data and not isinstance(data.get("score"), dict):
+        return {
+            "score": data["score"],
+            "reasoning": str(data.get("reasoning") or ""),
+        }
+    return None
 
 
 def parse_scores(
     text: str, criteria: list[dict[str, str]]
 ) -> list[dict[str, Any]]:
     """Turn Grok JSON into per-criterion reward rows.
+
+    Accepts the Grok CLI result envelope, a flat ``{score, reasoning}``
+    object, or ``{<criterion>: {score, reasoning}}``.
 
     Args:
         text: Raw CLI stdout.
@@ -164,15 +245,25 @@ def parse_scores(
         Dicts with ``name``, ``raw``, ``reward``, ``reasoning``.
     """
     data = _extract_json_object(text)
-    if len(criteria) == 1 and "score" in data and not isinstance(data["score"], dict):
+    if (
+        len(criteria) == 1
+        and "score" in data
+        and not isinstance(data["score"], dict)
+        and criteria[0]["name"] not in data
+    ):
         data = {criteria[0]["name"]: data}
     rows: list[dict[str, Any]] = []
     for item in criteria:
         name = item["name"]
-        entry = data.get(name)
-        if not isinstance(entry, dict) or "score" not in entry:
+        entry = _criterion_entry(data, name)
+        if entry is None:
+            _log(
+                f"parse failed for {name!r}; payload keys={sorted(data)} "
+                f"stdout_prefix={text.strip()[:240]!r}"
+            )
             raise ValueError(
-                f"Grok criterion {name!r} missing score object; got {entry!r}"
+                f"Grok criterion {name!r} missing score object; "
+                f"got {data.get(name)!r} keys={sorted(data)}"
             )
         raw = entry["score"]
         raw_text = str(raw).strip().lower()
@@ -312,8 +403,8 @@ def _self_test() -> int:
     schema = response_schema(criteria)
     check(
         "single_schema",
-        schema.get("required") == ["score", "reasoning"],
-        "flat yes/no schema for one criterion",
+        schema.get("required") == ["single_responsibility"],
+        "named yes/no schema even for one criterion",
     )
     block = criteria_block(criteria)
     check("criteria_token", '"yes" or "no"' in block, "prompt lists yes/no scores")
@@ -331,6 +422,30 @@ def _self_test() -> int:
         criteria,
     )
     check("parse_fence_no", rows_no[0]["reward"] == 0.0, "fenced no maps to 0.0")
+    envelope = {
+        "type": "result",
+        "subtype": "success",
+        "is_error": False,
+        "result": "Here's a summary...",
+        "structured_output": {
+            "function_commenting": {
+                "score": "yes",
+                "reasoning": "Parameters and Returns present",
+            }
+        },
+    }
+    commenting = [{"name": "function_commenting", "description": "docs"}]
+    env_rows = parse_scores(json.dumps(envelope), commenting)
+    check(
+        "parse_grok_envelope",
+        env_rows[0]["reward"] == 1.0,
+        "unwrap structured_output from --output-format json",
+    )
+    named = parse_scores(
+        '{"function_commenting": {"score": "no", "reasoning": "Args:"}}',
+        commenting,
+    )
+    check("parse_named_key", named[0]["reward"] == 0.0, "criterion-name key")
     multi = [
         {"name": "srp", "description": "SRP"},
         {"name": "commenting", "description": "docs"},
