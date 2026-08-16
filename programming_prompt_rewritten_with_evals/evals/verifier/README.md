@@ -12,8 +12,8 @@ LLM judges run once per Harbor `--ve EVAL_AGENTS=…` entry (`codex`, `cc`,
 score the same workspace independently; the skill passes only when every eval
 agent says yes. The Claude Code judge copies credentials into a writable
 `CLAUDE_CONFIG_DIR` (the trial mount is read-only). [`run_grok_judge.py`](run_grok_judge.py)
-unwraps Grok `--output-format json` envelopes. Programmatic worktree scoring
-is unchanged.
+unwraps Grok `--output-format json` envelopes and allows `--max-turns` so the
+agent can read files before scoring. Programmatic worktree scoring is unchanged.
 
 LLM judge text stays in `../judges/<skill>/prompt.md`. The worktree skill is
 **programmatic**: `run_judges.sh` runs `check_worktree.py` against

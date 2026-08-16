@@ -5,7 +5,9 @@ Rewardkit 0.1.7 only registers ``codex`` and ``claude-code`` as agent judges.
 This helper shells out to the pinned ``grok`` CLI with ``--json-schema`` so
 ``evalAgent=grok`` uses the same harness as the coding agent, then writes
 rewardkit-shaped JSON next to ``--output``. ``--json-schema`` implies
-``--output-format json``; scores live in ``structured_output``.
+``--output-format json``; scores live in ``structured_output``. The CLI is
+given ``--max-turns`` so it can read workspace files before filling the
+schema (a single-turn JSON dump was scoring no as "not yet inspected").
 
 ``--self-test`` covers prompt/schema/parse fixtures only — it never launches
 Grok or a Harbor trial.
@@ -24,7 +26,14 @@ from typing import Any
 
 
 DEFAULT_WORKSPACE = Path("/Projects/app")
+DEFAULT_MAX_TURNS = 16
 _JSON_FENCE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL)
+_INSPECT_BEFORE_SCORE = (
+    "Read every `*.py` file in the working directory before you score. "
+    "Use tools to open the files. Do not answer no because you have not "
+    "inspected the source yet — inspect first. 'If unsure, answer no' "
+    "applies only after you have read the Python."
+)
 
 
 def _log(message: str) -> None:
@@ -329,16 +338,19 @@ def write_reward(
     _log(f"wrote reward={overall} to {output}")
 
 
-def run_grok(
+def build_grok_command(
     *,
     prompt: str,
     schema: dict[str, Any],
     workspace: Path,
     model: str,
     effort: str,
-    timeout: int,
-) -> str:
-    """Invoke the Grok CLI as a headless structured-output judge.
+    max_turns: int = DEFAULT_MAX_TURNS,
+) -> list[str]:
+    """Return the Grok CLI argv for a headless judge call.
+
+    ``--single`` is one user prompt, not one model turn. ``--max-turns``
+    lets the agent read workspace files before emitting ``structured_output``.
 
     Args:
         prompt: Full judge prompt (criteria already substituted).
@@ -346,17 +358,12 @@ def run_grok(
         workspace: Working directory the CLI may inspect.
         model: Grok model id.
         effort: ``low``, ``medium``, or ``high``.
-        timeout: Subprocess timeout in seconds.
+        max_turns: Agent tool/model rounds before the CLI must stop.
 
     Returns:
-        Decoded stdout.
-
-    Raises:
-        FileNotFoundError: When ``grok`` is not on PATH.
-        subprocess.CalledProcessError: When the CLI exits non-zero.
-        subprocess.TimeoutExpired: When the CLI exceeds *timeout*.
+        Argument list for ``subprocess.run`` (first item is ``grok``).
     """
-    cmd = [
+    return [
         "grok",
         "--single",
         prompt,
@@ -368,12 +375,73 @@ def run_grok(
         effort,
         "--cwd",
         str(workspace),
+        "--max-turns",
+        str(max_turns),
         "--always-approve",
+        "--permission-mode",
+        "bypassPermissions",
         "--disable-web-search",
     ]
+
+
+def inspect_prompt(template: str, criteria: list[dict[str, str]], workspace: Path) -> str:
+    """Fill ``{criteria}`` and require a file-read before scoring.
+
+    Args:
+        template: Judge prompt with a ``{criteria}`` placeholder.
+        criteria: Name/description pairs from ``judge.toml``.
+        workspace: Path shown in the inspect instruction.
+
+    Returns:
+        The full prompt passed to ``grok --single``.
+    """
+    return (
+        template.replace("{criteria}", criteria_block(criteria))
+        + f"\n\nInspect the Python in the current working directory ({workspace}).\n"
+        + _INSPECT_BEFORE_SCORE
+    )
+
+
+def run_grok(
+    *,
+    prompt: str,
+    schema: dict[str, Any],
+    workspace: Path,
+    model: str,
+    effort: str,
+    timeout: int,
+    max_turns: int = DEFAULT_MAX_TURNS,
+) -> str:
+    """Invoke the Grok CLI as a headless structured-output judge.
+
+    Args:
+        prompt: Full judge prompt (criteria already substituted).
+        schema: JSON Schema for ``--json-schema``.
+        workspace: Working directory the CLI may inspect.
+        model: Grok model id.
+        effort: ``low``, ``medium``, or ``high``.
+        timeout: Subprocess timeout in seconds.
+        max_turns: Agent rounds; see :func:`build_grok_command`.
+
+    Returns:
+        Decoded stdout.
+
+    Raises:
+        FileNotFoundError: When ``grok`` is not on PATH.
+        subprocess.CalledProcessError: When the CLI exits non-zero.
+        subprocess.TimeoutExpired: When the CLI exceeds *timeout*.
+    """
+    cmd = build_grok_command(
+        prompt=prompt,
+        schema=schema,
+        workspace=workspace,
+        model=model,
+        effort=effort,
+        max_turns=max_turns,
+    )
     _log(
         f"starting grok judge model={model} effort={effort} "
-        f"workspace={workspace} timeout={timeout}s"
+        f"max_turns={max_turns} workspace={workspace} timeout={timeout}s"
     )
     proc = subprocess.run(
         cmd,
@@ -456,6 +524,33 @@ def _self_test() -> int:
         "srp" in multi_schema.get("properties", {}),
         "named properties for two criteria",
     )
+    cmd = build_grok_command(
+        prompt="score this",
+        schema=schema,
+        workspace=Path("/Projects/app"),
+        model="grok-4.6",
+        effort="low",
+    )
+    check(
+        "cmd_max_turns",
+        "--max-turns" in cmd and str(DEFAULT_MAX_TURNS) in cmd,
+        "judge CLI allows tool rounds before JSON",
+    )
+    check(
+        "cmd_bypass_permissions",
+        cmd[cmd.index("--permission-mode") + 1] == "bypassPermissions",
+        "judge does not stop to ask before reading files",
+    )
+    filled = inspect_prompt(
+        "Score it.\n{criteria}\n",
+        criteria,
+        Path("/Projects/app"),
+    )
+    check(
+        "inspect_before_score",
+        "Read every `*.py` file" in filled and "inspect first" in filled,
+        "prompt forbids no-as-not-inspected",
+    )
     failed = [name for name, ok, _ in cases if not ok]
     if failed:
         print(f"{len(failed)}/{len(cases)} grok-judge self-test(s) failed", flush=True)
@@ -474,6 +569,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--model", default="grok-4.6")
     parser.add_argument("--reasoning-effort", default="low")
     parser.add_argument("--timeout", type=int, default=0)
+    parser.add_argument(
+        "--max-turns",
+        type=int,
+        default=DEFAULT_MAX_TURNS,
+        help="Grok agent rounds for reading files before structured output",
+    )
     args = parser.parse_args(argv)
     if args.self_test:
         return _self_test()
@@ -481,11 +582,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--judge-dir and --output are required unless --self-test")
     template, criteria, toml_timeout = load_judge_dir(args.judge_dir)
     timeout = args.timeout or toml_timeout
-    prompt = template.replace("{criteria}", criteria_block(criteria))
-    prompt += (
-        "\n\nInspect the Python in the current working directory "
-        f"({args.workspace})."
-    )
+    prompt = inspect_prompt(template, criteria, args.workspace)
     schema = response_schema(criteria)
     raw = run_grok(
         prompt=prompt,
@@ -494,6 +591,7 @@ def main(argv: list[str] | None = None) -> int:
         model=args.model,
         effort=args.reasoning_effort,
         timeout=timeout,
+        max_turns=args.max_turns,
     )
     rows = parse_scores(raw, criteria)
     write_reward(args.output, rows, raw)
