@@ -10,7 +10,9 @@ Usage (from ``evals/``)::
 
     ./launch_benchmarks.sh
     ./launch_benchmarks.sh --preset positive-all-harnesses-all-judges
+    ./launch_benchmarks.sh --preset baseline-codex-cc --yes
     ./launch_benchmarks.sh --list
+    ./launch_benchmarks.sh --write-presets
     ./launch_benchmarks.sh --self-test
 
 Stdout is the menu / machine-readable lists. Diagnostics go to stderr.
@@ -37,6 +39,8 @@ from typing import Any, Callable, Sequence
 EVALS_DIR = Path(__file__).resolve().parent
 PRESETS_DIR = EVALS_DIR / "presets"
 RUN_SCRIPT = "run_benchmark.sh"
+DEFAULT_SKILLS = "srp,commenting,logging,worktree"
+HARNESS_ORDER: tuple[str, ...] = ("codex", "cc", "grok")
 WINDOW_TITLE_PREFIX = "harbor-eval:"
 XRANDR_CONNECTED_RE = re.compile(
     r"^(\S+)\s+connected(?:\s+primary)?\s+(\d+)x(\d+)\+(\d+)\+(\d+)",
@@ -242,6 +246,98 @@ def cascade_rects(
     return rects
 
 
+def matrix_jobs(harnesses: Sequence[str], *, baseline: bool) -> tuple[Job, ...]:
+    """Every included harness as coder × every included harness as judge.
+
+    The omitted harness is not a coder and not a judge (rate-limit slices).
+
+    Args:
+        harnesses: Coders and judges for this slice (same set).
+        baseline: When True, pass ``--baseline`` (no skills injected).
+    """
+    if not harnesses:
+        raise ValueError("need at least one harness")
+    jobs: list[Job] = []
+    for harness in harnesses:
+        for agent in harnesses:
+            args = [
+                f"./{RUN_SCRIPT}",
+                f"harness={harness}",
+                f"evalAgent={agent}",
+            ]
+            if baseline:
+                args.append("--baseline")
+            args.extend(["--skills", DEFAULT_SKILLS, "-k", "5", "-n", "5"])
+            jobs.append(Job(title=f"{harness} x {agent}", args=tuple(args)))
+    return tuple(jobs)
+
+
+def matrix_preset_name(harnesses: Sequence[str], *, baseline: bool) -> str:
+    """Filename stem for a harness×judge matrix preset.
+
+    Args:
+        harnesses: Included harness ids in ``HARNESS_ORDER``.
+        baseline: Positive vs baseline.
+    """
+    mode = "baseline" if baseline else "positive"
+    if tuple(harnesses) == HARNESS_ORDER:
+        return f"{mode}-all-harnesses-all-judges"
+    return f"{mode}-{'-'.join(harnesses)}"
+
+
+def matrix_description(harnesses: Sequence[str], *, baseline: bool) -> str:
+    """One-line menu text for a matrix preset.
+
+    Args:
+        harnesses: Included harness ids.
+        baseline: Positive vs baseline.
+    """
+    count = len(harnesses)
+    jobs = count * count
+    mode = (
+        "baseline / no skills (negative control)"
+        if baseline
+        else "positive (skills injected)"
+    )
+    if count == 3:
+        who = "codex, cc, grok as coder and as judge"
+    elif count == 2:
+        excluded = next(h for h in HARNESS_ORDER if h not in harnesses)
+        who = (
+            f"{' and '.join(harnesses)} only; "
+            f"{excluded} is not a coder and not a judge"
+        )
+    else:
+        who = f"only {harnesses[0]} as coder and as judge"
+    unit = "terminal" if jobs == 1 else "terminals"
+    return f"{mode}; {who}; all skills; k=5 n=5 ({jobs} {unit})"
+
+
+def shipped_matrix_groups() -> list[tuple[str, ...]]:
+    """3-way set, each 2-way (drop last harness first), each 1-way."""
+    groups: list[tuple[str, ...]] = [HARNESS_ORDER]
+    for excluded in reversed(HARNESS_ORDER):
+        groups.append(tuple(h for h in HARNESS_ORDER if h != excluded))
+    for only in HARNESS_ORDER:
+        groups.append((only,))
+    return groups
+
+
+def shipped_presets() -> list[Preset]:
+    """Built-in positive and baseline matrices (git-tracked JSON)."""
+    out: list[Preset] = []
+    for harnesses in shipped_matrix_groups():
+        for baseline in (False, True):
+            out.append(
+                Preset(
+                    name=matrix_preset_name(harnesses, baseline=baseline),
+                    description=matrix_description(harnesses, baseline=baseline),
+                    jobs=matrix_jobs(harnesses, baseline=baseline),
+                )
+            )
+    return out
+
+
 def parse_job(raw: dict[str, Any], *, index: int) -> Job:
     """Build a Job from one preset JSON object.
 
@@ -310,14 +406,22 @@ def load_preset_file(path: Path) -> Preset:
 
 
 def list_preset_files(directory: Path = PRESETS_DIR) -> list[Path]:
-    """Return preset JSON paths, sorted by stem.
+    """Return preset JSON paths: shipped catalog first, then extra stems.
 
     Args:
         directory: Presets folder.
     """
     if not directory.is_dir():
         return []
-    return sorted(directory.glob("*.json"), key=lambda item: item.stem)
+    order = {preset.name: index for index, preset in enumerate(shipped_presets())}
+
+    def sort_key(path: Path) -> tuple[int, int | str]:
+        stem = path.stem
+        if stem in order:
+            return (0, order[stem])
+        return (1, stem)
+
+    return sorted(directory.glob("*.json"), key=sort_key)
 
 
 def resolve_preset(name: str, directory: Path = PRESETS_DIR) -> Path:
@@ -352,6 +456,22 @@ def save_preset(preset: Preset, directory: Path = PRESETS_DIR) -> Path:
     path.write_text(json.dumps(preset_to_json(preset), indent=2) + "\n", encoding="utf-8")
     log(f"saved preset {path}")
     return path
+
+
+def write_shipped_presets(directory: Path = PRESETS_DIR) -> list[Path]:
+    """Rewrite git-tracked matrix JSON files from ``shipped_presets``.
+
+    Args:
+        directory: Presets folder.
+
+    Returns:
+        Paths written.
+    """
+    written: list[Path] = []
+    for preset in shipped_presets():
+        written.append(save_preset(preset, directory))
+    log(f"wrote {len(written)} shipped preset(s) under {directory}")
+    return written
 
 
 def jobs_from_command_lines(lines: Sequence[str]) -> tuple[Job, ...]:
@@ -849,36 +969,108 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
         len(tiles) >= 2 and (tiles[0].x != tiles[1].x or tiles[0].y != tiles[1].y),
         "windows are staggered",
     )
-    shipped = EVALS_DIR / "presets" / "positive-all-harnesses-all-judges.json"
+    catalog = shipped_presets()
+    catalog_names = [item.name for item in catalog]
+    expected_stems = {
+        "positive-all-harnesses-all-judges",
+        "baseline-all-harnesses-all-judges",
+        "positive-codex-cc",
+        "baseline-codex-cc",
+        "positive-codex-grok",
+        "baseline-codex-grok",
+        "positive-cc-grok",
+        "baseline-cc-grok",
+        "positive-codex",
+        "baseline-codex",
+        "positive-cc",
+        "baseline-cc",
+        "positive-grok",
+        "baseline-grok",
+    }
+    record("catalog_size", len(catalog) == 14, str(len(catalog)))
+    record(
+        "catalog_stems",
+        set(catalog_names) == expected_stems,
+        str(sorted(set(catalog_names) ^ expected_stems)),
+    )
+    try:
+        matrix_jobs((), baseline=False)
+        record("empty_matrix", False, "should have raised")
+    except ValueError:
+        record("empty_matrix", True, "need at least one harness")
+
+    def matrix_issues(
+        preset: Preset, harnesses: Sequence[str], *, baseline: bool
+    ) -> str:
+        issues: list[str] = []
+        if len(preset.jobs) != len(harnesses) ** 2:
+            issues.append(f"jobs={len(preset.jobs)}")
+        if any(("--baseline" in job.args) is not baseline for job in preset.jobs):
+            issues.append("baseline-flag")
+        if any(DEFAULT_SKILLS not in job.args for job in preset.jobs):
+            issues.append("skills")
+        excluded = [item for item in HARNESS_ORDER if item not in harnesses]
+        for harness in excluded:
+            leaked = any(
+                f"harness={harness}" in job.args or f"evalAgent={harness}" in job.args
+                for job in preset.jobs
+            )
+            if leaked:
+                issues.append(f"leaked-{harness}")
+        for harness in harnesses:
+            if not any(f"harness={harness}" in job.args for job in preset.jobs):
+                issues.append(f"no-coder-{harness}")
+            if not any(f"evalAgent={harness}" in job.args for job in preset.jobs):
+                issues.append(f"no-judge-{harness}")
+        expected_titles = {
+            f"{left} x {right}" for left in harnesses for right in harnesses
+        }
+        if {job.title for job in preset.jobs} != expected_titles:
+            issues.append("titles")
+        return ",".join(issues)
+
+    for harnesses in shipped_matrix_groups():
+        for baseline in (False, True):
+            preset_item = next(
+                item
+                for item in catalog
+                if item.name == matrix_preset_name(harnesses, baseline=baseline)
+            )
+            problems = matrix_issues(preset_item, harnesses, baseline=baseline)
+            record(preset_item.name, not problems, problems or "ok")
+
+    disk_stems = {path.stem for path in PRESETS_DIR.glob("*.json")}
+    record(
+        "catalog_on_disk",
+        expected_stems <= disk_stems,
+        f"missing={sorted(expected_stems - disk_stems)}",
+    )
+    disk_mismatch: list[str] = []
+    for expected in catalog:
+        path = PRESETS_DIR / f"{expected.name}.json"
+        try:
+            loaded = load_preset_file(path)
+        except (ValueError, OSError) as exc:
+            disk_mismatch.append(f"{expected.name}:{exc}")
+            continue
+        if loaded.jobs != expected.jobs or loaded.description != expected.description:
+            disk_mismatch.append(expected.name)
+    record("catalog_matches_disk", not disk_mismatch, ",".join(disk_mismatch) or "ok")
+    listed = [path.stem for path in list_preset_files(PRESETS_DIR)]
+    record(
+        "catalog_menu_order",
+        listed[: len(catalog_names)] == catalog_names,
+        str(listed[: len(catalog_names)]),
+    )
+
     preset: Preset | None = None
     try:
-        preset = load_preset_file(shipped)
+        preset = load_preset_file(PRESETS_DIR / "positive-all-harnesses-all-judges.json")
         record("shipped_nine", len(preset.jobs) == 9, f"jobs={len(preset.jobs)}")
-        record(
-            "shipped_matrix",
-            {job.title for job in preset.jobs}
-            == {
-                "codex x codex",
-                "codex x cc",
-                "codex x grok",
-                "cc x codex",
-                "cc x cc",
-                "cc x grok",
-                "grok x codex",
-                "grok x cc",
-                "grok x grok",
-            },
-            "3x3 titles",
-        )
         record(
             "shipped_positive",
             all("--baseline" not in job.args for job in preset.jobs),
             "no --baseline",
-        )
-        record(
-            "shipped_skills",
-            all("srp,commenting,logging,worktree" in job.args for job in preset.jobs),
-            "all four skills",
         )
     except (ValueError, OSError) as exc:
         record("shipped_nine", False, str(exc))
@@ -953,6 +1145,34 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
             reloaded.name == "smoke" and reloaded.jobs[0].args[0].endswith(RUN_SCRIPT),
             saved.name,
         )
+        written = write_shipped_presets(folder)
+        record("write_shipped_count", len(written) == 14, str(len(written)))
+        one = load_preset_file(folder / "baseline-codex.json")
+        record(
+            "write_one_harness_baseline",
+            len(one.jobs) == 1
+            and "--baseline" in one.jobs[0].args
+            and "harness=codex" in one.jobs[0].args
+            and "evalAgent=codex" in one.jobs[0].args
+            and "evalAgent=grok" not in one.jobs[0].args
+            and "evalAgent=cc" not in one.jobs[0].args,
+            " ".join(one.jobs[0].args),
+        )
+        two = load_preset_file(folder / "positive-cc-grok.json")
+        record(
+            "write_two_harness_excludes_codex",
+            len(two.jobs) == 4
+            and all("harness=codex" not in job.args for job in two.jobs)
+            and all("evalAgent=codex" not in job.args for job in two.jobs)
+            and all("--baseline" not in job.args for job in two.jobs),
+            str(len(two.jobs)),
+        )
+        listed_temp = [path.stem for path in list_preset_files(folder)]
+        record(
+            "temp_catalog_then_extra",
+            listed_temp[:14] == catalog_names and listed_temp[-1] == "smoke",
+            str(listed_temp),
+        )
 
     failed = [(name, msg) for name, ok, msg in cases if not ok]
     for name, ok, msg in cases:
@@ -972,11 +1192,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Launch this preset (stem or path) without the menu",
     )
     parser.add_argument("--list", action="store_true", help="Print presets and exit")
+    parser.add_argument(
+        "--write-presets",
+        action="store_true",
+        help="Rewrite shipped positive/baseline matrix JSON under presets/",
+    )
     parser.add_argument("--self-test", action="store_true", help="Fixture checks")
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="With --preset: log monitor + tiles, do not spawn windows",
+        help="With --preset: log monitor + cascade placements, do not spawn windows",
     )
     parser.add_argument(
         "--yes",
@@ -987,6 +1212,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.self_test:
         return _self_test()
+    if args.write_presets:
+        write_shipped_presets()
+        return 0
     if args.list:
         print_preset_list()
         return 0

@@ -1,0 +1,20 @@
+{
+  "name": "positive-codex",
+  "description": "positive (skills injected); only codex as coder and as judge; all skills; k=5 n=5 (1 terminal)",
+  "jobs": [
+    {
+      "title": "codex x codex",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=codex",
+        "evalAgent=codex",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5",
+        "-n",
+        "5"
+      ]
+    }
+  ]
+}

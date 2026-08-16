@@ -1,0 +1,66 @@
+{
+  "name": "baseline-codex-grok",
+  "description": "baseline / no skills (negative control); codex and grok only; cc is not a coder and not a judge; all skills; k=5 n=5 (4 terminals)",
+  "jobs": [
+    {
+      "title": "codex x codex",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=codex",
+        "evalAgent=codex",
+        "--baseline",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5",
+        "-n",
+        "5"
+      ]
+    },
+    {
+      "title": "codex x grok",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=codex",
+        "evalAgent=grok",
+        "--baseline",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5",
+        "-n",
+        "5"
+      ]
+    },
+    {
+      "title": "grok x codex",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=grok",
+        "evalAgent=codex",
+        "--baseline",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5",
+        "-n",
+        "5"
+      ]
+    },
+    {
+      "title": "grok x grok",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=grok",
+        "evalAgent=grok",
+        "--baseline",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5",
+        "-n",
+        "5"
+      ]
+    }
+  ]
+}

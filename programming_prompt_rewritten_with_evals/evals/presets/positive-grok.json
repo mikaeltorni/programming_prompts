@@ -1,0 +1,20 @@
+{
+  "name": "positive-grok",
+  "description": "positive (skills injected); only grok as coder and as judge; all skills; k=5 n=5 (1 terminal)",
+  "jobs": [
+    {
+      "title": "grok x grok",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=grok",
+        "evalAgent=grok",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5",
+        "-n",
+        "5"
+      ]
+    }
+  ]
+}

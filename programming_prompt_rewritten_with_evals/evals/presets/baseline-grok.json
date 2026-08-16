@@ -1,0 +1,21 @@
+{
+  "name": "baseline-grok",
+  "description": "baseline / no skills (negative control); only grok as coder and as judge; all skills; k=5 n=5 (1 terminal)",
+  "jobs": [
+    {
+      "title": "grok x grok",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=grok",
+        "evalAgent=grok",
+        "--baseline",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5",
+        "-n",
+        "5"
+      ]
+    }
+  ]
+}
