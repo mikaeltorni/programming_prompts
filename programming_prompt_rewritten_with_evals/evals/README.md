@@ -695,7 +695,9 @@ cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 Pick `1` for the shipped preset
 [`presets/positive-all-harnesses-all-judges.json`](presets/positive-all-harnesses-all-judges.json)
 (3 harnesses × 3 judges, all skills, positive, `-k 5 -n 5`). Windows open at a
-normal size on this monitor (cascaded, not maximised). Or skip the menu:
+normal size on this monitor (cascaded, not maximised). After a job finishes the
+terminal stays open as a shell; Up-arrow recalls the `./run_benchmark.sh`
+command. Or skip the menu:
 
 ```bash
 ./launch_benchmarks.sh --preset positive-all-harnesses-all-judges --yes
