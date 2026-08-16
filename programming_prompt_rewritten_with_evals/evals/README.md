@@ -132,7 +132,7 @@ evals/
 ├── docker_networks.py      # prune leftover Harbor nets + cross-process IPAM slots
 ├── launch_benchmarks.sh    # interactive preset menu; normal windows on this monitor
 ├── launch_benchmarks.py
-├── presets/                # git-tracked launch presets (JSON)
+├── presets/                # git-tracked launch presets (positive/baseline matrices)
 ├── runs/                   # timestamped archives; RESULTS.txt is the one-line index
 ├── codex-version.txt
 ├── claude-version.txt
@@ -692,9 +692,24 @@ cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 ./launch_benchmarks.sh
 ```
 
-Pick `1` for the shipped preset
-[`presets/positive-all-harnesses-all-judges.json`](presets/positive-all-harnesses-all-judges.json)
-(3 harnesses × 3 judges, all skills, positive, `-k 5 -n 5`). Windows open at a
+Pick a numbered preset (positive vs **baseline** / no skills; 3-, 2-, or
+1-harness slices). Judges are always the **same set** as the coding harnesses —
+if you drop grok because of a rate limit, grok is not a judge either.
+
+Shipped files under [`presets/`](presets/):
+
+| Preset | Terminals |
+| --- | ---: |
+| `positive-all-harnesses-all-judges` / `baseline-all-harnesses-all-judges` | 9 |
+| `positive-codex-cc` / `baseline-codex-cc` (no grok) | 4 |
+| `positive-codex-grok` / `baseline-codex-grok` (no cc) | 4 |
+| `positive-cc-grok` / `baseline-cc-grok` (no codex) | 4 |
+| `positive-codex` / `baseline-codex` | 1 |
+| `positive-cc` / `baseline-cc` | 1 |
+| `positive-grok` / `baseline-grok` | 1 |
+
+Each job is `harness=… evalAgent=… --skills srp,commenting,logging,worktree -k 5 -n 5`
+(baseline adds `--baseline`). Windows open at a
 normal size on this monitor (cascaded, not maximised). After a job finishes the
 terminal stays open as a shell; Up-arrow recalls the `./run_benchmark.sh`
 command. Or skip the menu:
@@ -703,8 +718,23 @@ command. Or skip the menu:
 ./launch_benchmarks.sh --preset positive-all-harnesses-all-judges --yes
 ```
 
+```bash
+./launch_benchmarks.sh --preset baseline-codex-cc --yes
+```
+
+```bash
+./launch_benchmarks.sh --preset positive-grok --yes
+```
+
+Regenerate the 14 shipped JSON files after changing the matrix builder:
+
+```bash
+./launch_benchmarks.sh --write-presets
+```
+
 `s` in the menu pastes new `./run_benchmark.sh` lines and writes another JSON
-file under `presets/` (commit it if you want it in git). The Docker slot lock
+file under `presets/` (commit it if you want it in git). Extra user JSON files
+appear **after** the shipped catalog. The Docker slot lock
 still queues extra jobs when IPAM is tight.
 
 Manual examples:
