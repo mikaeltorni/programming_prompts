@@ -5,6 +5,7 @@
 #   evals/verifier/run_judges.sh
 #   evals/verifier/check_worktree.py
 #   evals/verifier/run_grok_judge.py
+#   evals/verifier/llm_judge/*.py
 # Never edit the synced copies under .generated/tasks/*/tests/ (generated).
 # Usage: ./sync_judges.sh [skill ...]
 # Prefer ./sync_tasks.sh first so .generated/tasks/ exists.
@@ -15,6 +16,7 @@ JUDGES_ROOT="$SCRIPT_DIR/judges"
 VERIFIER_SRC="$SCRIPT_DIR/verifier/run_judges.sh"
 WORKTREE_CHECK_SRC="$SCRIPT_DIR/verifier/check_worktree.py"
 GROK_JUDGE_SRC="$SCRIPT_DIR/verifier/run_grok_judge.py"
+LLM_JUDGE_SRC="$SCRIPT_DIR/verifier/llm_judge"
 # Allow callers to target an isolated job copy (see run_benchmark.sh).
 TASKS_DIR="${TASKS_DIR:-$SCRIPT_DIR/.generated/tasks}"
 
@@ -37,6 +39,10 @@ if [[ ! -f "$WORKTREE_CHECK_SRC" ]]; then
 fi
 if [[ ! -f "$GROK_JUDGE_SRC" ]]; then
   echo "Missing Grok judge helper: $GROK_JUDGE_SRC" >&2
+  exit 1
+fi
+if [[ ! -f "$LLM_JUDGE_SRC/workspace.py" ]]; then
+  echo "Missing LLM judge package: $LLM_JUDGE_SRC" >&2
   exit 1
 fi
 
@@ -79,6 +85,9 @@ for tests_dir in "$TASKS_DIR"/*/tests; do
   install -m 755 "$VERIFIER_SRC" "$tests_dir/run_judges.sh"
   install -m 755 "$WORKTREE_CHECK_SRC" "$tests_dir/check_worktree.py"
   install -m 755 "$GROK_JUDGE_SRC" "$tests_dir/run_grok_judge.py"
+  rm -rf "$tests_dir/llm_judge"
+  mkdir -p "$tests_dir/llm_judge"
+  install -m 644 "$LLM_JUDGE_SRC"/*.py "$tests_dir/llm_judge/"
   for skill in "${skills[@]}"; do
     src="$JUDGES_ROOT/$skill"
     if is_programmatic_judge "$src"; then
