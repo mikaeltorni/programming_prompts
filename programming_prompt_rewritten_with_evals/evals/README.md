@@ -716,15 +716,15 @@ terminal stays open as a shell; Up-arrow recalls the `./run_benchmark.sh`
 command. Or skip the menu:
 
 ```bash
-./launch_benchmarks.sh --preset positive-all-harnesses-all-judges --yes
+./launch_benchmarks.sh --preset positive-all-harnesses-all-judges
 ```
 
 ```bash
-./launch_benchmarks.sh --preset baseline-codex-cc --yes
+./launch_benchmarks.sh --preset baseline-codex-cc
 ```
 
 ```bash
-./launch_benchmarks.sh --preset positive-grok --yes
+./launch_benchmarks.sh --preset positive-grok
 ```
 
 Regenerate the 14 shipped JSON files after changing the matrix builder:
