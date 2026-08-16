@@ -1,6 +1,6 @@
 {
   "name": "positive-codex",
-  "description": "positive (skills injected); only codex as coder and as judge; all skills; k=5 n=5 (1 terminal)",
+  "description": "positive; judges=codex on each coding run; no cc,grok; k=5 n=5",
   "jobs": [
     {
       "title": "codex x codex",

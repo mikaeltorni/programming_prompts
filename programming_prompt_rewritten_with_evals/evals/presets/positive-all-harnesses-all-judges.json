@@ -1,6 +1,6 @@
 {
   "name": "positive-all-harnesses-all-judges",
-  "description": "positive (skills injected); one coding run per harness; all three judge that same tree; all skills; k=5 n=5 (3 terminals)",
+  "description": "positive; judges=codex,cc,grok on each coding run; k=5 n=5",
   "jobs": [
     {
       "title": "codex x codex,cc,grok",

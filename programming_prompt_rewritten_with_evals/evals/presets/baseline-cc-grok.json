@@ -1,6 +1,6 @@
 {
   "name": "baseline-cc-grok",
-  "description": "baseline / no skills (negative control); one coding run each for cc and grok; evalAgent=cc,grok; codex is not a coder and not a judge; all skills; k=5 n=5 (2 terminals)",
+  "description": "baseline; judges=cc,grok on each coding run; no codex; k=5 n=5",
   "jobs": [
     {
       "title": "cc x cc,grok",

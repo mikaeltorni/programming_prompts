@@ -288,32 +288,17 @@ def matrix_preset_name(harnesses: Sequence[str], *, baseline: bool) -> str:
 
 
 def matrix_description(harnesses: Sequence[str], *, baseline: bool) -> str:
-    """One-line menu text for a matrix preset.
+    """One-line menu text: mode, shared judges, optional excluded harness.
 
     Args:
         harnesses: Included harness ids.
         baseline: Positive vs baseline.
     """
-    count = len(harnesses)
-    jobs = count
     judges = ",".join(harnesses)
-    mode = (
-        "baseline / no skills (negative control)"
-        if baseline
-        else "positive (skills injected)"
-    )
-    if count == 3:
-        who = "one coding run per harness; all three judge that same tree"
-    elif count == 2:
-        excluded = next(h for h in HARNESS_ORDER if h not in harnesses)
-        who = (
-            f"one coding run each for {' and '.join(harnesses)}; "
-            f"evalAgent={judges}; {excluded} is not a coder and not a judge"
-        )
-    else:
-        who = f"only {harnesses[0]} as coder and as judge"
-    unit = "terminal" if jobs == 1 else "terminals"
-    return f"{mode}; {who}; all skills; k=5 n=5 ({jobs} {unit})"
+    mode = "baseline" if baseline else "positive"
+    excluded = [item for item in HARNESS_ORDER if item not in harnesses]
+    drop = f"; no {','.join(excluded)}" if excluded else ""
+    return f"{mode}; judges={judges} on each coding run{drop}; k=5 n=5"
 
 
 def shipped_matrix_groups() -> list[tuple[str, ...]]:
@@ -542,6 +527,54 @@ def _job_harness(job: Job) -> str:
         if item.startswith("harness="):
             return item.split("=", 1)[1]
     return ""
+
+
+def _eval_agent_csv(job: Job) -> str:
+    """Return evalAgent ids in ``HARNESS_ORDER``, then any extras.
+
+    Args:
+        job: One launcher job.
+    """
+    agents = _job_eval_agents(job)
+    ordered = [item for item in HARNESS_ORDER if item in agents]
+    ordered.extend(sorted(agents - set(HARNESS_ORDER)))
+    return ",".join(ordered)
+
+
+def format_preset_listing(preset: Preset) -> str:
+    """Bracketed coding-count × shared judges, then the description.
+
+    Args:
+        preset: Preset to summarize for the menu / ``--list``.
+    """
+    count = len(preset.jobs)
+    coding = "1 coding" if count == 1 else f"{count} coding"
+    judges = _eval_agent_csv(preset.jobs[0]) if preset.jobs else "-"
+    return f"[{coding} × judges={judges}]  {preset.description}"
+
+
+def _eval_agent_csv(job: Job) -> str:
+    """Return evalAgent ids in ``HARNESS_ORDER``, then any extras.
+
+    Args:
+        job: One launcher job.
+    """
+    agents = _job_eval_agents(job)
+    ordered = [item for item in HARNESS_ORDER if item in agents]
+    ordered.extend(sorted(agents - set(HARNESS_ORDER)))
+    return ",".join(ordered)
+
+
+def format_preset_listing(preset: Preset) -> str:
+    """Bracketed coding-count × shared judges, then the description.
+
+    Args:
+        preset: Preset to summarize for the menu / ``--list``.
+    """
+    count = len(preset.jobs)
+    coding = "1 coding" if count == 1 else f"{count} coding"
+    judges = _eval_agent_csv(preset.jobs[0]) if preset.jobs else "-"
+    return f"[{coding} × judges={judges}]  {preset.description}"
 
 
 def shell_command(args: Sequence[str]) -> str:
@@ -823,7 +856,7 @@ def print_preset_list(directory: Path = PRESETS_DIR) -> None:
     for index, path in enumerate(files, start=1):
         try:
             preset = load_preset_file(path)
-            extra = f"  {len(preset.jobs)} jobs  {preset.description}".rstrip()
+            extra = f"  {format_preset_listing(preset)}"
             print(f"  {index}) {preset.name}{extra}")
         except ValueError as exc:
             print(f"  {index}) {path.stem}  (invalid: {exc})")
@@ -865,10 +898,7 @@ def menu_loop(display: Display, *, directory: Path = PRESETS_DIR) -> int:
         for index, path in enumerate(files, start=1):
             try:
                 preset = load_preset_file(path)
-                print(
-                    f"  {index}) {preset.name}  "
-                    f"[{len(preset.jobs)} jobs]  {preset.description}"
-                )
+                print(f"  {index}) {preset.name}  {format_preset_listing(preset)}")
             except ValueError as exc:
                 print(f"  {index}) {path.name}  INVALID ({exc})")
         print("  s) save new preset from pasted commands")
@@ -1085,6 +1115,21 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
         "catalog_menu_order",
         listed[: len(catalog_names)] == catalog_names,
         str(listed[: len(catalog_names)]),
+    )
+    two_way = next(item for item in catalog if item.name == "positive-codex-cc")
+    two_listing = format_preset_listing(two_way)
+    record(
+        "menu_two_judges",
+        "[2 coding × judges=codex,cc]" in two_listing and "no grok" in two_listing and "no cc," not in two_listing,
+        two_listing,
+    )
+    three_listing = format_preset_listing(
+        next(item for item in catalog if item.name == "positive-all-harnesses-all-judges")
+    )
+    record(
+        "menu_three_judges",
+        "[3 coding × judges=codex,cc,grok]" in three_listing,
+        three_listing,
     )
 
     preset: Preset | None = None
