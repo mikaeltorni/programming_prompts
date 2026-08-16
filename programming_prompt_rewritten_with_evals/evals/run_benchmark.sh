@@ -791,6 +791,22 @@ def _per_eval_agent_rewards(trial_dir: Path) -> dict[tuple[str, str], float]:
             except (TypeError, ValueError):
                 continue
     return out
+
+
+def _nested_criterion_bits(
+    item: dict,
+) -> tuple[str | None, str | None]:
+    """Return (raw, reasoning) from a reward-details criterion object.
+
+    Walks a nested ``details.reward.criteria[0]`` (or ``judge_output``) when
+    the top-level fields are empty — the shape written by run_judges.sh.
+
+    Args:
+        item: One criterion dict from ``reward.criteria``.
+
+    Returns:
+        Raw yes/no string and reasoning text, either of which may be None.
+    """
     raw = item.get("raw")
     reasoning = item.get("reasoning")
     if (reasoning is None or reasoning == "") and isinstance(item.get("details"), dict):
