@@ -4,6 +4,7 @@
 # Each skill keeps its own prompt at evals/judges/<skill>/prompt.md.
 #
 # LLM judges run once per eval agent via run_llm_judge.py (pin + retry).
+# A failed eval agent does not abort later agents or skills.
 #   EVAL_AGENTS=codex            (default when unset — same as historical Codex)
 #   EVAL_AGENTS=cc,codex,grok    (score the same workspace two/three times)
 #   EVAL_AGENT_MODELS=...        (one value, or one per agent)
@@ -184,7 +185,7 @@ run_llm_eval_agent() {
     --output "$output_json" \
     --workspace /Projects/app \
     --model "$model" \
-    --reasoning-effort "$effort"
+    --reasoning-effort "$effort" || return 1
 }
 
 run_programmatic_judge() {
@@ -315,7 +316,9 @@ run_one_judge() {
         effort="${EVAL_EFFORTS[$idx]}"
         agent_out="/logs/verifier/reward-${skill}-${agent}.json"
         echo "Running judge for skill=$skill evalAgent=$agent" >&2
-        run_llm_eval_agent "$judge_dir" "$agent_out" "$agent" "$model" "$effort"
+        if ! run_llm_eval_agent "$judge_dir" "$agent_out" "$agent" "$model" "$effort"; then
+            echo "evalAgent=$agent failed for skill=$skill (continuing other agents/skills)" >&2
+        fi
     done
     aggregate_eval_agent_rewards "$skill" "$output_json"
 }
