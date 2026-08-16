@@ -14,8 +14,9 @@ agent says yes. The Claude Code judge copies credentials into a writable
 `CLAUDE_CONFIG_DIR` (the trial mount is read-only). [`run_grok_judge.py`](run_grok_judge.py)
 unwraps Grok `--output-format json` envelopes, allows `--max-turns` so the
 agent can read files before scoring, and inlines the real workspace `*.py`
-files in the prompt so the judge cannot invent paths. Programmatic worktree
-scoring is unchanged.
+files in the prompt so the judge cannot invent paths. A failing score that
+admits non-inspection or cites a file that is not in the workspace is
+retried once. Programmatic worktree scoring is unchanged.
 
 LLM judge text stays in `../judges/<skill>/prompt.md`. The worktree skill is
 **programmatic**: `run_judges.sh` runs `check_worktree.py` against
