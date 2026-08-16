@@ -130,6 +130,9 @@ evals/
 ├── run_grok_benchmark.sh   # thin shim → run_benchmark.sh harness=grok
 ├── archive_benchmark_run.py
 ├── docker_networks.py      # prune leftover Harbor nets + cross-process IPAM slots
+├── launch_benchmarks.sh    # interactive preset menu; windows open on this monitor
+├── launch_benchmarks.py
+├── presets/                # git-tracked launch presets (JSON)
 ├── runs/                   # timestamped archives; RESULTS.txt is the one-line index
 ├── codex-version.txt
 ├── claude-version.txt
@@ -532,6 +535,10 @@ python3 archive_benchmark_run.py self-test
 python3 docker_networks.py self-test
 ```
 
+```bash
+python3 launch_benchmarks.py --self-test
+```
+
 Rebuild the newest-first one-line index (also happens automatically at the
 end of each `./run_benchmark.sh`):
 
@@ -674,7 +681,30 @@ codex login && codex login status
 # Optional: export XAI_API_KEY=... to override the SuperGrok key.
 ```
 
-Then run (examples):
+Then run (examples), or use the **preset launcher** so each job opens in its
+own window **on the same monitor as this terminal**:
+
+```bash
+cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
+```
+
+```bash
+./launch_benchmarks.sh
+```
+
+Pick `1` for the shipped preset
+[`presets/positive-all-harnesses-all-judges.json`](presets/positive-all-harnesses-all-judges.json)
+(3 harnesses × 3 judges, all skills, positive, `-k 5 -n 5`). Or skip the menu:
+
+```bash
+./launch_benchmarks.sh --preset positive-all-harnesses-all-judges --yes
+```
+
+`s` in the menu pastes new `./run_benchmark.sh` lines and writes another JSON
+file under `presets/` (commit it if you want it in git). The Docker slot lock
+still queues extra jobs when IPAM is tight.
+
+Manual examples:
 
 ```bash
 # Codex positive, both skills in one session (~25 trials at -k 5)

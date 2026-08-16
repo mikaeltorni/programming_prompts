@@ -1,0 +1,42 @@
+{
+  "name": "positive-all-harnesses-all-judges",
+  "description": "3 coding harnesses × 3 judges, all skills, positive, k=5 n=5 (9 terminals)",
+  "jobs": [
+    {
+      "title": "codex x codex",
+      "args": ["./run_benchmark.sh", "harness=codex", "evalAgent=codex", "--skills", "srp,commenting,logging,worktree", "-k", "5", "-n", "5"]
+    },
+    {
+      "title": "codex x cc",
+      "args": ["./run_benchmark.sh", "harness=codex", "evalAgent=cc", "--skills", "srp,commenting,logging,worktree", "-k", "5", "-n", "5"]
+    },
+    {
+      "title": "codex x grok",
+      "args": ["./run_benchmark.sh", "harness=codex", "evalAgent=grok", "--skills", "srp,commenting,logging,worktree", "-k", "5", "-n", "5"]
+    },
+    {
+      "title": "cc x codex",
+      "args": ["./run_benchmark.sh", "harness=cc", "evalAgent=codex", "--skills", "srp,commenting,logging,worktree", "-k", "5", "-n", "5"]
+    },
+    {
+      "title": "cc x cc",
+      "args": ["./run_benchmark.sh", "harness=cc", "evalAgent=cc", "--skills", "srp,commenting,logging,worktree", "-k", "5", "-n", "5"]
+    },
+    {
+      "title": "cc x grok",
+      "args": ["./run_benchmark.sh", "harness=cc", "evalAgent=grok", "--skills", "srp,commenting,logging,worktree", "-k", "5", "-n", "5"]
+    },
+    {
+      "title": "grok x codex",
+      "args": ["./run_benchmark.sh", "harness=grok", "evalAgent=codex", "--skills", "srp,commenting,logging,worktree", "-k", "5", "-n", "5"]
+    },
+    {
+      "title": "grok x cc",
+      "args": ["./run_benchmark.sh", "harness=grok", "evalAgent=cc", "--skills", "srp,commenting,logging,worktree", "-k", "5", "-n", "5"]
+    },
+    {
+      "title": "grok x grok",
+      "args": ["./run_benchmark.sh", "harness=grok", "evalAgent=grok", "--skills", "srp,commenting,logging,worktree", "-k", "5", "-n", "5"]
+    }
+  ]
+}
