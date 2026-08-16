@@ -56,6 +56,8 @@ Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
 - `evals/verifier/llm_judge/` — pin workspace `*.py` files and retry skip-inspect scores
 - `evals/.generated/tasks/` — generated at runtime (gitignored, hidden)
 - `evals/run_benchmark.sh` — multi-harness runner (`harness=codex|cc|grok|both|all`, `evalAgent=…`)
+- `evals/launch_benchmarks.sh` — preset menu; opens one terminal per job on this monitor
+- `evals/presets/` — git-tracked launch presets (JSON)
 - `evals/docker_networks.py` — prune leftover Harbor nets; slot lock so parallel terminals do not exhaust Docker IPAM
 - `evals/run_codex_benchmark.sh` — shim → `run_benchmark.sh harness=codex`
 - `evals/run_grok_benchmark.sh` — shim → `run_benchmark.sh harness=grok`
