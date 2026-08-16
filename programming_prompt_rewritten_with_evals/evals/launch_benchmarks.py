@@ -406,7 +406,11 @@ def shell_command(args: Sequence[str]) -> str:
 
 
 def terminal_script(title: str, args: Sequence[str]) -> str:
-    """Inner bash that runs one Harbor job and waits.
+    """Inner bash that runs one Harbor job, then an interactive shell.
+
+    The job command is written to a temp ``HISTFILE`` so Up-arrow recalls it
+    (same as typing it in a normal terminal). The window is not closed with
+    a Press-Enter prompt.
 
     Args:
         title: Window title (also set via OSC).
@@ -414,12 +418,19 @@ def terminal_script(title: str, args: Sequence[str]) -> str:
     """
     quoted_title = shlex.quote(title)
     body = shell_command(args)
+    quoted_body = shlex.quote(body)
     return (
         f"printf '\\033]0;%s\\007' {quoted_title}; "
         f"echo {quoted_title}; echo; "
+        "hist=$(mktemp --tmpdir harbor-eval-hist.XXXXXX); "
+        "rc=$(mktemp --tmpdir harbor-eval-rc.XXXXXX); "
+        f"printf '%s\\n' {quoted_body} > \"$hist\"; "
+        "printf 'export HISTFILE=%s\\nexport HISTSIZE=1000\\nexport HISTFILESIZE=1000\\n' "
+        "\"$hist\" > \"$rc\"; "
+        "echo '[[ -f ~/.bashrc ]] && . ~/.bashrc' >> \"$rc\"; "
         f"{body}; "
         "status=$?; echo; echo exit=$status; "
-        "read -r -p 'Press Enter to close this window...'"
+        "exec bash --rcfile \"$rc\" -i"
     )
 
 
@@ -910,6 +921,19 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
             "fake_script_has_runner",
             all(RUN_SCRIPT in script for _, script in fake.spawned),
             "inner bash runs the wrapper",
+        )
+        record(
+            "no_press_enter",
+            all("Press Enter" not in script for _, script in fake.spawned),
+            "window stays as a shell",
+        )
+        record(
+            "histfile_up_arrow",
+            all(
+                "HISTFILE" in script and "exec bash --rcfile" in script
+                for _, script in fake.spawned
+            ),
+            "Up-arrow recalls the job command",
         )
     else:
         record("fake_monitor", False, "shipped preset missing")
