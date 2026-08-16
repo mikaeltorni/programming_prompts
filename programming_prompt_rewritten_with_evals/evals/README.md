@@ -239,7 +239,9 @@ suite goes further:
   for `evalAgent=codex`. [`verifier/run_grok_judge.py`](verifier/run_grok_judge.py)
   shells out to the Grok CLI (`--json-schema`). That flag implies
   `--output-format json`, so the helper unwraps `structured_output` from the
-  result envelope (rewardkit 0.1.7 has no grok agent backend).
+  result envelope (rewardkit 0.1.7 has no grok agent backend). The judge gets
+  `--max-turns 16` so it can read workspace files before scoring; without
+  that it often answered no as "not yet inspected".
 - Sign in once on the host: `grok login --oauth` (SuperGrok / Grok.com).
   Confirm with `test -f ~/.grok/auth.json && grok --version`.
 
