@@ -234,8 +234,9 @@ suite goes further:
 - Auth (verifier): **default `evalAgent` inherits Grok**, so SuperGrok /
   `XAI_API_KEY` must reach the verifier. Codex `auth.json` is still mounted
   for `evalAgent=codex`. [`verifier/run_grok_judge.py`](verifier/run_grok_judge.py)
-  shells out to the Grok CLI (`--json-schema`); rewardkit 0.1.7 has no grok
-  agent backend.
+  shells out to the Grok CLI (`--json-schema`). That flag implies
+  `--output-format json`, so the helper unwraps `structured_output` from the
+  result envelope (rewardkit 0.1.7 has no grok agent backend).
 - Sign in once on the host: `grok login --oauth` (SuperGrok / Grok.com).
   Confirm with `test -f ~/.grok/auth.json && grok --version`.
 
