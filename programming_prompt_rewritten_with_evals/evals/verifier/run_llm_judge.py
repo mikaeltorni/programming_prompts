@@ -183,6 +183,16 @@ def _self_test() -> int:
             "args:" in c_text,
             "Args: remains a commenting failure",
         )
+        check(
+            "commenting_accepts_none_case",
+            "capitalization" in c_text or "does not matter" in c_text,
+            "Parameters: none and Parameters: None both pass",
+        )
+        check(
+            "commenting_blank_line_ok",
+            "blank line" in c_text,
+            "blank line before Parameters: is a yes",
+        )
     else:
         check("commenting_prompt_present", False, f"missing {commenting_prompt}")
     logging_prompt = (
