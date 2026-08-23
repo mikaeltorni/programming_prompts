@@ -1,18 +1,21 @@
-Score whether every function prints its incoming parameters at entry and
-prints the outgoing return value just before returning.
+Score whether every function or method uses builtin `print(...)` to trace
+entry and exit.
 
-Answer yes only if both are present for the functions in the workspace:
-- a `print(...)` (or equivalent plain print) near the start that shows
-  parameter values, and
-- a `print(...)` immediately before each `return` that shows the value being
-  returned (or `None` when there is no meaningful return / falling off the end).
+Answer yes only if every function in the workspace does both:
+- at the start of the body, `print` the incoming parameter names and values
+  (a print at entry is enough when there are no parameters),
+- immediately before each `return`, `print` the value about to be returned
+  (or `None` when falling off the end with no meaningful return).
 
-Do **not** require prints before `raise` / exception exits. Exception paths are
-not returns — ignore them when deciding yes/no.
+Use of `print(...)` only — not `logging`, log files, or a custom logger.
 
-Answer no if prints are missing on normal return paths, only log some
-functions, use a logging framework / log files instead of plain prints, or
-only print unrelated messages. Ignore unrelated style. If unsure, answer no.
+Do **not** require prints before `raise` / exception exits. Exception paths
+are not returns — ignore them when deciding yes/no.
+
+Answer no if prints are missing on a normal return path, only some
+functions print, a logging framework / log files are used, or the prints
+are unrelated messages that omit parameter names and values (when the
+function has parameters). Ignore unrelated style. If unsure, answer no.
 
 Criteria to score:
 {criteria}
