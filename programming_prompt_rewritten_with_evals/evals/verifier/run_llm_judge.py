@@ -156,6 +156,16 @@ def _self_test() -> int:
             "only if" not in no_block.lower(),
             "no-path is not limited to one exception (false-positive hole)",
         )
+        check(
+            "srp_yes_allows_get_format",
+            "already-computed" in yes_block.lower() or "get" in yes_block.lower(),
+            "thin entrypoint may format existing state in one line",
+        )
+        check(
+            "srp_yes_allows_int_in_helper",
+            "int()" in yes_block or "already-split" in yes_block.lower(),
+            "int() of a split token in a state helper is core logic",
+        )
     else:
         check("srp_prompt_present", False, f"missing {srp_prompt}")
     commenting_prompt = (
