@@ -4,18 +4,25 @@
 # Each skill keeps its own prompt at evals/judges/<skill>/prompt.md.
 #
 # LLM judges run once per eval agent via run_llm_judge.py (pin + retry).
-# A failed eval agent does not abort later agents or skills.
+# Skill × eval-agent jobs and programmatic checkers run concurrently
+# (evals/verifier/judge_pool.py). A failed job does not abort siblings.
 #   EVAL_AGENTS=codex            (default when unset — same as historical Codex)
 #   EVAL_AGENTS=cc,codex,grok    (score the same workspace two/three times)
 #   EVAL_AGENT_MODELS=...        (one value, or one per agent)
 #   EVAL_AGENT_REASONING_EFFORT=low|medium|high  (same zip rules)
+#   EVAL_JUDGE_WORKERS=N         (thread cap; default = one thread per job)
 # Programmatic judges (worktree) run once and ignore evalAgent.
 set -euo pipefail
 
-mkdir -p /logs/verifier
-
 HERE="$(cd "$(dirname "$0")" && pwd)"
 LLM_HELPER="$HERE/run_llm_judge.py"
+JUDGE_POOL="$HERE/judge_pool.py"
+
+if [[ "${1:-}" == "--self-test" ]]; then
+  exec python3 "$JUDGE_POOL" --self-test
+fi
+
+mkdir -p /logs/verifier
 
 csv_trim_lower() {
   local raw="${1:-}"
@@ -143,6 +150,10 @@ find_codex_auth() {
   return 1
 }
 
+if [[ ! -f "$JUDGE_POOL" ]]; then
+  echo "Missing judge pool: $JUDGE_POOL" >&2
+  exit 1
+fi
 if [[ "$has_llm_judge" -eq 1 ]]; then
   if [[ ! -f "$LLM_HELPER" ]]; then
     echo "Missing LLM judge helper: $LLM_HELPER" >&2
@@ -323,26 +334,42 @@ run_one_judge() {
     aggregate_eval_agent_rewards "$skill" "$output_json"
 }
 
-declare -a skill_names=()
-declare -a skill_rewards=()
-
-if [[ -d /tests/judges ]]; then
-    for judge_dir in /tests/judges/*; do
-        [[ -d "$judge_dir" && -f "$judge_dir/judge.toml" ]] || continue
-        skill="$(basename "$judge_dir")"
-        out="/logs/verifier/reward-${skill}.json"
-        echo "Running judge for skill: $skill" >&2
-        run_one_judge "$judge_dir" "$out"
-        skill_names+=("$skill")
-        reward="$(python3 - "$out" <<'PY'
-import json, sys
+append_judge_job() {
+    local label="$1"
+    shift
+    python3 - "$JOBS_FILE" "$label" "$@" <<'PY'
+import json
+import sys
 from pathlib import Path
-payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+
+path = Path(sys.argv[1])
+label = sys.argv[2]
+argv = sys.argv[3:]
+jobs = json.loads(path.read_text(encoding="utf-8"))
+jobs.append({"label": label, "argv": list(argv)})
+path.write_text(json.dumps(jobs) + "\n", encoding="utf-8")
+print(f"Queued judge job {label}", file=sys.stderr, flush=True)
+PY
+}
+
+read_skill_reward() {
+    python3 - "$1" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+if not path.is_file():
+    print("0.0")
+    raise SystemExit(0)
+payload = json.loads(path.read_text(encoding="utf-8"))
 print(float(payload.get("reward", 0)))
 PY
-)"
-        skill_rewards+=("$reward")
-        python3 - "$skill" "/logs/verifier/reward-${skill}-details.json" <<'PY'
+}
+
+print_skill_bits() {
+    local skill="$1"
+    python3 - "$skill" "/logs/verifier/reward-${skill}-details.json" <<'PY'
 import json, sys
 from pathlib import Path
 
@@ -378,14 +405,78 @@ if path.is_file():
                 )
 print(f"Judge {skill}: raw={raw or '?'} reasoning={reasoning or '(none)'}", flush=True)
 PY
+}
+
+declare -a skill_names=()
+declare -a llm_skills=()
+declare -a skill_rewards=()
+
+JOBS_FILE="$(mktemp)"
+echo '[]' > "$JOBS_FILE"
+
+if [[ -d /tests/judges ]]; then
+    for judge_dir in /tests/judges/*; do
+        [[ -d "$judge_dir" && -f "$judge_dir/judge.toml" ]] || continue
+        skill="$(basename "$judge_dir")"
+        skill_names+=("$skill")
+        out="/logs/verifier/reward-${skill}.json"
+        if grep -qE '^judge[[:space:]]*=[[:space:]]*"programmatic"' "$judge_dir/judge.toml"; then
+            echo "Queue programmatic judge for skill: $skill" >&2
+            append_judge_job "$skill" python3 "$HERE/check_worktree.py" \
+                --repo /Projects/app --output "$out"
+            continue
+        fi
+        llm_skills+=("$skill")
+        local_idx=0
+        for local_idx in "${!EVAL_AGENT_LIST[@]}"; do
+            agent="${EVAL_AGENT_LIST[$local_idx]}"
+            model="${EVAL_MODELS[$local_idx]}"
+            effort="${EVAL_EFFORTS[$local_idx]}"
+            agent_out="/logs/verifier/reward-${skill}-${agent}.json"
+            echo "Queue judge for skill=$skill evalAgent=$agent" >&2
+            append_judge_job "${skill}/${agent}" python3 "$LLM_HELPER" \
+                --agent "$agent" \
+                --judge-dir "$judge_dir" \
+                --output "$agent_out" \
+                --workspace /Projects/app \
+                --model "$model" \
+                --reasoning-effort "$effort"
+        done
     done
 fi
 
 if [[ ${#skill_names[@]} -eq 0 ]]; then
     # Fallback: single judge files at /tests root
+    rm -f "$JOBS_FILE"
     run_one_judge /tests /logs/verifier/reward.json
     exit 0
 fi
+
+echo "Running judge jobs concurrently (EVAL_JUDGE_WORKERS=${EVAL_JUDGE_WORKERS:-all})" >&2
+if ! python3 "$JUDGE_POOL" "$JOBS_FILE" > /logs/verifier/judge-pool-results.json; then
+    echo "judge pool failed to run (continuing to aggregate whatever rewards exist)" >&2
+fi
+rm -f "$JOBS_FILE"
+
+skill_is_llm() {
+    local candidate="$1"
+    local llm
+    for llm in "${llm_skills[@]:-}"; do
+        if [[ "$llm" == "$candidate" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+for skill in "${skill_names[@]}"; do
+    out="/logs/verifier/reward-${skill}.json"
+    if skill_is_llm "$skill"; then
+        aggregate_eval_agent_rewards "$skill" "$out"
+    fi
+    skill_rewards+=("$(read_skill_reward "$out")")
+    print_skill_bits "$skill"
+done
 
 python3 - <<'PY' /logs/verifier "${skill_names[@]}" -- "${skill_rewards[@]}"
 from __future__ import annotations

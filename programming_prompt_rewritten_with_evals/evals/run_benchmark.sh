@@ -39,7 +39,8 @@
 # Trial count (rule of thumb): harnesses × (skills if --run-separately else 1)
 # × tasks × -k. Example: both harnesses, 2 skills separately, 5 tasks, -k 5
 # → 2 × 2 × 5 × 5 = 100 trials. evalAgent does not multiply trials; it reruns
-# the LLM judge on each trial (2–3× verifier cost when several agents).
+# the LLM judge on each trial (2–3× verifier cost when several agents, same
+# wall clock — judges run concurrently unless EVAL_JUDGE_WORKERS caps them).
 #
 # Parallel terminals: each Harbor trial creates a Docker network. Docker's
 # default IPAM only has ~30 user-defined /16 slots, so a dozen -n 5 jobs
@@ -1304,17 +1305,6 @@ append_oauth_env() {
   esac
 }
 
-harbor_args_have_flag() {
-  local flag="$1"
-  local item
-  for item in "${HARBOR_ARGS[@]:-}"; do
-    if [[ "$item" == "$flag" ]]; then
-      return 0
-    fi
-  done
-  return 1
-}
-
 run_harbor_for_harness() {
   local harness="$1"
   shift
@@ -1363,6 +1353,9 @@ run_harbor_for_harness() {
   add_env_pair "EVAL_AGENTS=$eval_csv"
   add_env_pair "EVAL_AGENT_MODELS=$models_csv"
   add_env_pair "EVAL_AGENT_REASONING_EFFORT=$efforts_csv"
+  if [[ -n "${EVAL_JUDGE_WORKERS:-}" ]]; then
+    add_env_pair "EVAL_JUDGE_WORKERS=$EVAL_JUDGE_WORKERS"
+  fi
   # Verifier must see the same secrets (--ve). Agent phase still uses --ae.
   local -a ve_flags=(
     --ve "EVAL_AGENTS=$eval_csv"
@@ -1377,10 +1370,8 @@ run_harbor_for_harness() {
     esac
   done
 
-  local -a timeout_flags=()
-  if ! harbor_args_have_flag "--verifier-timeout-multiplier"; then
-    timeout_flags=(--verifier-timeout-multiplier "${#eval_agents[@]}")
-  fi
+  # Judges run concurrently inside the verifier, so wall time is about one
+  # judge timeout — not agents × skills. Leave Harbor's default multiplier.
 
   # Env vars must be visible to Harbor's agent process; export for this call only.
   (
@@ -1394,7 +1385,6 @@ run_harbor_for_harness() {
       --ak "version=$version" \
       "${ae_flags[@]}" \
       "${ve_flags[@]}" \
-      "${timeout_flags[@]}" \
       "$@"
   )
 }
