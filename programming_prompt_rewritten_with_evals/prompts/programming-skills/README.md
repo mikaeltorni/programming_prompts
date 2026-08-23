@@ -13,7 +13,7 @@ Current skills:
 | [`commenting`](commenting/SKILL.md) | Docstrings with description, Parameters, Returns |
 | [`logging`](logging/SKILL.md) | Plain `print` of parameters at entry and return value before exit |
 | [`logging-vague`](logging-vague/SKILL.md) | Control: one vague “Use logging.” line; scored by the logging judge |
-| [`worktree`](worktree/SKILL.md) | Sibling `.worktrees/<project>/` worktree, commit each part, never push |
+| [`worktree`](worktree/SKILL.md) | Sibling `.worktrees/<project>/` worktree, commit each part, merge back, never push |
 
 **Logging eval note:** pair `logging` (or `logging-vague`) with `srp` so the
 agent writes several helpers — otherwise a one-function script may not give

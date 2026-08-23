@@ -6,7 +6,7 @@ timeout = 60
 
 [[criterion]]
 name = "worktree_layout"
-description = "sibling .worktrees/<project>/ worktree, incremental commits, no push"
+description = "sibling .worktrees/<project>/ worktree, merge back, no push"
 type = "binary"
 
 [scoring]
