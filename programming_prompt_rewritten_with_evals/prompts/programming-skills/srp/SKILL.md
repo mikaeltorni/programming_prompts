@@ -15,8 +15,10 @@ Concrete rules:
 - Put core logic (arithmetic, state updates, conversions, business rules) in
   its own helper(s). Helpers may return a one-line formatted result.
 - Keep the public entrypoint thin: parse → call helpers → return/format.
-  Dispatching with if/elif in the entrypoint is fine. Do not leave
-  arithmetic, state updates, or conversions in the entrypoint — a
-  format-only helper is not enough.
+  Dispatching with if/elif in the entrypoint is fine. A one-line format
+  of already-computed state (for example `get` → `value=<n>`) is fine.
+  Do not leave increment/arithmetic/state updates in the entrypoint — a
+  format-only helper is not enough. Converting an already-split token
+  with `int()` inside a state helper is still that helper's job.
 - Do not leave parsing and core logic mixed in one monolithic function body.
 - Logging prints are a separate skill; they do not merge responsibilities.
