@@ -7,6 +7,7 @@ a git repository with an empty initial commit. A valid agent run then:
 * adds a worktree under ``<parent>/.worktrees/<project>/<dir>/`` (sibling of
   the repo, never inside it);
 * commits finished program parts on a non-default branch in that worktree;
+* merges that branch back into the live ``master``/``main`` checkout;
 * never adds a remote or pushes.
 
 This file is the judge. ``--self-test`` builds temporary fixtures for every
@@ -131,6 +132,20 @@ def _is_default_branch(branch: str) -> bool:
     """
     name = branch.removeprefix("refs/heads/")
     return name in {"master", "main"}
+
+
+def _is_ancestor(repo: Path, ancestor: str, descendant: str) -> bool:
+    """Return True when *ancestor* is in the history of *descendant*.
+
+    Args:
+        repo: Git working tree used for ``merge-base``.
+        ancestor: Commit that should already be merged.
+        descendant: Commit that should contain *ancestor* (usually live HEAD).
+
+    Returns:
+        Whether ``git merge-base --is-ancestor`` succeeded.
+    """
+    return _run_git(repo, "merge-base", "--is-ancestor", ancestor, descendant).returncode == 0
 
 
 def _root_commits(repo: Path) -> list[str]:
@@ -270,10 +285,29 @@ def check_repo(repo: Path) -> CheckResult:
         valid.append((path, entry))
 
     if valid:
-        names = ", ".join(str(path) for path, _ in valid)
+        live_branch = _git_ok(repo, "rev-parse", "--abbrev-ref", "HEAD")
+        if not _is_default_branch(live_branch):
+            return CheckResult(
+                False,
+                f"live checkout is on {live_branch or 'detached HEAD'}; merge into master/main",
+            )
+        live_head = _git_ok(repo, "rev-parse", "HEAD")
+        merged: list[Path] = []
+        for path, entry in valid:
+            wt_head = entry.get("HEAD") or _git_ok(path, "rev-parse", "HEAD")
+            if live_head and wt_head and _is_ancestor(repo, wt_head, live_head):
+                merged.append(path)
+        if not merged:
+            names = ", ".join(str(path) for path, _ in valid)
+            return CheckResult(
+                False,
+                f"worktree(s) exist ({names}) but were not merged into the live checkout",
+            )
+        names = ", ".join(str(path) for path in merged)
         return CheckResult(
             True,
-            f"worktree(s) under {store}: {names}; empty initial commit kept; no remotes/push",
+            f"worktree(s) under {store}: {names}; merged into live checkout; "
+            "empty initial commit kept; no remotes/push",
         )
     if problems:
         return CheckResult(False, "; ".join(problems))
@@ -300,7 +334,7 @@ def write_reward(result: CheckResult, output: Path) -> None:
                     "value": reward,
                     "raw": raw,
                     "weight": 1.0,
-                    "description": "sibling .worktrees/<project>/ worktree, incremental commits, no push",
+                    "description": "sibling .worktrees/<project>/ worktree, merge back, no push",
                     "reasoning": result.reasoning,
                 }
             ],
@@ -364,6 +398,17 @@ def _add_worktree(repo: Path, path: Path, *git_args: str) -> None:
     _cmd(repo, "git", "worktree", "add", *git_args, str(path))
 
 
+def _merge_branch(repo: Path, branch: str) -> None:
+    """Merge *branch* into master in *repo* with ``--no-ff``.
+
+    Args:
+        repo: Live checkout on master.
+        branch: Feature branch to merge.
+    """
+    _cmd(repo, "git", "checkout", "master")
+    _cmd(repo, "git", "merge", "--no-ff", branch, "-m", f"Merge {branch}")
+
+
 def _write_py(path: Path, body: str = "def run():\n    return 1\n") -> None:
     """Write a tiny Python file.
 
@@ -400,7 +445,19 @@ def _self_test() -> int:
         _write_py(wt / "calculator.py")
         _cmd(wt, "git", "add", "calculator.py")
         _cmd(wt, "git", "commit", "-m", "feat(calc): add calculator")
+        _merge_branch(repo, "feat/calc")
         record("pass_sibling_store", True, repo)
+
+        # Fail: valid worktree + commit, but never merged into master.
+        parent = root / "fail-unmerged"
+        repo = parent / "app"
+        _init_empty_repo(repo)
+        wt = parent / ".worktrees" / "app" / "feat-nomerge"
+        _add_worktree(repo, wt, "-b", "feat/nomerge")
+        _write_py(wt / "calculator.py")
+        _cmd(wt, "git", "add", "calculator.py")
+        _cmd(wt, "git", "commit", "-m", "feat(calc): unmerged")
+        record("fail_unmerged", False, repo)
 
         # Pass: same, then merge --no-ff back to master (worktree still present).
         parent = root / "pass-merge"
@@ -426,6 +483,7 @@ def _self_test() -> int:
         _write_py(wt / "counter.py", "def run_counter(c):\n    return c\n")
         _cmd(wt, "git", "add", "counter.py")
         _cmd(wt, "git", "commit", "-m", "feat(counter): entrypoint")
+        _merge_branch(repo, "feat/counter")
         record("pass_incremental_commits", True, repo)
 
         # Fail: not a git repo.
@@ -551,6 +609,7 @@ def _self_test() -> int:
         _write_py(wt / "calculator.py")
         _cmd(wt, "git", "add", "calculator.py")
         _cmd(wt, "git", "commit", "-m", "named project")
+        _merge_branch(repo, "feat/named")
         record("pass_matching_project_name", True, repo)
 
         # Pass: simulated Projects/ parent (the Harbor eval layout).
@@ -562,6 +621,7 @@ def _self_test() -> int:
         _write_py(wt / "calculator.py")
         _cmd(wt, "git", "add", "calculator.py")
         _cmd(wt, "git", "commit", "-m", "feat(calc): add calculator")
+        _merge_branch(repo, "feat/calc")
         record("pass_projects_parent", True, repo)
 
     failed = [(name, msg) for name, ok, msg in cases if not ok]

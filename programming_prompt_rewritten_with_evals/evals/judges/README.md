@@ -24,7 +24,7 @@ judges/
 | [`srp`](srp/prompt.md) | single-responsibility structure | parse + core helpers; entrypoint must not do the core work |
 | [`commenting`](commenting/prompt.md) | docstring format | description + same-line `Parameters:` + `Returns:` (no Google wrap) |
 | [`logging`](logging/prompt.md) | entry/exit prints | builtin `print` of names+values at entry + return value before each `return` (ignore `raise`) |
-| [`worktree`](worktree/judge.toml) | *(programmatic)* | sibling `.worktrees/<project>/` worktree, commits on a feature branch, no remotes/push |
+| [`worktree`](worktree/judge.toml) | *(programmatic)* | sibling `.worktrees/<project>/` worktree, merge into master, no remotes/push |
 
 `logging-vague` has **no** judge directory — the runner maps it onto
 `judges/logging/` so the vague one-liner is scored by the real logging criteria.
