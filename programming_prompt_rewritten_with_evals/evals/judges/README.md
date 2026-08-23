@@ -21,7 +21,7 @@ judges/
 
 | Skill | Prompt | What it scores |
 | --- | --- | --- |
-| [`srp`](srp/prompt.md) | single-responsibility structure | parse + core helpers, thin entrypoint |
+| [`srp`](srp/prompt.md) | single-responsibility structure | parse + core helpers, thin if/elif entrypoint |
 | [`commenting`](commenting/prompt.md) | docstring format | description + `Parameters:` + `Returns:` |
 | [`logging`](logging/prompt.md) | entry/exit prints | plain `print` of params at entry + return value before each `return` (ignore `raise`) |
 | [`worktree`](worktree/judge.toml) | *(programmatic)* | sibling `.worktrees/<project>/` worktree, commits on a feature branch, no remotes/push |
