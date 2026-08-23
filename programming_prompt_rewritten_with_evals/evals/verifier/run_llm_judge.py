@@ -111,6 +111,42 @@ def _self_test() -> int:
     )
     block = criteria_block(criteria)
     check("criteria_token", '"yes" or "no"' in block, "prompt lists yes/no scores")
+    srp_prompt = (
+        Path(__file__).resolve().parent.parent / "judges" / "srp" / "prompt.md"
+    )
+    if srp_prompt.is_file():
+        srp_text = srp_prompt.read_text(encoding="utf-8")
+        lower = srp_text.lower()
+        no_idx = lower.find("answer no")
+        yes_idx = lower.find("answer yes")
+        yes_block = (
+            srp_text[yes_idx:no_idx]
+            if yes_idx >= 0 and no_idx > yes_idx
+            else srp_text
+        )
+        no_block = srp_text[no_idx:] if no_idx >= 0 else ""
+        check(
+            "srp_yes_allows_dispatch",
+            "dispatch" in yes_block.lower() and "if/elif" in yes_block.lower(),
+            "yes-path allows a thin if/elif entrypoint",
+        )
+        check(
+            "srp_no_does_not_punish_dispatch",
+            "dispatch" not in no_block.lower(),
+            "no-path does not treat dispatch as an SRP failure",
+        )
+        check(
+            "srp_helpers_may_format",
+            "formatted" in lower,
+            "helpers may return a formatted result string",
+        )
+        check(
+            "srp_logging_not_srp_fail",
+            "logging" in lower and "not an srp failure" in lower,
+            "logging prints are scored separately",
+        )
+    else:
+        check("srp_prompt_present", False, f"missing {srp_prompt}")
     rows = parse_scores(
         '{"score": "yes", "reasoning": "parse helper plus core"}',
         criteria,
