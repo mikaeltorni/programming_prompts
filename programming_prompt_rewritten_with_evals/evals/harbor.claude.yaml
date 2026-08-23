@@ -12,7 +12,7 @@ agents:
       - ../prompts/programming-skills/srp
       - ../prompts/programming-skills/commenting
     kwargs:
-      version: "2.1.227"
+      version: "2.1.241"
       reasoning_effort: low
 
 tasks: []

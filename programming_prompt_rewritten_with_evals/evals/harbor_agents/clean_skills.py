@@ -9,12 +9,72 @@ from __future__ import annotations
 import shlex
 from pathlib import Path
 
-# Fallback when codex-version.txt is missing; keep in sync with that file.
-DEFAULT_CODEX_VERSION = "0.147.0"
-# Fallback when claude-version.txt is missing; keep in sync with that file.
-DEFAULT_CLAUDE_VERSION = "2.1.227"
-# Fallback when grok-version.txt is missing; keep in sync with that file.
-DEFAULT_GROK_VERSION = "1.0.4"
+# Fallback when pin files and the instance-start cache are missing.
+# Keep in sync with evals/*-version.txt.
+DEFAULT_CODEX_VERSION = "0.149.0"
+DEFAULT_CLAUDE_VERSION = "2.1.241"
+DEFAULT_GROK_VERSION = "1.0.5"
+
+_EVALS_DIR = Path(__file__).resolve().parents[1]
+
+
+def generated_versions_dir() -> Path:
+    """Return the gitignored cache of CLI versions resolved at instance start.
+
+    ``run_benchmark.sh`` writes one ``*-version.txt`` per harness here after
+    looking up npm / the Grok stable channel. Loaders prefer this cache over
+    the committed pin files so a new Harbor instance uses the newest CLIs
+    without dirtying git.
+    """
+    return _EVALS_DIR / ".generated" / "cli-versions"
+
+
+def generated_version_file(name: str) -> Path:
+    """Return the instance-start cache path for one harness pin.
+
+    Args:
+        name: ``codex``, ``claude``, or ``grok``.
+    """
+    return generated_versions_dir() / f"{name}-version.txt"
+
+
+def _read_version_text(path: Path) -> str:
+    """Return stripped file text, or empty when the path is missing/unreadable.
+
+    Args:
+        path: Version pin or cache file.
+    """
+    try:
+        return path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
+def _load_version(
+    *,
+    name: str,
+    pin_file: Path,
+    default: str,
+    version_file: Path | None = None,
+    use_cache: bool = True,
+) -> str:
+    """Load a CLI version: explicit override, then instance cache, then pin.
+
+    Args:
+        name: Harness pin stem (``codex``, ``claude``, ``grok``).
+        pin_file: Committed fallback pin under ``evals/``.
+        default: Last-resort constant when every file is missing.
+        version_file: Optional explicit path (skips the instance cache).
+        use_cache: When False, skip ``.generated/cli-versions/`` and read
+            the committed pin (used for ``--no-pin-refresh``).
+    """
+    if version_file is not None:
+        return _read_version_text(version_file) or default
+    if use_cache:
+        cached = _read_version_text(generated_version_file(name))
+        if cached:
+            return cached
+    return _read_version_text(pin_file) or default
 
 
 def codex_version_file() -> Path:
@@ -22,74 +82,88 @@ def codex_version_file() -> Path:
 
     The file lives next to the Harbor task tree at ``evals/codex-version.txt``.
     """
-    return Path(__file__).resolve().parents[1] / "codex-version.txt"
+    return _EVALS_DIR / "codex-version.txt"
 
 
 def claude_version_file() -> Path:
     """Return the path of the evals Claude Code version pin file."""
-    return Path(__file__).resolve().parents[1] / "claude-version.txt"
+    return _EVALS_DIR / "claude-version.txt"
 
 
 def grok_version_file() -> Path:
     """Return the path of the evals Grok CLI version pin file."""
-    return Path(__file__).resolve().parents[1] / "grok-version.txt"
+    return _EVALS_DIR / "grok-version.txt"
 
 
-def load_codex_version(version_file: Path | None = None) -> str:
-    """Load the pinned Codex CLI version from disk.
+def load_codex_version(
+    version_file: Path | None = None, *, use_cache: bool = True
+) -> str:
+    """Load the Codex CLI version for this instance.
 
-    Args:
-        version_file: Optional override path. Defaults to
-            :func:`codex_version_file`.
-
-    Returns:
-        A stripped version string such as ``0.147.0``. Falls back to
-        :data:`DEFAULT_CODEX_VERSION` when the file is absent or empty.
-    """
-    path = version_file or codex_version_file()
-    try:
-        text = path.read_text(encoding="utf-8").strip()
-    except OSError:
-        return DEFAULT_CODEX_VERSION
-    return text or DEFAULT_CODEX_VERSION
-
-
-def load_claude_version(version_file: Path | None = None) -> str:
-    """Load the pinned Claude Code CLI version from disk.
+    Prefers the gitignored instance-start cache, then the committed pin.
 
     Args:
-        version_file: Optional override path. Defaults to
-            :func:`claude_version_file`.
+        version_file: Optional override path. When set, only that file is
+            read (no instance cache).
+        use_cache: When False, read only the committed pin.
 
     Returns:
-        A stripped version string such as ``2.1.227``. Falls back to
-        :data:`DEFAULT_CLAUDE_VERSION` when the file is absent or empty.
+        A stripped version string such as ``0.149.0``. Falls back to
+        :data:`DEFAULT_CODEX_VERSION` when every source is absent or empty.
     """
-    path = version_file or claude_version_file()
-    try:
-        text = path.read_text(encoding="utf-8").strip()
-    except OSError:
-        return DEFAULT_CLAUDE_VERSION
-    return text or DEFAULT_CLAUDE_VERSION
+    return _load_version(
+        name="codex",
+        pin_file=codex_version_file(),
+        default=DEFAULT_CODEX_VERSION,
+        version_file=version_file,
+        use_cache=use_cache,
+    )
 
 
-def load_grok_version(version_file: Path | None = None) -> str:
-    """Load the pinned Grok CLI version from disk.
+def load_claude_version(
+    version_file: Path | None = None, *, use_cache: bool = True
+) -> str:
+    """Load the Claude Code CLI version for this instance.
 
     Args:
-        version_file: Optional override path. Defaults to
-            :func:`grok_version_file`.
+        version_file: Optional override path. When set, only that file is
+            read (no instance cache).
+        use_cache: When False, read only the committed pin.
 
     Returns:
-        A stripped version string such as ``1.0.4``. Falls back to
-        :data:`DEFAULT_GROK_VERSION` when the file is absent or empty.
+        A stripped version string such as ``2.1.241``. Falls back to
+        :data:`DEFAULT_CLAUDE_VERSION` when every source is absent or empty.
     """
-    path = version_file or grok_version_file()
-    try:
-        text = path.read_text(encoding="utf-8").strip()
-    except OSError:
-        return DEFAULT_GROK_VERSION
-    return text or DEFAULT_GROK_VERSION
+    return _load_version(
+        name="claude",
+        pin_file=claude_version_file(),
+        default=DEFAULT_CLAUDE_VERSION,
+        version_file=version_file,
+        use_cache=use_cache,
+    )
+
+
+def load_grok_version(
+    version_file: Path | None = None, *, use_cache: bool = True
+) -> str:
+    """Load the Grok CLI version for this instance.
+
+    Args:
+        version_file: Optional override path. When set, only that file is
+            read (no instance cache).
+        use_cache: When False, read only the committed pin.
+
+    Returns:
+        A stripped version string such as ``1.0.5``. Falls back to
+        :data:`DEFAULT_GROK_VERSION` when every source is absent or empty.
+    """
+    return _load_version(
+        name="grok",
+        pin_file=grok_version_file(),
+        default=DEFAULT_GROK_VERSION,
+        version_file=version_file,
+        use_cache=use_cache,
+    )
 
 
 def build_ensure_git_repo_command(repo: str = "/Projects/app") -> str:

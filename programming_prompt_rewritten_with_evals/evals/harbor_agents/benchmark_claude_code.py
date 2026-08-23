@@ -1,8 +1,10 @@
 """Clean Claude Code agent for rewritten-prompt Harbor benchmarks.
 
 Wipes host/user Claude skill trees inside the trial, then installs only the
-skills Harbor injected for the job. CLI version defaults to the pin in
-``evals/claude-version.txt`` unless ``--ak version=...`` overrides it.
+skills Harbor injected for the job. CLI version defaults to the newest
+stable npm ``@anthropic-ai/claude-code`` looked up at instance start, with
+``evals/claude-version.txt`` as the fallback unless ``--ak version=...``
+overrides it.
 """
 
 from __future__ import annotations
@@ -32,7 +34,8 @@ class BenchmarkClaudeCode(ClaudeCode):
         Args:
             *args: Forwarded to Harbor's Claude Code agent.
             version: Claude Code CLI version to install/verify inside the trial
-                environment. When omitted, reads ``evals/claude-version.txt``.
+                environment. When omitted, uses the instance-start cache or
+                ``evals/claude-version.txt``.
             **kwargs: Forwarded to the Harbor Claude Code agent (model flags,
                 skills directory, reasoning effort, and so on).
         """

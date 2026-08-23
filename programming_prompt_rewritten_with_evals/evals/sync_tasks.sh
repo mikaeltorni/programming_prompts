@@ -6,6 +6,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 PROMPTS_DIR="$SCRIPT_DIR/coding-prompts"
 ORACLES_DIR="$SCRIPT_DIR/oracles"
 TEMPLATE_DIR="$SCRIPT_DIR/task-template"
@@ -28,12 +29,44 @@ import shutil
 import sys
 from pathlib import Path
 
+from harbor_agents.clean_skills import (
+    load_claude_version,
+    load_codex_version,
+    load_grok_version,
+)
+from harbor_agents.log import log
+
 prompts_dir = Path(sys.argv[1])
 oracles_dir = Path(sys.argv[2])
 template_dir = Path(sys.argv[3])
 tasks_dir = Path(sys.argv[4])
 
 FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n(.*)\Z", re.S)
+DOCKER_ARG_RE = {
+    "CODEX_VERSION": re.compile(r"^ARG CODEX_VERSION=.*$", re.M),
+    "CLAUDE_VERSION": re.compile(r"^ARG CLAUDE_VERSION=.*$", re.M),
+    "GROK_VERSION": re.compile(r"^ARG GROK_VERSION=.*$", re.M),
+}
+
+
+def patch_dockerfile_versions(path: Path) -> None:
+    """Bake the instance-start CLI versions into a generated task Dockerfile.
+
+    Args:
+        path: Copied ``environment/Dockerfile`` under a generated task.
+    """
+    versions = {
+        "CODEX_VERSION": load_codex_version(),
+        "CLAUDE_VERSION": load_claude_version(),
+        "GROK_VERSION": load_grok_version(),
+    }
+    text = path.read_text(encoding="utf-8")
+    for arg, version in versions.items():
+        updated, count = DOCKER_ARG_RE[arg].subn(f"ARG {arg}={version}", text, count=1)
+        if count != 1:
+            raise SystemExit(f"{path}: missing ARG {arg}= in template Dockerfile")
+        text = updated
+    path.write_text(text, encoding="utf-8")
 
 
 def parse_prompt(path: Path) -> tuple[dict[str, str], str]:
@@ -144,11 +177,17 @@ for prompt_path in prompt_files:
     (task_dir / "artifact.txt").write_text(artifact + "\n", encoding="utf-8")
     write_task_toml(task_dir / "task.toml", name, description)
     shutil.copy2(template_dir / "environment" / "Dockerfile", task_dir / "environment" / "Dockerfile")
+    patch_dockerfile_versions(task_dir / "environment" / "Dockerfile")
     shutil.copy2(template_dir / "tests" / "test.sh", task_dir / "tests" / "test.sh")
     (task_dir / "tests" / "test.sh").chmod(0o755)
     shutil.copy2(oracle_src, task_dir / "solution" / "oracle.py")
     write_solve_sh(task_dir / "solution" / "solve.sh", artifact, name)
     print(f"materialized task {name} -> {task_dir}", flush=True)
 
+log(
+    "baked CLI versions into generated Dockerfiles: "
+    f"Codex={load_codex_version()} Claude={load_claude_version()} "
+    f"Grok={load_grok_version()}"
+)
 print(f"Synced {len(prompt_files)} coding prompt(s) into {tasks_dir}", flush=True)
 PY

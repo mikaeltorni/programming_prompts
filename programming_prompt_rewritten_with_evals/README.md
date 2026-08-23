@@ -38,7 +38,9 @@ CLI parameters (`harness=`, `evalAgent=`, `evalAgentModel=`,
 harness as the coding agent; pass `evalAgent=cc,codex` to grade twice.
 
 Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
-@ low; Grok `grok-4.6` @ low. Pins:
+@ low; Grok `grok-4.6` @ low. Each new Harbor instance looks up the newest
+stable CLI (npm `latest` for Codex and Claude Code, Grok `stable` channel).
+Committed fallbacks:
 [`evals/codex-version.txt`](evals/codex-version.txt),
 [`evals/claude-version.txt`](evals/claude-version.txt),
 [`evals/grok-version.txt`](evals/grok-version.txt).

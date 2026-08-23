@@ -3,10 +3,10 @@ FROM ghcr.io/astral-sh/uv:0.11.26 AS uv
 FROM python:3.12-slim
 
 # Keep in sync with evals/codex-version.txt, evals/claude-version.txt,
-# and evals/grok-version.txt
-ARG CODEX_VERSION=0.147.0
-ARG CLAUDE_VERSION=2.1.227
-ARG GROK_VERSION=1.0.4
+# and evals/grok-version.txt (instance start may bake newer values).
+ARG CODEX_VERSION=0.149.0
+ARG CLAUDE_VERSION=2.1.241
+ARG GROK_VERSION=1.0.5
 
 COPY --from=uv /uv /uvx /bin/
 

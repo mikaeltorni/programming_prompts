@@ -6,8 +6,10 @@ user skill discovery path Codex scans, then installs only the skills Harbor
 injected for the job (``--skill`` / agent ``skills``). Host skills under
 ``~/.agents/skills`` never enter the benchmark container session.
 
-The Codex CLI version defaults to the pin in ``evals/codex-version.txt``
-(currently 0.147.0) unless ``--ak version=...`` overrides it.
+The Codex CLI version defaults to the newest stable release looked up at
+instance start (npm ``@openai/codex`` ``latest``), with
+``evals/codex-version.txt`` as the fallback pin, unless ``--ak version=...``
+overrides it.
 """
 
 from __future__ import annotations
@@ -37,7 +39,8 @@ class BenchmarkCodex(Codex):
         Args:
             *args: Forwarded to :class:`harbor.agents.installed.codex.Codex`.
             version: Codex CLI version to install/verify inside the trial
-                environment. When omitted, reads ``evals/codex-version.txt``.
+                environment. When omitted, uses the instance-start cache or
+                ``evals/codex-version.txt``.
             **kwargs: Forwarded to the Harbor Codex agent (model flags, skills
                 directory, resume, and so on).
         """
