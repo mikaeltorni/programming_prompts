@@ -47,6 +47,7 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `evalAgent=cc,codex,grok` / `--evalAgent cc` / `--eval-agent=all` | LLM **judge** harness(es). Same aliases/groups as `harness=`. Omit to use the **same** harness as the coding agent |
 | `evalAgentModel=claude-opus-5` / `--evalAgentModel …` / `--eval-agent-model=…` | Judge model id (same idea as `-m` / `--model`). One value for every eval agent, or one per agent |
 | `evalAgentReasoningEffort=low` / `--evalAgentReasoningEffort high` | Judge effort: `low`, `medium`, or `high` (same idea as `--ak reasoning_effort=`). One value or one per agent |
+| `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: one thread per job) |
 | `--skills srp,commenting` | Which skills to inject (default: all non-`*-vague`) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
@@ -78,8 +79,10 @@ Trial math: default `-k 5` is **5 attempts per selected coding task**. With all
 with 2 skills ≈ **2×** that. Omit harness (both) ≈ **2×** again — e.g.
 `harness` omitted + `--run-separately` + 2 skills + 5 tasks + `-k 5` ≈
 **100 trials**. `evalAgent=cc,codex` does **not** multiply trials; it reruns
-the LLM judge on each trial (2× verifier time/cost). Programmatic judges
-(worktree) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
+the LLM judge on each trial (2× verifier *cost*). Judge subprocesses for every
+skill × eval agent plus programmatic checkers run **concurrently**, so wall
+clock stays about one judge timeout unless you cap it with `EVAL_JUDGE_WORKERS`.
+Programmatic judges (worktree) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
 Code `claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
 (`--reasoning-effort`). Judge defaults match those models at **low** effort
 unless `evalAgentModel` / `evalAgentReasoningEffort` override them.
@@ -119,6 +122,7 @@ evals/
 ├── verifier/
 │   ├── README.md
 │   ├── run_judges.sh
+│   ├── judge_pool.py           # concurrent LLM + programmatic judges
 │   ├── check_worktree.py       # worktree layout judge + --self-test
 │   ├── run_llm_judge.py        # Codex / Claude Code / Grok eval agent
 │   ├── run_grok_judge.py       # shim → run_llm_judge.py --agent grok
@@ -538,6 +542,14 @@ python3 verifier/check_worktree.py --self-test
 ```
 
 ```bash
+python3 verifier/run_llm_judge.py --self-test
+```
+
+```bash
+python3 verifier/judge_pool.py --self-test
+```
+
+```bash
 python3 archive_benchmark_run.py self-test
 ```
 
@@ -788,6 +800,7 @@ Override defaults on the command line (or edit `harbor.codex.yaml` /
 | `--ak reasoning_effort=…` | Effort: `low`, `medium`, or `high` (Codex, Claude, Grok) |
 | `evalAgentModel=…` | Judge model id (same idea as `-m`; one value or one per eval agent) |
 | `evalAgentReasoningEffort=…` | Judge effort (same idea as `--ak reasoning_effort=`) |
+| `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: one thread per job) |
 | `--ak version=…` | CLI pin override |
 | `-k` / `--n-attempts` | Independent attempts per task (default example: `5`) |
 | `-n` / `--n-concurrent` | How many trials run in parallel (default example: `5`) |

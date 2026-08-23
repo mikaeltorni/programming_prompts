@@ -3,6 +3,7 @@
 # Edit only:
 #   evals/judges/<skill>/prompt.md (+ judge.toml)
 #   evals/verifier/run_judges.sh
+#   evals/verifier/judge_pool.py
 #   evals/verifier/check_worktree.py
 #   evals/verifier/run_llm_judge.py
 #   evals/verifier/run_grok_judge.py
@@ -17,6 +18,7 @@ JUDGES_ROOT="$SCRIPT_DIR/judges"
 VERIFIER_SRC="$SCRIPT_DIR/verifier/run_judges.sh"
 WORKTREE_CHECK_SRC="$SCRIPT_DIR/verifier/check_worktree.py"
 GROK_JUDGE_SRC="$SCRIPT_DIR/verifier/run_grok_judge.py"
+JUDGE_POOL_SRC="$SCRIPT_DIR/verifier/judge_pool.py"
 LLM_JUDGE_CLI="$SCRIPT_DIR/verifier/run_llm_judge.py"
 LLM_JUDGE_SRC="$SCRIPT_DIR/verifier/llm_judge"
 # Allow callers to target an isolated job copy (see run_benchmark.sh).
@@ -41,6 +43,10 @@ if [[ ! -f "$WORKTREE_CHECK_SRC" ]]; then
 fi
 if [[ ! -f "$GROK_JUDGE_SRC" ]]; then
   echo "Missing Grok judge helper: $GROK_JUDGE_SRC" >&2
+  exit 1
+fi
+if [[ ! -f "$JUDGE_POOL_SRC" ]]; then
+  echo "Missing judge pool: $JUDGE_POOL_SRC" >&2
   exit 1
 fi
 if [[ ! -f "$LLM_JUDGE_CLI" ]]; then
@@ -91,6 +97,7 @@ for tests_dir in "$TASKS_DIR"/*/tests; do
   install -m 755 "$VERIFIER_SRC" "$tests_dir/run_judges.sh"
   install -m 755 "$WORKTREE_CHECK_SRC" "$tests_dir/check_worktree.py"
   install -m 755 "$LLM_JUDGE_CLI" "$tests_dir/run_llm_judge.py"
+  install -m 755 "$JUDGE_POOL_SRC" "$tests_dir/judge_pool.py"
   install -m 755 "$GROK_JUDGE_SRC" "$tests_dir/run_grok_judge.py"
   rm -rf "$tests_dir/llm_judge"
   mkdir -p "$tests_dir/llm_judge"
