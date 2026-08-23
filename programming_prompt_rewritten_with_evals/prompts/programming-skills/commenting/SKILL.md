@@ -12,7 +12,8 @@ Document every function or method with a docstring that always uses exactly
 this format:
 
 1. A short description of what the function does.
-2. One line starting with `Parameters:` listing each parameter and meaning.
+2. One line starting with `Parameters:` listing each parameter and meaning
+   (`Parameters: none` or `Parameters: None` when there are no parameters).
 3. One line starting with `Returns:` describing the return value
    (`Returns: None` when there is no meaningful return).
 
