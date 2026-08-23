@@ -145,8 +145,68 @@ def _self_test() -> int:
             "logging" in lower and "not an srp failure" in lower,
             "logging prints are scored separately",
         )
+        check(
+            "srp_no_rejects_fat_entrypoint",
+            "entrypoint" in no_block.lower()
+            and ("arithmetic" in no_block.lower() or "state" in no_block.lower()),
+            "no-path fails when the entrypoint still does core work",
+        )
+        check(
+            "srp_no_not_only_if",
+            "only if" not in no_block.lower(),
+            "no-path is not limited to one exception (false-positive hole)",
+        )
     else:
         check("srp_prompt_present", False, f"missing {srp_prompt}")
+    commenting_prompt = (
+        Path(__file__).resolve().parent.parent / "judges" / "commenting" / "prompt.md"
+    )
+    if commenting_prompt.is_file():
+        c_text = commenting_prompt.read_text(encoding="utf-8").lower()
+        check(
+            "commenting_every_function",
+            "every function" in c_text,
+            "commenting scores every function, not some",
+        )
+        check(
+            "commenting_same_line_labels",
+            "same line" in c_text,
+            "Parameters:/Returns: content stays on the label line",
+        )
+        check(
+            "commenting_rejects_wrapped",
+            "wrapped" not in c_text and "google" in c_text,
+            "Google-style wrapped Parameters: is a no, not a yes",
+        )
+        check(
+            "commenting_rejects_args",
+            "args:" in c_text,
+            "Args: remains a commenting failure",
+        )
+    else:
+        check("commenting_prompt_present", False, f"missing {commenting_prompt}")
+    logging_prompt = (
+        Path(__file__).resolve().parent.parent / "judges" / "logging" / "prompt.md"
+    )
+    if logging_prompt.is_file():
+        l_text = logging_prompt.read_text(encoding="utf-8").lower()
+        check(
+            "logging_every_function",
+            "every function" in l_text,
+            "logging scores every function, not some",
+        )
+        check(
+            "logging_builtin_print_only",
+            "print(" in l_text and "equivalent" not in l_text,
+            "only builtin print(), not an equivalent",
+        )
+        check(
+            "logging_names_and_values",
+            "names and values" in l_text,
+            "entry prints must show parameter names and values",
+        )
+    else:
+        check("logging_prompt_present", False, f"missing {logging_prompt}")
     rows = parse_scores(
         '{"score": "yes", "reasoning": "parse helper plus core"}',
         criteria,
