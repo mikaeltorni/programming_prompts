@@ -54,7 +54,8 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `--tasks=greeter` / `task=todo,counter` | Same, equals / bare forms |
 | `--run-separately` / `--runSeparately` | One Harbor job per skill (costlier) |
 | `--baseline` | No skills injected; selected judges still score |
-| `--install-only` | Reinstall/verify pinned CLI(s) in the task image |
+| `--install-only` | Reinstall/verify newest stable CLI(s) in the task image (no LLM) |
+| `--no-pin-refresh` | Skip registry lookup; use committed `*-version.txt` pins |
 | `-k` / `-n` / `-m` / `--ak` | Passed through to Harbor |
 
 Harness aliases: `cc`, `claude`, `claude-code`, `claudecode` → Claude Code;
@@ -122,6 +123,7 @@ evals/
 │   ├── run_llm_judge.py        # Codex / Claude Code / Grok eval agent
 │   ├── run_grok_judge.py       # shim → run_llm_judge.py --agent grok
 │   └── llm_judge/              # shared pin-and-retry helpers for every eval agent
+├── harbor_agents/          # BenchmarkCodex / Claude / Grok + version refresh
 ├── testing/
 ├── sync_tasks.sh           # coding-prompts → .generated/tasks/
 ├── sync_judges.sh          # judges + verifier → .generated/tasks/*/tests/
@@ -194,9 +196,13 @@ and judge files.
 ## Tested platform
 
 The Harbor workflow was exercised on Ubuntu 24.04 with Docker Engine, Harbor
-`0.20.0`, Codex CLI `0.147.0`, Claude Code `2.1.227`, Grok CLI `1.0.4`,
+`0.20.0`, Codex CLI `0.149.0`, Claude Code `2.1.241`, Grok CLI `1.0.5`,
 GPT-5.6 Luna at low reasoning effort, Claude Opus 5 at low effort, and
-Grok 4.6 at low effort.
+Grok 4.6 at low effort. Each `./run_benchmark.sh` invocation looks up those
+CLI versions again (npm `latest`, Grok `stable` channel) so a new instance
+installs whatever is newest at start time. Pass `--no-pin-refresh` to freeze
+the committed pin files. The lookup is a few HTTP GETs and does not call an
+LLM.
 
 ## Clean agent instances (required for skill benchmarks)
 
@@ -207,7 +213,8 @@ Skill trials must not reuse host skill trees.
 Every Harbor Codex trial already gets a fresh `CODEX_HOME=/tmp/codex-home`. This
 suite goes further:
 
-- Pin: [`codex-version.txt`](codex-version.txt) (`0.147.0`).
+- Pin fallback: [`codex-version.txt`](codex-version.txt) (`0.149.0`).
+  Instance start prefers npm `@openai/codex` `latest`.
 - [`harbor_agents/benchmark_codex.py`](harbor_agents/benchmark_codex.py) wipes
   `$HOME/.agents/skills`, `/etc/codex/skills`, and `$CODEX_HOME/skills`, then
   installs only the skills configured for that job.
@@ -215,7 +222,8 @@ suite goes further:
 
 ### Claude Code (`harness=cc`)
 
-- Pin: [`claude-version.txt`](claude-version.txt) (`2.1.227`).
+- Pin fallback: [`claude-version.txt`](claude-version.txt) (`2.1.241`).
+  Instance start prefers npm `@anthropic-ai/claude-code` `latest`.
 - [`harbor_agents/benchmark_claude_code.py`](harbor_agents/benchmark_claude_code.py)
   wipes `$HOME/.claude/skills` and `$CLAUDE_CONFIG_DIR/skills`, then installs
   only the job’s skills (Harbor would otherwise copy host `~/.claude/skills`).
@@ -236,7 +244,8 @@ suite goes further:
 
 ### Grok CLI (`harness=grok`)
 
-- Pin: [`grok-version.txt`](grok-version.txt) (`1.0.4`).
+- Pin fallback: [`grok-version.txt`](grok-version.txt) (`1.0.5`).
+  Instance start prefers the Grok `https://x.ai/cli/stable` channel pointer.
 - Model: `grok-4.6` @ **low** reasoning (`--reasoning-effort low`). Harbor's
   stock Grok agent defaults to high; this wrapper pins low unless you pass
   `--ak reasoning_effort=high`.
@@ -266,10 +275,11 @@ Reinstall or verify pinned CLIs inside the task environment:
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-./run_benchmark.sh --install-only                  # Codex + Claude Code
+./run_benchmark.sh --install-only                  # Codex + Claude Code (newest CLIs)
 ./run_benchmark.sh --install-only harness=codex
 ./run_benchmark.sh --install-only harness=cc
 ./run_benchmark.sh --install-only harness=grok
+./run_benchmark.sh --no-pin-refresh --install-only # committed pins only
 ```
 
 ## Install Docker on Ubuntu 24.04

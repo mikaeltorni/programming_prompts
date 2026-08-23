@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 # Run rewritten-prompt Harbor jobs with clean, version-pinned coding agents.
 #
+# Each new instance looks up the newest stable CLI (npm latest for Codex and
+# Claude Code, Grok stable channel) and installs that in the trial. Committed
+# *-version.txt files are fallbacks when the registry is unreachable.
+# Pass --no-pin-refresh (or HARNESS_PIN_REFRESH=0) to use only those pins.
+# Lookups are tiny HTTP GETs — they do not call an LLM.
+#
 # Harnesses: Codex (`codex`), Claude Code (`cc`), and Grok CLI (`grok`).
 # Omit --harness / harness= to run Codex and Claude Code. Defaults:
 #   codex → openai/gpt-5.6-luna @ reasoning_effort=low
@@ -25,6 +31,7 @@
 #   ./run_benchmark.sh --skills srp,logging -k 2 -n 2
 #   ./run_benchmark.sh --skills srp,worktree -k 2 -n 2
 #   ./run_benchmark.sh --install-only harness=grok
+#   ./run_benchmark.sh --no-pin-refresh --install-only harness=codex
 #   ./run_benchmark.sh harness=codex evalAgent=cc,codex
 #   ./run_benchmark.sh harness=cc evalAgent=grok evalAgentModel=grok-4.6 \
 #       evalAgentReasoningEffort=low
@@ -79,6 +86,7 @@ fi
 
 export PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 HARNESS_SPEC="$SCRIPT_DIR/harbor_agents/harness_spec.py"
+REFRESH_VERSIONS="$SCRIPT_DIR/harbor_agents/refresh_versions.py"
 DOCKER_NETWORKS="$SCRIPT_DIR/docker_networks.py"
 _docker_slot_holder=""
 
@@ -130,7 +138,7 @@ JUDGES_ROOT="$SCRIPT_DIR/judges"
 CODING_PROMPTS_DIR="$SCRIPT_DIR/coding-prompts"
 TASKS_DIR="$SCRIPT_DIR/.generated/tasks"
 
-echo "Codex pin: $CODEX_VERSION | Claude Code pin: $CLAUDE_VERSION | Grok pin: $GROK_VERSION" >&2
+echo "Committed CLI fallbacks: Codex $CODEX_VERSION | Claude Code $CLAUDE_VERSION | Grok $GROK_VERSION" >&2
 echo "Run stamp: $RUN_STAMP" >&2
 echo "PYTHONPATH includes: $SCRIPT_DIR" >&2
 
@@ -140,6 +148,7 @@ harbor_job_name() {
 }
 
 INSTALL_ONLY=0
+PIN_REFRESH=1
 BASELINE=0
 RUN_SEPARATELY=0
 SKILLS_ARG=""
@@ -154,6 +163,14 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --install-only)
       INSTALL_ONLY=1
+      shift
+      ;;
+    --no-pin-refresh|--offline-pins)
+      PIN_REFRESH=0
+      shift
+      ;;
+    --pin-refresh)
+      PIN_REFRESH=1
       shift
       ;;
     --baseline|--no-skill)
@@ -321,6 +338,17 @@ else
   done
   unset _h
 fi
+
+# Look up newest stable CLIs for this instance (tiny registry GETs, no LLM).
+if [[ "$PIN_REFRESH" -eq 0 ]]; then
+  python3 "$REFRESH_VERSIONS" --offline >&2
+else
+  python3 "$REFRESH_VERSIONS" >&2
+fi
+CODEX_VERSION="$(python3 "$HARNESS_SPEC" version codex)"
+CLAUDE_VERSION="$(python3 "$HARNESS_SPEC" version cc)"
+GROK_VERSION="$(python3 "$HARNESS_SPEC" version grok)"
+echo "Instance CLI versions: Codex $CODEX_VERSION | Claude Code $CLAUDE_VERSION | Grok $GROK_VERSION" >&2
 
 # Control skills named <base>-vague inject a vague SKILL.md but are scored by
 # judges/<base>/ (they have no judge of their own).

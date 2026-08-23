@@ -7,7 +7,7 @@ agents:
     model_name: openai/gpt-5.6-luna
     skills: []
     kwargs:
-      version: "0.147.0"
+      version: "0.149.0"
       reasoning_effort: low
 
 tasks:

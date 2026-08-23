@@ -2,7 +2,8 @@
 
 Wraps Harbor's Grok Build agent (``grok-build``) so each trial:
 
-* pins the CLI version from ``evals/grok-version.txt``;
+* pins the CLI version from the instance-start lookup (Grok ``stable``
+  channel), falling back to ``evals/grok-version.txt``;
 * wipes ``~/.grok/skills`` (and plugins) then installs only the skills Harbor
   injected for the job — host SuperGrok marketplace skills never enter the
   session;
@@ -41,7 +42,8 @@ class BenchmarkGrok(GrokBuild):
         Args:
             *args: Forwarded to Harbor's Grok Build agent.
             version: Grok CLI version to install/verify inside the trial.
-                When omitted, reads ``evals/grok-version.txt``.
+                When omitted, uses the instance-start cache or
+                ``evals/grok-version.txt``.
             **kwargs: Forwarded to the Harbor Grok agent (model flags, skills
                 directory, reasoning effort, ``grok_config``, and so on).
                 ``reasoning_effort`` defaults to ``low`` when the job did not

@@ -17,7 +17,7 @@ agents:
       - ../prompts/programming-skills/srp
       - ../prompts/programming-skills/worktree
     kwargs:
-      version: "1.0.4"
+      version: "1.0.5"
       reasoning_effort: low
 
 tasks: []
