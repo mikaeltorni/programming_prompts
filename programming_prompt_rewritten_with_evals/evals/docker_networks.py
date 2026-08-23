@@ -72,6 +72,20 @@ WAIT_LOG_SEC = 15.0
 POOL_EXHAUSTED_NEEDLE = "all predefined address pools have been fully subnetted"
 
 
+def wait_log_due(now: float, last_log: float, interval: float = WAIT_LOG_SEC) -> bool:
+    """Return True when a wait line should print.
+
+    Initialize ``last_log`` to ``started - interval`` so the first wait is
+    immediate; later lines stay spaced by *interval*.
+
+    Args:
+        now: ``time.monotonic()`` at this poll.
+        last_log: Monotonic time of the previous wait line.
+        interval: Minimum seconds between wait lines.
+    """
+    return now - last_log >= interval
+
+
 def log(message: str) -> None:
     """Write one helper line to stderr (stdout stays machine-readable).
 
@@ -619,7 +633,7 @@ def acquire_slots(
         raise ValueError("--holder is required")
     prune_stale_networks()
     started = time.monotonic()
-    last_log = 0.0
+    last_log = started - WAIT_LOG_SEC
     while True:
         with _with_lock(write=True) as state:
             reaped = _reap_holders(state)
@@ -667,7 +681,7 @@ def acquire_slots(
                 f"timed out waiting for {slots} Docker network slots "
                 f"(capacity={cap} used={used} reserved={reserved})"
             )
-        if now - last_log >= WAIT_LOG_SEC:
+        if wait_log_due(now, last_log):
             log(
                 f"waiting for {need} Docker network slot(s); "
                 f"free={free} max={max_slots} used={used} reserved={reserved}"
@@ -837,6 +851,16 @@ def _self_test() -> int:
         "occupied_no_double_count",
         occupied_slots(used=25, harbor_live=25, reserved=25) == 25,
         "live Harbor nets already reserved count once",
+    )
+    record(
+        "wait_log_immediate",
+        wait_log_due(100.0, 100.0 - WAIT_LOG_SEC),
+        "first wait logs immediately",
+    )
+    record(
+        "wait_log_interval",
+        not wait_log_due(100.0 + WAIT_LOG_SEC - 0.1, 100.0),
+        "no wait spam inside the interval",
     )
 
     failed = [(name, msg) for name, ok, msg in cases if not ok]

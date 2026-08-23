@@ -106,6 +106,7 @@ acquire_docker_slots() {
   local holder="$1"
   local slots="$2"
   local granted
+  echo "Reserving up to $slots Docker network slot(s) for $holder (blocks if IPAM is full)." >&2
   granted="$(python3 "$DOCKER_NETWORKS" acquire --slots "$slots" --holder "$holder" --pid "$$")"
   _docker_slot_holder="$holder"
   printf '%s\n' "$granted"
@@ -1474,7 +1475,11 @@ run_jobs_for_harness() {
   if [[ "$RUN_SEPARATELY" -eq 1 ]]; then
     echo "Running each selected skill in its own prompt instance for harness=$harness (--run-separately)." >&2
     local skill
+    local skill_i=0
+    local skill_n="${#SELECTED_SKILLS[@]}"
     for skill in "${SELECTED_SKILLS[@]}"; do
+      skill_i=$((skill_i + 1))
+      echo "=== separately skill ${skill_i}/${skill_n}: ${skill} (harness=${harness}) ===" >&2
       SELECTED_SKILLS_FOR_JOB=("$skill")
       if [[ "$BASELINE" -eq 1 ]]; then
         run_one_job "$harness" "$(harbor_job_name "${harness}-baseline-$skill")" "baseline"
