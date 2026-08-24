@@ -2,11 +2,13 @@
 
 Canonical Harbor verify script for every coding task.
 
-- Edit [`run_judges.sh`](run_judges.sh), [`judge_pool.py`](judge_pool.py),
-  [`check_worktree.py`](check_worktree.py),
+- Edit [`run_judges.sh`](run_judges.sh) (sources [`lib/`](lib/)),
+  [`judge_pool.py`](judge_pool.py),
+  [`check_worktree.py`](check_worktree.py) plus [`worktree_check/`](worktree_check/),
   [`run_llm_judge.py`](run_llm_judge.py), and [`llm_judge/`](llm_judge/) here.
   [`run_grok_judge.py`](run_grok_judge.py) is a compatibility shim.
-- `../sync_judges.sh` copies them to `.generated/tasks/*/tests/` (runtime).
+- `../sync_judges.sh` copies the entry scripts, `worktree_check/`, `llm_judge/`,
+  and `lib/*.sh` to `.generated/tasks/*/tests/` (runtime).
 - Each task’s committed `tests/test.sh` is a thin wrapper that execs `run_judges.sh`.
 
 LLM judges run once per Harbor `--ve EVAL_AGENTS=…` entry (`codex`, `cc`,
