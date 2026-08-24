@@ -8,6 +8,8 @@
 #   evals/verifier/run_llm_judge.py
 #   evals/verifier/run_grok_judge.py
 #   evals/verifier/llm_judge/*.py
+#   evals/verifier/worktree_check/*.py
+#   evals/verifier/lib/*.sh
 # Never edit the synced copies under .generated/tasks/*/tests/ (generated).
 # Usage: ./sync_judges.sh [skill ...]
 # Prefer ./sync_tasks.sh first so .generated/tasks/ exists.
@@ -21,6 +23,8 @@ GROK_JUDGE_SRC="$SCRIPT_DIR/verifier/run_grok_judge.py"
 JUDGE_POOL_SRC="$SCRIPT_DIR/verifier/judge_pool.py"
 LLM_JUDGE_CLI="$SCRIPT_DIR/verifier/run_llm_judge.py"
 LLM_JUDGE_SRC="$SCRIPT_DIR/verifier/llm_judge"
+WORKTREE_CHECK_PACKAGE="$SCRIPT_DIR/verifier/worktree_check"
+VERIFIER_LIB_SRC="$SCRIPT_DIR/verifier/lib"
 # Allow callers to target an isolated job copy (see run_benchmark.sh).
 TASKS_DIR="${TASKS_DIR:-$SCRIPT_DIR/.generated/tasks}"
 
@@ -55,6 +59,14 @@ if [[ ! -f "$LLM_JUDGE_CLI" ]]; then
 fi
 if [[ ! -f "$LLM_JUDGE_SRC/workspace.py" ]]; then
   echo "Missing LLM judge package: $LLM_JUDGE_SRC" >&2
+  exit 1
+fi
+if [[ ! -f "$WORKTREE_CHECK_PACKAGE/__init__.py" ]]; then
+  echo "Missing worktree checker package: $WORKTREE_CHECK_PACKAGE" >&2
+  exit 1
+fi
+if [[ ! -f "$VERIFIER_LIB_SRC/eval_agents.sh" ]]; then
+  echo "Missing verifier shell library: $VERIFIER_LIB_SRC" >&2
   exit 1
 fi
 
@@ -99,6 +111,11 @@ for tests_dir in "$TASKS_DIR"/*/tests; do
   install -m 755 "$LLM_JUDGE_CLI" "$tests_dir/run_llm_judge.py"
   install -m 755 "$JUDGE_POOL_SRC" "$tests_dir/judge_pool.py"
   install -m 755 "$GROK_JUDGE_SRC" "$tests_dir/run_grok_judge.py"
+  rm -rf "$tests_dir/worktree_check"
+  cp -r "$WORKTREE_CHECK_PACKAGE" "$tests_dir/worktree_check"
+  rm -rf "$tests_dir/lib"
+  install -d "$tests_dir/lib"
+  install -m 644 "$VERIFIER_LIB_SRC"/*.sh "$tests_dir/lib/"
   rm -rf "$tests_dir/llm_judge"
   mkdir -p "$tests_dir/llm_judge"
   install -m 644 "$LLM_JUDGE_SRC"/*.py "$tests_dir/llm_judge/"

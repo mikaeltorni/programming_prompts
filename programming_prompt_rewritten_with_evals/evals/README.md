@@ -125,23 +125,29 @@ evals/
 │       └── judge.toml          # programmatic
 ├── verifier/
 │   ├── README.md
-│   ├── run_judges.sh
+│   ├── run_judges.sh           # thin entry; sources lib/*.sh
+│   ├── lib/                    # eval-agent, auth, runners, rewards helpers
 │   ├── judge_pool.py           # concurrent LLM + programmatic judges
-│   ├── check_worktree.py       # worktree layout judge + --self-test
-│   ├── run_llm_judge.py        # Codex / Claude Code / Grok eval agent
+│   ├── check_worktree.py       # thin CLI for the worktree layout judge
+│   ├── worktree_check/         # git I/O, rules, reward, fixtures
+│   ├── run_llm_judge.py        # thin CLI; Codex / Claude Code / Grok eval agent
 │   ├── run_grok_judge.py       # shim → run_llm_judge.py --agent grok
-│   └── llm_judge/              # shared pin-and-retry helpers for every eval agent
-├── harbor_agents/          # BenchmarkCodex / Claude / Grok + version refresh
+│   └── llm_judge/              # pin-and-retry helpers + self_test
+├── harbor_agents/          # BenchmarkCodex / Claude / Grok + registry/normalize/mounts
+├── lib/                    # sourced run_benchmark.sh SRP helpers + print_summary.py
+├── docker_ipam/            # IPAM math, slot lock, live Docker, CLI
+├── archive_run/            # run archive copy + RESULTS.txt index
+├── launcher/               # preset menu, geometry, terminal placement
 ├── testing/
 ├── sync_tasks.sh           # coding-prompts → .generated/tasks/
 ├── sync_judges.sh          # judges + verifier → .generated/tasks/*/tests/
 ├── run_benchmark.sh        # Codex + Claude Code + Grok runner
 ├── run_codex_benchmark.sh  # thin shim → run_benchmark.sh harness=codex
 ├── run_grok_benchmark.sh   # thin shim → run_benchmark.sh harness=grok
-├── archive_benchmark_run.py
-├── docker_networks.py      # prune leftover Harbor nets + cross-process IPAM slots
+├── archive_benchmark_run.py  # thin CLI shim → archive_run
+├── docker_networks.py      # thin CLI shim → docker_ipam
 ├── launch_benchmarks.sh    # interactive preset menu; normal windows on this monitor
-├── launch_benchmarks.py
+├── launch_benchmarks.py    # thin CLI shim → launcher
 ├── presets/                # git-tracked launch presets (positive/baseline matrices)
 ├── runs/                   # timestamped archives; RESULTS.txt is the table index
 ├── codex-version.txt
