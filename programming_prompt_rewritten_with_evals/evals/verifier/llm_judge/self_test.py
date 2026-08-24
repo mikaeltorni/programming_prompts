@@ -123,6 +123,11 @@ def run_self_test() -> int:
                 "int()" in yes_block or "already-split" in yes_block.lower(),
                 "int() of a split token in a state helper is core logic",
             ),
+            (
+                "srp_yes_allows_dispatch_raises",
+                "unknown" in yes_block.lower() and "raise" in yes_block.lower(),
+                "thin entrypoint may raise on unknown op or extra args",
+            ),
         ]
         for item in srp_checks:
             check(*item)
