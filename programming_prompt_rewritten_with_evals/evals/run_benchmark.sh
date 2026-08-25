@@ -44,7 +44,8 @@
 # Parallel terminals: each Harbor trial creates a Docker network AND a unique
 # compose image tag. Docker's default IPAM only has ~30 user-defined /16 slots,
 # and leftover ``*__env-main`` images plus BuildKit cache fill the disk.
-# docker_networks.py prunes leftovers and holds a cross-process slot lock.
+# docker_networks.py prunes exited containers and empty nets (keeps images
+# and BuildKit cache) and holds a cross-process slot lock.
 # Live coding trials are also capped machine-wide (default
 # EVAL_LLM_MAX_CONCURRENT=2) so ``-n 5`` in four terminals cannot burn API
 # rate limits. --run-separately runs one skill Harbor job after another.

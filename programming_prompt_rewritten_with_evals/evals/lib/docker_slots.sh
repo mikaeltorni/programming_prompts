@@ -41,8 +41,9 @@ on_eval_shell_exit() {
 }
 
 reclaim_docker_leftovers() {
-  # Drop exited Harbor containers, empty trial networks, unused images, cache.
-  python3 "$DOCKER_NETWORKS" prune >/dev/null || true
+  # Free IPAM (exited containers + empty nets). Keep trial images and
+  # BuildKit cache so the next Harbor job does not rebuild from scratch.
+  python3 "$DOCKER_NETWORKS" prune --ipam-only >/dev/null || true
 }
 
 acquire_docker_slots() {

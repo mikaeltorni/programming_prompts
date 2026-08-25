@@ -329,7 +329,7 @@ def _wait_or_timeout(
             f"reserved={snapshot['reserved']}"
         )
         last_log = now
-        reclaim_docker_leftovers(builder_cache=False)
+        reclaim_docker_leftovers(images=False, builder_cache=False)
     time.sleep(POLL_SEC)
     return last_log
 
@@ -350,7 +350,7 @@ def acquire_slots(
     from .hygiene import reclaim_docker_leftovers
 
     _validate_request(slots, holder)
-    reclaim_docker_leftovers(builder_cache=False)
+    reclaim_docker_leftovers(images=False, builder_cache=False)
     started = time.monotonic()
     last_log = started - WAIT_LOG_SEC
     while True:
