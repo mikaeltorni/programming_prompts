@@ -47,13 +47,14 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `evalAgent=cc,codex,grok` / `--evalAgent cc` / `--eval-agent=all` | LLM **judge** harness(es). Same aliases/groups as `harness=`. Omit to use the **same** harness as the coding agent |
 | `evalAgentModel=claude-opus-5` / `--evalAgentModel …` / `--eval-agent-model=…` | Judge model id (same idea as `-m` / `--model`). One value for every eval agent, or one per agent |
 | `evalAgentReasoningEffort=low` / `--evalAgentReasoningEffort high` | Judge effort: `low`, `medium`, or `high` (same idea as `--ak reasoning_effort=`). One value or one per agent |
-| `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: one thread per job) |
+| `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **1**) |
+| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine (default: **2**). `0` disables the cap |
 | `--skills srp,commenting` | Which skills to inject (default: all non-`*-vague`) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
 | `--tasks todo,calculator` | Which coding prompts to run (default: all) |
 | `--tasks=greeter` / `task=todo,counter` | Same, equals / bare forms |
-| `--run-separately` / `--runSeparately` | One Harbor job per skill, run in parallel under the Docker IPAM cap |
+| `--run-separately` / `--runSeparately` | One Harbor job per skill, **one after another** |
 | `--baseline` | No skills injected; selected judges still score |
 | `--install-only` | Reinstall/verify newest stable CLI(s) in the task image (no LLM) |
 | `--no-pin-refresh` | Skip registry lookup; use committed `*-version.txt` pins |
@@ -71,17 +72,12 @@ session and **each** matching judge scores the same written code. That is a
 single Harbor job: 5 tasks × `-k 5` = **25 trials**, then the wrapper stops.
 With `--run-separately`, each skill gets its own prompt instance + its own
 judge (more subscription usage) — **one Harbor job per skill**, so four skills
-are **4 × 25 = 100 trials**. Those skill jobs used to run **one after another**,
-which looked like a mysterious second run after the first skill’s 25/25
-summary. They now **fan out in parallel**. The wrapper prints
-`=== separately: N skill job(s) … up to W in parallel at -n … ===` and
-`=== separately skill i/N: … [parallel] ===` for each start. Each job’s `-n`
-is **fair-shared** across free Docker IPAM slots (`docker_networks.py fair-share`)
-so four `-n 5` skill jobs do not try to open 20 trial networks at once.
-If only a few slots remain, extra skill jobs wait in a worker queue.
-Parallel skill jobs pass Harbor `--quiet` so trial TUIs do not interleave;
-watch `$JOBS/<job>/` and the banners. Each Harbor job still gets an
-**isolated** copy of the selected tasks under
+are **4 × 25 = 100 trials**. Those skill jobs run **one after another**.
+Parallel skill jobs used to unpack a unique multi-GB trial image each and
+start every coding agent at once, which filled the disk and burned API rate
+limits. The wrapper prints `=== separately: N skill job(s) … sequential ===`
+and `=== separately skill i/N: … ===` for each start. Each Harbor job still
+gets an **isolated** copy of the selected tasks under
 `$RUN_DIR/harbor/task-trees/<job>/` so `/tests/judges` cannot be clobbered by
 another skill job or a concurrent benchmark sharing
 `evals/.generated/tasks/`.
@@ -91,9 +87,10 @@ Trial math: default `-k 5` is **5 attempts per selected coding task**. With all
 with 2 skills ≈ **2×** that. Omit harness (both) ≈ **2×** again — e.g.
 `harness` omitted + `--run-separately` + 2 skills + 5 tasks + `-k 5` ≈
 **100 trials**. `evalAgent=cc,codex` does **not** multiply trials; it reruns
-the LLM judge on each trial (2× verifier *cost*). Judge subprocesses for every
-skill × eval agent plus programmatic checkers run **concurrently**, so wall
-clock stays about one judge timeout unless you cap it with `EVAL_JUDGE_WORKERS`.
+the LLM judge on each trial (2× verifier *cost*). Judge subprocesses default
+to **one at a time** (`EVAL_JUDGE_WORKERS=1`) so dual eval agents do not
+open six LLM sessions per trial. Live coding trials on the machine default to
+**two at a time** (`EVAL_LLM_MAX_CONCURRENT=2`); extra wrappers wait.
 Programmatic judges (worktree) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
 Code `claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
 (`--reasoning-effort`). Judge defaults match those models at **low** effort
@@ -356,15 +353,18 @@ sudo usermod -aG docker "$USER"
 ```
 
 Docker's built-in IPAM gives each user-defined network a whole `/16` (~30
-networks on the host). Harbor creates one network **per trial**, so twelve
-terminals at `-n 5` exhaust the pool (`all predefined address pools have been
-fully subnetted`) and crash in `_prepare`. [`docker_networks.py`](docker_networks.py)
-prunes leftover empty Harbor networks and makes concurrent `./run_benchmark.sh`
-processes **wait for a slot** instead of stampeding. `--run-separately` splits
-those free slots across skill jobs in the same wrapper (`fair-share`) so they
-can run at the same time; each job’s reservation is tracked in the current
-shell and released when that Harbor job finishes (wrapping `acquire` in `$()`
-used to leak slots until the whole wrapper exited). Optional: give Docker
+networks on the host). Harbor creates one network **and one compose image tag**
+**per trial**, so leftover `*__env-main` images plus BuildKit cache fill the
+disk, and a dozen terminals at `-n 5` also exhaust IPAM
+(`all predefined address pools have been fully subnetted`).
+[`docker_networks.py`](docker_networks.py) removes exited trial containers,
+unused trial images, empty networks, and dangling build cache, then makes
+concurrent `./run_benchmark.sh` processes **wait for a coding-trial slot**.
+The default machine-wide cap is two live coding trials
+(`EVAL_LLM_MAX_CONCURRENT=2`). `--run-separately` runs one skill Harbor job
+after another. Each job’s reservation is tracked in the current shell and
+released when that Harbor job finishes (wrapping `acquire` in `$()` used to
+leak slots until the whole wrapper exited). Optional: give Docker
 thousands of `/24` trial networks (254 hosts each — enough for a Harbor
 compose project) so many jobs can run at full `-n` in parallel. Merge these
 pools into `/etc/docker/daemon.json` (keep any other keys) and restart Docker
@@ -843,7 +843,8 @@ Override defaults on the command line (or edit `harbor.codex.yaml` /
 | `--ak reasoning_effort=…` | Effort: `low`, `medium`, or `high` (Codex, Claude, Grok) |
 | `evalAgentModel=…` | Judge model id (same idea as `-m`; one value or one per eval agent) |
 | `evalAgentReasoningEffort=…` | Judge effort (same idea as `--ak reasoning_effort=`) |
-| `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: one thread per job) |
+| `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **1**) |
+| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine (default: **2**) |
 | `--ak version=…` | CLI pin override |
 | `-k` / `--n-attempts` | Independent attempts per task (default example: `5`) |
 | `-n` / `--n-concurrent` | How many trials run in parallel (default example: `5`) |

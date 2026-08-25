@@ -66,11 +66,6 @@ run_one_job() {
       concurrent_for_job="${harbor_args[$((i + 1))]:-$concurrent_for_job}"
     fi
   done
-  if [[ -n "${SEPARATELY_N_CONCURRENT:-}" ]]; then
-    concurrent_for_job="$SEPARATELY_N_CONCURRENT"
-    set_harbor_n_concurrent harbor_args "$concurrent_for_job"
-    echo "Job $job_name separately fair-share -n $concurrent_for_job" >&2
-  fi
   if [[ "${SEPARATELY_QUIET:-0}" -eq 1 ]]; then
     append_harbor_quiet harbor_args
   fi
@@ -80,7 +75,7 @@ run_one_job() {
   if harbor_uses_docker_env; then
     acquire_docker_slots "$docker_holder" "$concurrent_for_job" granted_slots
     if [[ "$granted_slots" != "$concurrent_for_job" ]]; then
-      echo "Docker IPAM clamped job $job_name -n $concurrent_for_job → $granted_slots" >&2
+      echo "Docker IPAM/LLM cap clamped job $job_name -n $concurrent_for_job → $granted_slots" >&2
       set_harbor_n_concurrent harbor_args "$granted_slots"
     fi
   else
@@ -89,6 +84,7 @@ run_one_job() {
 
   run_harbor_for_harness "$harness" "${common[@]}" "${harbor_args[@]}"
   release_docker_slots
+  reclaim_docker_leftovers
   local summary_file
   summary_file="$(mktemp)"
   capture_print_summary "$JOBS/$job_name" "$run_mode" "$skills_csv" "$summary_file"

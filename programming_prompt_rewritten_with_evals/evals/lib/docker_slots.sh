@@ -37,6 +37,12 @@ on_eval_shell_exit() {
   # EXIT trap: drop the named holder, then any leaked holders for this shell.
   release_docker_slots
   python3 "$DOCKER_NETWORKS" release --pid "${BASHPID:-$$}" || true
+  reclaim_docker_leftovers
+}
+
+reclaim_docker_leftovers() {
+  # Drop exited Harbor containers, empty trial networks, unused images, cache.
+  python3 "$DOCKER_NETWORKS" prune >/dev/null || true
 }
 
 acquire_docker_slots() {

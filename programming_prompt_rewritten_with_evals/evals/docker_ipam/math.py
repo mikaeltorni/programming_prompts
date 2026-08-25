@@ -9,6 +9,8 @@ from typing import Any
 from .constants import (
     BUILTIN_NETWORKS,
     DEFAULT_ADDRESS_POOLS,
+    HARBOR_CONTENT_IMAGE_PREFIX,
+    HARBOR_IMAGE_SUFFIX,
     HARBOR_NETWORK_SUFFIX,
     POOL_EXHAUSTED_NEEDLE,
     RECOMMENDED_ADDRESS_POOLS,
@@ -58,6 +60,54 @@ def is_harbor_trial_network(name: str) -> bool:
     Returns: true when the name has Harbor's trial suffix.
     """
     return name.endswith(HARBOR_NETWORK_SUFFIX)
+
+
+def is_harbor_trial_image(name: str) -> bool:
+    """Identify a Harbor trial image repository or ``repo:tag``.
+
+    Parameters: name - Docker image repository or ``name:tag``.
+
+    Returns: true for compose ``*__env-main`` tags or content-addressed ``hb__*``.
+    """
+    repo = name.split(":", 1)[0]
+    return repo.endswith(HARBOR_IMAGE_SUFFIX) or repo.startswith(
+        HARBOR_CONTENT_IMAGE_PREFIX
+    )
+
+
+def is_harbor_trial_container(name: str) -> bool:
+    """Identify a Harbor trial compose container.
+
+    Parameters: name - Docker container name.
+
+    Returns: true for ``<session>__env-main-1`` style names.
+    """
+    return f"{HARBOR_IMAGE_SUFFIX}-" in name or name.endswith(HARBOR_IMAGE_SUFFIX)
+
+
+def grant_trial_slots(
+    requested: int,
+    *,
+    ipam_free: int,
+    ipam_max: int,
+    reserved: int,
+    llm_cap: int,
+) -> int | None:
+    """Choose how many concurrent trials to grant now.
+
+    Parameters: requested - caller's ``-n``; ipam_free - unused Docker
+        networks; ipam_max - pool cap; reserved - slots already held by
+        other wrappers; llm_cap - machine-wide coding-trial cap.
+
+    Returns: slots to grant, or ``None`` when the caller must wait.
+    """
+    want = max(1, requested)
+    ipam_room = max(0, min(ipam_free, ipam_max))
+    llm_room = max(0, llm_cap - reserved)
+    room = min(ipam_room, llm_room)
+    if room < 1:
+        return None
+    return min(want, room)
 
 
 def is_pool_exhausted_message(text: str) -> bool:
