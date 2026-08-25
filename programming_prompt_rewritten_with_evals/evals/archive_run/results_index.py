@@ -78,18 +78,40 @@ def parse_run_stamp(stamp: object) -> datetime | None:
     return naive.replace(tzinfo=local_tz)
 
 
+def _archive_end_time(run_dir: Path) -> datetime | None:
+    """Return the latest mtime among durable archive finish files.
+
+    Parameters: run_dir - one archived run.
+
+    Returns: timezone-aware datetime, or ``None`` when no finish files exist.
+    """
+    candidates = [
+        run_dir / "01-SUMMARY.txt",
+        run_dir / "03-COMBINED-SUMMARY.txt",
+    ]
+    candidates.extend(sorted(run_dir.glob("jobs/*/00-job-result.json")))
+    candidates.extend(sorted(run_dir.glob("harbor/*/result.json")))
+    mtimes = [path.stat().st_mtime for path in candidates if path.is_file()]
+    if not mtimes:
+        return None
+    return datetime.fromtimestamp(max(mtimes), tz=timezone.utc)
+
+
 def run_elapsed_seconds(
     meta: dict,
     *,
     now: datetime | None = None,
+    run_dir: Path | None = None,
 ) -> float | None:
     """Compute wall-clock seconds for a run from metadata.
 
     Prefers stored ``elapsed_sec``, then ``started_at`` (or the run stamp)
     against ``archived_at``. When the end timestamp is missing or not after
-    the start — typical of an in-progress job — uses ``now``.
+    the start — typical of an in-progress job — uses ``now``. Older archives
+    sometimes stamped ``archived_at`` at init; if the computed duration is
+    under five seconds, falls back to summary or job-result file mtimes.
 
-    Parameters: meta - run metadata; now - clock used for in-progress runs.
+    Parameters: meta - run metadata; now - clock used for in-progress runs; run_dir - optional archive directory for mtime fallback.
 
     Returns: elapsed seconds, or ``None`` when start time is unknown.
     """
@@ -105,17 +127,27 @@ def run_elapsed_seconds(
     clock = now or datetime.now(timezone.utc)
     if ended is None or ended <= started:
         ended = clock
-    return max(0.0, (ended - started).total_seconds())
+    elapsed = max(0.0, (ended - started).total_seconds())
+    if elapsed < 5.0 and run_dir is not None:
+        mtime_end = _archive_end_time(run_dir)
+        if mtime_end is not None and mtime_end > started:
+            elapsed = max(elapsed, (mtime_end - started).total_seconds())
+    return elapsed
 
 
-def runtime_cell(meta: dict, *, now: datetime | None = None) -> str:
+def runtime_cell(
+    meta: dict,
+    *,
+    now: datetime | None = None,
+    run_dir: Path | None = None,
+) -> str:
     """Format a RESULTS Runtime cell from run metadata.
 
-    Parameters: meta - run metadata; now - clock used for in-progress runs.
+    Parameters: meta - run metadata; now - clock used for in-progress runs; run_dir - optional archive directory for mtime fallback.
 
     Returns: ``Xh YYm ZZs`` or ``-``.
     """
-    return format_runtime(run_elapsed_seconds(meta, now=now))
+    return format_runtime(run_elapsed_seconds(meta, now=now, run_dir=run_dir))
 
 
 def _csv(values: list[str]) -> str:
@@ -263,7 +295,7 @@ def format_results_row(run_dir: Path) -> dict[str, str]:
     scored = int(scores["scored"])
     row = {
         "Run": str(meta.get("timestamp") or run_dir.name.split("__", 1)[0]),
-        "Runtime": runtime_cell(meta),
+        "Runtime": runtime_cell(meta, run_dir=run_dir),
         "Mode": str(meta.get("mode") or "-"),
         "Harness": _csv(harnesses),
         "Judge": _csv(eval_agents) if eval_agents else "inherit",
