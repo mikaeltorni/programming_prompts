@@ -90,7 +90,6 @@ def _archive_end_time(run_dir: Path) -> datetime | None:
         run_dir / "03-COMBINED-SUMMARY.txt",
     ]
     candidates.extend(sorted(run_dir.glob("jobs/*/00-job-result.json")))
-    candidates.extend(sorted(run_dir.glob("harbor/*/result.json")))
     mtimes = [path.stat().st_mtime for path in candidates if path.is_file()]
     if not mtimes:
         return None
