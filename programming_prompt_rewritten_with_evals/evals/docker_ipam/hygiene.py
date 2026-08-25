@@ -2,10 +2,9 @@
 
 Harbor names one compose project per trial (``calculator__abc1234__env``),
 so ``docker compose up --build`` tags a unique ``*__env-main`` image even
-when layers are cached. Parallel jobs plus dual LLM judges left dozens of
-exited containers, 3.6G image tags, and tens of GB of build cache, which
-filled the disk and blocked IPAM. This module deletes leftovers that no
-running container still needs.
+when layers are cached. Automatic reclaim only removes exited containers
+and empty networks (IPAM). Deleting unused image tags and BuildKit cache
+is opt-in so the next trial can reuse layers instead of rebuilding.
 """
 
 from __future__ import annotations
@@ -135,10 +134,19 @@ def prune_unused_builder_cache() -> bool:
     return True
 
 
-def reclaim_docker_leftovers(*, builder_cache: bool = False) -> dict[str, Any]:
+def reclaim_docker_leftovers(
+    *,
+    images: bool = False,
+    builder_cache: bool = False,
+) -> dict[str, Any]:
     """Free leftover Harbor Docker state in a safe order.
 
-    Parameters: builder_cache - also prune dangling BuildKit cache.
+    Automatic evals reclaim (the default) only drops exited containers and
+    empty networks so the next trial can reuse image layers and BuildKit
+    cache. Passing ``images`` / ``builder_cache`` is the manual disk-reclaim
+    path — that is what made jobs slow when it ran between every Harbor job.
+
+    Parameters: images - delete unused ``*__env-main`` tags; builder_cache - also prune dangling BuildKit cache.
 
     Returns: counts of removed containers, networks, and images.
     """
@@ -146,11 +154,15 @@ def reclaim_docker_leftovers(*, builder_cache: bool = False) -> dict[str, Any]:
 
     containers = prune_exited_harbor_containers()
     networks = prune_stale_networks()
-    images = prune_unused_harbor_images()
+    removed_images = prune_unused_harbor_images() if images else []
     if builder_cache:
         prune_unused_builder_cache()
+    log(
+        f"reclaim containers={len(containers)} networks={len(networks)} "
+        f"images={len(removed_images)} builder_cache={int(builder_cache)}"
+    )
     return {
         "containers": len(containers),
         "networks": len(networks),
-        "images": len(images),
+        "images": len(removed_images),
     }

@@ -290,6 +290,57 @@ def _self_test() -> int:
         f"rc={share_cli.returncode} out={share_cli.stdout!r} err={share_cli.stderr!r}",
     )
 
+    from . import hygiene as hygiene_mod
+    from . import live as live_mod
+
+    reclaim_calls: list[str] = []
+    orig_containers = hygiene_mod.prune_exited_harbor_containers
+    orig_images = hygiene_mod.prune_unused_harbor_images
+    orig_cache = hygiene_mod.prune_unused_builder_cache
+    orig_networks = live_mod.prune_stale_networks
+
+    def fake_containers() -> list[str]:
+        reclaim_calls.append("containers")
+        return ["c1"]
+
+    def fake_networks() -> list[str]:
+        reclaim_calls.append("networks")
+        return ["n1"]
+
+    def fake_images() -> list[str]:
+        reclaim_calls.append("images")
+        return ["img"]
+
+    def fake_cache() -> bool:
+        reclaim_calls.append("cache")
+        return True
+
+    hygiene_mod.prune_exited_harbor_containers = fake_containers
+    hygiene_mod.prune_unused_harbor_images = fake_images
+    hygiene_mod.prune_unused_builder_cache = fake_cache
+    live_mod.prune_stale_networks = fake_networks
+    try:
+        ipam = hygiene_mod.reclaim_docker_leftovers()
+        record(
+            "reclaim_default_ipam_only",
+            reclaim_calls == ["containers", "networks"]
+            and ipam == {"containers": 1, "networks": 1, "images": 0},
+            f"calls={reclaim_calls} counts={ipam}",
+        )
+        reclaim_calls.clear()
+        full = hygiene_mod.reclaim_docker_leftovers(images=True, builder_cache=True)
+        record(
+            "reclaim_full_disk",
+            reclaim_calls == ["containers", "networks", "images", "cache"]
+            and full == {"containers": 1, "networks": 1, "images": 1},
+            f"calls={reclaim_calls} counts={full}",
+        )
+    finally:
+        hygiene_mod.prune_exited_harbor_containers = orig_containers
+        hygiene_mod.prune_unused_harbor_images = orig_images
+        hygiene_mod.prune_unused_builder_cache = orig_cache
+        live_mod.prune_stale_networks = orig_networks
+
     failed = [(name, msg) for name, ok, msg in cases if not ok]
     for name, ok, msg in cases:
         status = "PASS" if ok else "FAIL"

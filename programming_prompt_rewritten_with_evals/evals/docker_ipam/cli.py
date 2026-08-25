@@ -9,8 +9,10 @@ Harbor ``_prepare``.
 
 This helper:
 
-* prunes leftover Harbor trial containers, empty networks, unused
-  ``*__env-main`` images, and dangling BuildKit cache;
+* prunes leftover Harbor trial containers and empty networks between jobs
+  (``prune --ipam-only``) so IPAM stays free without deleting image layers;
+  ``prune`` without flags also drops unused ``*__env-main`` images and
+  dangling BuildKit cache when you need disk back;
 * caps live coding trials machine-wide (default ``EVAL_LLM_MAX_CONCURRENT=2``)
   so four ``-n 5`` terminals cannot stampede Docker or LLM rate limits;
 * estimates remaining IPAM slots from ``/etc/docker/daemon.json`` or Docker's
@@ -23,6 +25,7 @@ Stdout is machine-readable (slot counts / JSON). Diagnostics go to stderr.
 Usage (from ``evals/``)::
 
     python3 docker_networks.py self-test
+    python3 docker_networks.py prune --ipam-only
     python3 docker_networks.py prune
     python3 docker_networks.py acquire --slots 5 --holder STAMP --pid $$
     python3 docker_networks.py release --holder STAMP
@@ -61,9 +64,14 @@ def _build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("self-test", help="Check pool math and stale-network fixtures")
-    sub.add_parser(
+    prune = sub.add_parser(
         "prune",
-        help="Remove leftover Harbor containers, networks, unused images, and build cache",
+        help="Remove leftover Harbor Docker state (full disk reclaim unless --ipam-only)",
+    )
+    prune.add_argument(
+        "--ipam-only",
+        action="store_true",
+        help="Drop exited containers and empty networks only; keep images and BuildKit cache",
     )
     cap = sub.add_parser("capacity", help="Print IPAM snapshot as JSON")
     cap.add_argument(
@@ -167,7 +175,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "self-test":
         return _self_test()
     if args.cmd == "prune":
-        counts = reclaim_docker_leftovers(builder_cache=True)
+        counts = reclaim_docker_leftovers(
+            images=not args.ipam_only,
+            builder_cache=not args.ipam_only,
+        )
         print(json.dumps(counts, sort_keys=True))
         return 0
     if args.cmd == "capacity":
