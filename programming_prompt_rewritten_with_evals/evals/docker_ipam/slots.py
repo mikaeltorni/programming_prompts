@@ -10,10 +10,17 @@ import time
 from pathlib import Path
 from typing import Any
 
-from .constants import POLL_SEC, SAFETY_MARGIN, WAIT_LOG_SEC
+from .constants import (
+    LLM_MAX_CONCURRENT_DEFAULT,
+    LLM_MAX_CONCURRENT_UNLIMITED,
+    POLL_SEC,
+    SAFETY_MARGIN,
+    WAIT_LOG_SEC,
+)
 from .log import log
 from .math import (
     docker0_subnet,
+    grant_trial_slots,
     harbor_trial_count,
     occupied_slots,
     parse_daemon_pools,
@@ -172,6 +179,27 @@ def reserved_slots(state: dict[str, Any], *, excluding: str = "") -> int:
     return total
 
 
+def llm_max_concurrent() -> int:
+    """Read the machine-wide coding-trial cap.
+
+    Parameters: none.
+
+    Returns: max live Harbor trials across every wrapper. ``0`` or a negative
+        ``EVAL_LLM_MAX_CONCURRENT`` disables the cap (IPAM only).
+    """
+    raw = os.environ.get("EVAL_LLM_MAX_CONCURRENT", "").strip()
+    if not raw:
+        return LLM_MAX_CONCURRENT_DEFAULT
+    try:
+        value = int(raw)
+    except ValueError:
+        log(f"ignoring invalid EVAL_LLM_MAX_CONCURRENT={raw!r}")
+        return LLM_MAX_CONCURRENT_DEFAULT
+    if value <= 0:
+        return LLM_MAX_CONCURRENT_UNLIMITED
+    return value
+
+
 def _validate_request(slots: int, holder: str) -> None:
     """Validate a slot request.
 
@@ -236,13 +264,22 @@ def _try_grant(
 
     Returns: granted slots, or none when capacity is unavailable.
     """
-    need = min(requested, snapshot["max_slots"])
+    llm_cap = llm_max_concurrent()
+    need = grant_trial_slots(
+        requested,
+        ipam_free=snapshot["free"],
+        ipam_max=snapshot["max_slots"],
+        reserved=snapshot["reserved"],
+        llm_cap=llm_cap,
+    )
+    if need is None:
+        return None
     already_granted = (
         holder in state["holders"]
         and int(state["holders"][holder].get("slots") or 0) == need
     )
-    if need > snapshot["free"] and not already_granted:
-        return None
+    if already_granted:
+        return need
     state["holders"][holder] = {
         "pid": pid,
         "slots": need,
@@ -251,12 +288,12 @@ def _try_grant(
     if need < requested:
         log(
             f"clamped -n {requested} → {need} "
-            f"(Docker IPAM max_slots={snapshot['max_slots']} "
-            f"capacity={snapshot['cap']})"
+            f"(llm_cap={llm_cap} IPAM free={snapshot['free']} "
+            f"max_slots={snapshot['max_slots']})"
         )
     log(
         f"acquired {need} slot(s) for {holder} "
-        f"(free {snapshot['free'] - need}/{snapshot['max_slots']} after grant; "
+        f"(reserved others={snapshot['reserved']} llm_cap={llm_cap}; "
         f"docker user-defined={snapshot['used']}/{snapshot['cap']})"
     )
     return need
@@ -275,7 +312,7 @@ def _wait_or_timeout(
 
     Returns: updated previous-log time.
     """
-    from .live import prune_stale_networks
+    from .hygiene import reclaim_docker_leftovers
 
     now = time.monotonic()
     if timeout_sec is not None and now - started >= timeout_sec:
@@ -284,15 +321,15 @@ def _wait_or_timeout(
             f"(capacity={snapshot['cap']} used={snapshot['used']} "
             f"reserved={snapshot['reserved']})"
         )
-    need = min(requested, snapshot["max_slots"])
+    llm_cap = llm_max_concurrent()
     if wait_log_due(now, last_log):
         log(
-            f"waiting for {need} Docker network slot(s); "
-            f"free={snapshot['free']} max={snapshot['max_slots']} "
-            f"used={snapshot['used']} reserved={snapshot['reserved']}"
+            f"waiting for coding-trial slot(s) requested={requested} "
+            f"llm_cap={llm_cap} IPAM free={snapshot['free']} "
+            f"reserved={snapshot['reserved']}"
         )
         last_log = now
-        prune_stale_networks()
+        reclaim_docker_leftovers(builder_cache=False)
     time.sleep(POLL_SEC)
     return last_log
 
@@ -310,10 +347,10 @@ def acquire_slots(
 
     Returns: granted slot count.
     """
-    from .live import prune_stale_networks
+    from .hygiene import reclaim_docker_leftovers
 
     _validate_request(slots, holder)
-    prune_stale_networks()
+    reclaim_docker_leftovers(builder_cache=False)
     started = time.monotonic()
     last_log = started - WAIT_LOG_SEC
     while True:

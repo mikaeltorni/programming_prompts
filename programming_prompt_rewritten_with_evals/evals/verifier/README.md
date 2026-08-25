@@ -23,7 +23,9 @@ that fail constrained decode still score when the yes/no JSON is in ``text``.
 `*.py` files into the prompt for every agent and retries once on skip-inspect
 or invented paths. Codex and Claude Code still use pinned harbor-rewardkit
 (with a writable `CLAUDE_CONFIG_DIR` / `CODEX_HOME` overlay passed into the
-`uvx` child, not only `os.environ`). Grok uses the CLI.
+`uvx` child, not only `os.environ`). Grok uses the CLI. Judge subprocesses
+default to one worker so dual eval agents do not stampede subscription
+rate limits.
 Programmatic worktree scoring is unchanged.
 
 LLM judge text stays in `../judges/<skill>/prompt.md`. The worktree skill is

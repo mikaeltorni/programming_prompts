@@ -9,7 +9,10 @@ Harbor ``_prepare``.
 
 This helper:
 
-* prunes leftover empty Harbor trial networks (compose down missed them);
+* prunes leftover Harbor trial containers, empty networks, unused
+  ``*__env-main`` images, and dangling BuildKit cache;
+* caps live coding trials machine-wide (default ``EVAL_LLM_MAX_CONCURRENT=2``)
+  so four ``-n 5`` terminals cannot stampede Docker or LLM rate limits;
 * estimates remaining IPAM slots from ``/etc/docker/daemon.json`` or Docker's
   built-in pools;
 * holds a cross-process counting semaphore so concurrent wrappers wait
@@ -36,10 +39,10 @@ from pathlib import Path
 from typing import Any
 
 from .constants import DAEMON_JSON_PATH
+from .hygiene import reclaim_docker_leftovers
 from .live import (
     current_capacity,
     load_daemon_json,
-    prune_stale_networks,
 )
 from .log import log
 from .math import fair_share_slots, merge_recommended_daemon_json
@@ -58,7 +61,10 @@ def _build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("self-test", help="Check pool math and stale-network fixtures")
-    sub.add_parser("prune", help="Remove empty leftover Harbor trial networks")
+    sub.add_parser(
+        "prune",
+        help="Remove leftover Harbor containers, networks, unused images, and build cache",
+    )
     cap = sub.add_parser("capacity", help="Print IPAM snapshot as JSON")
     cap.add_argument(
         "--daemon-json",
@@ -161,7 +167,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "self-test":
         return _self_test()
     if args.cmd == "prune":
-        print(len(prune_stale_networks()))
+        counts = reclaim_docker_leftovers(builder_cache=True)
+        print(json.dumps(counts, sort_keys=True))
         return 0
     if args.cmd == "capacity":
         print(json.dumps(current_capacity(daemon_path=args.daemon_json), sort_keys=True))

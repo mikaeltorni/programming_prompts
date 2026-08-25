@@ -39,18 +39,15 @@
 # Trial count (rule of thumb): harnesses × (skills if --run-separately else 1)
 # × tasks × -k. Example: both harnesses, 2 skills separately, 5 tasks, -k 5
 # → 2 × 2 × 5 × 5 = 100 trials. evalAgent does not multiply trials; it reruns
-# the LLM judge on each trial (2–3× verifier cost when several agents, same
-# wall clock — judges run concurrently unless EVAL_JUDGE_WORKERS caps them).
+# the LLM judge on each trial (serialized unless EVAL_JUDGE_WORKERS > 1).
 #
-# Parallel terminals: each Harbor trial creates a Docker network. Docker's
-# default IPAM only has ~30 user-defined /16 slots, so a dozen -n 5 jobs
-# crash with "all predefined address pools have been fully subnetted".
-# docker_networks.py prunes leftover Harbor nets and holds a cross-process
-# slot lock so extra jobs wait instead of exhausting IPAM.
-# --run-separately used to start the next skill only after the previous
-# skill's 25 trials finished (easy to mistake for a mysterious second run).
-# Skill jobs now fan out in parallel, each -n fair-shared across free IPAM
-# slots. Combined mode is still one Harbor job for all selected skills.
+# Parallel terminals: each Harbor trial creates a Docker network AND a unique
+# compose image tag. Docker's default IPAM only has ~30 user-defined /16 slots,
+# and leftover ``*__env-main`` images plus BuildKit cache fill the disk.
+# docker_networks.py prunes leftovers and holds a cross-process slot lock.
+# Live coding trials are also capped machine-wide (default
+# EVAL_LLM_MAX_CONCURRENT=2) so ``-n 5`` in four terminals cannot burn API
+# rate limits. --run-separately runs one skill Harbor job after another.
 
 set -euo pipefail
 
@@ -327,6 +324,9 @@ echo "Selected skill(s): ${SELECTED_SKILLS[*]}" >&2
 
 mapfile -t SELECTED_TASKS < <(resolve_tasks "$TASKS_ARG")
 echo "Selected coding task(s): ${SELECTED_TASKS[*]}" >&2
+echo "LLM trial cap: EVAL_LLM_MAX_CONCURRENT=${EVAL_LLM_MAX_CONCURRENT:-2} (coding trials live on this machine)" >&2
+echo "Judge workers: EVAL_JUDGE_WORKERS=${EVAL_JUDGE_WORKERS:-1}" >&2
+reclaim_docker_leftovers
 
 # --- install-only path uses a minimal generated config ---
 if [[ "$INSTALL_ONLY" -eq 1 ]]; then
@@ -351,6 +351,7 @@ if [[ "$INSTALL_ONLY" -eq 1 ]]; then
       "${HARBOR_ARGS[@]}"
     release_docker_slots
   done
+  reclaim_docker_leftovers
   exit 0
 fi
 

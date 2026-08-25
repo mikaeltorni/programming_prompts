@@ -15,6 +15,9 @@ from .constants import (
 )
 from .math import (
     fair_share_slots,
+    grant_trial_slots,
+    is_harbor_trial_container,
+    is_harbor_trial_image,
     is_harbor_trial_network,
     is_pool_exhausted_message,
     is_stale_harbor_network,
@@ -76,6 +79,51 @@ def _self_test() -> int:
         "harbor_name",
         is_harbor_trial_network("todo__rj6kp52__env_default"),
         "trial compose network",
+    )
+    record(
+        "harbor_image_compose",
+        is_harbor_trial_image("calculator__hqedu6c__env-main"),
+        "compose per-trial image tag",
+    )
+    record(
+        "harbor_image_tagged",
+        is_harbor_trial_image("greeter__z6op6af__env-main:latest"),
+        "repo:tag still matches",
+    )
+    record(
+        "harbor_image_content",
+        is_harbor_trial_image("hb__2fed48270ac9ac752100518869fe4d51"),
+        "content-addressed hb__ image",
+    )
+    record(
+        "harbor_image_not_python",
+        not is_harbor_trial_image("python"),
+        "leave unrelated images alone",
+    )
+    record(
+        "harbor_container",
+        is_harbor_trial_container("todo__kbkd9sh__env-main-1"),
+        "compose main service container",
+    )
+    record(
+        "grant_llm_cap",
+        grant_trial_slots(5, ipam_free=28, ipam_max=28, reserved=0, llm_cap=2) == 2,
+        "machine-wide LLM cap clamps -n 5 to 2",
+    )
+    record(
+        "grant_wait_when_llm_full",
+        grant_trial_slots(5, ipam_free=28, ipam_max=28, reserved=2, llm_cap=2) is None,
+        "second wrapper waits when two coding trials are already live",
+    )
+    record(
+        "grant_ipam_room",
+        grant_trial_slots(5, ipam_free=1, ipam_max=28, reserved=0, llm_cap=8) == 1,
+        "take remaining IPAM slot instead of waiting for full -n",
+    )
+    record(
+        "grant_unlimited_llm",
+        grant_trial_slots(5, ipam_free=20, ipam_max=28, reserved=0, llm_cap=10**9) == 5,
+        "EVAL_LLM_MAX_CONCURRENT=0 keeps requested -n when IPAM allows",
     )
     record(
         "not_harbor_bridge",

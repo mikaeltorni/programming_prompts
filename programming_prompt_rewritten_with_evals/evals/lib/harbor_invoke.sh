@@ -48,9 +48,7 @@ run_harbor_for_harness() {
   add_env_pair "EVAL_AGENTS=$eval_csv"
   add_env_pair "EVAL_AGENT_MODELS=$models_csv"
   add_env_pair "EVAL_AGENT_REASONING_EFFORT=$efforts_csv"
-  if [[ -n "${EVAL_JUDGE_WORKERS:-}" ]]; then
-    add_env_pair "EVAL_JUDGE_WORKERS=$EVAL_JUDGE_WORKERS"
-  fi
+  add_env_pair "EVAL_JUDGE_WORKERS=${EVAL_JUDGE_WORKERS:-1}"
   # Verifier must see the same secrets (--ve). Agent phase still uses --ae.
   local -a ve_flags=(
     --ve "EVAL_AGENTS=$eval_csv"
@@ -65,8 +63,8 @@ run_harbor_for_harness() {
     esac
   done
 
-  # Judges run concurrently inside the verifier, so wall time is about one
-  # judge timeout — not agents × skills. Leave Harbor's default multiplier.
+  # Judges default to one worker so dual evalAgents do not fire six LLM
+  # sessions per trial on top of the coding agent.
 
   # Env vars must be visible to Harbor's agent process; export for this call only.
   # Clear EXIT so this subshell does not inherit the wrapper's slot/FIFO trap —

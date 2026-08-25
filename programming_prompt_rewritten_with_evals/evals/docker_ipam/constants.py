@@ -23,6 +23,10 @@ RECOMMENDED_ADDRESS_POOLS: tuple[tuple[str, int], ...] = (
 
 BUILTIN_NETWORKS = frozenset({"bridge", "host", "none"})
 HARBOR_NETWORK_SUFFIX = "__env_default"
+HARBOR_IMAGE_SUFFIX = "__env-main"
+HARBOR_CONTENT_IMAGE_PREFIX = "hb__"
+LLM_MAX_CONCURRENT_DEFAULT = 2
+LLM_MAX_CONCURRENT_UNLIMITED = 10**9
 DAEMON_JSON_PATH = Path("/etc/docker/daemon.json")
 SAFETY_MARGIN = 2
 STALE_GRACE_SEC = 60.0

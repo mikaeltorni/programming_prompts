@@ -13,8 +13,8 @@ Usage::
 ``jobs.json`` is a JSON list of ``{"label": "srp/codex", "argv": [...]}``
 objects. Optional ``cwd`` is the child working directory. Stdout is the
 JSON result list; diagnostics go to stderr. ``EVAL_JUDGE_WORKERS`` caps
-the pool (default: one thread per job). ``--self-test`` never launches a
-judge CLI or Harbor.
+the pool (default: **1**, so dual eval agents do not stampede rate limits).
+``--self-test`` never launches a judge CLI or Harbor.
 """
 
 from __future__ import annotations
@@ -78,8 +78,7 @@ def resolve_workers(job_count: int, requested: int | None = None) -> int:
     Args:
         job_count: Number of jobs about to run.
         requested: Explicit ``--workers`` value; ``None`` reads
-            ``EVAL_JUDGE_WORKERS``. ``<= 0`` or unset means one thread per
-            job.
+            ``EVAL_JUDGE_WORKERS``. Unset, ``<= 0``, or invalid means **1**.
 
     Returns:
         At least 1, and never more than *job_count* (or 1 when empty).
@@ -96,7 +95,7 @@ def resolve_workers(job_count: int, requested: int | None = None) -> int:
                 log(f"pool ignoring invalid EVAL_JUDGE_WORKERS={raw!r}")
                 value = None
     if value is None or value <= 0:
-        chosen = job_count
+        chosen = 1
     else:
         chosen = max(1, min(int(value), job_count))
     log(f"pool workers={chosen} jobs={job_count}")
@@ -192,7 +191,7 @@ def _self_test() -> int:
         print(f"{'PASS' if ok else 'FAIL'}  {name}: {detail}", flush=True)
 
     check("workers_empty", resolve_workers(0) == 1, "empty list still has 1 worker")
-    check("workers_all", resolve_workers(6, None) == 6, "unset workers = job count")
+    check("workers_default_one", resolve_workers(6, None) == 1, "unset workers = 1")
     check("workers_cap", resolve_workers(6, 100) == 6, "workers cannot exceed jobs")
     check("workers_floor", resolve_workers(6, 2) == 2, "positive cap is kept")
     os.environ["EVAL_JUDGE_WORKERS"] = "3"
@@ -200,11 +199,11 @@ def _self_test() -> int:
     os.environ["EVAL_JUDGE_WORKERS"] = "nope"
     check(
         "workers_bad_env",
-        resolve_workers(4) == 4,
-        "invalid EVAL_JUDGE_WORKERS falls back to all jobs",
+        resolve_workers(4) == 1,
+        "invalid EVAL_JUDGE_WORKERS falls back to 1",
     )
     os.environ.pop("EVAL_JUDGE_WORKERS", None)
-    check("workers_zero_means_all", resolve_workers(5, 0) == 5, "0 workers = all jobs")
+    check("workers_zero_means_one", resolve_workers(5, 0) == 1, "0 workers = 1")
 
     try:
         load_jobs(Path("/no/such/jobs.json"))
@@ -342,7 +341,7 @@ def main(argv: list[str] | None = None) -> int:
         "--workers",
         type=int,
         default=None,
-        help="Thread count (default: EVAL_JUDGE_WORKERS or one per job)",
+        help="Thread count (default: EVAL_JUDGE_WORKERS or 1)",
     )
     parser.add_argument("jobs_file", nargs="?", type=Path)
     args = parser.parse_args(argv)
