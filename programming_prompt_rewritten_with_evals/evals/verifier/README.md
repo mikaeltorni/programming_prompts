@@ -22,7 +22,8 @@ that fail constrained decode still score when the yes/no JSON is in ``text``.
 [`run_llm_judge.py`](run_llm_judge.py) pins the real workspace
 `*.py` files into the prompt for every agent and retries once on skip-inspect
 or invented paths. Codex and Claude Code still use pinned harbor-rewardkit
-(with a writable `CLAUDE_CONFIG_DIR` / `CODEX_HOME`). Grok uses the CLI.
+(with a writable `CLAUDE_CONFIG_DIR` / `CODEX_HOME` overlay passed into the
+`uvx` child, not only `os.environ`). Grok uses the CLI.
 Programmatic worktree scoring is unchanged.
 
 LLM judge text stays in `../judges/<skill>/prompt.md`. The worktree skill is

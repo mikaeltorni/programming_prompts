@@ -7,6 +7,7 @@ score admits non-inspection or cites a path that is not in the workspace.
 
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 import shutil
@@ -16,7 +17,13 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from llm_judge.homes import claude_effort_on_path, setup_claude_home, setup_codex_home
+from llm_judge.homes import (
+    claude_effort_on_path,
+    claude_judge_env,
+    overlay_environ,
+    setup_claude_home,
+    setup_codex_home,
+)
 from llm_judge.log import log
 from llm_judge.reliability import retry_prompt, run_until_reliable
 from llm_judge.scores import rows_from_rewardkit_details
@@ -27,6 +34,65 @@ from llm_judge.workspace import (
 )
 
 REWARDKIT_FROM = "harbor-rewardkit@0.1.7"
+_UVX_LOCK = Path("/tmp/harbor-rewardkit-uvx.lock")
+_UVX_READY = Path("/tmp/harbor-rewardkit-ready-0.1.7")
+
+
+def _rewardkit_error_excerpt(text: str) -> str:
+    """Keep the useful tail of rewardkit stderr.
+
+    Parameters: text - combined stderr/stdout from a failed ``uvx`` run.
+
+    Returns: excerpt without leading download-progress lines.
+    """
+    lines = [
+        line
+        for line in text.splitlines()
+        if not line.strip().startswith("Downloading ")
+        and " Downloaded " not in line
+        and not line.startswith("Installed ")
+    ]
+    excerpt = "\n".join(lines).strip() or text.strip()
+    return excerpt[-3000:]
+
+
+def ensure_rewardkit_cli(env: dict[str, str] | None = None) -> None:
+    """Install harbor-rewardkit once so parallel judges do not race ``uvx``.
+
+    Parameters: env - optional environment for the warmup process.
+
+    Returns: none.
+    """
+    if _UVX_READY.is_file():
+        return
+    _UVX_LOCK.parent.mkdir(parents=True, exist_ok=True)
+    with _UVX_LOCK.open("a+", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        if _UVX_READY.is_file():
+            return
+        log(f"warming uvx {REWARDKIT_FROM} (serial; parallel judges wait)")
+        merged = os.environ.copy()
+        if env:
+            merged.update(env)
+        proc = subprocess.run(
+            ["uvx", "--from", REWARDKIT_FROM, "rewardkit", "--help"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=180,
+            env=merged,
+        )
+        if proc.returncode != 0:
+            err = _rewardkit_error_excerpt(proc.stderr or proc.stdout or "")
+            log(f"rewardkit warmup failed rc={proc.returncode}: {err}")
+            raise subprocess.CalledProcessError(
+                proc.returncode,
+                ["uvx", "--from", REWARDKIT_FROM, "rewardkit", "--help"],
+                output=proc.stdout,
+                stderr=proc.stderr,
+            )
+        _UVX_READY.write_text("ok\n", encoding="utf-8")
+        log("rewardkit uvx tool is ready")
 
 
 def rewardkit_backend(agent: str) -> str:
@@ -124,6 +190,7 @@ def run_rewardkit(
         subprocess.TimeoutExpired: When the CLI exceeds *timeout*.
     """
     output.parent.mkdir(parents=True, exist_ok=True)
+    ensure_rewardkit_cli(env)
     cmd = [
         "uvx",
         "--from",
@@ -142,6 +209,7 @@ def run_rewardkit(
     merged = os.environ.copy()
     if env:
         merged.update(env)
+        log(f"rewardkit env overlay keys={','.join(sorted(env))}")
     log(
         f"starting rewardkit judge backend={backend} model={model} "
         f"workspace={workspace} timeout={timeout}s"
@@ -155,7 +223,7 @@ def run_rewardkit(
         env=merged,
     )
     if proc.returncode != 0:
-        err = (proc.stderr or proc.stdout or "")[:500]
+        err = _rewardkit_error_excerpt(proc.stderr or proc.stdout or "")
         log(f"rewardkit judge failed rc={proc.returncode}: {err}")
         raise subprocess.CalledProcessError(
             proc.returncode, cmd, output=proc.stdout, stderr=proc.stderr
@@ -193,6 +261,7 @@ def score_with_rewardkit(
     backend = rewardkit_backend(agent)
     runner = invoke or run_rewardkit
     listed_keys = listed_python_keys(files, workspace)
+    overlay: dict[str, str] = {}
 
     def attempt(reason: str | None, timeout_s: int) -> tuple[str, list[dict[str, Any]]]:
         work = write_pinned_judge_dir(judge_dir, workspace, files, reason)
@@ -205,6 +274,7 @@ def score_with_rewardkit(
                 model=model,
                 workspace=workspace,
                 timeout=timeout_s,
+                env=overlay or None,
             )
             details = load_rewardkit_details(tmp_out)
             rows = rows_from_rewardkit_details(details, criteria)
@@ -216,35 +286,21 @@ def score_with_rewardkit(
     def with_homes() -> tuple[str, list[dict[str, Any]]]:
         if agent == "cc":
             home, token = setup_claude_home()
-            env = {
-                "CLAUDE_FORCE_OAUTH": "true",
-                "REWARDKIT_FORCE_OAUTH": "true",
-                "CLAUDE_CONFIG_DIR": str(home),
-                "IS_SANDBOX": "1",
-                "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-            }
-            if token:
-                env["CLAUDE_CODE_OAUTH_TOKEN"] = token
+            overlay.update(claude_judge_env(home, token))
             try:
-                with claude_effort_on_path(effort):
+                with overlay_environ(overlay), claude_effort_on_path(effort):
                     return run_until_reliable(
                         listed_keys=listed_keys, timeout=timeout, attempt=attempt
                     )
             finally:
                 shutil.rmtree(home, ignore_errors=True)
         home = setup_codex_home(effort)
+        overlay["CODEX_HOME"] = str(home)
         try:
-            old = os.environ.get("CODEX_HOME")
-            os.environ["CODEX_HOME"] = str(home)
-            try:
+            with overlay_environ(overlay):
                 return run_until_reliable(
                     listed_keys=listed_keys, timeout=timeout, attempt=attempt
                 )
-            finally:
-                if old is None:
-                    os.environ.pop("CODEX_HOME", None)
-                else:
-                    os.environ["CODEX_HOME"] = old
         finally:
             shutil.rmtree(home, ignore_errors=True)
 
