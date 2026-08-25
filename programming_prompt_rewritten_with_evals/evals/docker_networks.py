@@ -24,6 +24,8 @@ Usage (from ``evals/``)::
     python3 docker_networks.py prune
     python3 docker_networks.py acquire --slots 5 --holder STAMP --pid $$
     python3 docker_networks.py release --holder STAMP
+    python3 docker_networks.py release --pid $$
+    python3 docker_networks.py fair-share --jobs 4 --requested 5
 """
 
 from docker_ipam.cli import main

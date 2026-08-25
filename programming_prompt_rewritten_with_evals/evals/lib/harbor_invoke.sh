@@ -69,7 +69,11 @@ run_harbor_for_harness() {
   # judge timeout — not agents × skills. Leave Harbor's default multiplier.
 
   # Env vars must be visible to Harbor's agent process; export for this call only.
+  # Clear EXIT so this subshell does not inherit the wrapper's slot/FIFO trap —
+  # otherwise Harbor's return would release IPAM slots and separately worker
+  # tokens before run_one_job finishes summarizing.
   (
+    trap - EXIT
     export "${env_flags[@]}"
     local -a ae_flags=()
     for pair in "${env_flags[@]}"; do

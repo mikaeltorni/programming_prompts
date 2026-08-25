@@ -204,6 +204,27 @@ def user_defined_capacity(
     return total
 
 
+def fair_share_slots(free: int, job_count: int, requested: int) -> tuple[int, int]:
+    """Split free IPAM slots across parallel Harbor jobs.
+
+    Parameters: free - currently available slots; job_count - jobs that want
+        to run; requested - each job's ``-n`` / ``--n-concurrent``.
+
+    Returns: ``(n_concurrent_per_job, max_parallel_jobs)``. Each running job
+        gets the same ``-n``. When there are fewer free slots than jobs, extra
+        jobs wait in a worker queue of size ``max_parallel_jobs``.
+    """
+    if job_count < 1:
+        raise ValueError("job_count must be >= 1")
+    want = max(1, requested)
+    if free < 1:
+        return 1, 1
+    per_job = max(1, min(want, free // job_count))
+    if per_job * job_count > free:
+        return 1, max(1, min(job_count, free))
+    return per_job, job_count
+
+
 def occupied_slots(used: int, harbor_live: int, reserved: int) -> int:
     """Calculate pool slots occupied for a new grant.
 

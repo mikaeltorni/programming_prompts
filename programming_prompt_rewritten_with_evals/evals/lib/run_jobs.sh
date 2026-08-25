@@ -66,37 +66,39 @@ run_one_job() {
       concurrent_for_job="${harbor_args[$((i + 1))]:-$concurrent_for_job}"
     fi
   done
+  if [[ -n "${SEPARATELY_N_CONCURRENT:-}" ]]; then
+    concurrent_for_job="$SEPARATELY_N_CONCURRENT"
+    set_harbor_n_concurrent harbor_args "$concurrent_for_job"
+    echo "Job $job_name separately fair-share -n $concurrent_for_job" >&2
+  fi
+  if [[ "${SEPARATELY_QUIET:-0}" -eq 1 ]]; then
+    append_harbor_quiet harbor_args
+  fi
+
   local docker_holder="${RUN_STAMP}:${job_name}"
-  local granted_slots
-  granted_slots="$(acquire_docker_slots "$docker_holder" "$concurrent_for_job")"
-  if [[ "$granted_slots" != "$concurrent_for_job" ]]; then
-    echo "Docker IPAM clamped job $job_name -n $concurrent_for_job → $granted_slots" >&2
-    set_harbor_n_concurrent harbor_args "$granted_slots"
+  local granted_slots=""
+  if harbor_uses_docker_env; then
+    acquire_docker_slots "$docker_holder" "$concurrent_for_job" granted_slots
+    if [[ "$granted_slots" != "$concurrent_for_job" ]]; then
+      echo "Docker IPAM clamped job $job_name -n $concurrent_for_job → $granted_slots" >&2
+      set_harbor_n_concurrent harbor_args "$granted_slots"
+    fi
+  else
+    echo "Skipping Docker IPAM for $job_name (Harbor --env is not docker)." >&2
   fi
 
   run_harbor_for_harness "$harness" "${common[@]}" "${harbor_args[@]}"
   release_docker_slots
-  capture_print_summary "$JOBS/$job_name" "$run_mode" "$skills_csv"
-  archive_sync_job "$job_name"
+  local summary_file
+  summary_file="$(mktemp)"
+  capture_print_summary "$JOBS/$job_name" "$run_mode" "$skills_csv" "$summary_file"
+  archive_sync_job "$job_name" "$summary_file"
 }
 
 run_jobs_for_harness() {
   local harness="$1"
   if [[ "$RUN_SEPARATELY" -eq 1 ]]; then
-    echo "Running each selected skill in its own prompt instance for harness=$harness (--run-separately)." >&2
-    local skill
-    local skill_i=0
-    local skill_n="${#SELECTED_SKILLS[@]}"
-    for skill in "${SELECTED_SKILLS[@]}"; do
-      skill_i=$((skill_i + 1))
-      echo "=== separately skill ${skill_i}/${skill_n}: ${skill} (harness=${harness}) ===" >&2
-      SELECTED_SKILLS_FOR_JOB=("$skill")
-      if [[ "$BASELINE" -eq 1 ]]; then
-        run_one_job "$harness" "$(harbor_job_name "${harness}-baseline-$skill")" "baseline"
-      else
-        run_one_job "$harness" "$(harbor_job_name "${harness}-$skill")" "positive" "$SKILLS_ROOT/$skill"
-      fi
-    done
+    run_separately_jobs_for_harness "$harness"
   else
     SELECTED_SKILLS_FOR_JOB=("${SELECTED_SKILLS[@]}")
     if [[ "$BASELINE" -eq 1 ]]; then

@@ -53,7 +53,7 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
 | `--tasks todo,calculator` | Which coding prompts to run (default: all) |
 | `--tasks=greeter` / `task=todo,counter` | Same, equals / bare forms |
-| `--run-separately` / `--runSeparately` | One Harbor job per skill (costlier) |
+| `--run-separately` / `--runSeparately` | One Harbor job per skill, run in parallel under the Docker IPAM cap |
 | `--baseline` | No skills injected; selected judges still score |
 | `--install-only` | Reinstall/verify newest stable CLI(s) in the task image (no LLM) |
 | `--no-pin-refresh` | Skip registry lookup; use committed `*-version.txt` pins |
@@ -67,15 +67,23 @@ Grok. `evalAgent` uses the same aliases (`evalAgent=both`, `evalAgent=all`,
 matches that job’s coding harness (`harness=cc` → Claude Code judge).
 
 Without `--run-separately`, all selected skills are installed in **one** agent
-session and **each** matching judge scores the same written code. With
-`--run-separately`, each skill gets its own prompt instance + its own judge
-(more subscription usage). The wrapper prints `=== separately skill i/N: … ===`
-before each Harbor job so a long skill summary is not mistaken for a hang,
-then announces Docker-slot reservation (and
-`docker_networks` logs a wait line immediately if IPAM is full). Each Harbor
-job gets an **isolated** copy of the selected tasks under
+session and **each** matching judge scores the same written code. That is a
+single Harbor job: 5 tasks × `-k 5` = **25 trials**, then the wrapper stops.
+With `--run-separately`, each skill gets its own prompt instance + its own
+judge (more subscription usage) — **one Harbor job per skill**, so four skills
+are **4 × 25 = 100 trials**. Those skill jobs used to run **one after another**,
+which looked like a mysterious second run after the first skill’s 25/25
+summary. They now **fan out in parallel**. The wrapper prints
+`=== separately: N skill job(s) … up to W in parallel at -n … ===` and
+`=== separately skill i/N: … [parallel] ===` for each start. Each job’s `-n`
+is **fair-shared** across free Docker IPAM slots (`docker_networks.py fair-share`)
+so four `-n 5` skill jobs do not try to open 20 trial networks at once.
+If only a few slots remain, extra skill jobs wait in a worker queue.
+Parallel skill jobs pass Harbor `--quiet` so trial TUIs do not interleave;
+watch `$JOBS/<job>/` and the banners. Each Harbor job still gets an
+**isolated** copy of the selected tasks under
 `$RUN_DIR/harbor/task-trees/<job>/` so `/tests/judges` cannot be clobbered by
-the next skill job or a concurrent benchmark sharing
+another skill job or a concurrent benchmark sharing
 `evals/.generated/tasks/`.
 
 Trial math: default `-k 5` is **5 attempts per selected coding task**. With all
@@ -298,7 +306,17 @@ cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 
 ## Install Docker on Ubuntu 24.04
 
-Harbor runs this evaluation in Docker. If `docker version` reports that the
+Harbor runs this evaluation in Docker. Harbor 0.20 has **no host-local /
+no-container backend**: `harbor run --env` is `docker` by default, or another
+sandbox (`apple-container` on Apple silicon macOS, Singularity, Daytona, E2B,
+Modal, …). There is no flag that executes trials on the host filesystem.
+This suite’s tasks also require the trial image (`task-template/environment/Dockerfile`,
+`/Projects/app` plus sibling `.worktrees/`). `apple-container` is not usable
+on Linux. Cloud `--env` values can be passed through on the wrapper command
+line (they land in Harbor args); the wrapper then **skips the local Docker
+IPAM lock**. Local Linux runs still need Docker Engine.
+
+If `docker version` reports that the
 command is missing, install Docker Engine from Docker's official Ubuntu
 repository:
 
@@ -337,7 +355,11 @@ networks on the host). Harbor creates one network **per trial**, so twelve
 terminals at `-n 5` exhaust the pool (`all predefined address pools have been
 fully subnetted`) and crash in `_prepare`. [`docker_networks.py`](docker_networks.py)
 prunes leftover empty Harbor networks and makes concurrent `./run_benchmark.sh`
-processes **wait for a slot** instead of stampeding. Optional: give Docker
+processes **wait for a slot** instead of stampeding. `--run-separately` splits
+those free slots across skill jobs in the same wrapper (`fair-share`) so they
+can run at the same time; each job’s reservation is tracked in the current
+shell and released when that Harbor job finishes (wrapping `acquire` in `$()`
+used to leak slots until the whole wrapper exited). Optional: give Docker
 thousands of `/24` trial networks (254 hosts each — enough for a Harbor
 compose project) so many jobs can run at full `-n` in parallel. Merge these
 pools into `/etc/docker/daemon.json` (keep any other keys) and restart Docker
@@ -372,6 +394,10 @@ python3 docker_networks.py prune
 
 ```bash
 python3 docker_networks.py capacity
+```
+
+```bash
+python3 docker_networks.py fair-share --jobs 4 --requested 5 --free 18
 ```
 
 ## Activate Docker access in VS Code, Cursor, and tmux
@@ -793,7 +819,9 @@ once. The wrapper defaults to the same `-k 5 -n 5` when you pass no Harbor
 flags. After the job finishes it prints a categorized console summary.
 Several terminals may start at once: the wrapper serializes Docker networks
 across processes when the daemon's address pool is tight (see
-[Install Docker](#install-docker-on-ubuntu-2404)).
+[Install Docker](#install-docker-on-ubuntu-2404)). `--run-separately` also
+splits that pool **across skill jobs in the same terminal** so they run at
+the same time without exhausting IPAM.
 
 Do not use bare `-a codex` / `-a claude-code` / `-a grok-build` for these skill
 benchmarks: those paths can leave host/user skill directories untouched and do
