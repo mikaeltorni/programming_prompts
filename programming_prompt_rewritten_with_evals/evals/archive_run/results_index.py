@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .fsutil import load_json_lenient, log
@@ -9,14 +10,112 @@ from .fsutil import load_json_lenient, log
 RESULTS_INDEX_NAME = "RESULTS.txt"
 RESULTS_COL_SEP = " | "
 RESULTS_FIXED_COLUMNS = (
-    "Run", "Mode", "Harness", "Judge", "Skills", "Tasks",
+    "Run", "Runtime", "Mode", "Harness", "Judge", "Skills", "Tasks",
     "k", "n", "Sep", "Trials", "Scored", "Pass",
 )
 RESULTS_SKILL_ORDER = ("srp", "commenting", "logging", "worktree", "logging-vague")
 RESULTS_TASK_ORDER = ("calculator", "counter", "greeter", "temperature", "todo")
 RESULTS_LEFT_ALIGN = frozenset(
-    {"Run", "Mode", "Harness", "Judge", "Skills", "Tasks", "Sep"}
+    {"Run", "Runtime", "Mode", "Harness", "Judge", "Skills", "Tasks", "Sep"}
 )
+
+
+def format_runtime(seconds: float | int | None) -> str:
+    """Format elapsed seconds as hours, minutes, and seconds.
+
+    Parameters: seconds - elapsed wall time, or ``None`` when unknown.
+
+    Returns: ``Xh YYm ZZs`` with minutes and seconds zero-padded, or ``-``.
+    """
+    if seconds is None:
+        return "-"
+    total = int(round(float(seconds)))
+    if total < 0:
+        total = 0
+    hours, remainder = divmod(total, 3600)
+    minutes, secs = divmod(remainder, 60)
+    return f"{hours}h {minutes:02d}m {secs:02d}s"
+
+
+def parse_iso_datetime(value: object) -> datetime | None:
+    """Parse an ISO-8601 timestamp.
+
+    Parameters: value - metadata datetime string.
+
+    Returns: timezone-aware datetime, or ``None`` when unreadable.
+    """
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def parse_run_stamp(stamp: object) -> datetime | None:
+    """Parse ``YYYY-MM-DD_HHMMSS[_pid]`` as local wall time.
+
+    Parameters: stamp - run timestamp from ``date +%Y-%m-%d_%H%M%S``.
+
+    Returns: timezone-aware datetime, or ``None`` when unreadable.
+    """
+    if not isinstance(stamp, str) or not stamp.strip():
+        return None
+    parts = stamp.strip().split("_")
+    if len(parts) < 2:
+        return None
+    try:
+        naive = datetime.strptime(f"{parts[0]}_{parts[1]}", "%Y-%m-%d_%H%M%S")
+    except ValueError:
+        return None
+    local_tz = datetime.now().astimezone().tzinfo
+    return naive.replace(tzinfo=local_tz)
+
+
+def run_elapsed_seconds(
+    meta: dict,
+    *,
+    now: datetime | None = None,
+) -> float | None:
+    """Compute wall-clock seconds for a run from metadata.
+
+    Prefers stored ``elapsed_sec``, then ``started_at`` (or the run stamp)
+    against ``archived_at``. When the end timestamp is missing or not after
+    the start — typical of an in-progress job — uses ``now``.
+
+    Parameters: meta - run metadata; now - clock used for in-progress runs.
+
+    Returns: elapsed seconds, or ``None`` when start time is unknown.
+    """
+    stored = meta.get("elapsed_sec")
+    if isinstance(stored, (int, float)) and stored >= 0:
+        return float(stored)
+    started = parse_iso_datetime(meta.get("started_at"))
+    if started is None:
+        started = parse_run_stamp(meta.get("timestamp"))
+    if started is None:
+        return None
+    ended = parse_iso_datetime(meta.get("archived_at") or meta.get("finished_at"))
+    clock = now or datetime.now(timezone.utc)
+    if ended is None or ended <= started:
+        ended = clock
+    return max(0.0, (ended - started).total_seconds())
+
+
+def runtime_cell(meta: dict, *, now: datetime | None = None) -> str:
+    """Format a RESULTS Runtime cell from run metadata.
+
+    Parameters: meta - run metadata; now - clock used for in-progress runs.
+
+    Returns: ``Xh YYm ZZs`` or ``-``.
+    """
+    return format_runtime(run_elapsed_seconds(meta, now=now))
 
 
 def _csv(values: list[str]) -> str:
@@ -153,7 +252,7 @@ def format_results_row(run_dir: Path) -> dict[str, str]:
 
     Parameters: run_dir - one archived run.
 
-    Returns: fixed fields and per-skill and per-task rates.
+    Returns: fixed fields (including Runtime between Run and Mode) and per-skill and per-task rates.
     """
     meta = load_json_lenient(run_dir / "00-meta.json") or {}
     scores = collect_run_scores(run_dir)
@@ -164,6 +263,7 @@ def format_results_row(run_dir: Path) -> dict[str, str]:
     scored = int(scores["scored"])
     row = {
         "Run": str(meta.get("timestamp") or run_dir.name.split("__", 1)[0]),
+        "Runtime": runtime_cell(meta),
         "Mode": str(meta.get("mode") or "-"),
         "Harness": _csv(harnesses),
         "Judge": _csv(eval_agents) if eval_agents else "inherit",
@@ -357,5 +457,5 @@ def prepend_results_line(runs_root: Path, run_dir: Path) -> Path:
     path = runs_root / RESULTS_INDEX_NAME
     kept = [item for item in _read_existing_rows(path) if item.get("Run") != row["Run"]]
     write_results_table(path, [row, *kept])
-    log(f"prepended {path} stamp={row['Run']} pass={row['Pass']}")
+    log(f"prepended {path} stamp={row['Run']} runtime={row['Runtime']} pass={row['Pass']}")
     return path

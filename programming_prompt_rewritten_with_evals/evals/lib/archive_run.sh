@@ -93,6 +93,7 @@ init_run_archive() {
     archive_init_args+=(--separately)
   fi
   RUN_DIR="$(python3 "$SCRIPT_DIR/archive_benchmark_run.py" init "${archive_init_args[@]}")"
+  export RUN_DIR
   if [[ -n "$JOBS_FROM_ENV" ]]; then
     JOBS="$JOBS_FROM_ENV"
   else
