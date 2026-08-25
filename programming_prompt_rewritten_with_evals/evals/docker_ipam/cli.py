@@ -23,6 +23,8 @@ Usage (from ``evals/``)::
     python3 docker_networks.py prune
     python3 docker_networks.py acquire --slots 5 --holder STAMP --pid $$
     python3 docker_networks.py release --holder STAMP
+    python3 docker_networks.py release --pid $$
+    python3 docker_networks.py fair-share --jobs 4 --requested 5
 """
 
 from __future__ import annotations
@@ -40,9 +42,9 @@ from .live import (
     prune_stale_networks,
 )
 from .log import log
-from .math import merge_recommended_daemon_json
+from .math import fair_share_slots, merge_recommended_daemon_json
 from .self_test import _self_test
-from .slots import acquire_slots, release_slots
+from .slots import acquire_slots, release_slots, release_slots_for_pid
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -72,7 +74,26 @@ def _build_parser() -> argparse.ArgumentParser:
     acq.add_argument("--timeout-sec", type=float, default=None)
 
     rel = sub.add_parser("release", help="Drop a slot reservation")
-    rel.add_argument("--holder", required=True)
+    rel.add_argument("--holder", default="", help="Holder id passed to acquire")
+    rel.add_argument("--pid", type=int, default=0, help="Drop every holder owned by this pid")
+
+    share = sub.add_parser(
+        "fair-share",
+        help="Split free IPAM slots across parallel Harbor jobs (stdout: n workers free)",
+    )
+    share.add_argument("--jobs", type=int, required=True, help="How many Harbor jobs want to run")
+    share.add_argument(
+        "--requested",
+        type=int,
+        required=True,
+        help="Each job's requested -n / --n-concurrent",
+    )
+    share.add_argument(
+        "--free",
+        type=int,
+        default=None,
+        help="Override live free-slot count (default: query Docker IPAM)",
+    )
 
     rec = sub.add_parser(
         "recommended-daemon-json",
@@ -85,6 +106,27 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Existing daemon.json to merge (default: /etc/docker/daemon.json)",
     )
     return parser
+
+
+def _fair_share(args: Any) -> int:
+    """Print a uniform -n and worker-pool size for parallel Harbor jobs.
+
+    Parameters: args - parsed fair-share arguments.
+
+    Returns: process exit status.
+    """
+    try:
+        free = args.free if args.free is not None else current_capacity()["free"]
+        n_concurrent, workers = fair_share_slots(free, args.jobs, args.requested)
+    except (RuntimeError, ValueError) as exc:
+        log(str(exc))
+        return 1
+    log(
+        f"fair-share jobs={args.jobs} requested={args.requested} "
+        f"free={free} → -n {n_concurrent} workers={workers}"
+    )
+    print(f"{n_concurrent} {workers} {free}")
+    return 0
 
 
 def _acquire(args: Any) -> int:
@@ -124,11 +166,19 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "capacity":
         print(json.dumps(current_capacity(daemon_path=args.daemon_json), sort_keys=True))
         return 0
+    if args.cmd == "fair-share":
+        return _fair_share(args)
     if args.cmd == "acquire":
         return _acquire(args)
     if args.cmd == "release":
-        release_slots(args.holder)
-        return 0
+        if args.holder:
+            release_slots(args.holder)
+            return 0
+        if args.pid:
+            release_slots_for_pid(args.pid)
+            return 0
+        log("release requires --holder or --pid")
+        return 1
     if args.cmd == "recommended-daemon-json":
         merged = merge_recommended_daemon_json(load_daemon_json(args.daemon_json))
         print(json.dumps(merged, indent=2, sort_keys=True))

@@ -2,8 +2,10 @@
 
 import os
 import subprocess
+import sys
 import tempfile
 from datetime import datetime, timezone
+from pathlib import Path
 
 from .constants import (
     DEFAULT_ADDRESS_POOLS,
@@ -12,6 +14,7 @@ from .constants import (
     WAIT_LOG_SEC,
 )
 from .math import (
+    fair_share_slots,
     is_harbor_trial_network,
     is_pool_exhausted_message,
     is_stale_harbor_network,
@@ -23,7 +26,7 @@ from .math import (
     user_defined_capacity,
     wait_log_due,
 )
-from .slots import load_state, reap_holders, reserved_slots, state_path, with_lock
+from .slots import load_state, reap_holders, release_slots_for_pid, reserved_slots, state_path, with_lock
 
 
 def _self_test() -> int:
@@ -156,6 +159,24 @@ def _self_test() -> int:
             == 5,
             "job-a holds 5 after reap",
         )
+        extra = subprocess.Popen(["sleep", "60"])
+        try:
+            with with_lock(write=True) as state:
+                state["holders"]["job-b"] = {"pid": extra.pid, "slots": 2}
+                state["holders"]["job-a"] = {"pid": os.getpid(), "slots": 5}
+            dropped = release_slots_for_pid(extra.pid)
+            record(
+                "release_slots_for_pid",
+                dropped == 1
+                and "job-b"
+                not in load_state(state_path().read_text(encoding="utf-8"))["holders"]
+                and "job-a"
+                in load_state(state_path().read_text(encoding="utf-8"))["holders"],
+                f"dropped={dropped}",
+            )
+        finally:
+            extra.terminate()
+            extra.wait()
     record(
         "occupied_leftovers_only",
         occupied_slots(used=8, harbor_live=8, reserved=0) == 8,
@@ -180,6 +201,45 @@ def _self_test() -> int:
         "wait_log_interval",
         not wait_log_due(100.0 + WAIT_LOG_SEC - 0.1, 100.0),
         "no wait spam inside the interval",
+    )
+    share_cases = (
+        ((18, 4, 5), (4, 4), "four jobs share 18 slots under -n 5"),
+        ((18, 4, 2), (2, 4), "do not inflate -n above the request"),
+        ((20, 2, 5), (5, 2), "two jobs keep full -n 5"),
+        ((3, 4, 5), (1, 3), "queue the fourth job when only 3 slots remain"),
+        ((0, 4, 5), (1, 1), "block on a single worker when IPAM is empty"),
+        ((5, 1, 5), (5, 1), "one job uses its requested -n"),
+        ((5, 5, 5), (1, 5), "one slot each when jobs equal free slots"),
+    )
+    for (free, jobs, requested), expected, detail in share_cases:
+        got = fair_share_slots(free, jobs, requested)
+        record(
+            f"fair_share_{free}_{jobs}_{requested}",
+            got == expected,
+            f"{detail}; got {got}",
+        )
+    share_cli = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "docker_networks.py"),
+            "fair-share",
+            "--jobs",
+            "4",
+            "--requested",
+            "5",
+            "--free",
+            "18",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd=str(Path(__file__).resolve().parents[1]),
+        env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1])},
+    )
+    record(
+        "fair_share_cli",
+        share_cli.returncode == 0 and share_cli.stdout.strip() == "4 4 18",
+        f"rc={share_cli.returncode} out={share_cli.stdout!r} err={share_cli.stderr!r}",
     )
 
     failed = [(name, msg) for name, ok, msg in cases if not ok]

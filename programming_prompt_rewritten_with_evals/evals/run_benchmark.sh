@@ -47,6 +47,10 @@
 # crash with "all predefined address pools have been fully subnetted".
 # docker_networks.py prunes leftover Harbor nets and holds a cross-process
 # slot lock so extra jobs wait instead of exhausting IPAM.
+# --run-separately used to start the next skill only after the previous
+# skill's 25 trials finished (easy to mistake for a mysterious second run).
+# Skill jobs now fan out in parallel, each -n fair-shared across free IPAM
+# slots. Combined mode is still one Harbor job for all selected skills.
 
 set -euo pipefail
 
@@ -112,7 +116,8 @@ source "$SCRIPT_DIR/lib/prepare_tasks.sh"
 source "$SCRIPT_DIR/lib/archive_run.sh"
 source "$SCRIPT_DIR/lib/harbor_invoke.sh"
 source "$SCRIPT_DIR/lib/run_jobs.sh"
-trap release_docker_slots EXIT
+source "$SCRIPT_DIR/lib/separately_jobs.sh"
+trap on_eval_shell_exit EXIT
 
 echo "Committed CLI fallbacks: Codex $CODEX_VERSION | Claude Code $CLAUDE_VERSION | Grok $GROK_VERSION" >&2
 echo "Run stamp: $RUN_STAMP" >&2

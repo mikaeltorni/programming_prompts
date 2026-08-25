@@ -340,3 +340,29 @@ def release_slots(holder: str) -> None:
         log(f"released {info.get('slots')} slot(s) for {holder}")
     else:
         log(f"no slot holder {holder} to release")
+
+
+def release_slots_for_pid(pid: int) -> int:
+    """Release every holder owned by *pid*.
+
+    Parameters: pid - process identifier stored at acquire time.
+
+    Returns: number of holders dropped.
+    """
+    if pid <= 0:
+        return 0
+    dropped: list[tuple[str, Any]] = []
+    with with_lock(write=True) as state:
+        holders = state.get("holders", {})
+        for holder_id, info in list(holders.items()):
+            if not isinstance(info, dict):
+                continue
+            try:
+                owner = int(info.get("pid") or 0)
+            except (TypeError, ValueError):
+                continue
+            if owner == pid:
+                dropped.append((holder_id, holders.pop(holder_id)))
+    for holder_id, info in dropped:
+        log(f"released {info.get('slots')} slot(s) for {holder_id} (pid={pid})")
+    return len(dropped)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import fcntl
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -277,7 +278,12 @@ def append_summary(run_dir: Path, text: str, *, name: str = "01-SUMMARY.txt") ->
     Returns: nothing.
     """
     run_dir.mkdir(parents=True, exist_ok=True)
-    with (run_dir / name).open("a", encoding="utf-8") as handle:
-        handle.write(text)
-        if not text.endswith("\n"):
-            handle.write("\n")
+    path = run_dir / name
+    with path.open("a", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            handle.write(text)
+            if not text.endswith("\n"):
+                handle.write("\n")
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)

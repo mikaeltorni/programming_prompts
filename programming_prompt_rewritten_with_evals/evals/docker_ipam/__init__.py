@@ -23,6 +23,7 @@ from .live import (
 from .log import log
 from .math import (
     docker0_subnet,
+    fair_share_slots,
     harbor_trial_count,
     is_harbor_trial_network,
     is_pool_exhausted_message,
@@ -44,6 +45,7 @@ from .slots import (
     pid_alive,
     reap_holders,
     release_slots,
+    release_slots_for_pid,
     reserved_slots,
     slot_dir,
     state_path,
@@ -65,6 +67,7 @@ __all__ = [
     "current_capacity",
     "docker0_subnet",
     "docker_json",
+    "fair_share_slots",
     "harbor_trial_count",
     "is_harbor_trial_network",
     "is_pool_exhausted_message",
@@ -84,6 +87,7 @@ __all__ = [
     "prune_stale_networks",
     "reap_holders",
     "release_slots",
+    "release_slots_for_pid",
     "reserved_slots",
     "slot_dir",
     "state_path",

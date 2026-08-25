@@ -8,21 +8,30 @@ capture_print_summary() {
   local jobs_root="$1"
   local run_mode="$2"
   local skills_csv="$3"
-  SUMMARY_CAPTURE_FILE="$(mktemp)"
+  local summary_file="${4:-}"
+  if [[ -z "$summary_file" ]]; then
+    summary_file="$(mktemp)"
+  fi
   # Capture stderr summary to a file, then replay it to the console.
-  print_summary "$jobs_root" "$run_mode" "$skills_csv" 2>"$SUMMARY_CAPTURE_FILE" || true
-  cat "$SUMMARY_CAPTURE_FILE" >&2
+  print_summary "$jobs_root" "$run_mode" "$skills_csv" 2>"$summary_file" || true
+  cat "$summary_file" >&2
+  SUMMARY_CAPTURE_FILE="$summary_file"
 }
 
 archive_sync_job() {
   local job_name="$1"
+  local summary_file="${2:-${SUMMARY_CAPTURE_FILE:-}}"
   python3 "$SCRIPT_DIR/archive_benchmark_run.py" sync-job \
     --run-dir "$RUN_DIR" \
     --jobs-root "$JOBS" \
     --job-name "$job_name" \
-    --summary-file "$SUMMARY_CAPTURE_FILE" >/dev/null
-  rm -f "$SUMMARY_CAPTURE_FILE"
-  SUMMARY_CAPTURE_FILE=""
+    --summary-file "$summary_file" >/dev/null
+  if [[ -n "$summary_file" && "$summary_file" == "$SUMMARY_CAPTURE_FILE" ]]; then
+    rm -f "$SUMMARY_CAPTURE_FILE"
+    SUMMARY_CAPTURE_FILE=""
+  elif [[ -n "$summary_file" ]]; then
+    rm -f "$summary_file"
+  fi
   echo "written to: $RUN_DIR/jobs/$job_name" >&2
 }
 
