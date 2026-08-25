@@ -4,7 +4,7 @@
 Layout (explorer-friendly, timestamp-first directory name):
 
   evals/runs/
-    RESULTS.txt                 # aligned table, newest row at the top
+    RESULTS.txt                 # aligned table: Run | Runtime | Mode | …
     YYYY-MM-DD_HHMMSS__harness-…__mode-…__skills-…__separately-…__kN-nN/
       00-meta.json
       01-SUMMARY.txt

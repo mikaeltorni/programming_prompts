@@ -99,7 +99,8 @@ unless `evalAgentModel` / `evalAgentReasoningEffort` override them.
 After each job the wrapper prints trials, then categorized rollups: **by
 harness**, **by eval agent**, **harness × eval agent**, **harness × skill**,
 **harness × task**, **harness × task × skill**, plus a harness comparison
-table when both ran, and a GRAND TOTAL. Per-eval-agent answers show as
+table when both ran, and a GRAND TOTAL that includes the run's wall-clock
+runtime (`Xh YYm ZZs`, after the run stamp and before the mode). Per-eval-agent answers show as
 `judge[srp/cc]` / `judge[srp/codex]`. A skill (and the trial) passes only
 when **every** selected eval agent says yes.
 
@@ -163,7 +164,8 @@ evals/
 
 After every non-install run the wrapper writes a durable archive under
 [`runs/`](runs/) and prints `written to: <path>`. [`runs/RESULTS.txt`](runs/RESULTS.txt)
-is an aligned table (newest row at the top, under the header): mode, harness,
+is an aligned table (newest row at the top, under the header): run stamp,
+runtime (`Xh YYm ZZs`, immediately after Run and before Mode), mode, harness,
 judge, skills, tasks, k/n, separately, trial/scored/pass counts, and per-skill
 plus per-task rates. Folder names start with
 `YYYY-MM-DD_HHMMSS_<pid>` so they sort by time in the explorer, and encode

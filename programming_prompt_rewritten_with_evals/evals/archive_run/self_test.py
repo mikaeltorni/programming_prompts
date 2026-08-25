@@ -6,14 +6,17 @@ import json
 import os
 import subprocess
 import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from .harbor_copy import archive_jobs_root, write_meta
 from .results_index import (
+    format_runtime,
     looks_like_results_table,
     parse_results_table,
     prepend_results_line,
     rebuild_results_index,
+    run_elapsed_seconds,
 )
 
 
@@ -52,10 +55,12 @@ def _write_results_fixture(
     eval_agent: str,
     overall: float,
     skill_ok: float,
+    started_at: str,
+    archived_at: str,
 ) -> Path:
     """Create one archived run for results-index checks.
 
-    Parameters: runs_root - temporary runs root; stamp - run timestamp; mode - benchmark mode; harness - harness name; eval_agent - judge name; overall - overall reward; skill_ok - SRP reward.
+    Parameters: runs_root - temporary runs root; stamp - run timestamp; mode - benchmark mode; harness - harness name; eval_agent - judge name; overall - overall reward; skill_ok - SRP reward; started_at - ISO start; archived_at - ISO end.
 
     Returns: fixture run directory.
     """
@@ -83,6 +88,8 @@ def _write_results_fixture(
             "attempts_per_task": 5,
             "concurrent": 5,
             "run_separately": False,
+            "started_at": started_at,
+            "archived_at": archived_at,
         },
     )
     return run_dir
@@ -157,15 +164,50 @@ def _check_results(record) -> None:
 
     Returns: nothing.
     """
+    record("runtime_format_zero", format_runtime(0) == "0h 00m 00s", format_runtime(0))
+    record("runtime_format_hms", format_runtime(3723) == "1h 02m 03s", format_runtime(3723))
+    record(
+        "runtime_format_long",
+        format_runtime(2 * 3600 + 15 * 60 + 3) == "2h 15m 03s",
+        format_runtime(2 * 3600 + 15 * 60 + 3),
+    )
+    record("runtime_format_missing", format_runtime(None) == "-", format_runtime(None))
+    local_tz = datetime.now().astimezone().tzinfo
+    stamp_start = datetime(2026, 8, 16, 10, 0, 0, tzinfo=local_tz)
+    stamp_end = stamp_start + timedelta(hours=0, minutes=9, seconds=3)
+    stamp_elapsed = run_elapsed_seconds(
+        {
+            "timestamp": "2026-08-16_100000_99",
+            "archived_at": stamp_end.astimezone(timezone.utc).isoformat(),
+        }
+    )
+    record(
+        "runtime_from_stamp",
+        format_runtime(stamp_elapsed) == "0h 09m 03s",
+        format_runtime(stamp_elapsed),
+    )
+    in_progress = run_elapsed_seconds(
+        {"started_at": "2026-08-16T10:00:00+00:00"},
+        now=datetime(2026, 8, 16, 11, 2, 3, tzinfo=timezone.utc),
+    )
+    record(
+        "runtime_in_progress_uses_now",
+        format_runtime(in_progress) == "1h 02m 03s",
+        format_runtime(in_progress),
+    )
     with tempfile.TemporaryDirectory(prefix="archive-results-") as raw:
         runs_root = Path(raw)
         _write_results_fixture(
             runs_root, "2026-08-16_100000_1", mode="baseline",
             harness="codex", eval_agent="cc", overall=0.0, skill_ok=0.0,
+            started_at="2026-08-16T10:00:00+00:00",
+            archived_at="2026-08-16T10:09:03+00:00",
         )
         _write_results_fixture(
             runs_root, "2026-08-16_110000_2", mode="positive",
             harness="grok", eval_agent="grok", overall=1.0, skill_ok=1.0,
+            started_at="2026-08-16T11:00:00+00:00",
+            archived_at="2026-08-16T12:02:03+00:00",
         )
         index = rebuild_results_index(runs_root)
         text = index.read_text(encoding="utf-8")
@@ -179,6 +221,19 @@ def _check_results(record) -> None:
             "results_has_header",
             looks_like_results_table(text) and text.splitlines()[0].startswith("Run"),
             text.splitlines()[0] if text else "missing",
+        )
+        headers = [cell.strip() for cell in text.splitlines()[0].split(" | ")]
+        record(
+            "results_runtime_between_run_and_mode",
+            headers[:3] == ["Run", "Runtime", "Mode"],
+            str(headers[:5]),
+        )
+        record(
+            "results_runtime_hms",
+            bool(rows)
+            and rows[0]["Runtime"] == "1h 02m 03s"
+            and rows[1]["Runtime"] == "0h 09m 03s",
+            f"{rows[0].get('Runtime') if rows else ''} {rows[1].get('Runtime') if len(rows) > 1 else ''}",
         )
         record(
             "results_table_pass",
@@ -203,6 +258,8 @@ def _check_results(record) -> None:
         extra = _write_results_fixture(
             runs_root, "2026-08-16_120000_3", mode="positive",
             harness="codex", eval_agent="codex", overall=1.0, skill_ok=1.0,
+            started_at="2026-08-16T12:00:00+00:00",
+            archived_at="2026-08-16T14:15:03+00:00",
         )
         prepend_results_line(runs_root, extra)
         prepend_results_line(runs_root, extra)
@@ -211,6 +268,11 @@ def _check_results(record) -> None:
             "results_prepend_dedupes",
             len(rows) == 3 and rows[0]["Run"] == "2026-08-16_120000_3",
             f"rows={len(rows)} first={rows[0]['Run'] if rows else ''}",
+        )
+        record(
+            "results_prepend_runtime",
+            bool(rows) and rows[0]["Runtime"] == "2h 15m 03s",
+            rows[0].get("Runtime", "") if rows else "missing",
         )
         record(
             "results_body_below_header",

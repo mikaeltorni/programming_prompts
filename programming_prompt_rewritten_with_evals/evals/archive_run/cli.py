@@ -10,7 +10,12 @@ from pathlib import Path
 from .fsutil import load_json_lenient
 from .harbor_copy import append_summary, archive_jobs_root, write_meta
 from .paths import build_run_dirname
-from .results_index import prepend_results_line, rebuild_results_index
+from .results_index import (
+    format_runtime,
+    prepend_results_line,
+    rebuild_results_index,
+    run_elapsed_seconds,
+)
 from .self_test import _self_test
 
 DESCRIPTION = "Archive a Harbor benchmark job tree into an inspectable runs/ folder."
@@ -79,6 +84,7 @@ def _init_run(args: argparse.Namespace) -> int:
     run_dir = args.runs_root / dirname
     meta = {
         "timestamp": args.timestamp,
+        "started_at": datetime.now(timezone.utc).isoformat(),
         "harnesses": args.harness,
         "eval_agents": args.eval_agent,
         "eval_agent_inherit": not bool(args.eval_agent),
@@ -157,7 +163,12 @@ def _finalize(args: argparse.Namespace) -> int:
         append_summary(args.run_dir, "\n" + text)
         (args.run_dir / "03-COMBINED-SUMMARY.txt").write_text(text, encoding="utf-8")
     meta = load_json_lenient(args.run_dir / "00-meta.json") or {}
-    meta["archived_at"] = datetime.now(timezone.utc).isoformat()
+    ended = datetime.now(timezone.utc)
+    meta["archived_at"] = ended.isoformat()
+    elapsed = run_elapsed_seconds(meta, now=ended)
+    if elapsed is not None:
+        meta["elapsed_sec"] = round(elapsed, 1)
+        meta["runtime"] = format_runtime(elapsed)
     meta["jobs_dir"] = str(args.jobs_root)
     meta["jobs_temp"] = str(args.jobs_root)
     write_meta(args.run_dir, meta)

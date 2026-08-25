@@ -13,6 +13,7 @@ from .projects import archive_projects_layout, reset_clone_to_initial
 from .results_index import (
     collect_run_scores,
     format_results_row,
+    format_runtime,
     list_run_dirs,
     looks_like_results_table,
     parse_results_table,
@@ -20,6 +21,7 @@ from .results_index import (
     rebuild_results_index,
     render_results_table,
     results_table_columns,
+    run_elapsed_seconds,
     write_results_table,
 )
 
@@ -32,6 +34,7 @@ __all__ = [
     "build_run_dirname",
     "collect_run_scores",
     "format_results_row",
+    "format_runtime",
     "list_run_dirs",
     "looks_like_results_table",
     "main",
@@ -41,6 +44,7 @@ __all__ = [
     "render_results_table",
     "reset_clone_to_initial",
     "results_table_columns",
+    "run_elapsed_seconds",
     "slug",
     "write_meta",
     "write_results_table",

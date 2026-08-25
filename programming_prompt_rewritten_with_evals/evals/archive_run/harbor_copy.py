@@ -261,11 +261,12 @@ def write_meta(run_dir: Path, meta: dict) -> None:
 
     Parameters: run_dir - archive run directory; meta - metadata fields.
 
-    Returns: nothing.
+    Returns: nothing. Sets ``started_at`` when the payload omits it.
+    Finalize overwrites ``archived_at``, ``elapsed_sec``, and ``runtime``.
     """
     run_dir.mkdir(parents=True, exist_ok=True)
     payload = dict(meta)
-    payload.setdefault("archived_at", datetime.now(timezone.utc).isoformat())
+    payload.setdefault("started_at", datetime.now(timezone.utc).isoformat())
     payload["run_dir"] = str(run_dir)
     write_json(run_dir / "00-meta.json", payload)
 

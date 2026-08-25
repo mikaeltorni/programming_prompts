@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from collections import defaultdict
 from pathlib import Path
 
-
+from archive_run.results_index import format_runtime, run_elapsed_seconds
 from harbor_agents.harness_spec import HARNESSES, identify_harness
 
 
@@ -337,6 +338,40 @@ def _rate_line(label: str, values: list[float]) -> None:
     print(f"  {label}: {_fmt_rate(passed, len(values))}", file=sys.stderr)
 
 
+def _meta_for_summary(jobs_root: Path) -> dict:
+    """Load archive metadata for the current run.
+
+    Parameters: jobs_root - Harbor jobs directory passed to this summary.
+
+    Returns: metadata object, or an empty dict when the archive is missing.
+    """
+    run_dir = os.environ.get("RUN_DIR", "").strip()
+    candidates = []
+    if run_dir:
+        candidates.append(Path(run_dir))
+    candidates.extend((jobs_root, jobs_root.parent, jobs_root.parent.parent))
+    for path in candidates:
+        payload = _load_json(path / "00-meta.json")
+        if payload:
+            return payload
+    return {}
+
+
+def _run_and_runtime(jobs_root: Path) -> tuple[str, str]:
+    """Return the run stamp and formatted wall-clock runtime.
+
+    Parameters: jobs_root - Harbor jobs directory passed to this summary.
+
+    Returns: ``(stamp, runtime)``; empty strings when unknown.
+    """
+    meta = _meta_for_summary(jobs_root)
+    stamp = str(meta.get("timestamp") or "").strip()
+    runtime = format_runtime(run_elapsed_seconds(meta))
+    if runtime == "-":
+        runtime = ""
+    return stamp, runtime
+
+
 jobs_root = Path(sys.argv[1])
 run_mode = sys.argv[2] if len(sys.argv) > 2 else "unknown"
 skills_csv = sys.argv[3] if len(sys.argv) > 3 else ""
@@ -345,8 +380,15 @@ if not trial_dirs:
     print("No trial reward.json files found under", jobs_root, file=sys.stderr)
     raise SystemExit(0)
 
+run_stamp, runtime_text = _run_and_runtime(jobs_root)
+identity = ""
+if run_stamp:
+    identity += f"run={run_stamp}  "
+if runtime_text:
+    identity += f"runtime={runtime_text}  "
+
 _section(
-    f"Trial results ({len(trial_dirs)}) — mode={run_mode} "
+    f"Trial results ({len(trial_dirs)}) — {identity}mode={run_mode} "
     f"skills={skills_csv or '-'} — {jobs_root}"
 )
 
@@ -484,10 +526,17 @@ if len(by_harness) >= 2:
 
 print(file=sys.stderr)
 print("-" * 78, file=sys.stderr)
+runtime_suffix = f"  runtime={runtime_text}" if runtime_text else ""
 if rewards:
     passed = sum(1 for value in rewards if value >= 1.0)
     total = len(rewards)
-    print(f"GRAND TOTAL pass_rate={_fmt_rate(passed, total)}", file=sys.stderr)
+    print(
+        f"GRAND TOTAL pass_rate={_fmt_rate(passed, total)}{runtime_suffix}",
+        file=sys.stderr,
+    )
 else:
-    print("GRAND TOTAL pass_rate=n/a (no numeric rewards)", file=sys.stderr)
+    print(
+        f"GRAND TOTAL pass_rate=n/a (no numeric rewards){runtime_suffix}",
+        file=sys.stderr,
+    )
 print("-" * 78, file=sys.stderr)
