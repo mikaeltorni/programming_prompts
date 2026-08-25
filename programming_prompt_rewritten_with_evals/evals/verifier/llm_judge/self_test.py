@@ -9,9 +9,14 @@ from pathlib import Path
 from typing import Any
 
 from .grok import DEFAULT_MAX_TURNS, build_grok_command, score_with_grok
-from .homes import claude_wrapper_script
+from .homes import claude_judge_env, claude_wrapper_script
 from .reliability import unreliable_score_reason
-from .rewardkit import rewardkit_backend, score_with_rewardkit, write_pinned_judge_dir
+from .rewardkit import (
+    _rewardkit_error_excerpt,
+    rewardkit_backend,
+    score_with_rewardkit,
+    write_pinned_judge_dir,
+)
 from .scores import (
     parse_scores,
     response_schema,
@@ -264,6 +269,31 @@ def run_self_test() -> int:
         "claude_wrapper_bypass",
         "--permission-mode bypassPermissions" in wrapper and "--effort" in wrapper,
         "Claude PATH wrapper injects effort and bypassPermissions",
+    )
+    cc_env = claude_judge_env(Path("/tmp/claude-judge-x"), "secret-token")
+    check(
+        "claude_judge_env_config_dir",
+        cc_env.get("CLAUDE_CONFIG_DIR") == "/tmp/claude-judge-x"
+        and cc_env.get("CLAUDE_FORCE_OAUTH") == "true"
+        and cc_env.get("CLAUDE_CODE_OAUTH_TOKEN") == "secret-token",
+        "Claude judge overlay includes writable config dir and OAuth",
+    )
+    cc_env_no_token = claude_judge_env(Path("/tmp/claude-judge-x"), "")
+    check(
+        "claude_judge_env_omits_empty_token",
+        "CLAUDE_CODE_OAUTH_TOKEN" not in cc_env_no_token
+        and cc_env_no_token.get("CLAUDE_CONFIG_DIR") == "/tmp/claude-judge-x",
+        "empty token is not exported as a blank OAuth env var",
+    )
+    excerpt = _rewardkit_error_excerpt(
+        "Downloading litellm (23.1MiB)\n"
+        "Installed 56 packages in 1.59s\n"
+        "Exception Group Traceback: claude-code failed\n"
+    )
+    check(
+        "rewardkit_error_skips_downloads",
+        "Downloading" not in excerpt and "claude-code failed" in excerpt,
+        "failed-judge logs keep the exception, not uvx download spam",
     )
     command = build_grok_command(
         prompt="score this",

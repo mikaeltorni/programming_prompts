@@ -21,6 +21,7 @@ RUN apt-get update \
     && codex --version \
     && claude --version \
     && grok --version \
+    && uvx --from harbor-rewardkit@0.1.7 rewardkit --help \
     && git config --system user.email "eval@local" \
     && git config --system user.name "Eval Agent" \
     && rm -rf /root/.agents /root/.codex /root/.claude /etc/codex \

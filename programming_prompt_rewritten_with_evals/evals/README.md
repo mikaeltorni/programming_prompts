@@ -256,8 +256,13 @@ suite goes further:
   `harness=cc` grades with Claude Code and needs Claude OAuth — not Codex.
   Codex `auth.json` is still mounted so `evalAgent=codex` (or a mix) can run.
   The verifier copies credentials into a writable `CLAUDE_CONFIG_DIR` (the
-  trial mount is read-only) and runs `claude -p` with `IS_SANDBOX=1` plus
-  `--permission-mode bypassPermissions`, matching Harbor's coding agent.
+  trial mount is read-only), exports that dir plus `CLAUDE_CODE_OAUTH_TOKEN`
+  into the rewardkit/`uvx` child, and runs `claude -p` with `IS_SANDBOX=1`
+  plus `--permission-mode bypassPermissions`, matching Harbor's coding agent.
+  Parallel Claude+Codex judges used to exit 1 during a racing `uvx`
+  `harbor-rewardkit` install (the log showed only download lines, and the
+  aggregate became `cc=no` with `(none recorded)`). The task image now
+  preinstalls that tool, and the verifier serializes the first `uvx` warmup.
   Without the matching judge auth you get a verifier error such as
   `Claude Code eval agent needs CLAUDE_CODE_OAUTH_TOKEN`.
 - Do not pass `…=1` for `*AUTH*` / `*OAUTH*` / `*TOKEN*` flags via Harbor

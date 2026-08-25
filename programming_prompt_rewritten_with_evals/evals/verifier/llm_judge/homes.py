@@ -134,6 +134,47 @@ def setup_claude_home() -> tuple[Path, str]:
     return judge_home, token
 
 
+def claude_judge_env(home: Path, token: str) -> dict[str, str]:
+    """Build the environment overlay for a Claude Code rewardkit judge.
+
+    Parameters: home - writable ``CLAUDE_CONFIG_DIR``; token - OAuth access token
+        (empty when credentials file is enough).
+
+    Returns: env keys for the judge subprocess. Values are secrets; do not log them.
+    """
+    env = {
+        "CLAUDE_FORCE_OAUTH": "true",
+        "REWARDKIT_FORCE_OAUTH": "true",
+        "CLAUDE_CONFIG_DIR": str(home),
+        "IS_SANDBOX": "1",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    }
+    if token:
+        env["CLAUDE_CODE_OAUTH_TOKEN"] = token
+    return env
+
+
+@contextmanager
+def overlay_environ(extra: dict[str, str]) -> Iterator[None]:
+    """Temporarily apply *extra* to ``os.environ``.
+
+    Parameters: extra - keys to set for the duration of the context.
+
+    Returns: context manager that restores previous values.
+    """
+    saved = {key: os.environ.get(key) for key in extra}
+    os.environ.update(extra)
+    log(f"environ overlay keys={','.join(sorted(extra))}")
+    try:
+        yield
+    finally:
+        for key, previous in saved.items():
+            if previous is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = previous
+
+
 def claude_wrapper_script(real: str, effort: str) -> str:
     """Return bash for a PATH wrapper that injects effort and bypassPermissions.
 
