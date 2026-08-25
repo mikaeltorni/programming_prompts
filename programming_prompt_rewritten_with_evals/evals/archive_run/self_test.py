@@ -195,6 +195,25 @@ def _check_results(record) -> None:
         format_runtime(in_progress) == "1h 02m 03s",
         format_runtime(in_progress),
     )
+    with tempfile.TemporaryDirectory(prefix="archive-mtime-") as raw_mtime:
+        mtime_root = Path(raw_mtime)
+        stale = _write_results_fixture(
+            mtime_root, "2026-08-16_100000_mtime", mode="positive",
+            harness="codex", eval_agent="codex", overall=1.0, skill_ok=1.0,
+            started_at="2026-08-16T10:00:00+00:00",
+            archived_at="2026-08-16T10:00:01+00:00",
+        )
+        summary = stale / "01-SUMMARY.txt"
+        summary.write_text("summary\n", encoding="utf-8")
+        start_ts = datetime(2026, 8, 16, 10, 0, 0, tzinfo=timezone.utc).timestamp()
+        os.utime(summary, (start_ts + 14 * 60, start_ts + 14 * 60))
+        mtime_index = rebuild_results_index(mtime_root)
+        mtime_rows = parse_results_table(mtime_index.read_text(encoding="utf-8"))
+        record(
+            "runtime_from_summary_mtime",
+            bool(mtime_rows) and mtime_rows[0]["Runtime"] == "0h 14m 00s",
+            mtime_rows[0].get("Runtime", "") if mtime_rows else "missing",
+        )
     with tempfile.TemporaryDirectory(prefix="archive-results-") as raw:
         runs_root = Path(raw)
         _write_results_fixture(
