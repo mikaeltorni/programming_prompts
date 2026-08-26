@@ -19,6 +19,13 @@ _RATE_LIMIT_NEEDLES = (
     'duration_api_ms":0',
     "duration_api_ms\":0",
 )
+_JUDGE_CLI_NEEDLES = (
+    "rewardkit",
+    "uvx",
+    "agent cli",
+    "--judge",
+    "pool finished with failures",
+)
 
 
 def looks_like_judge_rate_limit(text: str) -> bool:
@@ -31,10 +38,22 @@ def looks_like_judge_rate_limit(text: str) -> bool:
     if not text:
         return False
     lowered = text.lower()
-    if "calledprocesserror" not in lowered and "exited with code 1" not in lowered:
-        if "rate limit" not in lowered and "rate_limit" not in lowered:
-            if "too many requests" not in lowered and " 429" not in lowered:
-                return False
+    if (
+        "rate limit" in lowered
+        or "rate_limit" in lowered
+        or "ratelimit" in lowered
+        or "too many requests" in lowered
+        or " 429" in lowered
+        or "overloaded" in lowered
+    ):
+        return True
+    crashed = (
+        "calledprocesserror" in lowered or "exited with code 1" in lowered
+    )
+    if not crashed:
+        return False
+    if any(needle in lowered for needle in _JUDGE_CLI_NEEDLES):
+        return True
     return any(needle.lower() in lowered for needle in _RATE_LIMIT_NEEDLES)
 
 
