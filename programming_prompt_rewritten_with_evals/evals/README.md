@@ -335,7 +335,12 @@ IPAM's ~28 `/16` slots). The same overlay mounts per-container **tmpfs**
 on `/tmp`, `/var/tmp`, and `/root/.cache` so uv/agent scratch skips
 overlay2 copy-up (the usual community fix for overlay2 write amplification).
 Each mount is private RAM — not a shared volume, not a host bind — so
-trials stay isolated; only the image layers stay on disk. `apple-container` is not usable
+trials stay isolated; only the image layers stay on disk. Each trial also
+gets a **1 CPU cgroup quota** plus `GOMAXPROCS=1` / `UV_THREADPOOL_SIZE=2`
+so Node/Go do not spawn a 16-thread pool per container (the usual
+thread-explosion on a small AMD core count). Twenty live trials will still
+keep the host busy; this cuts context-switch waste, not the agent work.
+`apple-container` is not usable
 on Linux. Cloud `--env` values can be passed through on the wrapper command
 line (they land in Harbor args); the wrapper then **skips the local Docker
 IPAM lock**. Local Linux runs still need Docker Engine.

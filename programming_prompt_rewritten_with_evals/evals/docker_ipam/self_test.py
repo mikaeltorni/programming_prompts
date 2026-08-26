@@ -268,6 +268,13 @@ def _self_test() -> int:
         "per-container tmpfs keeps overlay2 off trial scratch",
     )
     record(
+        "template_cpu_quota",
+        "cpus: 1.0" in compose_text
+        and "GOMAXPROCS" in compose_text
+        and "UV_THREADPOOL_SIZE" in compose_text,
+        "per-container CFS quota stops host-nproc thread explosion",
+    )
+    record(
         "grant_explicit_cap_honors_n10",
         grant_trial_slots(
             10, ipam_free=28, ipam_max=28, reserved=0,
