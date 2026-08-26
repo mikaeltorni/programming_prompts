@@ -1,6 +1,6 @@
 {
   "name": "positive-codex-grok",
-  "description": "positive; judges=codex,grok on each coding run; no cc; k=5 n=5",
+  "description": "positive; judges=codex,grok on each coding run; no cc; k=5",
   "jobs": [
     {
       "title": "codex x codex,grok",
@@ -11,8 +11,6 @@
         "--skills",
         "srp,commenting,logging,worktree",
         "-k",
-        "5",
-        "-n",
         "5"
       ]
     },
@@ -25,8 +23,6 @@
         "--skills",
         "srp,commenting,logging,worktree",
         "-k",
-        "5",
-        "-n",
         "5"
       ]
     }

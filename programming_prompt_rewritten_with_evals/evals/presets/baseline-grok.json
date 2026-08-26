@@ -1,6 +1,6 @@
 {
   "name": "baseline-grok",
-  "description": "baseline; judges=grok on each coding run; no codex,cc; k=5 n=5",
+  "description": "baseline; judges=grok on each coding run; no codex,cc; k=5",
   "jobs": [
     {
       "title": "grok x grok",
@@ -12,8 +12,6 @@
         "--skills",
         "srp,commenting,logging,worktree",
         "-k",
-        "5",
-        "-n",
         "5"
       ]
     }

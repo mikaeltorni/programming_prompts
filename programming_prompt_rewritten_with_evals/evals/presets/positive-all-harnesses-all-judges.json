@@ -1,6 +1,6 @@
 {
   "name": "positive-all-harnesses-all-judges",
-  "description": "positive; judges=codex,cc,grok on each coding run; k=5 n=5",
+  "description": "positive; judges=codex,cc,grok on each coding run; k=5",
   "jobs": [
     {
       "title": "codex x codex,cc,grok",
@@ -11,8 +11,6 @@
         "--skills",
         "srp,commenting,logging,worktree",
         "-k",
-        "5",
-        "-n",
         "5"
       ]
     },
@@ -25,8 +23,6 @@
         "--skills",
         "srp,commenting,logging,worktree",
         "-k",
-        "5",
-        "-n",
         "5"
       ]
     },
@@ -39,8 +35,6 @@
         "--skills",
         "srp,commenting,logging,worktree",
         "-k",
-        "5",
-        "-n",
         "5"
       ]
     }

@@ -31,11 +31,11 @@ run_one_job() {
   )
 
   local -a harbor_args=("${HARBOR_ARGS[@]}")
+  local i
   if [[ ${#harbor_args[@]} -eq 0 ]]; then
-    harbor_args=(--job-name "$job_name" -k 5 -n 5)
+    harbor_args=(--job-name "$job_name" -k 5)
   else
     local has_job_name=0
-    local i
     for ((i = 0; i < ${#harbor_args[@]}; i++)); do
       if [[ "${harbor_args[$i]}" == "--job-name" ]]; then
         harbor_args[$((i + 1))]="${job_name}"
@@ -48,9 +48,16 @@ run_one_job() {
   fi
 
   local attempts_per_task=5
+  local user_passed_n=0
+  local concurrent_for_job
+  concurrent_for_job="$(default_n_concurrent)"
   for ((i = 0; i < ${#harbor_args[@]}; i++)); do
     if [[ "${harbor_args[$i]}" == "-k" || "${harbor_args[$i]}" == "--n-attempts" ]]; then
       attempts_per_task="${harbor_args[$((i + 1))]:-$attempts_per_task}"
+    fi
+    if [[ "${harbor_args[$i]}" == "-n" || "${harbor_args[$i]}" == "--n-concurrent" ]]; then
+      user_passed_n=1
+      concurrent_for_job="${harbor_args[$((i + 1))]:-$concurrent_for_job}"
     fi
   done
   local task_count
@@ -60,12 +67,6 @@ run_one_job() {
   echo "Model default: $(harness_model_name "$harness") @ reasoning_effort=low (CLI $(harness_cli_version "$harness"))" >&2
   echo "Job $job_name evalAgent: $(eval_agents_csv_for_harness "$harness") (inherit if evalAgent omitted)" >&2
 
-  local concurrent_for_job=5
-  for ((i = 0; i < ${#harbor_args[@]}; i++)); do
-    if [[ "${harbor_args[$i]}" == "-n" || "${harbor_args[$i]}" == "--n-concurrent" ]]; then
-      concurrent_for_job="${harbor_args[$((i + 1))]:-$concurrent_for_job}"
-    fi
-  done
   if [[ "${SEPARATELY_QUIET:-0}" -eq 1 ]]; then
     append_harbor_quiet harbor_args
   fi
@@ -74,12 +75,18 @@ run_one_job() {
   local granted_slots=""
   if harbor_uses_docker_env; then
     acquire_docker_slots "$docker_holder" "$concurrent_for_job" granted_slots
-    if [[ "$granted_slots" != "$concurrent_for_job" ]]; then
+    if [[ "$user_passed_n" -eq 0 ]]; then
+      echo "Job $job_name omitted -n; using machine cap → $granted_slots concurrent trial(s)." >&2
+    elif [[ "$granted_slots" != "$concurrent_for_job" ]]; then
       echo "Docker IPAM/LLM cap clamped job $job_name -n $concurrent_for_job → $granted_slots" >&2
-      set_harbor_n_concurrent harbor_args "$granted_slots"
     fi
+    set_harbor_n_concurrent harbor_args "$granted_slots"
   else
     echo "Skipping Docker IPAM for $job_name (Harbor --env is not docker)." >&2
+    if [[ "$user_passed_n" -eq 0 ]]; then
+      echo "Job $job_name omitted -n; using machine cap → $concurrent_for_job concurrent trial(s)." >&2
+      set_harbor_n_concurrent harbor_args "$concurrent_for_job"
+    fi
   fi
 
   run_harbor_for_harness "$harness" "${common[@]}" "${harbor_args[@]}"

@@ -46,6 +46,11 @@ reclaim_docker_leftovers() {
   python3 "$DOCKER_NETWORKS" prune --keep-builder-cache >/dev/null || true
 }
 
+default_n_concurrent() {
+  # Harbor -n when the caller omitted it: machine LLM cap (default 10).
+  python3 "$DOCKER_NETWORKS" default-n
+}
+
 acquire_docker_slots() {
   # Reserve *slots* trial networks for *holder* in the *current* shell.
   # Do not wrap this function in $() — that subshell would lose the holder

@@ -172,6 +172,8 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
             issues.append("baseline-flag")
         if any(DEFAULT_SKILLS not in job.args for job in preset.jobs):
             issues.append("skills")
+        if any("-n" in job.args or "--n-concurrent" in job.args for job in preset.jobs):
+            issues.append("explicit-n")
         excluded = [item for item in HARNESS_ORDER if item not in harnesses]
         for harness in excluded:
             if any(

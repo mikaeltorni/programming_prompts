@@ -1,6 +1,6 @@
 {
   "name": "baseline-cc",
-  "description": "baseline; judges=cc on each coding run; no codex,grok; k=5 n=5",
+  "description": "baseline; judges=cc on each coding run; no codex,grok; k=5",
   "jobs": [
     {
       "title": "cc x cc",
@@ -12,8 +12,6 @@
         "--skills",
         "srp,commenting,logging,worktree",
         "-k",
-        "5",
-        "-n",
         "5"
       ]
     }

@@ -5,6 +5,7 @@ from .constants import (
     BUILTIN_NETWORKS,
     DAEMON_JSON_PATH,
     DEFAULT_ADDRESS_POOLS,
+    DEFAULT_N_WHEN_UNLIMITED,
     HARBOR_IMAGE_SUFFIX,
     HARBOR_NETWORK_SUFFIX,
     LLM_MAX_CONCURRENT_DEFAULT,
@@ -50,6 +51,7 @@ from .math import (
 )
 from .slots import (
     acquire_slots,
+    default_n_concurrent,
     load_state,
     lock_path,
     pid_alive,
@@ -66,6 +68,7 @@ __all__ = [
     "BUILTIN_NETWORKS",
     "DAEMON_JSON_PATH",
     "DEFAULT_ADDRESS_POOLS",
+    "DEFAULT_N_WHEN_UNLIMITED",
     "HARBOR_IMAGE_SUFFIX",
     "HARBOR_NETWORK_SUFFIX",
     "LLM_MAX_CONCURRENT_DEFAULT",
@@ -77,6 +80,7 @@ __all__ = [
     "WAIT_LOG_SEC",
     "acquire_slots",
     "current_capacity",
+    "default_n_concurrent",
     "docker0_subnet",
     "docker_json",
     "fair_share_slots",

@@ -14,9 +14,9 @@ This helper:
   so disk does not grow with every trial; BuildKit cache stays so the next
   job does not rebuild. Bare ``prune`` also drops dangling BuildKit cache
   when you need more disk;
-* caps live coding trials machine-wide (default ``EVAL_LLM_MAX_CONCURRENT=10``)
-  so ``-n 10`` is not clamped to two; set ``EVAL_LLM_MAX_CONCURRENT=2`` to
-  restore the old quota-safe cap;
+* caps live coding trials machine-wide (default ``EVAL_LLM_MAX_CONCURRENT=10``).
+  Omit Harbor ``-n`` to run at that cap (``default-n``); pass ``-n 2`` for a
+  cheap smoke. ``EVAL_LLM_MAX_CONCURRENT=2`` restores the old quota-safe cap;
 * estimates remaining IPAM slots from ``/etc/docker/daemon.json`` or Docker's
   built-in pools;
 * holds a cross-process counting semaphore so concurrent wrappers wait
@@ -27,6 +27,7 @@ Stdout is machine-readable (slot counts / JSON). Diagnostics go to stderr.
 Usage (from ``evals/``)::
 
     python3 docker_networks.py self-test
+    python3 docker_networks.py default-n
     python3 docker_networks.py prune --ipam-only
     python3 docker_networks.py prune
     python3 docker_networks.py acquire --slots 5 --holder STAMP --pid $$
@@ -52,7 +53,12 @@ from .live import (
 from .log import log
 from .math import fair_share_slots, merge_recommended_daemon_json
 from .self_test import _self_test
-from .slots import acquire_slots, release_slots, release_slots_for_pid
+from .slots import (
+    acquire_slots,
+    default_n_concurrent,
+    release_slots,
+    release_slots_for_pid,
+)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -66,6 +72,10 @@ def _build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("self-test", help="Check pool math and stale-network fixtures")
+    sub.add_parser(
+        "default-n",
+        help="Print Harbor -n when the caller omitted it (LLM cap, or 64 if uncapped)",
+    )
     prune = sub.add_parser(
         "prune",
         help="Remove leftover Harbor Docker state (full disk reclaim unless --ipam-only)",
@@ -181,6 +191,9 @@ def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     if args.cmd == "self-test":
         return _self_test()
+    if args.cmd == "default-n":
+        print(default_n_concurrent())
+        return 0
     if args.cmd == "prune":
         counts = reclaim_docker_leftovers(
             images=not args.ipam_only,
