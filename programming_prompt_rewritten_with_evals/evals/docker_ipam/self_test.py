@@ -11,6 +11,7 @@ from .constants import (
     DEFAULT_ADDRESS_POOLS,
     DEFAULT_N_WHEN_UNLIMITED,
     LLM_MAX_CONCURRENT_DEFAULT,
+    LLM_MAX_CONCURRENT_UNLIMITED,
     POOL_EXHAUSTED_NEEDLE,
     RECOMMENDED_ADDRESS_POOLS,
     WAIT_LOG_SEC,
@@ -33,6 +34,7 @@ from .math import (
 )
 from .slots import (
     default_n_concurrent,
+    llm_max_concurrent,
     load_state,
     reap_holders,
     release_slots_for_pid,
@@ -136,18 +138,39 @@ def _self_test() -> int:
         "EVAL_LLM_MAX_CONCURRENT=0 keeps requested -n when IPAM allows",
     )
     record(
-        "grant_default_cap_honors_n10",
+        "grant_k20_unlimited",
+        grant_trial_slots(
+            20, ipam_free=28, ipam_max=28, reserved=0,
+            llm_cap=LLM_MAX_CONCURRENT_UNLIMITED,
+        ) == 20,
+        "unset LLM cap lets -k 20 run 20 trials when IPAM has room",
+    )
+    record(
+        "grant_k20_ipam_clamps",
+        grant_trial_slots(
+            20, ipam_free=13, ipam_max=28, reserved=0,
+            llm_cap=LLM_MAX_CONCURRENT_UNLIMITED,
+        ) == 13,
+        "Docker IPAM still clamps -k 20 when leftover networks fill the pool",
+    )
+    record(
+        "grant_explicit_cap_honors_n10",
         grant_trial_slots(
             10, ipam_free=28, ipam_max=28, reserved=0,
             llm_cap=LLM_MAX_CONCURRENT_DEFAULT,
         ) == 10,
-        "default LLM cap lets -n 10 run 10 trials",
+        "EVAL_LLM_MAX_CONCURRENT=10 still lets -n 10 run 10 trials",
     )
     prev_llm = os.environ.pop("EVAL_LLM_MAX_CONCURRENT", None)
     try:
         record(
-            "default_n_matches_cap",
-            default_n_concurrent() == LLM_MAX_CONCURRENT_DEFAULT,
+            "unset_llm_cap_unlimited",
+            llm_max_concurrent() == LLM_MAX_CONCURRENT_UNLIMITED,
+            f"got {llm_max_concurrent()}",
+        )
+        record(
+            "default_n_unset_unlimited",
+            default_n_concurrent() == DEFAULT_N_WHEN_UNLIMITED,
             f"got {default_n_concurrent()}",
         )
         os.environ["EVAL_LLM_MAX_CONCURRENT"] = "2"

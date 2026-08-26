@@ -49,8 +49,7 @@ run_one_job() {
 
   local attempts_per_task=5
   local user_passed_n=0
-  local concurrent_for_job
-  concurrent_for_job="$(default_n_concurrent)"
+  local concurrent_for_job=5
   for ((i = 0; i < ${#harbor_args[@]}; i++)); do
     if [[ "${harbor_args[$i]}" == "-k" || "${harbor_args[$i]}" == "--n-attempts" ]]; then
       attempts_per_task="${harbor_args[$((i + 1))]:-$attempts_per_task}"
@@ -60,6 +59,9 @@ run_one_job() {
       concurrent_for_job="${harbor_args[$((i + 1))]:-$concurrent_for_job}"
     fi
   done
+  if [[ "$user_passed_n" -eq 0 ]]; then
+    concurrent_for_job="$attempts_per_task"
+  fi
   local task_count
   task_count="$(list_task_dirs | wc -l | tr -d ' ')"
   echo "Job $job_name [$harness] schedules about $((task_count * attempts_per_task)) trials ($attempts_per_task attempts × $task_count tasks)." >&2
@@ -76,7 +78,7 @@ run_one_job() {
   if harbor_uses_docker_env; then
     acquire_docker_slots "$docker_holder" "$concurrent_for_job" granted_slots
     if [[ "$user_passed_n" -eq 0 ]]; then
-      echo "Job $job_name omitted -n; using machine cap → $granted_slots concurrent trial(s)." >&2
+      echo "Job $job_name omitted -n; following -k $attempts_per_task → $granted_slots concurrent trial(s)." >&2
     elif [[ "$granted_slots" != "$concurrent_for_job" ]]; then
       echo "Docker IPAM/LLM cap clamped job $job_name -n $concurrent_for_job → $granted_slots" >&2
     fi
@@ -84,7 +86,7 @@ run_one_job() {
   else
     echo "Skipping Docker IPAM for $job_name (Harbor --env is not docker)." >&2
     if [[ "$user_passed_n" -eq 0 ]]; then
-      echo "Job $job_name omitted -n; using machine cap → $concurrent_for_job concurrent trial(s)." >&2
+      echo "Job $job_name omitted -n; following -k $attempts_per_task → $concurrent_for_job concurrent trial(s)." >&2
       set_harbor_n_concurrent harbor_args "$concurrent_for_job"
     fi
   fi

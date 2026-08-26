@@ -54,16 +54,21 @@ archive_finalize() {
 init_run_archive() {
   local mode_label="$1"
   ATTEMPTS_PER_TASK=5
-  CONCURRENT="$(python3 "$DOCKER_NETWORKS" default-n)"
+  local user_passed_n=0
+  CONCURRENT=5
   local i
   for ((i = 0; i < ${#HARBOR_ARGS[@]}; i++)); do
     if [[ "${HARBOR_ARGS[$i]}" == "-k" || "${HARBOR_ARGS[$i]}" == "--n-attempts" ]]; then
       ATTEMPTS_PER_TASK="${HARBOR_ARGS[$((i + 1))]:-$ATTEMPTS_PER_TASK}"
     fi
     if [[ "${HARBOR_ARGS[$i]}" == "-n" || "${HARBOR_ARGS[$i]}" == "--n-concurrent" ]]; then
+      user_passed_n=1
       CONCURRENT="${HARBOR_ARGS[$((i + 1))]:-$CONCURRENT}"
     fi
   done
+  if [[ "$user_passed_n" -eq 0 ]]; then
+    CONCURRENT="$ATTEMPTS_PER_TASK"
+  fi
   mkdir -p "$RUNS_ROOT"
   local -a archive_init_args=(
     --runs-root "$RUNS_ROOT"

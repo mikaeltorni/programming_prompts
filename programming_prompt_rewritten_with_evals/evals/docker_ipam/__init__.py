@@ -52,6 +52,7 @@ from .math import (
 from .slots import (
     acquire_slots,
     default_n_concurrent,
+    llm_max_concurrent,
     load_state,
     lock_path,
     pid_alive,
@@ -92,6 +93,7 @@ __all__ = [
     "is_pool_exhausted_message",
     "is_stale_harbor_network",
     "list_networks",
+    "llm_max_concurrent",
     "load_daemon_json",
     "load_state",
     "lock_path",

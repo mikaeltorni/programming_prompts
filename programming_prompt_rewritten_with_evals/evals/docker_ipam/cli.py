@@ -14,9 +14,10 @@ This helper:
   so disk does not grow with every trial; BuildKit cache stays so the next
   job does not rebuild. Bare ``prune`` also drops dangling BuildKit cache
   when you need more disk;
-* caps live coding trials machine-wide (default ``EVAL_LLM_MAX_CONCURRENT=10``).
-  Omit Harbor ``-n`` to run at that cap (``default-n``); pass ``-n 2`` for a
-  cheap smoke. ``EVAL_LLM_MAX_CONCURRENT=2`` restores the old quota-safe cap;
+* does not cap live coding trials unless ``EVAL_LLM_MAX_CONCURRENT`` is set.
+  Omit Harbor ``-n`` to follow ``-k`` (``-k 20`` runs 20 at once). Docker
+  IPAM still limits live networks (~28 on stock Docker).
+  ``EVAL_LLM_MAX_CONCURRENT=2`` restores the old quota-safe cap;
 * estimates remaining IPAM slots from ``/etc/docker/daemon.json`` or Docker's
   built-in pools;
 * holds a cross-process counting semaphore so concurrent wrappers wait
@@ -74,7 +75,7 @@ def _build_parser() -> argparse.ArgumentParser:
     sub.add_parser("self-test", help="Check pool math and stale-network fixtures")
     sub.add_parser(
         "default-n",
-        help="Print Harbor -n when the caller omitted it (LLM cap, or 64 if uncapped)",
+        help="Print Harbor -n when neither -n nor -k is available (LLM cap, or 64 if uncapped)",
     )
     prune = sub.add_parser(
         "prune",

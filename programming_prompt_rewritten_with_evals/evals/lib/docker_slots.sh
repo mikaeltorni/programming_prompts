@@ -47,7 +47,7 @@ reclaim_docker_leftovers() {
 }
 
 default_n_concurrent() {
-  # Harbor -n when the caller omitted it: machine LLM cap (default 10).
+  # Fallback Harbor -n when neither -n nor -k is available (CLI helper).
   python3 "$DOCKER_NETWORKS" default-n
 }
 
