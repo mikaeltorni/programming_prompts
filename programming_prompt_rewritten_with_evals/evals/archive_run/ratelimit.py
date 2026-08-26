@@ -55,6 +55,7 @@ def trial_is_ratelimited(trial_dir: Path) -> bool:
     for relative in (
         "10-test-stdout.txt",
         "verifier/10-test-stdout.txt",
+        "verifier/test-stdout.txt",
         "logs/verifier/test-stdout.txt",
     ):
         path = trial_dir / relative

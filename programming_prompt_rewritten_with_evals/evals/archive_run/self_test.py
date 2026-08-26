@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from .harbor_copy import archive_jobs_root, write_meta
+from .ratelimit import trial_is_ratelimited
 from .results_index import (
     format_runtime,
     looks_like_results_table,
@@ -359,6 +360,23 @@ def _check_results(record) -> None:
             and rl_rows[0]["Pass"] == "1/1"
             and rl_rows[0]["RateLimit"] == "2",
             str(rl_rows[0]) if rl_rows else "missing",
+        )
+
+    with tempfile.TemporaryDirectory(prefix="archive-harbor-rl-") as raw_live:
+        live = Path(raw_live) / "trial"
+        (live / "verifier").mkdir(parents=True)
+        (live / "verifier" / "reward.json").write_text(
+            '{"reward": 0.0}\n', encoding="utf-8"
+        )
+        (live / "verifier" / "test-stdout.txt").write_text(
+            "CalledProcessError: Agent CLI 'claude' exited with code 1: "
+            '{"is_error":[REDACTED],"duration_api_ms":0}\n',
+            encoding="utf-8",
+        )
+        record(
+            "results_ratelimit_reads_harbor_stdout",
+            trial_is_ratelimited(live),
+            "Harbor verifier/test-stdout.txt is scanned",
         )
 
 
