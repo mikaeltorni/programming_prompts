@@ -195,7 +195,7 @@ for prompt_path in prompt_files:
 log(
     "baked CLI versions into generated Dockerfiles: "
     f"Codex={load_codex_version()} Claude={load_claude_version()} "
-    f"Grok={load_grok_version()}; compose overlay network_mode=bridge tmpfs scratch"
+    f"Grok={load_grok_version()}; compose overlay network_mode=bridge tmpfs scratch cpus=1"
 )
 print(f"Synced {len(prompt_files)} coding prompt(s) into {tasks_dir}", flush=True)
 PY

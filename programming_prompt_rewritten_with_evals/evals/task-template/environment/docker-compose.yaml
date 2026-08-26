@@ -10,11 +10,23 @@
 # shared volume) keeps each trial's scratch in its own RAM mount — still
 # isolated, no host bind, gone when the container stops. Image layers stay
 # on overlay2. `exec` on /tmp so tools that unpack and run from TMPDIR work.
+#
+# 20 concurrent Codex CLIs on an 8-core host stay hot: that is the work.
+# Without a cgroup cap each process sees 16 host threads and sizes Go/Node
+# pools to match (community thread-explosion). `cpus: 1` is per-container
+# CFS quota — still isolated — plus GOMAXPROCS/UV_THREADPOOL_SIZE so pools
+# stay small. Total heat is still ~all cores busy.
 services:
   main:
     network_mode: bridge
+    cpus: 1.0
     environment:
       TMPDIR: /tmp
+      GOMAXPROCS: "1"
+      UV_THREADPOOL_SIZE: "2"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
     tmpfs:
       - /tmp:exec,mode=1777,size=268435456
       - /var/tmp:mode=1777,size=67108864
