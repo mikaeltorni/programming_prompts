@@ -236,6 +236,11 @@ def run_self_test() -> int:
                 "wrapped" not in text and "google" in text,
                 "Google-style wrapped Parameters: is a no, not a yes",
             ),
+            (
+                "commenting_allows_list_continuation",
+                "continues on" in text and "next line" in text,
+                "a long Parameters list may continue on the next line",
+            ),
             ("commenting_rejects_args", "args:" in text, "Args: remains a commenting failure"),
             (
                 "commenting_accepts_none_case",
