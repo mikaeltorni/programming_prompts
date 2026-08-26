@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .constants import (
     DEFAULT_ADDRESS_POOLS,
+    DEFAULT_N_WHEN_UNLIMITED,
     LLM_MAX_CONCURRENT_DEFAULT,
     POOL_EXHAUSTED_NEEDLE,
     RECOMMENDED_ADDRESS_POOLS,
@@ -30,7 +31,15 @@ from .math import (
     user_defined_capacity,
     wait_log_due,
 )
-from .slots import load_state, reap_holders, release_slots_for_pid, reserved_slots, state_path, with_lock
+from .slots import (
+    default_n_concurrent,
+    load_state,
+    reap_holders,
+    release_slots_for_pid,
+    reserved_slots,
+    state_path,
+    with_lock,
+)
 
 
 def _self_test() -> int:
@@ -133,6 +142,51 @@ def _self_test() -> int:
             llm_cap=LLM_MAX_CONCURRENT_DEFAULT,
         ) == 10,
         "default LLM cap lets -n 10 run 10 trials",
+    )
+    prev_llm = os.environ.pop("EVAL_LLM_MAX_CONCURRENT", None)
+    try:
+        record(
+            "default_n_matches_cap",
+            default_n_concurrent() == LLM_MAX_CONCURRENT_DEFAULT,
+            f"got {default_n_concurrent()}",
+        )
+        os.environ["EVAL_LLM_MAX_CONCURRENT"] = "2"
+        record(
+            "default_n_follows_env",
+            default_n_concurrent() == 2,
+            f"got {default_n_concurrent()}",
+        )
+        os.environ["EVAL_LLM_MAX_CONCURRENT"] = "0"
+        record(
+            "default_n_unlimited",
+            default_n_concurrent() == DEFAULT_N_WHEN_UNLIMITED,
+            f"got {default_n_concurrent()}",
+        )
+    finally:
+        if prev_llm is None:
+            os.environ.pop("EVAL_LLM_MAX_CONCURRENT", None)
+        else:
+            os.environ["EVAL_LLM_MAX_CONCURRENT"] = prev_llm
+    default_n_cli = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "docker_networks.py"),
+            "default-n",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd=str(Path(__file__).resolve().parents[1]),
+        env={
+            **os.environ,
+            "PYTHONPATH": str(Path(__file__).resolve().parents[1]),
+            "EVAL_LLM_MAX_CONCURRENT": "7",
+        },
+    )
+    record(
+        "default_n_cli",
+        default_n_cli.returncode == 0 and default_n_cli.stdout.strip() == "7",
+        f"rc={default_n_cli.returncode} out={default_n_cli.stdout!r} err={default_n_cli.stderr!r}",
     )
     record(
         "not_harbor_bridge",

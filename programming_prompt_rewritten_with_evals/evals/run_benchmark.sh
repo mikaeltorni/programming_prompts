@@ -48,9 +48,10 @@
 # docker_networks.py prunes exited containers and empty nets (keeps images
 # and BuildKit cache) and holds a cross-process slot lock.
 # Live coding trials are capped machine-wide (default
-# EVAL_LLM_MAX_CONCURRENT=10) so ``-n 10`` actually runs 10 trials at once.
-# Set EVAL_LLM_MAX_CONCURRENT=2 to restore the old quota-safe cap.
-# --run-separately is one job with all selected skills.
+# EVAL_LLM_MAX_CONCURRENT=10). Omit Harbor -n to run at that cap; passing
+# -n 20 does not go faster than the cap. Set EVAL_LLM_MAX_CONCURRENT=2 to
+# restore the old quota-safe cap. --run-separately is one job with all
+# selected skills.
 
 set -euo pipefail
 

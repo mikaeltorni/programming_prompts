@@ -54,7 +54,7 @@ archive_finalize() {
 init_run_archive() {
   local mode_label="$1"
   ATTEMPTS_PER_TASK=5
-  CONCURRENT=5
+  CONCURRENT="$(python3 "$DOCKER_NETWORKS" default-n)"
   local i
   for ((i = 0; i < ${#HARBOR_ARGS[@]}; i++)); do
     if [[ "${HARBOR_ARGS[$i]}" == "-k" || "${HARBOR_ARGS[$i]}" == "--n-attempts" ]]; then

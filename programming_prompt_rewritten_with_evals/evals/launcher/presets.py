@@ -68,7 +68,7 @@ def matrix_jobs(harnesses: Sequence[str], *, baseline: bool) -> tuple[Job, ...]:
         ]
         if baseline:
             args.append("--baseline")
-        args.extend(["--skills", DEFAULT_SKILLS, "-k", "5", "-n", "5"])
+        args.extend(["--skills", DEFAULT_SKILLS, "-k", "5"])
         jobs.append(Job(title=f"{harness} x {judges}", args=tuple(args)))
     return tuple(jobs)
 
@@ -97,7 +97,7 @@ def matrix_description(harnesses: Sequence[str], *, baseline: bool) -> str:
     mode = "baseline" if baseline else "positive"
     excluded = [item for item in HARNESS_ORDER if item not in harnesses]
     drop = f"; no {','.join(excluded)}" if excluded else ""
-    return f"{mode}; judges={judges} on each coding run{drop}; k=5 n=5"
+    return f"{mode}; judges={judges} on each coding run{drop}; k=5"
 
 
 def shipped_matrix_groups() -> list[tuple[str, ...]]:

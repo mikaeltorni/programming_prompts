@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .constants import (
+    DEFAULT_N_WHEN_UNLIMITED,
     LLM_MAX_CONCURRENT_DEFAULT,
     LLM_MAX_CONCURRENT_UNLIMITED,
     POLL_SEC,
@@ -198,6 +199,22 @@ def llm_max_concurrent() -> int:
     if value <= 0:
         return LLM_MAX_CONCURRENT_UNLIMITED
     return value
+
+
+def default_n_concurrent() -> int:
+    """Harbor ``-n`` when the caller omitted the flag.
+
+    Parameters: none.
+
+    Returns: live coding-trial count. Uses ``EVAL_LLM_MAX_CONCURRENT`` when
+        set, otherwise ``LLM_MAX_CONCURRENT_DEFAULT``. A disabled cap
+        (``0`` or negative) returns ``DEFAULT_N_WHEN_UNLIMITED``; acquire
+        still clamps that to free IPAM.
+    """
+    cap = llm_max_concurrent()
+    if cap == LLM_MAX_CONCURRENT_UNLIMITED:
+        return DEFAULT_N_WHEN_UNLIMITED
+    return cap
 
 
 def _validate_request(slots: int, holder: str) -> None:

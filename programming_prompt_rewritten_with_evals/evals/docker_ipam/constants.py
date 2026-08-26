@@ -27,6 +27,9 @@ HARBOR_IMAGE_SUFFIX = "__env-main"
 HARBOR_CONTENT_IMAGE_PREFIX = "hb__"
 LLM_MAX_CONCURRENT_DEFAULT = 10
 LLM_MAX_CONCURRENT_UNLIMITED = 10**9
+# Harbor ``-n`` when the caller omitted it and the LLM cap is disabled
+# (``EVAL_LLM_MAX_CONCURRENT=0``). Acquire still clamps to free IPAM.
+DEFAULT_N_WHEN_UNLIMITED = 64
 DAEMON_JSON_PATH = Path("/etc/docker/daemon.json")
 SAFETY_MARGIN = 2
 STALE_GRACE_SEC = 60.0
