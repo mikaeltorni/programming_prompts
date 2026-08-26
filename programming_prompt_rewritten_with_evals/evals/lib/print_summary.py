@@ -6,8 +6,15 @@ import json
 import os
 import re
 import sys
+import tempfile
 from collections import defaultdict
+from contextlib import redirect_stderr
+from dataclasses import dataclass
+from io import StringIO
 from pathlib import Path
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from archive_run.ratelimit import trial_is_ratelimited
 from archive_run.results_index import format_runtime, run_elapsed_seconds
@@ -373,92 +380,79 @@ def _run_and_runtime(jobs_root: Path) -> tuple[str, str]:
     return stamp, runtime
 
 
-jobs_root = Path(sys.argv[1])
-run_mode = sys.argv[2] if len(sys.argv) > 2 else "unknown"
-skills_csv = sys.argv[3] if len(sys.argv) > 3 else ""
-trial_dirs = _trial_dirs(jobs_root)
-if not trial_dirs:
-    print("No trial reward.json files found under", jobs_root, file=sys.stderr)
-    raise SystemExit(0)
+@dataclass(frozen=True)
+class TrialReport:
+    """One trial's console block, kept so highlights can reprint it.
 
-run_stamp, runtime_text = _run_and_runtime(jobs_root)
-identity = ""
-if run_stamp:
-    identity += f"run={run_stamp}  "
-if runtime_text:
-    identity += f"runtime={runtime_text}  "
+    Parameters: index - 1-based trial number; total - trial count; harness -
+        inferred harness id; name - Harbor trial directory name; verdict -
+        PASS/FAIL/RATELIMIT; reward_text - printable reward; limited - rate
+        limit skip; per_skill - skill rewards; per_eval - skill/agent
+        rewards; judge_rows - answer/reason pairs; sources - artifact paths
+        and file text.
+    """
 
-_section(
-    f"Trial results ({len(trial_dirs)}) — {identity}mode={run_mode} "
-    f"skills={skills_csv or '-'} — {jobs_root}"
-)
+    index: int
+    total: int
+    harness: str
+    name: str
+    verdict: str
+    reward_text: str
+    limited: bool
+    per_skill: dict[str, float]
+    per_eval: dict[tuple[str, str], float]
+    judge_rows: list[tuple[str, str | None, str | None]]
+    sources: list[tuple[str, str]]
 
-by_harness: dict[str, list[float]] = defaultdict(list)
-by_harness_skill: dict[tuple[str, str], list[float]] = defaultdict(list)
-by_harness_task: dict[tuple[str, str], list[float]] = defaultdict(list)
-by_harness_task_skill: dict[tuple[str, str, str], list[float]] = defaultdict(list)
-by_eval_agent: dict[str, list[float]] = defaultdict(list)
-by_harness_eval: dict[tuple[str, str], list[float]] = defaultdict(list)
-by_harness_eval_skill: dict[tuple[str, str, str], list[float]] = defaultdict(list)
-by_skill: dict[str, list[float]] = defaultdict(list)
-by_task: dict[str, list[float | None]] = defaultdict(list)
-rewards: list[float] = []
-ratelimited_n = 0
 
-for index, trial_dir in enumerate(trial_dirs, start=1):
-    reward = _reward_value(trial_dir)
-    limited = trial_is_ratelimited(trial_dir)
-    judge_rows = _judge_criteria(trial_dir)
-    sources = _python_sources(trial_dir)
-    task = _task_name(trial_dir)
-    harness = _harness_of(trial_dir, jobs_root)
-    per_skill = _per_skill_rewards(trial_dir)
-    per_eval = _per_eval_agent_rewards(trial_dir)
-    if limited:
-        ratelimited_n += 1
-    else:
-        by_task[task].append(reward)
-        if reward is not None:
-            rewards.append(reward)
-            by_harness[harness].append(reward)
-            by_harness_task[(harness, task)].append(reward)
-        for skill, value in per_skill.items():
-            by_skill[skill].append(value)
-            by_harness_skill[(harness, skill)].append(value)
-            by_harness_task_skill[(harness, task, skill)].append(value)
-        for (skill, agent), value in per_eval.items():
-            by_eval_agent[agent].append(value)
-            by_harness_eval[(harness, agent)].append(value)
-            by_harness_eval_skill[(harness, agent, skill)].append(value)
+def _is_baseline(run_mode: str) -> bool:
+    """Return whether *run_mode* is a baseline (no-skill) job.
 
-    if limited:
-        verdict = "RATELIMIT"
-    elif reward is not None and reward >= 1.0:
-        verdict = "PASS"
-    else:
-        verdict = "FAIL"
-    reward_text = "n/a" if reward is None else f"{reward:g}"
+    Parameters: run_mode - ``baseline`` or ``baseline-all``.
+
+    Returns: True for baseline summaries.
+    """
+    return run_mode.startswith("baseline")
+
+
+def _is_positive(run_mode: str) -> bool:
+    """Return whether *run_mode* is a positive (skills-on) job.
+
+    Parameters: run_mode - ``positive`` or ``positive-all``.
+
+    Returns: True for positive summaries.
+    """
+    return run_mode.startswith("positive")
+
+
+def _print_trial(report: TrialReport) -> None:
+    """Write one trial header, judges, and source to stderr.
+
+    Parameters: report - collected trial fields.
+
+    Returns: none.
+    """
     print(file=sys.stderr)
     print(
-        f"[{index}/{len(trial_dirs)}] [{harness}] {trial_dir.name}  "
-        f"{verdict}  reward={reward_text}",
+        f"[{report.index}/{report.total}] [{report.harness}] {report.name}  "
+        f"{report.verdict}  reward={report.reward_text}",
         file=sys.stderr,
     )
-    if limited:
+    if report.limited:
         print("  failed due to ratelimit (excluded from pass_rate)", file=sys.stderr)
-    if per_skill:
+    if report.per_skill:
         bits = ", ".join(
-            f"{name}={value:g}" for name, value in sorted(per_skill.items())
+            f"{name}={value:g}" for name, value in sorted(report.per_skill.items())
         )
         print(f"  per-skill: {bits}", file=sys.stderr)
-    if per_eval:
+    if report.per_eval:
         bits = ", ".join(
             f"{skill}/{agent}={value:g}"
-            for (skill, agent), value in sorted(per_eval.items())
+            for (skill, agent), value in sorted(report.per_eval.items())
         )
         print(f"  per-evalAgent: {bits}", file=sys.stderr)
-    if judge_rows:
-        for skill_name, raw, reasoning in judge_rows:
+    if report.judge_rows:
+        for skill_name, raw, reasoning in report.judge_rows:
             if raw is not None:
                 print(f"  judge[{skill_name}] answer: {raw}", file=sys.stderr)
             if reasoning:
@@ -468,95 +462,370 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
                     f"  judge[{skill_name}] reason: (none recorded)",
                     file=sys.stderr,
                 )
-    if sources:
-        for rel, source in sources:
+    if report.sources:
+        for rel, source in report.sources:
             print(f"  {rel}:", file=sys.stderr)
             for line in source.splitlines():
                 print(f"    {line}", file=sys.stderr)
     else:
         print("  source: (no *.py artifacts downloaded)", file=sys.stderr)
 
-_section(f"By harness (mode={run_mode})")
-for harness in sorted(by_harness):
-    _rate_line(harness, by_harness[harness])
 
-if by_eval_agent:
-    _section(f"By eval agent (mode={run_mode})")
-    for agent in sorted(by_eval_agent):
-        _rate_line(agent, by_eval_agent[agent])
+def _print_highlights(run_mode: str, reports: list[TrialReport]) -> None:
+    """Reprint the interesting trials after the rollup (console bottom).
 
-    _section(f"By harness × eval agent (mode={run_mode})")
-    for harness, agent in sorted(by_harness_eval):
-        _rate_line(f"{harness} / evalAgent={agent}", by_harness_eval[(harness, agent)])
+    Positive jobs reprint FAILs (unexpected misses). Baseline jobs reprint
+    PASSes (unexpected skill-following without skills). Source is included
+    so the dumped code is at the bottom of the window.
 
-    _section(f"By harness × eval agent × skill (mode={run_mode})")
-    for harness, agent, skill in sorted(by_harness_eval_skill):
-        _rate_line(
-            f"{harness} / evalAgent={agent} / {skill}",
-            by_harness_eval_skill[(harness, agent, skill)],
+    Parameters: run_mode - positive or baseline label; reports - all trials.
+
+    Returns: none.
+    """
+    if _is_positive(run_mode):
+        chosen = [item for item in reports if item.verdict == "FAIL"]
+        title = (
+            f"Failed trials ({len(chosen)}) — reprinted at the bottom "
+            f"(positive run)"
+        )
+    elif _is_baseline(run_mode):
+        chosen = [item for item in reports if item.verdict == "PASS"]
+        title = (
+            f"Successful trials ({len(chosen)}) — reprinted at the bottom "
+            f"with source (baseline run)"
+        )
+    else:
+        return
+    _section(title)
+    if not chosen:
+        print("  (none)", file=sys.stderr)
+        return
+    for report in chosen:
+        _print_trial(report)
+
+
+def _write_trial_fixture(
+    jobs_root: Path,
+    *,
+    name: str,
+    reward: float,
+    source_marker: str,
+) -> None:
+    """Create one Harbor-shaped trial for ``--self-test``.
+
+    Parameters: jobs_root - fake jobs directory; name - trial folder;
+        reward - overall reward; source_marker - unique string in the .py.
+
+    Returns: none.
+    """
+    trial = jobs_root / "codex-skills" / name
+    verifier = trial / "verifier"
+    app = trial / "artifacts" / "Projects" / "app"
+    verifier.mkdir(parents=True)
+    app.mkdir(parents=True)
+    (verifier / "reward.json").write_text(
+        json.dumps({"reward": reward}) + "\n", encoding="utf-8"
+    )
+    (app / "app.py").write_text(
+        f'"""marker={source_marker}"""\n', encoding="utf-8"
+    )
+
+
+def _run_self_test() -> int:
+    """Prove highlight reprint without Harbor.
+
+    Parameters: none.
+
+    Returns: 0 when every check passes.
+    """
+    cases: list[tuple[str, bool, str]] = []
+
+    def check(name: str, ok: bool, detail: str) -> None:
+        cases.append((name, ok, detail))
+        status = "PASS" if ok else "FAIL"
+        print(f"{status}  {name}: {detail}", flush=True)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        jobs = Path(tmp) / "jobs"
+        _write_trial_fixture(
+            jobs, name="calculator__pass", reward=1.0, source_marker="PASS_SRC"
+        )
+        _write_trial_fixture(
+            jobs, name="calculator__fail", reward=0.0, source_marker="FAIL_SRC"
+        )
+        buf = StringIO()
+        with redirect_stderr(buf):
+            _print_summary(jobs, "positive", "commenting")
+        positive = buf.getvalue()
+        after_fail = positive.split("Failed trials", 1)
+        check(
+            "positive_has_fail_section",
+            len(after_fail) == 2,
+            "positive summary reprints failed trials after GRAND TOTAL",
+        )
+        tail = after_fail[1] if len(after_fail) == 2 else ""
+        check(
+            "positive_fail_has_source",
+            "FAIL_SRC" in tail,
+            "failed trial source is in the bottom reprint",
+        )
+        check(
+            "positive_fail_omits_pass_source",
+            "PASS_SRC" not in tail,
+            "passing trial source is not in the failed reprint",
+        )
+        grand_at = positive.rfind("GRAND TOTAL")
+        fail_at = positive.rfind("Failed trials")
+        check(
+            "positive_fail_after_grand_total",
+            grand_at != -1 and fail_at > grand_at,
+            "failed reprint sits at the bottom after GRAND TOTAL",
         )
 
-_section(f"By harness × skill (mode={run_mode})")
-for harness, skill in sorted(by_harness_skill):
-    _rate_line(f"{harness} / {skill}", by_harness_skill[(harness, skill)])
+        buf = StringIO()
+        with redirect_stderr(buf):
+            _print_summary(jobs, "baseline", "commenting")
+        baseline = buf.getvalue()
+        after_pass = baseline.split("Successful trials", 1)
+        check(
+            "baseline_has_pass_section",
+            len(after_pass) == 2,
+            "baseline summary reprints successful trials after GRAND TOTAL",
+        )
+        tail = after_pass[1] if len(after_pass) == 2 else ""
+        check(
+            "baseline_pass_has_source",
+            "PASS_SRC" in tail,
+            "successful trial source is in the bottom reprint",
+        )
+        check(
+            "baseline_pass_omits_fail_source",
+            "FAIL_SRC" not in tail,
+            "failed trial source is not in the successful reprint",
+        )
 
-_section(f"By harness × coding task (mode={run_mode})")
-for harness, task in sorted(by_harness_task):
-    _rate_line(f"{harness} / {task}", by_harness_task[(harness, task)])
+        all_pass = Path(tmp) / "all-pass"
+        _write_trial_fixture(
+            all_pass, name="calculator__ok", reward=1.0, source_marker="ONLY_PASS"
+        )
+        buf = StringIO()
+        with redirect_stderr(buf):
+            _print_summary(all_pass, "positive", "commenting")
+        empty = buf.getvalue()
+        check(
+            "positive_none_when_all_pass",
+            "Failed trials (0)" in empty and "(none)" in empty,
+            "all-pass positive run still prints an empty failed section",
+        )
 
-_section(f"By harness × task × skill (mode={run_mode})")
-for harness, task, skill in sorted(by_harness_task_skill):
-    _rate_line(
-        f"{harness} / {task} / {skill}",
-        by_harness_task_skill[(harness, task, skill)],
+    failed = [name for name, ok, _ in cases if not ok]
+    if failed:
+        print(f"{len(failed)}/{len(cases)} print-summary self-test(s) failed", flush=True)
+        return 1
+    print(f"{len(cases)}/{len(cases)} print-summary self-tests passed", flush=True)
+    return 0
+
+
+def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
+    """Print the categorized Harbor trial summary to stderr.
+
+    Parameters: jobs_root - Harbor jobs directory; run_mode - positive or
+        baseline; skills_csv - skill list for the header.
+
+    Returns: none.
+    """
+    trial_dirs = _trial_dirs(jobs_root)
+    if not trial_dirs:
+        print("No trial reward.json files found under", jobs_root, file=sys.stderr)
+        return
+
+    run_stamp, runtime_text = _run_and_runtime(jobs_root)
+    identity = ""
+    if run_stamp:
+        identity += f"run={run_stamp}  "
+    if runtime_text:
+        identity += f"runtime={runtime_text}  "
+
+    _section(
+        f"Trial results ({len(trial_dirs)}) — {identity}mode={run_mode} "
+        f"skills={skills_csv or '-'} — {jobs_root}"
     )
 
-if by_skill:
-    _section(f"By skill judge — all harnesses (mode={run_mode})")
-    for skill in sorted(by_skill):
-        _rate_line(skill, by_skill[skill])
+    by_harness: dict[str, list[float]] = defaultdict(list)
+    by_harness_skill: dict[tuple[str, str], list[float]] = defaultdict(list)
+    by_harness_task: dict[tuple[str, str], list[float]] = defaultdict(list)
+    by_harness_task_skill: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+    by_eval_agent: dict[str, list[float]] = defaultdict(list)
+    by_harness_eval: dict[tuple[str, str], list[float]] = defaultdict(list)
+    by_harness_eval_skill: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+    by_skill: dict[str, list[float]] = defaultdict(list)
+    by_task: dict[str, list[float | None]] = defaultdict(list)
+    rewards: list[float] = []
+    ratelimited_n = 0
+    reports: list[TrialReport] = []
 
-_section(f"By coding task — all harnesses (mode={run_mode})")
-for task in sorted(by_task):
-    values = [value for value in by_task[task] if value is not None]
-    passed = sum(1 for value in values if value >= 1.0)
-    print(f"  {task}: {_fmt_rate(passed, len(values))}", file=sys.stderr)
+    for index, trial_dir in enumerate(trial_dirs, start=1):
+        reward = _reward_value(trial_dir)
+        limited = trial_is_ratelimited(trial_dir)
+        judge_rows = _judge_criteria(trial_dir)
+        sources = _python_sources(trial_dir)
+        task = _task_name(trial_dir)
+        harness = _harness_of(trial_dir, jobs_root)
+        per_skill = _per_skill_rewards(trial_dir)
+        per_eval = _per_eval_agent_rewards(trial_dir)
+        if limited:
+            ratelimited_n += 1
+        else:
+            by_task[task].append(reward)
+            if reward is not None:
+                rewards.append(reward)
+                by_harness[harness].append(reward)
+                by_harness_task[(harness, task)].append(reward)
+            for skill, value in per_skill.items():
+                by_skill[skill].append(value)
+                by_harness_skill[(harness, skill)].append(value)
+                by_harness_task_skill[(harness, task, skill)].append(value)
+            for (skill, agent), value in per_eval.items():
+                by_eval_agent[agent].append(value)
+                by_harness_eval[(harness, agent)].append(value)
+                by_harness_eval_skill[(harness, agent, skill)].append(value)
 
-if len(by_harness) >= 2:
-    _section("Harness comparison (same mode/skills/tasks)")
-    print(
-        f"  {'harness':<10} {'pass_rate':<22} {'passed':>7} {'total':>7}",
-        file=sys.stderr,
-    )
+        if limited:
+            verdict = "RATELIMIT"
+        elif reward is not None and reward >= 1.0:
+            verdict = "PASS"
+        else:
+            verdict = "FAIL"
+        report = TrialReport(
+            index=index,
+            total=len(trial_dirs),
+            harness=harness,
+            name=trial_dir.name,
+            verdict=verdict,
+            reward_text="n/a" if reward is None else f"{reward:g}",
+            limited=limited,
+            per_skill=per_skill,
+            per_eval=per_eval,
+            judge_rows=judge_rows,
+            sources=sources,
+        )
+        reports.append(report)
+        _print_trial(report)
+
+    _section(f"By harness (mode={run_mode})")
     for harness in sorted(by_harness):
-        values = by_harness[harness]
+        _rate_line(harness, by_harness[harness])
+
+    if by_eval_agent:
+        _section(f"By eval agent (mode={run_mode})")
+        for agent in sorted(by_eval_agent):
+            _rate_line(agent, by_eval_agent[agent])
+
+        _section(f"By harness × eval agent (mode={run_mode})")
+        for harness, agent in sorted(by_harness_eval):
+            _rate_line(
+                f"{harness} / evalAgent={agent}",
+                by_harness_eval[(harness, agent)],
+            )
+
+        _section(f"By harness × eval agent × skill (mode={run_mode})")
+        for harness, agent, skill in sorted(by_harness_eval_skill):
+            _rate_line(
+                f"{harness} / evalAgent={agent} / {skill}",
+                by_harness_eval_skill[(harness, agent, skill)],
+            )
+
+    _section(f"By harness × skill (mode={run_mode})")
+    for harness, skill in sorted(by_harness_skill):
+        _rate_line(f"{harness} / {skill}", by_harness_skill[(harness, skill)])
+
+    _section(f"By harness × coding task (mode={run_mode})")
+    for harness, task in sorted(by_harness_task):
+        _rate_line(f"{harness} / {task}", by_harness_task[(harness, task)])
+
+    _section(f"By harness × task × skill (mode={run_mode})")
+    for harness, task, skill in sorted(by_harness_task_skill):
+        _rate_line(
+            f"{harness} / {task} / {skill}",
+            by_harness_task_skill[(harness, task, skill)],
+        )
+
+    if by_skill:
+        _section(f"By skill judge — all harnesses (mode={run_mode})")
+        for skill in sorted(by_skill):
+            _rate_line(skill, by_skill[skill])
+
+    _section(f"By coding task — all harnesses (mode={run_mode})")
+    for task in sorted(by_task):
+        values = [value for value in by_task[task] if value is not None]
         passed = sum(1 for value in values if value >= 1.0)
+        print(f"  {task}: {_fmt_rate(passed, len(values))}", file=sys.stderr)
+
+    if len(by_harness) >= 2:
+        _section("Harness comparison (same mode/skills/tasks)")
         print(
-            f"  {harness:<10} {_fmt_rate(passed, len(values)):<22} "
-            f"{passed:>7} {len(values):>7}",
+            f"  {'harness':<10} {'pass_rate':<22} {'passed':>7} {'total':>7}",
             file=sys.stderr,
         )
+        for harness in sorted(by_harness):
+            values = by_harness[harness]
+            passed = sum(1 for value in values if value >= 1.0)
+            print(
+                f"  {harness:<10} {_fmt_rate(passed, len(values)):<22} "
+                f"{passed:>7} {len(values):>7}",
+                file=sys.stderr,
+            )
 
-print(file=sys.stderr)
-print("-" * 78, file=sys.stderr)
-runtime_suffix = f"  runtime={runtime_text}" if runtime_text else ""
-rate_suffix = (
-    f"  rate_limited={ratelimited_n} (excluded from pass_rate)"
-    if ratelimited_n
-    else ""
-)
-if rewards:
-    passed = sum(1 for value in rewards if value >= 1.0)
-    total = len(rewards)
-    print(
-        f"GRAND TOTAL pass_rate={_fmt_rate(passed, total)}"
-        f"{runtime_suffix}{rate_suffix}",
-        file=sys.stderr,
+    print(file=sys.stderr)
+    print("-" * 78, file=sys.stderr)
+    runtime_suffix = f"  runtime={runtime_text}" if runtime_text else ""
+    rate_suffix = (
+        f"  rate_limited={ratelimited_n} (excluded from pass_rate)"
+        if ratelimited_n
+        else ""
     )
-else:
-    print(
-        f"GRAND TOTAL pass_rate=n/a (no numeric rewards)"
-        f"{runtime_suffix}{rate_suffix}",
-        file=sys.stderr,
+    if rewards:
+        passed = sum(1 for value in rewards if value >= 1.0)
+        total = len(rewards)
+        print(
+            f"GRAND TOTAL pass_rate={_fmt_rate(passed, total)}"
+            f"{runtime_suffix}{rate_suffix}",
+            file=sys.stderr,
+        )
+    else:
+        print(
+            f"GRAND TOTAL pass_rate=n/a (no numeric rewards)"
+            f"{runtime_suffix}{rate_suffix}",
+            file=sys.stderr,
+        )
+    print("-" * 78, file=sys.stderr)
+    _print_highlights(run_mode, reports)
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Print a summary or run the fixture self-test.
+
+    Parameters: argv - optional argument override.
+
+    Returns: process exit code.
+    """
+    args = sys.argv[1:] if argv is None else argv
+    if args and args[0] == "--self-test":
+        return _run_self_test()
+    if not args:
+        print(
+            "Usage: print_summary.py JOBS_ROOT [MODE] [SKILLS_CSV]\n"
+            "       print_summary.py --self-test",
+            file=sys.stderr,
+        )
+        return 2
+    _print_summary(
+        Path(args[0]),
+        args[1] if len(args) > 1 else "unknown",
+        args[2] if len(args) > 2 else "",
     )
-print("-" * 78, file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
