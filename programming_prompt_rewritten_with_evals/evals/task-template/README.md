@@ -5,7 +5,9 @@ Shared Harbor scaffolding copied into every generated `.generated/tasks/<name>/`
 
 - `environment/Dockerfile` — Python image with Codex, Claude Code, and Grok
   CLIs (ARG defaults match `evals/*-version.txt`; `sync_tasks.sh` bakes the
-  versions looked up at instance start), git, `/Projects/app` as the cloned
+  versions looked up at instance start), **`uv tool install harbor-rewardkit==0.1.7`**
+  so `rewardkit` is on `PATH` at verify time (judges must not unpack
+  `uvx --from` per trial), git, `/Projects/app` as the cloned
   repo (empty initial commit), sibling `/Projects/.worktrees/`, and
   `/app` → `/Projects/app`
 - `environment/docker-compose.yaml` — Harbor overlay: `network_mode: bridge`

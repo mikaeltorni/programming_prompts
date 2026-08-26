@@ -266,7 +266,13 @@ suite goes further:
   Parallel Claude+Codex judges used to exit 1 during a racing `uvx`
   `harbor-rewardkit` install (the log showed only download lines, and the
   aggregate became `cc=no` with `(none recorded)`). The task image now
-  preinstalls that tool, and the verifier serializes the first `uvx` warmup.
+  **`uv tool install`s `harbor-rewardkit==0.1.7` onto `PATH`**, and the
+  verifier calls that `rewardkit` binary (skipping `uvx --from` warmup).
+  A leftover `uvx --from` warmup that hits the 180s timeout is a
+  `TimeoutExpired` skip (rate-limit), not a scored no — `TimeoutExpired`
+  is not `TimeoutError`, so the judge wrapper must catch it explicitly.
+  100 concurrent trials that each unpack `uvx` saturate disk and fail
+  exactly one LLM skill per trial with empty reasoning.
   Without the matching judge auth you get a verifier error such as
   `Claude Code eval agent needs CLAUDE_CODE_OAUTH_TOKEN`.
 - Do not pass `…=1` for `*AUTH*` / `*OAUTH*` / `*TOKEN*` flags via Harbor
