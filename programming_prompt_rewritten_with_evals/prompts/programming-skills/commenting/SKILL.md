@@ -17,8 +17,9 @@ this format:
 3. One line starting with `Returns:` describing the return value
    (`Returns: None` when there is no meaningful return).
 
-Do not use `Args:` or other section names. Keep `Parameters:` and `Returns:`
-as single lines (do not wrap the label onto a following line).
+Do not use `Args:` or other section names. Do not put `Parameters:` or
+`Returns:` on a line by themselves. A long parameter list may continue on
+the next line after the label already has content.
 
 Match this layout exactly:
 
