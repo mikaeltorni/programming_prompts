@@ -211,6 +211,12 @@ def run_self_test() -> int:
                 and "validation-only" in yes_block.lower(),
                 "empty already-parsed arg guard in a core helper is yes",
             ),
+            (
+                "srp_yes_allows_core_helper_dispatch",
+                "_apply_operation" in yes_block
+                and "conservatively" in yes_block.lower(),
+                "core-helper if/elif dispatch is a yes, not a conservative no",
+            ),
         ]
         for item in srp_checks:
             check(*item)
@@ -290,6 +296,11 @@ def run_self_test() -> int:
                 "logging_every_named_parameter",
                 "none" in text and "omitting" in text and "argument=" in text,
                 "optional None parameters must still be printed by name",
+            ),
+            (
+                "logging_one_print_named_params",
+                "same line" in text and "unlabeled tuple" in text,
+                "one print with real names is a yes, not a generic label",
             ),
         ]:
             check(*item)

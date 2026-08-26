@@ -12,7 +12,12 @@ example a `get` branch that returns `value=<n>` or `str(counter)`).
 Raising from a dispatch branch is still thin: unknown operation in
 `else`, extra args on one verb (for example `list` with an argument),
 or a missing required argument (`add` without text, `done` without an
-index). Those raises are not mixed parsing. Core-logic helpers may
+index). Those raises are not mixed parsing. A core helper may also
+dispatch operations with if/elif (for example `_apply_operation`) —
+that is still one responsibility (state/arithmetic), not mixed parsing.
+When parse lives in its own helper and the entrypoint is thin, answer
+yes; do not score conservatively because the core helper also
+dispatches or validates already-parsed arguments. Core-logic helpers may
 return a one-line formatted result (for example `added=1`). Converting
 an already-split token with `int()` / `float()` inside a state helper is
 still core logic, not mixed parsing. An empty or missing already-parsed
