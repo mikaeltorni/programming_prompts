@@ -20,6 +20,9 @@ For every function or method you write or edit:
    When the function has **no parameters**, any entry `print(...)` is
    enough — `print("entry")`, `print("_list_items()")`, or
    `print("parameters=none")` all count.
+   This applies to `def` / `async def` / methods. Do **not** add prints
+   inside `lambda` expressions (including `lambda: left + right` in an
+   operator table).
 2. Just **before each `return`** (or before falling off the end when there is
    an implicit `None`), `print` the value that is about to leave the function.
 
