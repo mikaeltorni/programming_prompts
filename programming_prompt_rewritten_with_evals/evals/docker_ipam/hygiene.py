@@ -141,10 +141,10 @@ def reclaim_docker_leftovers(
 ) -> dict[str, Any]:
     """Free leftover Harbor Docker state in a safe order.
 
-    Automatic evals reclaim (the default) only drops exited containers and
-    empty networks so the next trial can reuse image layers and BuildKit
-    cache. Passing ``images`` / ``builder_cache`` is the manual disk-reclaim
-    path — that is what made jobs slow when it ran between every Harbor job.
+    Automatic evals reclaim drops exited containers, empty networks, and
+    unused ``*__env-main`` image *tags* so disk does not grow with every
+    trial. BuildKit cache stays so the next job reuses layers instead of
+    rebuilding. Passing ``builder_cache`` is the manual full-disk path.
 
     Parameters: images - delete unused ``*__env-main`` tags; builder_cache - also prune dangling BuildKit cache.
 
