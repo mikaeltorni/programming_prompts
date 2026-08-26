@@ -10,9 +10,11 @@ description: >-
 
 For every function or method you write or edit:
 
-1. At the **start** of the body, `print` each incoming parameter's **actual
-   name** and value. Example: `print(f"command={command!r}")` or
-   `print(f"operation={operation!r} value={value!r}")`.
+1. At the **start** of the body, `print` **every** incoming parameter's
+   **actual name** and value, including optional parameters whose value is
+   `None`. Example: `print(f"command={command!r}")` or
+   `print(f"operation={operation!r} argument={argument!r}")`.
+   Omitting a named parameter because it is unused or `None` is a failure.
    When the function has **no parameters**, any entry `print(...)` is
    enough — `print("entry")`, `print("_list_items()")`, or
    `print("parameters=none")` all count.
