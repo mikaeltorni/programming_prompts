@@ -475,8 +475,8 @@ def _print_highlights(run_mode: str, reports: list[TrialReport]) -> None:
     """Reprint the interesting trials after the rollup (console bottom).
 
     Positive jobs reprint FAILs (unexpected misses). Baseline jobs reprint
-    PASSes (unexpected skill-following without skills). Source is included
-    so the dumped code is at the bottom of the window.
+    PASSes (unexpected skill-following without skills). Source is included.
+    Printed after the per-trial dump and before the rollup recap.
 
     Parameters: run_mode - positive or baseline label; reports - all trials.
 
@@ -485,13 +485,13 @@ def _print_highlights(run_mode: str, reports: list[TrialReport]) -> None:
     if _is_positive(run_mode):
         chosen = [item for item in reports if item.verdict == "FAIL"]
         title = (
-            f"Failed trials ({len(chosen)}) — reprinted at the bottom "
+            f"Failed trials ({len(chosen)}) — reprinted above the recap "
             f"(positive run)"
         )
     elif _is_baseline(run_mode):
         chosen = [item for item in reports if item.verdict == "PASS"]
         title = (
-            f"Successful trials ({len(chosen)}) — reprinted at the bottom "
+            f"Successful trials ({len(chosen)}) — reprinted above the recap "
             f"with source (baseline run)"
         )
     else:
@@ -561,13 +561,13 @@ def _run_self_test() -> int:
         check(
             "positive_has_fail_section",
             len(after_fail) == 2,
-            "positive summary reprints failed trials after GRAND TOTAL",
+            "positive summary reprints failed trials after the trial dump",
         )
         tail = after_fail[1] if len(after_fail) == 2 else ""
         check(
             "positive_fail_has_source",
             "FAIL_SRC" in tail,
-            "failed trial source is in the bottom reprint",
+            "failed trial source is in the reprint above the recap",
         )
         check(
             "positive_fail_omits_pass_source",
@@ -575,11 +575,15 @@ def _run_self_test() -> int:
             "passing trial source is not in the failed reprint",
         )
         grand_at = positive.rfind("GRAND TOTAL")
+        recap_at = positive.find("By harness")
         fail_at = positive.rfind("Failed trials")
         check(
-            "positive_fail_after_grand_total",
-            grand_at != -1 and fail_at > grand_at,
-            "failed reprint sits at the bottom after GRAND TOTAL",
+            "positive_fail_above_recap",
+            fail_at != -1
+            and recap_at != -1
+            and grand_at != -1
+            and fail_at < recap_at < grand_at,
+            "failed reprint sits above the recap, not after GRAND TOTAL",
         )
 
         buf = StringIO()
@@ -590,13 +594,13 @@ def _run_self_test() -> int:
         check(
             "baseline_has_pass_section",
             len(after_pass) == 2,
-            "baseline summary reprints successful trials after GRAND TOTAL",
+            "baseline summary reprints successful trials after the trial dump",
         )
         tail = after_pass[1] if len(after_pass) == 2 else ""
         check(
             "baseline_pass_has_source",
             "PASS_SRC" in tail,
-            "successful trial source is in the bottom reprint",
+            "successful trial source is in the reprint above the recap",
         )
         check(
             "baseline_pass_omits_fail_source",
@@ -712,6 +716,8 @@ def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
         reports.append(report)
         _print_trial(report)
 
+    _print_highlights(run_mode, reports)
+
     _section(f"By harness (mode={run_mode})")
     for harness in sorted(by_harness):
         _rate_line(harness, by_harness[harness])
@@ -799,7 +805,6 @@ def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
             file=sys.stderr,
         )
     print("-" * 78, file=sys.stderr)
-    _print_highlights(run_mode, reports)
 
 
 def main(argv: list[str] | None = None) -> int:
