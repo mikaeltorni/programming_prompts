@@ -207,6 +207,11 @@ def run_self_test() -> int:
                 "names and values" in text,
                 "entry prints must show parameter names and values",
             ),
+            (
+                "logging_rejects_generic_input",
+                "input=" in text and "unlabeled tuple" in text,
+                "generic input= / unlabeled tuples are a no",
+            ),
         ]:
             check(*item)
     else:

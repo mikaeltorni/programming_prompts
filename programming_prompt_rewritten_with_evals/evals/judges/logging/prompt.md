@@ -7,6 +7,12 @@ Answer yes only if every function in the workspace does both:
 - immediately before each `return`, `print` the value about to be returned
   (or `None` when falling off the end with no meaningful return).
 
+Each named parameter must appear **as that name** in the entry print
+(`command=...`, `operation=...`, `value=...`). Answer **no** when an entry
+print uses a generic label (`input=`, `args=`, `params=`) or packs several
+parameters into one unlabeled tuple (`input=(operation, value)`) instead of
+the real parameter names.
+
 Use of `print(...)` only — not `logging`, log files, or a custom logger.
 
 Do **not** require prints before `raise` / exception exits. Exception paths
