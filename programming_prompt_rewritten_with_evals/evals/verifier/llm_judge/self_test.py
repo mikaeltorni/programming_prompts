@@ -228,6 +228,11 @@ def run_self_test() -> int:
                 "parameters=none" in text and "no parameters" in text,
                 "no-parameter functions may print parameters=none",
             ),
+            (
+                "logging_every_named_parameter",
+                "none" in text and "omitting" in text and "argument=" in text,
+                "optional None parameters must still be printed by name",
+            ),
         ]:
             check(*item)
     else:

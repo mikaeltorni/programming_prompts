@@ -8,7 +8,9 @@ Answer yes only if every function in the workspace does both:
   (or `None` when falling off the end with no meaningful return).
 
 Each named parameter must appear **as that name** in the entry print
-(`command=...`, `operation=...`, `value=...`). Answer **no** when a
+(`command=...`, `operation=...`, `argument=...`). That includes optional
+parameters whose value is `None` — omitting `argument=` because it is
+unused or `None` is a **no**. Answer **no** when a
 function **has named parameters** and the entry print uses a generic
 label (`input=`, `args=`, `params=`) or packs several parameters into
 one unlabeled tuple (`input=(operation, value)`) instead of the real
