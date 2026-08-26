@@ -237,6 +237,29 @@ def _self_test() -> int:
         "Docker IPAM still clamps -k 20 when leftover networks fill the pool",
     )
     record(
+        "grant_bridge_ignores_ipam",
+        grant_trial_slots(
+            20,
+            ipam_free=LLM_MAX_CONCURRENT_UNLIMITED,
+            ipam_max=LLM_MAX_CONCURRENT_UNLIMITED,
+            reserved=0,
+            llm_cap=LLM_MAX_CONCURRENT_UNLIMITED,
+        ) == 20,
+        "docker0 trials are not clamped by stock IPAM",
+    )
+    compose = (
+        Path(__file__).resolve().parents[1]
+        / "task-template"
+        / "environment"
+        / "docker-compose.yaml"
+    )
+    compose_text = compose.read_text(encoding="utf-8") if compose.is_file() else ""
+    record(
+        "template_bridge_network_mode",
+        compose.is_file() and "network_mode: bridge" in compose_text,
+        f"path={compose}",
+    )
+    record(
         "grant_explicit_cap_honors_n10",
         grant_trial_slots(
             10, ipam_free=28, ipam_max=28, reserved=0,

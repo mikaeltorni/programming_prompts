@@ -159,6 +159,13 @@ prompt_files = [p for p in prompt_files if p.name.lower() != "readme.md"]
 if not prompt_files:
     raise SystemExit(f"No coding-prompts/*.md under {prompts_dir}")
 
+compose_src = template_dir / "environment" / "docker-compose.yaml"
+if not compose_src.is_file():
+    raise SystemExit(
+        f"{compose_src}: missing; Harbor would create one Docker "
+        "network per trial and exhaust stock IPAM"
+    )
+
 for prompt_path in prompt_files:
     name = prompt_path.stem
     meta, body = parse_prompt(prompt_path)
@@ -178,6 +185,7 @@ for prompt_path in prompt_files:
     write_task_toml(task_dir / "task.toml", name, description)
     shutil.copy2(template_dir / "environment" / "Dockerfile", task_dir / "environment" / "Dockerfile")
     patch_dockerfile_versions(task_dir / "environment" / "Dockerfile")
+    shutil.copy2(compose_src, task_dir / "environment" / "docker-compose.yaml")
     shutil.copy2(template_dir / "tests" / "test.sh", task_dir / "tests" / "test.sh")
     (task_dir / "tests" / "test.sh").chmod(0o755)
     shutil.copy2(oracle_src, task_dir / "solution" / "oracle.py")
@@ -187,7 +195,7 @@ for prompt_path in prompt_files:
 log(
     "baked CLI versions into generated Dockerfiles: "
     f"Codex={load_codex_version()} Claude={load_claude_version()} "
-    f"Grok={load_grok_version()}"
+    f"Grok={load_grok_version()}; compose overlay network_mode=bridge"
 )
 print(f"Synced {len(prompt_files)} coding prompt(s) into {tasks_dir}", flush=True)
 PY

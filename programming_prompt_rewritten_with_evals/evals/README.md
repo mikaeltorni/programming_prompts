@@ -48,7 +48,7 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `evalAgentModel=claude-opus-5` / `--evalAgentModel …` / `--eval-agent-model=…` | Judge model id (same idea as `-m` / `--model`). One value for every eval agent, or one per agent |
 | `evalAgentReasoningEffort=low` / `--evalAgentReasoningEffort high` | Judge effort: `low`, `medium`, or `high` (same idea as `--ak reasoning_effort=`). One value or one per agent |
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
-| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine. **Unset = no LLM cap** (Docker IPAM only, ~28). Omit Harbor `-n` to follow `-k`. `2` is the old quota-safe cap |
+| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine. **Unset = no LLM cap**. Omit Harbor `-n` to follow `-k`. `2` is the old quota-safe cap |
 | `--skills srp,commenting` | Which skills to inject (default: all non-`*-vague`) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
@@ -87,10 +87,12 @@ the LLM judge on each trial (2× verifier *cost*). Judge subprocesses default
 to **four at a time** (`EVAL_JUDGE_WORKERS=4`) so the four skills overlap
 after the coding agent. Set `EVAL_JUDGE_WORKERS=1` to serialize them. Live
 coding trials have **no LLM cap** unless `EVAL_LLM_MAX_CONCURRENT` is set.
-**Omit `-n` to follow `-k`** — `-k 20` runs 20 trials at once. Stock Docker
-IPAM still limits live networks to about **28**. `EVAL_LLM_MAX_CONCURRENT=2`
-restores the old quota-safe cap. Extra wrappers wait when IPAM (or an explicit
-cap) is already in use.
+**Omit `-n` to follow `-k`** — `-k 20` runs 20 trials at once. Pass a larger
+`-n` (up to tasks×attempts) to run more of the wave at once; trials sit on
+Docker's default `bridge` so stock IPAM (~28 user-defined nets) is not the
+cap. `EVAL_LLM_MAX_CONCURRENT=2`
+restores the old quota-safe cap. Extra wrappers wait when an explicit
+cap is already in use.
 Programmatic judges (worktree) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
 Code `claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
 (`--reasoning-effort`). Judge defaults match those models at **low** effort
@@ -115,7 +117,7 @@ evals/
 │   ├── temperature.md
 │   └── todo.md
 ├── oracles/                # reference solutions for Harbor oracle
-├── task-template/          # shared Dockerfile + thin test.sh
+├── task-template/          # shared Dockerfile + docker-compose.yaml + thin test.sh
 ├── judges/
 │   ├── README.md
 │   ├── srp/
@@ -318,7 +320,10 @@ no-container backend**: `harbor run --env` is `docker` by default, or another
 sandbox (`apple-container` on Apple silicon macOS, Singularity, Daytona, E2B,
 Modal, …). There is no flag that executes trials on the host filesystem.
 This suite’s tasks also require the trial image (`task-template/environment/Dockerfile`,
-`/Projects/app` plus sibling `.worktrees/`). `apple-container` is not usable
+`/Projects/app` plus sibling `.worktrees/`). The task-template
+`docker-compose.yaml` sets `network_mode: bridge` so each trial is still a
+container but does **not** allocate a user-defined Docker network (stock
+IPAM's ~28 `/16` slots). `apple-container` is not usable
 on Linux. Cloud `--env` values can be passed through on the wrapper command
 line (they land in Harbor args); the wrapper then **skips the local Docker
 IPAM lock**. Local Linux runs still need Docker Engine.
@@ -358,10 +363,11 @@ sudo usermod -aG docker "$USER"
 ```
 
 Docker's built-in IPAM gives each user-defined network a whole `/16` (~30
-networks on the host). Harbor creates one network **and one compose image tag**
-**per trial**, so leftover `*__env-main` images plus BuildKit cache fill the
-disk, and a dozen terminals at `-n 5` also exhaust IPAM
-(`all predefined address pools have been fully subnetted`).
+networks on the host). Harbor's generated compose would create one network
+**and one compose image tag** per trial; this suite overlays
+`network_mode: bridge` so live trials use docker0 and no longer consume those
+slots. Leftover `*__env-main` images plus BuildKit cache still fill the
+disk, and older runs may still leave `__env_default` nets.
 [`docker_networks.py`](docker_networks.py) removes leftover trial containers
 (including ones still `Up` after Harbor's `compose down` failed), empty
 networks, and unused `*__env-main` image **tags** between jobs and while
@@ -370,17 +376,18 @@ every trial. In-progress trials are kept. BuildKit cache stays — wiping it
 on every job forced a multi-minute image rebuild. Bare
 `python3 docker_networks.py prune` also drops dangling build cache when you
 need more disk.
-Concurrent `./run_benchmark.sh` processes **wait for a coding-trial slot**.
-There is no default LLM cap. Omit Harbor `-n` to follow `-k` (`-k 20` runs
-20 at once). Stock Docker IPAM still limits live networks to about 28.
-`--run-separately` is a single Harbor job.
+Concurrent `./run_benchmark.sh` processes **wait for a coding-trial slot**
+only when `EVAL_LLM_MAX_CONCURRENT` is set (or a job still uses per-trial
+networks). There is no default LLM cap. Omit Harbor `-n` to follow `-k` (`-k 20` runs
+20 at once). Pass `-n 100` with 5 tasks × `-k 20` to run the whole wave at
+once. `--run-separately` is a single Harbor job.
 Each job’s reservation is tracked in the current shell and
 released when that Harbor job finishes (wrapping `acquire` in `$()` used to
-leak slots until the whole wrapper exited). Optional: give Docker
-thousands of `/24` trial networks (254 hosts each — enough for a Harbor
-compose project) so many jobs can run at full `-n` in parallel. Merge these
-pools into `/etc/docker/daemon.json` (keep any other keys) and restart Docker
-when no Harbor jobs are running:
+leak slots until the whole wrapper exited). Optional: if you run other Harbor
+compose that still creates user-defined nets, give Docker thousands of `/24`
+trial networks (254 hosts each) so those jobs can run at full `-n` in parallel.
+Merge these pools into `/etc/docker/daemon.json` (keep any other keys) and
+restart Docker when no Harbor jobs are running:
 
 ```bash
 python3 docker_networks.py recommended-daemon-json
@@ -811,8 +818,8 @@ Regenerate the 14 shipped JSON files after changing the matrix builder:
 
 `s` in the menu pastes new `./run_benchmark.sh` lines and writes another JSON
 file under `presets/` (commit it if you want it in git). Extra user JSON files
-appear **after** the shipped catalog. The Docker slot lock
-still queues extra jobs when IPAM is tight.
+appear **after** the shipped catalog. The Docker slot lock still queues extra
+jobs when `EVAL_LLM_MAX_CONCURRENT` is set.
 
 Manual examples:
 
@@ -832,11 +839,12 @@ Manual examples:
 ```
 
 `-k 5` schedules five attempts **per task**. Omit `-n` to follow `-k` (so
-`-k 20` runs 20 trials at once). Pass `-n 2` only when you want a cheaper
+`-k 20` runs 20 trials at once). Pass `-n 100` with 5 tasks × `-k 20` to run
+the whole wave at once. Pass `-n 2` only when you want a cheaper
 smoke. The wrapper defaults to `-k 5` (and therefore 5 concurrent) when you
 pass no Harbor flags. After the job finishes it prints a categorized console summary.
-Several terminals may start at once: the wrapper serializes Docker networks
-across processes when the daemon's address pool is tight (see
+Several terminals may start at once. Trials use Docker's default bridge, so
+stock IPAM is not the cap (see
 [Install Docker](#install-docker-on-ubuntu-2404)).
 
 Do not use bare `-a codex` / `-a claude-code` / `-a grok-build` for these skill
@@ -855,7 +863,7 @@ Override defaults on the command line (or edit `harbor.codex.yaml` /
 | `evalAgentModel=…` | Judge model id (same idea as `-m`; one value or one per eval agent) |
 | `evalAgentReasoningEffort=…` | Judge effort (same idea as `--ak reasoning_effort=`) |
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
-| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials (unset = none; Docker IPAM ~28) |
+| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials (unset = none) |
 | `--ak version=…` | CLI pin override |
 | `-k` / `--n-attempts` | Independent attempts per task (default: `5`) |
 | `-n` / `--n-concurrent` | How many trials run in parallel (omit = follow `-k`) |
