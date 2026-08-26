@@ -345,8 +345,8 @@ def _check_results(record) -> None:
         heuristic.mkdir(parents=True)
         (heuristic / "01-reward.json").write_text('{"reward": 0.0}\n', encoding="utf-8")
         (heuristic / "10-test-stdout.txt").write_text(
-            "CalledProcessError: Agent CLI 'claude' exited with code 1: "
-            '{"is_error":true,"duration_api_ms":0}\n',
+            "CalledProcessError: Command '['uvx', '--from', 'harbor-rewardkit@0.1.7', "
+            "'rewardkit', '--judge', 'codex']' returned non-zero exit status 1.\n",
             encoding="utf-8",
         )
         rl_rows = parse_results_table(

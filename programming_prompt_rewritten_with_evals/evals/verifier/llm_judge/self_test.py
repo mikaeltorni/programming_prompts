@@ -70,6 +70,15 @@ def run_self_test() -> int:
         "Claude is_error + exit 1 is a rate-limit skip",
     )
     check(
+        "ratelimit_detects_codex_rewardkit_crash",
+        looks_like_judge_rate_limit(
+            "subprocess.CalledProcessError: Command '['uvx', '--from', "
+            "'harbor-rewardkit@0.1.7', 'rewardkit', '--judge', 'codex']' "
+            "returned non-zero exit status 1."
+        ),
+        "Codex rewardkit exit 1 with empty reasoning is a rate-limit skip",
+    )
+    check(
         "ratelimit_ignores_scored_no",
         not looks_like_judge_rate_limit("Judge srp: raw=no reasoning=too many helpers"),
         "a scored no is not a rate-limit",

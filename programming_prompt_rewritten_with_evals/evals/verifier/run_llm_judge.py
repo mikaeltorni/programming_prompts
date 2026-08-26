@@ -9,7 +9,6 @@ from pathlib import Path
 
 from llm_judge.grok import DEFAULT_MAX_TURNS, score_with_grok
 from llm_judge.log import log
-from llm_judge.ratelimit import looks_like_judge_rate_limit
 from llm_judge.rewardkit import score_with_rewardkit
 from llm_judge.scores import write_reward
 from llm_judge.self_test import run_self_test
@@ -69,11 +68,21 @@ def run_eval_agent(
             err = str(exc.stderr or exc.output or exc)
         else:
             err = str(exc)
-        if looks_like_judge_rate_limit(err):
-            log(f"evalAgent {agent} rate-limited; recording skip not a scored no")
-            write_reward(output, [], err, agent=agent, ratelimit=True)
-            return
-        raise
+        # A crashed or timed-out judge CLI did not score the trial. Treat
+        # that as a rate-limit skip, including Codex uvx/rewardkit exit 1
+        # which has no Claude is_error payload.
+        log(
+            f"evalAgent {agent} judge CLI failed; recording ratelimit skip "
+            f"not a scored no ({type(exc).__name__})"
+        )
+        write_reward(
+            output,
+            [],
+            err or str(exc),
+            agent=agent,
+            ratelimit=True,
+        )
+        return
     write_reward(output, rows, raw, agent=agent)
 
 
