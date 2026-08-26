@@ -10,7 +10,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "entry_exit_prints"
-description = "functions print each parameter's actual name and value at entry (not input=/args= or an unlabeled tuple) and print return values before each return (ignore raise)"
+description = "named parameters printed by real name at entry; no-parameter functions any entry print (parameters=none is yes); print return values before each return (ignore raise)"
 type = "binary"
 
 [scoring]

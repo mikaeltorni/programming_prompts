@@ -8,10 +8,15 @@ Answer yes only if every function in the workspace does both:
   (or `None` when falling off the end with no meaningful return).
 
 Each named parameter must appear **as that name** in the entry print
-(`command=...`, `operation=...`, `value=...`). Answer **no** when an entry
-print uses a generic label (`input=`, `args=`, `params=`) or packs several
-parameters into one unlabeled tuple (`input=(operation, value)`) instead of
-the real parameter names.
+(`command=...`, `operation=...`, `value=...`). Answer **no** when a
+function **has named parameters** and the entry print uses a generic
+label (`input=`, `args=`, `params=`) or packs several parameters into
+one unlabeled tuple (`input=(operation, value)`) instead of the real
+parameter names.
+
+When a function has **no parameters**, any entry `print(...)` is a yes
+— including `print("entry")`, `print("_list_items()")`, and
+`print("parameters=none")`. Those are not generic-label failures.
 
 Use of `print(...)` only — not `logging`, log files, or a custom logger.
 
