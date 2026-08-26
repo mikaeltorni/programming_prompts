@@ -4,6 +4,18 @@
 # `network_mode: bridge` puts every trial on Docker's default docker0 (no
 # extra IPAM subnet). Agents still have internet. Isolation is one shared
 # L2; container names stay unique per Harbor session.
+#
+# overlay2 copy-up of /tmp, /var/tmp, and package caches hammers disk when
+# dozens of trials write at once. Per-container tmpfs (Docker docs; not a
+# shared volume) keeps each trial's scratch in its own RAM mount — still
+# isolated, no host bind, gone when the container stops. Image layers stay
+# on overlay2. `exec` on /tmp so tools that unpack and run from TMPDIR work.
 services:
   main:
     network_mode: bridge
+    environment:
+      TMPDIR: /tmp
+    tmpfs:
+      - /tmp:exec,mode=1777,size=268435456
+      - /var/tmp:mode=1777,size=67108864
+      - /root/.cache:mode=0700,size=134217728

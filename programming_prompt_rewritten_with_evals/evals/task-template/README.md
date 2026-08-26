@@ -12,7 +12,8 @@ Shared Harbor scaffolding copied into every generated `.generated/tasks/<name>/`
   `/app` → `/Projects/app`
 - `environment/docker-compose.yaml` — Harbor overlay: `network_mode: bridge`
   so each trial stays in a container but does **not** allocate a user-defined
-  Docker network (stock IPAM only has ~28 of those)
+  Docker network (stock IPAM only has ~28 of those); per-container tmpfs on
+  `/tmp`, `/var/tmp`, and `/root/.cache` so scratch I/O is RAM, not overlay2
 - `tests/test.sh` — thin wrapper that execs synced `run_judges.sh`
 
 Per-task instruction text comes from `../coding-prompts/<name>.md`.
