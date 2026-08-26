@@ -9,6 +9,7 @@ from pathlib import Path
 
 from llm_judge.grok import DEFAULT_MAX_TURNS, score_with_grok
 from llm_judge.log import log
+from llm_judge.ratelimit import JUDGE_CLI_FAILURES
 from llm_judge.rewardkit import score_with_rewardkit
 from llm_judge.scores import write_reward
 from llm_judge.self_test import run_self_test
@@ -62,7 +63,7 @@ def run_eval_agent(
             raise ValueError(
                 f"unknown eval agent {agent!r} (expected grok, cc, or codex)"
             )
-    except (subprocess.CalledProcessError, TimeoutError) as exc:
+    except JUDGE_CLI_FAILURES as exc:
         err = ""
         if isinstance(exc, subprocess.CalledProcessError):
             err = str(exc.stderr or exc.output or exc)
@@ -70,7 +71,7 @@ def run_eval_agent(
             err = str(exc)
         # A crashed or timed-out judge CLI did not score the trial. Treat
         # that as a rate-limit skip, including Codex uvx/rewardkit exit 1
-        # which has no Claude is_error payload.
+        # and subprocess.TimeoutExpired (not a TimeoutError) from uvx warmup.
         log(
             f"evalAgent {agent} judge CLI failed; recording ratelimit skip "
             f"not a scored no ({type(exc).__name__})"

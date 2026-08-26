@@ -3,18 +3,21 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
 
 from .grok import DEFAULT_MAX_TURNS, build_grok_command, score_with_grok
 from .homes import claude_judge_env, claude_wrapper_script
-from .ratelimit import looks_like_judge_rate_limit
+from .ratelimit import JUDGE_CLI_FAILURES, looks_like_judge_rate_limit
 from .reliability import unreliable_score_reason
 from .rewardkit import (
     _rewardkit_error_excerpt,
     rewardkit_backend,
+    rewardkit_command,
     score_with_rewardkit,
     write_pinned_judge_dir,
 )
@@ -83,6 +86,47 @@ def run_self_test() -> int:
         not looks_like_judge_rate_limit("Judge srp: raw=no reasoning=too many helpers"),
         "a scored no is not a rate-limit",
     )
+    check(
+        "ratelimit_detects_uvx_warmup_timeout",
+        looks_like_judge_rate_limit(
+            "subprocess.TimeoutExpired: Command '['uvx', '--from', "
+            "'harbor-rewardkit@0.1.7', 'rewardkit', '--help']' "
+            "timed out after 180 seconds"
+        ),
+        "uvx warmup timeout is a rate-limit skip, not a scored no",
+    )
+    check(
+        "timeout_expired_is_cli_failure",
+        subprocess.TimeoutExpired in JUDGE_CLI_FAILURES,
+        "TimeoutExpired is caught as a judge CLI skip (it is not TimeoutError)",
+    )
+    with tempfile.TemporaryDirectory() as tmp:
+        fake_bin = Path(tmp) / "rewardkit"
+        fake_bin.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        fake_bin.chmod(0o755)
+        saved_path = os.environ.get("PATH", "")
+        os.environ["PATH"] = f"{tmp}{os.pathsep}{saved_path}"
+        try:
+            cmd = rewardkit_command()
+            check(
+                "rewardkit_prefers_preinstalled_binary",
+                cmd == [str(fake_bin)],
+                "preinstalled rewardkit on PATH skips uvx --from",
+            )
+        finally:
+            os.environ["PATH"] = saved_path
+    with tempfile.TemporaryDirectory() as tmp:
+        saved_path = os.environ.get("PATH", "")
+        os.environ["PATH"] = tmp
+        try:
+            cmd = rewardkit_command()
+            check(
+                "rewardkit_falls_back_to_uvx",
+                cmd[:3] == ["uvx", "--from", "harbor-rewardkit@0.1.7"],
+                "uvx --from remains the fallback when rewardkit is absent",
+            )
+        finally:
+            os.environ["PATH"] = saved_path
 
     source = Path(__file__).resolve()
     judge_candidates = [

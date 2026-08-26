@@ -2,6 +2,16 @@
 
 from __future__ import annotations
 
+import subprocess
+
+# Crashes and timeouts did not score the trial. run_llm_judge treats these
+# as rate-limit skips, not a skill no. TimeoutExpired is not a TimeoutError.
+JUDGE_CLI_FAILURES: tuple[type[BaseException], ...] = (
+    subprocess.CalledProcessError,
+    subprocess.TimeoutExpired,
+    TimeoutError,
+)
+
 _RATE_LIMIT_NEEDLES = (
     '"is_error"',
     "is_error",
@@ -18,6 +28,8 @@ _JUDGE_CLI_NEEDLES = (
     "agent cli",
     "--judge",
     "pool finished with failures",
+    "timed out after",
+    "timeoutexpired",
 )
 
 
@@ -38,6 +50,8 @@ def looks_like_judge_rate_limit(text: str) -> bool:
         or "too many requests" in lowered
         or " 429" in lowered
         or "overloaded" in lowered
+        or "timed out after" in lowered
+        or "timeoutexpired" in lowered
     ):
         return True
     crashed = (

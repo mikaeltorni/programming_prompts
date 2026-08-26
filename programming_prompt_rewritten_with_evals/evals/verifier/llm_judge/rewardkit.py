@@ -34,8 +34,23 @@ from llm_judge.workspace import (
 )
 
 REWARDKIT_FROM = "harbor-rewardkit@0.1.7"
+UVX_WARMUP_TIMEOUT_S = 180
 _UVX_LOCK = Path("/tmp/harbor-rewardkit-uvx.lock")
 _UVX_READY = Path("/tmp/harbor-rewardkit-ready-0.1.7")
+
+
+def rewardkit_command() -> list[str]:
+    """Return the argv prefix for the rewardkit CLI.
+
+    Parameters: none.
+
+    Returns: ``[path-to-rewardkit]`` when the task image preinstalled the
+        binary, otherwise pinned ``uvx --from harbor-rewardkit@0.1.7``.
+    """
+    binary = shutil.which("rewardkit")
+    if binary:
+        return [binary]
+    return ["uvx", "--from", REWARDKIT_FROM, "rewardkit"]
 
 
 def _rewardkit_error_excerpt(text: str) -> str:
@@ -59,16 +74,23 @@ def _rewardkit_error_excerpt(text: str) -> str:
 def ensure_rewardkit_cli(env: dict[str, str] | None = None) -> None:
     """Install harbor-rewardkit once so parallel judges do not race ``uvx``.
 
+    Skips warmup when ``rewardkit`` is already on PATH (task image
+    ``uv tool install``). 100 concurrent ``uvx --from`` warmups otherwise
+    stall the disk and hit :data:`UVX_WARMUP_TIMEOUT_S`.
+
     Parameters: env - optional environment for the warmup process.
 
     Returns: none.
     """
+    if shutil.which("rewardkit"):
+        log("preinstalled rewardkit on PATH; skip uvx warmup")
+        return
     if _UVX_READY.is_file():
         return
     _UVX_LOCK.parent.mkdir(parents=True, exist_ok=True)
     with _UVX_LOCK.open("a+", encoding="utf-8") as handle:
         fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
-        if _UVX_READY.is_file():
+        if shutil.which("rewardkit") or _UVX_READY.is_file():
             return
         log(f"warming uvx {REWARDKIT_FROM} (serial; parallel judges wait)")
         merged = os.environ.copy()
@@ -79,7 +101,7 @@ def ensure_rewardkit_cli(env: dict[str, str] | None = None) -> None:
             check=False,
             capture_output=True,
             text=True,
-            timeout=180,
+            timeout=UVX_WARMUP_TIMEOUT_S,
             env=merged,
         )
         if proc.returncode != 0:
@@ -173,7 +195,7 @@ def run_rewardkit(
     timeout: int,
     env: dict[str, str] | None = None,
 ) -> None:
-    """Shell out to pinned ``uvx harbor-rewardkit``.
+    """Shell out to preinstalled ``rewardkit`` or pinned ``uvx``.
 
     Args:
         work: Temp judge directory with pinned ``prompt.md``.
@@ -185,17 +207,14 @@ def run_rewardkit(
         env: Optional environment overlay (homes, tokens). Values are not logged.
 
     Raises:
-        FileNotFoundError: When ``uvx`` is missing.
+        FileNotFoundError: When neither ``rewardkit`` nor ``uvx`` is on PATH.
         subprocess.CalledProcessError: When rewardkit exits non-zero.
         subprocess.TimeoutExpired: When the CLI exceeds *timeout*.
     """
     output.parent.mkdir(parents=True, exist_ok=True)
     ensure_rewardkit_cli(env)
     cmd = [
-        "uvx",
-        "--from",
-        REWARDKIT_FROM,
-        "rewardkit",
+        *rewardkit_command(),
         str(work),
         "--workspace",
         str(workspace),
@@ -211,7 +230,7 @@ def run_rewardkit(
         merged.update(env)
         log(f"rewardkit env overlay keys={','.join(sorted(env))}")
     log(
-        f"starting rewardkit judge backend={backend} model={model} "
+        f"starting rewardkit judge argv0={cmd[0]} backend={backend} model={model} "
         f"workspace={workspace} timeout={timeout}s"
     )
     proc = subprocess.run(

@@ -8,6 +8,11 @@ ARG CODEX_VERSION=0.149.0
 ARG CLAUDE_VERSION=2.1.241
 ARG GROK_VERSION=1.0.5
 
+# uv tool install lands rewardkit here. Judges must call that binary, not
+# `uvx --from` at verify time — 100 concurrent trials unpacking uvx saturates
+# disk and hits the 180s warmup timeout (scored as a fake no).
+ENV PATH="/root/.local/bin:/root/.grok/bin:${PATH}"
+
 COPY --from=uv /uv /uvx /bin/
 
 RUN apt-get update \
@@ -17,11 +22,12 @@ RUN apt-get update \
     && npm install --global "@anthropic-ai/claude-code@${CLAUDE_VERSION}" \
     && curl -fsSL https://x.ai/cli/install.sh | bash -s "${GROK_VERSION}" \
     && ln -sfn /root/.grok/bin/grok /usr/local/bin/grok \
-    && export PATH="/root/.grok/bin:$HOME/.local/bin:/usr/local/bin:$PATH" \
+    && uv tool install harbor-rewardkit==0.1.7 \
+    && command -v rewardkit \
+    && rewardkit --help \
     && codex --version \
     && claude --version \
     && grok --version \
-    && uvx --from harbor-rewardkit@0.1.7 rewardkit --help \
     && git config --system user.email "eval@local" \
     && git config --system user.name "Eval Agent" \
     && rm -rf /root/.agents /root/.codex /root/.claude /etc/codex \
