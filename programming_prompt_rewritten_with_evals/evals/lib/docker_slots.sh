@@ -41,8 +41,8 @@ on_eval_shell_exit() {
 }
 
 reclaim_docker_leftovers() {
-  # Free IPAM and unused Harbor image tags. Keep BuildKit cache so the next
-  # Harbor job reuses layers instead of rebuilding from scratch.
+  # Free leftover Harbor containers (including failed compose down), IPAM,
+  # and unused image tags. Keep BuildKit cache so the next job reuses layers.
   python3 "$DOCKER_NETWORKS" prune --keep-builder-cache >/dev/null || true
 }
 
