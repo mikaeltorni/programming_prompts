@@ -9,10 +9,11 @@ Harbor ``_prepare``.
 
 This helper:
 
-* prunes leftover Harbor trial containers and empty networks between jobs
-  (``prune --ipam-only``) so IPAM stays free without deleting image layers;
-  ``prune`` without flags also drops unused ``*__env-main`` images and
-  dangling BuildKit cache when you need disk back;
+* prunes leftover Harbor trial containers, empty networks, and unused
+  ``*__env-main`` image tags between jobs (``prune --keep-builder-cache``)
+  so disk does not grow with every trial; BuildKit cache stays so the next
+  job does not rebuild. Bare ``prune`` also drops dangling BuildKit cache
+  when you need more disk;
 * caps live coding trials machine-wide (default ``EVAL_LLM_MAX_CONCURRENT=10``)
   so ``-n 10`` is not clamped to two; set ``EVAL_LLM_MAX_CONCURRENT=2`` to
   restore the old quota-safe cap;
@@ -73,6 +74,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--ipam-only",
         action="store_true",
         help="Drop exited containers and empty networks only; keep images and BuildKit cache",
+    )
+    prune.add_argument(
+        "--keep-builder-cache",
+        action="store_true",
+        help="Also drop unused Harbor trial image tags; keep BuildKit cache so the next job does not rebuild",
     )
     cap = sub.add_parser("capacity", help="Print IPAM snapshot as JSON")
     cap.add_argument(
@@ -178,7 +184,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "prune":
         counts = reclaim_docker_leftovers(
             images=not args.ipam_only,
-            builder_cache=not args.ipam_only,
+            builder_cache=not args.ipam_only and not args.keep_builder_cache,
         )
         print(json.dumps(counts, sort_keys=True))
         return 0

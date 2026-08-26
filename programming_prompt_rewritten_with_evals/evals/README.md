@@ -361,12 +361,12 @@ networks on the host). Harbor creates one network **and one compose image tag**
 **per trial**, so leftover `*__env-main` images plus BuildKit cache fill the
 disk, and a dozen terminals at `-n 5` also exhaust IPAM
 (`all predefined address pools have been fully subnetted`).
-[`docker_networks.py`](docker_networks.py) removes exited trial containers
-and empty networks **between jobs** (`prune --ipam-only`) so IPAM stays free
-without deleting image layers or BuildKit cache — wiping those on every job
-forced a multi-minute image rebuild and made evals slow without extra LLM
-load. Bare `python3 docker_networks.py prune` still drops unused
-`*__env-main` images and dangling build cache when you need disk back.
+[`docker_networks.py`](docker_networks.py) removes exited trial containers,
+empty networks, and unused `*__env-main` image **tags** between jobs
+(`prune --keep-builder-cache`) so disk does not grow with every trial.
+BuildKit cache stays — wiping it on every job forced a multi-minute image
+rebuild. Bare `python3 docker_networks.py prune` also drops dangling
+build cache when you need more disk.
 Concurrent `./run_benchmark.sh` processes **wait for a coding-trial slot**.
 The default machine-wide cap is ten live coding trials
 (`EVAL_LLM_MAX_CONCURRENT=10`) so `-n 10` runs ten trials at once.

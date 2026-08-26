@@ -337,6 +337,16 @@ def _self_test() -> int:
             f"calls={reclaim_calls} counts={ipam}",
         )
         reclaim_calls.clear()
+        tagged = hygiene_mod.reclaim_docker_leftovers(
+            images=True, builder_cache=False
+        )
+        record(
+            "reclaim_images_keep_builder_cache",
+            reclaim_calls == ["containers", "networks", "images"]
+            and tagged == {"containers": 1, "networks": 1, "images": 1},
+            f"calls={reclaim_calls} counts={tagged}",
+        )
+        reclaim_calls.clear()
         full = hygiene_mod.reclaim_docker_leftovers(images=True, builder_cache=True)
         record(
             "reclaim_full_disk",
