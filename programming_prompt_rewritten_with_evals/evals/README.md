@@ -378,12 +378,15 @@ slots. Leftover `*__env-main` images plus BuildKit cache still fill the
 disk, and older runs may still leave `__env_default` nets.
 [`docker_networks.py`](docker_networks.py) removes leftover trial containers
 (including ones still `Up` after Harbor's `compose down` failed), empty
-networks, and unused `*__env-main` image **tags** between jobs and while
-waiting for slots (`prune --keep-builder-cache`) so disk does not grow with
-every trial. In-progress trials are kept. BuildKit cache stays — wiping it
-on every job forced a multi-minute image rebuild. Bare
-`python3 docker_networks.py prune` also drops dangling build cache when you
-need more disk.
+networks, and unused `*__env-main` image **tags** after the last live wrapper
+exits (`prune --keep-builder-cache`) so disk does not grow with every trial.
+Image prune is skipped while any wrapper still holds slots: Harbor tags a
+unique `*:latest` after `Image Built` and only then starts the container, so
+a second overlapping `./run_benchmark.sh` used to delete those tags and leave
+trials without `01-reward.json` (Scored below `-k`). In-progress trials are
+kept. BuildKit cache stays — wiping it on every job forced a multi-minute
+image rebuild. Bare `python3 docker_networks.py prune` also drops dangling
+build cache when you need more disk.
 Concurrent `./run_benchmark.sh` processes **wait for a coding-trial slot**
 only when `EVAL_LLM_MAX_CONCURRENT` is set (or a job still uses per-trial
 networks). There is no default LLM cap. Omit Harbor `-n` to follow `-k` (`-k 20` runs

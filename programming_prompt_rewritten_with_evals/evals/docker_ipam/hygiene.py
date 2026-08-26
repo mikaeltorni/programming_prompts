@@ -123,10 +123,21 @@ def _in_use_image_keys() -> set[str]:
 def prune_unused_harbor_images() -> list[str]:
     """Delete Harbor trial image tags that no container still uses.
 
+    Skip while any evals wrapper still holds slots. Harbor tags a unique
+    ``*__env-main:latest`` after ``Image Built`` and only then starts the
+    container. A second overlapping ``./run_benchmark.sh`` used to ``rmi``
+    those tags before ``compose up``, so trials finished without
+    ``01-reward.json`` and scored below ``-k``.
+
     Parameters: none.
 
     Returns: removed ``repo:tag`` names.
     """
+    from .slots import live_run_stamps
+
+    if live_run_stamps():
+        log("skipping Harbor image prune: an evals wrapper is still running")
+        return []
     in_use = _in_use_image_keys()
     rows = _docker_rows(["images", "--format", "{{.Repository}}:{{.Tag}}\t{{.ID}}"])
     removed: list[str] = []

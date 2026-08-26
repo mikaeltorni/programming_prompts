@@ -543,6 +543,32 @@ def _self_test() -> int:
         hygiene_mod.prune_unused_builder_cache = orig_cache
         live_mod.prune_stale_networks = orig_networks
 
+    from . import slots as slots_mod
+
+    orig_stamps = slots_mod.live_run_stamps
+    orig_rows = hygiene_mod._docker_rows
+    docker_calls: list[list[str]] = []
+
+    def fake_live_stamps() -> set[str]:
+        return {"2026-08-26_232733_1"}
+
+    def fake_rows(args: list[str]) -> list[str]:
+        docker_calls.append(list(args))
+        return []
+
+    slots_mod.live_run_stamps = fake_live_stamps
+    hygiene_mod._docker_rows = fake_rows
+    try:
+        skipped = hygiene_mod.prune_unused_harbor_images()
+        record(
+            "skip_image_prune_while_live",
+            skipped == [] and docker_calls == [],
+            f"removed={skipped} docker={docker_calls}",
+        )
+    finally:
+        slots_mod.live_run_stamps = orig_stamps
+        hygiene_mod._docker_rows = orig_rows
+
     failed = [(name, msg) for name, ok, msg in cases if not ok]
     for name, ok, msg in cases:
         status = "PASS" if ok else "FAIL"
