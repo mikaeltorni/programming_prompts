@@ -9,6 +9,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+from archive_run.ratelimit import trial_is_ratelimited
 from archive_run.results_index import format_runtime, run_elapsed_seconds
 from harbor_agents.harness_spec import HARNESSES, identify_harness
 
@@ -402,30 +403,40 @@ by_harness_eval_skill: dict[tuple[str, str, str], list[float]] = defaultdict(lis
 by_skill: dict[str, list[float]] = defaultdict(list)
 by_task: dict[str, list[float | None]] = defaultdict(list)
 rewards: list[float] = []
+ratelimited_n = 0
 
 for index, trial_dir in enumerate(trial_dirs, start=1):
     reward = _reward_value(trial_dir)
+    limited = trial_is_ratelimited(trial_dir)
     judge_rows = _judge_criteria(trial_dir)
     sources = _python_sources(trial_dir)
     task = _task_name(trial_dir)
     harness = _harness_of(trial_dir, jobs_root)
     per_skill = _per_skill_rewards(trial_dir)
     per_eval = _per_eval_agent_rewards(trial_dir)
-    by_task[task].append(reward)
-    if reward is not None:
-        rewards.append(reward)
-        by_harness[harness].append(reward)
-        by_harness_task[(harness, task)].append(reward)
-    for skill, value in per_skill.items():
-        by_skill[skill].append(value)
-        by_harness_skill[(harness, skill)].append(value)
-        by_harness_task_skill[(harness, task, skill)].append(value)
-    for (skill, agent), value in per_eval.items():
-        by_eval_agent[agent].append(value)
-        by_harness_eval[(harness, agent)].append(value)
-        by_harness_eval_skill[(harness, agent, skill)].append(value)
+    if limited:
+        ratelimited_n += 1
+    else:
+        by_task[task].append(reward)
+        if reward is not None:
+            rewards.append(reward)
+            by_harness[harness].append(reward)
+            by_harness_task[(harness, task)].append(reward)
+        for skill, value in per_skill.items():
+            by_skill[skill].append(value)
+            by_harness_skill[(harness, skill)].append(value)
+            by_harness_task_skill[(harness, task, skill)].append(value)
+        for (skill, agent), value in per_eval.items():
+            by_eval_agent[agent].append(value)
+            by_harness_eval[(harness, agent)].append(value)
+            by_harness_eval_skill[(harness, agent, skill)].append(value)
 
-    verdict = "PASS" if reward is not None and reward >= 1.0 else "FAIL"
+    if limited:
+        verdict = "RATELIMIT"
+    elif reward is not None and reward >= 1.0:
+        verdict = "PASS"
+    else:
+        verdict = "FAIL"
     reward_text = "n/a" if reward is None else f"{reward:g}"
     print(file=sys.stderr)
     print(
@@ -433,6 +444,8 @@ for index, trial_dir in enumerate(trial_dirs, start=1):
         f"{verdict}  reward={reward_text}",
         file=sys.stderr,
     )
+    if limited:
+        print("  failed due to ratelimit (excluded from pass_rate)", file=sys.stderr)
     if per_skill:
         bits = ", ".join(
             f"{name}={value:g}" for name, value in sorted(per_skill.items())
@@ -527,16 +540,23 @@ if len(by_harness) >= 2:
 print(file=sys.stderr)
 print("-" * 78, file=sys.stderr)
 runtime_suffix = f"  runtime={runtime_text}" if runtime_text else ""
+rate_suffix = (
+    f"  rate_limited={ratelimited_n} (excluded from pass_rate)"
+    if ratelimited_n
+    else ""
+)
 if rewards:
     passed = sum(1 for value in rewards if value >= 1.0)
     total = len(rewards)
     print(
-        f"GRAND TOTAL pass_rate={_fmt_rate(passed, total)}{runtime_suffix}",
+        f"GRAND TOTAL pass_rate={_fmt_rate(passed, total)}"
+        f"{runtime_suffix}{rate_suffix}",
         file=sys.stderr,
     )
 else:
     print(
-        f"GRAND TOTAL pass_rate=n/a (no numeric rewards){runtime_suffix}",
+        f"GRAND TOTAL pass_rate=n/a (no numeric rewards)"
+        f"{runtime_suffix}{rate_suffix}",
         file=sys.stderr,
     )
 print("-" * 78, file=sys.stderr)

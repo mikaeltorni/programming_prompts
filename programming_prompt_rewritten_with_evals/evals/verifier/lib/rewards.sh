@@ -28,6 +28,12 @@ def reward_of(path: Path) -> float:
     except (TypeError, ValueError):
         return 0.0
 
+def is_ratelimit(path: Path) -> bool:
+    payload = load(path)
+    if payload.get("ratelimit") is True:
+        return True
+    return str(payload.get("error") or "").lower() in {"ratelimit", "rate_limit"}
+
 def bits(details: dict) -> tuple[str, str]:
     reward = details.get("reward")
     if not isinstance(reward, dict):
@@ -47,10 +53,17 @@ def bits(details: dict) -> tuple[str, str]:
 
 per_agent = []
 rewards = []
+ratelimited = False
 for agent in agents:
-    reward = reward_of(verifier / f"reward-{skill}-{agent}.json")
+    path = verifier / f"reward-{skill}-{agent}.json"
+    limited = is_ratelimit(path)
+    ratelimited = ratelimited or limited
+    reward = 0.0 if limited else reward_of(path)
     details = load(verifier / f"reward-{skill}-{agent}-details.json")
     raw, reasoning = bits(details)
+    if limited:
+        raw = "ratelimit"
+        reasoning = reasoning or "failed due to ratelimit"
     if not raw:
         raw = "yes" if reward >= 1.0 else "no"
     per_agent.append({
@@ -58,6 +71,7 @@ for agent in agents:
         "reward": reward,
         "raw": raw,
         "reasoning": reasoning,
+        "ratelimit": limited,
         "details": details,
     })
     rewards.append(reward)
@@ -67,8 +81,14 @@ for agent in agents:
         flush=True,
     )
 
-overall = 1.0 if rewards and all(value >= 1.0 for value in rewards) else 0.0
-dest.write_text(json.dumps({"reward": overall}, indent=2) + "\n", encoding="utf-8")
+overall = 0.0 if ratelimited else (
+    1.0 if rewards and all(value >= 1.0 for value in rewards) else 0.0
+)
+skill_payload = {"reward": overall}
+if ratelimited:
+    skill_payload["ratelimit"] = True
+    skill_payload["error"] = "ratelimit"
+dest.write_text(json.dumps(skill_payload, indent=2) + "\n", encoding="utf-8")
 details_dest = dest.parent / f"reward-{skill}-details.json"
 payload = {
     "reward": {
@@ -78,7 +98,7 @@ payload = {
         "criteria": [{
             "name": skill,
             "reward": overall,
-            "raw": "yes" if overall >= 1.0 else "no",
+            "raw": "ratelimit" if ratelimited else ("yes" if overall >= 1.0 else "no"),
             "reasoning": "; ".join(
                 f"{item['agent']}={item['raw']}" for item in per_agent
             ),
@@ -201,8 +221,24 @@ for name, reward in zip(names, rewards, strict=True):
     })
 
 overall = 1.0 if rewards and all(value >= 1.0 for value in rewards) else 0.0
+ratelimited = False
+for name in names:
+    skill_path = out_dir / f"reward-{name}.json"
+    if skill_path.is_file():
+        try:
+            skill_payload = json.loads(skill_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            skill_payload = {}
+        if isinstance(skill_payload, dict) and skill_payload.get("ratelimit") is True:
+            ratelimited = True
+if ratelimited:
+    overall = 0.0
+reward_payload = {"reward": overall}
+if ratelimited:
+    reward_payload["ratelimit"] = True
+    reward_payload["error"] = "ratelimit"
 (out_dir / "reward.json").write_text(
-    json.dumps({"reward": overall}, indent=2) + "\n", encoding="utf-8"
+    json.dumps(reward_payload, indent=2) + "\n", encoding="utf-8"
 )
 (out_dir / "reward-details.json").write_text(
     json.dumps({

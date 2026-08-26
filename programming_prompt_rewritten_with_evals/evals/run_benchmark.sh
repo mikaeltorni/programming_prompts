@@ -36,10 +36,11 @@
 #   ./run_benchmark.sh harness=cc evalAgent=grok evalAgentModel=grok-4.6 \
 #       evalAgentReasoningEffort=low
 #
-# Trial count (rule of thumb): harnesses × (skills if --run-separately else 1)
-# × tasks × -k. Example: both harnesses, 2 skills separately, 5 tasks, -k 5
-# → 2 × 2 × 5 × 5 = 100 trials. evalAgent does not multiply trials; it reruns
-# the LLM judge on each trial (serialized unless EVAL_JUDGE_WORKERS > 1).
+# Trial count (rule of thumb): harnesses × tasks × -k. Example: one harness,
+# 5 tasks, -k 5 → 25 trials. --run-separately does not multiply jobs or
+# trials (it used to start one Harbor job per skill, which looked like a
+# second run). evalAgent does not multiply trials; it reruns the LLM judge
+# on each trial (serialized unless EVAL_JUDGE_WORKERS > 1).
 #
 # Parallel terminals: each Harbor trial creates a Docker network AND a unique
 # compose image tag. Docker's default IPAM only has ~30 user-defined /16 slots,
@@ -48,7 +49,7 @@
 # and BuildKit cache) and holds a cross-process slot lock.
 # Live coding trials are also capped machine-wide (default
 # EVAL_LLM_MAX_CONCURRENT=2) so ``-n 5`` in four terminals cannot burn API
-# rate limits. --run-separately runs one skill Harbor job after another.
+# rate limits. --run-separately is one job with all selected skills.
 
 set -euo pipefail
 
@@ -360,11 +361,9 @@ fi
 TASK_COUNT="$(list_task_dirs | wc -l | tr -d ' ')"
 echo "Discovered $TASK_COUNT coding task(s) under $TASKS_DIR" >&2
 
-# Estimate total trials for the user.
+# Estimate total trials for the user. --run-separately no longer multiplies
+# by skill count (one Harbor job, all selected skills).
 SKILL_FACTOR=1
-if [[ "$RUN_SEPARATELY" -eq 1 ]]; then
-  SKILL_FACTOR=${#SELECTED_SKILLS[@]}
-fi
 HARNESS_FACTOR=${#SELECTED_HARNESSES[@]}
 
 if [[ "$BASELINE" -eq 1 ]]; then
