@@ -331,7 +331,11 @@ This suite’s tasks also require the trial image (`task-template/environment/Do
 `/Projects/app` plus sibling `.worktrees/`). The task-template
 `docker-compose.yaml` sets `network_mode: bridge` so each trial is still a
 container but does **not** allocate a user-defined Docker network (stock
-IPAM's ~28 `/16` slots). `apple-container` is not usable
+IPAM's ~28 `/16` slots). The same overlay mounts per-container **tmpfs**
+on `/tmp`, `/var/tmp`, and `/root/.cache` so uv/agent scratch skips
+overlay2 copy-up (the usual community fix for overlay2 write amplification).
+Each mount is private RAM — not a shared volume, not a host bind — so
+trials stay isolated; only the image layers stay on disk. `apple-container` is not usable
 on Linux. Cloud `--env` values can be passed through on the wrapper command
 line (they land in Harbor args); the wrapper then **skips the local Docker
 IPAM lock**. Local Linux runs still need Docker Engine.

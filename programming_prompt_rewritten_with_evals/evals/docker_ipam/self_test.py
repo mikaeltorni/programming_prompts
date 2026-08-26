@@ -260,6 +260,14 @@ def _self_test() -> int:
         f"path={compose}",
     )
     record(
+        "template_tmpfs_scratch",
+        "tmpfs:" in compose_text
+        and "/tmp:exec" in compose_text
+        and "/var/tmp:" in compose_text
+        and "/root/.cache:" in compose_text,
+        "per-container tmpfs keeps overlay2 off trial scratch",
+    )
+    record(
         "grant_explicit_cap_honors_n10",
         grant_trial_slots(
             10, ipam_free=28, ipam_max=28, reserved=0,
