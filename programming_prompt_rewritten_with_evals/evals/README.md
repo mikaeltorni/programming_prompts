@@ -47,8 +47,8 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `evalAgent=cc,codex,grok` / `--evalAgent cc` / `--eval-agent=all` | LLM **judge** harness(es). Same aliases/groups as `harness=`. Omit to use the **same** harness as the coding agent |
 | `evalAgentModel=claude-opus-5` / `--evalAgentModel …` / `--eval-agent-model=…` | Judge model id (same idea as `-m` / `--model`). One value for every eval agent, or one per agent |
 | `evalAgentReasoningEffort=low` / `--evalAgentReasoningEffort high` | Judge effort: `low`, `medium`, or `high` (same idea as `--ak reasoning_effort=`). One value or one per agent |
-| `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **1**) |
-| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine (default: **2**). `0` disables the cap |
+| `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
+| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine (default: **10**). `0` disables the cap |
 | `--skills srp,commenting` | Which skills to inject (default: all non-`*-vague`) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
@@ -84,9 +84,12 @@ Trial math: default `-k 5` is **5 attempts per selected coding task**. With all
 does **not** multiply that. Omit harness (both) ≈ **2×** again — e.g.
 `harness` omitted + 5 tasks + `-k 5` ≈ **50 trials**. `evalAgent=cc,codex` does **not** multiply trials; it reruns
 the LLM judge on each trial (2× verifier *cost*). Judge subprocesses default
-to **one at a time** (`EVAL_JUDGE_WORKERS=1`) so dual eval agents do not
-open six LLM sessions per trial. Live coding trials on the machine default to
-**two at a time** (`EVAL_LLM_MAX_CONCURRENT=2`); extra wrappers wait.
+to **four at a time** (`EVAL_JUDGE_WORKERS=4`) so the four skills overlap
+after the coding agent. Set `EVAL_JUDGE_WORKERS=1` to serialize them. Live
+coding trials on the machine default to **ten at a time**
+(`EVAL_LLM_MAX_CONCURRENT=10`) so `-n 10` is not clamped to two; extra
+wrappers wait when that cap is already in use. `EVAL_LLM_MAX_CONCURRENT=2`
+restores the old quota-safe cap.
 Programmatic judges (worktree) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
 Code `claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
 (`--reasoning-effort`). Judge defaults match those models at **low** effort
@@ -365,8 +368,9 @@ forced a multi-minute image rebuild and made evals slow without extra LLM
 load. Bare `python3 docker_networks.py prune` still drops unused
 `*__env-main` images and dangling build cache when you need disk back.
 Concurrent `./run_benchmark.sh` processes **wait for a coding-trial slot**.
-The default machine-wide cap is two live coding trials
-(`EVAL_LLM_MAX_CONCURRENT=2`). `--run-separately` is a single Harbor job.
+The default machine-wide cap is ten live coding trials
+(`EVAL_LLM_MAX_CONCURRENT=10`) so `-n 10` runs ten trials at once.
+`--run-separately` is a single Harbor job.
 Each job’s reservation is tracked in the current shell and
 released when that Harbor job finishes (wrapping `acquire` in `$()` used to
 leak slots until the whole wrapper exited). Optional: give Docker
@@ -846,8 +850,8 @@ Override defaults on the command line (or edit `harbor.codex.yaml` /
 | `--ak reasoning_effort=…` | Effort: `low`, `medium`, or `high` (Codex, Claude, Grok) |
 | `evalAgentModel=…` | Judge model id (same idea as `-m`; one value or one per eval agent) |
 | `evalAgentReasoningEffort=…` | Judge effort (same idea as `--ak reasoning_effort=`) |
-| `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **1**) |
-| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine (default: **2**) |
+| `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
+| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine (default: **10**) |
 | `--ak version=…` | CLI pin override |
 | `-k` / `--n-attempts` | Independent attempts per task (default example: `5`) |
 | `-n` / `--n-concurrent` | How many trials run in parallel (default example: `5`) |

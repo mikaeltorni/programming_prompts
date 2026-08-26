@@ -62,7 +62,7 @@ if [[ ${#skill_names[@]} -eq 0 ]]; then
   exit 0
 fi
 
-echo "Running judge jobs (EVAL_JUDGE_WORKERS=${EVAL_JUDGE_WORKERS:-1})" >&2
+echo "Running judge jobs (EVAL_JUDGE_WORKERS=${EVAL_JUDGE_WORKERS:-4})" >&2
 if ! python3 "$JUDGE_POOL" "$JOBS_FILE" >/logs/verifier/judge-pool-results.json; then
   echo "judge pool failed to run (continuing to aggregate whatever rewards exist)" >&2
 fi

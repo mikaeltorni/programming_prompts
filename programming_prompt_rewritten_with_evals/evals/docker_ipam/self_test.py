@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .constants import (
     DEFAULT_ADDRESS_POOLS,
+    LLM_MAX_CONCURRENT_DEFAULT,
     POOL_EXHAUSTED_NEEDLE,
     RECOMMENDED_ADDRESS_POOLS,
     WAIT_LOG_SEC,
@@ -124,6 +125,14 @@ def _self_test() -> int:
         "grant_unlimited_llm",
         grant_trial_slots(5, ipam_free=20, ipam_max=28, reserved=0, llm_cap=10**9) == 5,
         "EVAL_LLM_MAX_CONCURRENT=0 keeps requested -n when IPAM allows",
+    )
+    record(
+        "grant_default_cap_honors_n10",
+        grant_trial_slots(
+            10, ipam_free=28, ipam_max=28, reserved=0,
+            llm_cap=LLM_MAX_CONCURRENT_DEFAULT,
+        ) == 10,
+        "default LLM cap lets -n 10 run 10 trials",
     )
     record(
         "not_harbor_bridge",

@@ -13,8 +13,9 @@ This helper:
   (``prune --ipam-only``) so IPAM stays free without deleting image layers;
   ``prune`` without flags also drops unused ``*__env-main`` images and
   dangling BuildKit cache when you need disk back;
-* caps live coding trials machine-wide (default ``EVAL_LLM_MAX_CONCURRENT=2``)
-  so four ``-n 5`` terminals cannot stampede Docker or LLM rate limits;
+* caps live coding trials machine-wide (default ``EVAL_LLM_MAX_CONCURRENT=10``)
+  so ``-n 10`` is not clamped to two; set ``EVAL_LLM_MAX_CONCURRENT=2`` to
+  restore the old quota-safe cap;
 * estimates remaining IPAM slots from ``/etc/docker/daemon.json`` or Docker's
   built-in pools;
 * holds a cross-process counting semaphore so concurrent wrappers wait
