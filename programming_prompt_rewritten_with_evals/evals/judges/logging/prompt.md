@@ -10,7 +10,12 @@ Answer yes only if every function in the workspace does both:
 Each named parameter must appear **as that name** in the entry print
 (`command=...`, `operation=...`, `argument=...`). That includes optional
 parameters whose value is `None` — omitting `argument=` because it is
-unused or `None` is a **no**. Answer **no** when a
+unused or `None` is a **no**. One print that lists every real parameter
+name on the same line is a **yes** — for example
+`print(f"left={left!r} operator={operator!r} right={right!r}")` or
+`print(f"operation={operation!r} argument={argument!r}")`. Combining
+real names in one message is not a generic label and is not an unlabeled
+tuple. Answer **no** when a
 function **has named parameters** and the entry print uses a generic
 label (`input=`, `args=`, `params=`) or packs several parameters into
 one unlabeled tuple (`input=(operation, value)`) instead of the real

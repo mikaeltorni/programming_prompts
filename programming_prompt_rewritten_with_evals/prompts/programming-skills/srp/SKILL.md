@@ -18,7 +18,9 @@ Concrete rules:
   Dispatching with if/elif in the entrypoint is fine, including an
   unknown-operation `else` raise, a one-branch extra-arg check (for
   example `list` with an argument), or a missing required-argument check
-  (`add` without text, `done` without an index). A one-line format of
+  (`add` without text, `done` without an index). A core helper may also
+  dispatch operations with if/elif (for example `_apply_operation`) —
+  that is still that helper's job. A one-line format of
   already-computed state (for example `get` → `value=<n>`) is fine. Do not
   leave increment/arithmetic/state updates in the entrypoint — a
   format-only helper is not enough. Converting an already-split token with
