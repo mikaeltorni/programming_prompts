@@ -2,8 +2,8 @@
 """Host Docker hygiene and slot lock for Harbor eval jobs.
 
 See ``docker_ipam/cli.py`` for the command list. Default live coding-trial
-cap is ``EVAL_LLM_MAX_CONCURRENT=10``. Omit Harbor ``-n`` to run at that cap
-(``default-n``). Automatic reclaim is
+cap is unset (no LLM cap; Docker IPAM only). Omit Harbor ``-n`` to follow
+``-k``. Automatic reclaim is
 ``prune --keep-builder-cache`` (exited containers, empty networks, unused
 trial image tags; BuildKit cache kept). Bare ``prune`` also drops dangling
 BuildKit cache when you need disk back.

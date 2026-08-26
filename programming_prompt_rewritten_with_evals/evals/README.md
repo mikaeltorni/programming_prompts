@@ -48,7 +48,7 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `evalAgentModel=claude-opus-5` / `--evalAgentModel …` / `--eval-agent-model=…` | Judge model id (same idea as `-m` / `--model`). One value for every eval agent, or one per agent |
 | `evalAgentReasoningEffort=low` / `--evalAgentReasoningEffort high` | Judge effort: `low`, `medium`, or `high` (same idea as `--ak reasoning_effort=`). One value or one per agent |
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
-| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine (default: **10**). Omit Harbor `-n` to run at this cap. `0` disables the cap |
+| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine. **Unset = no LLM cap** (Docker IPAM only, ~28). Omit Harbor `-n` to follow `-k`. `2` is the old quota-safe cap |
 | `--skills srp,commenting` | Which skills to inject (default: all non-`*-vague`) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
@@ -86,11 +86,11 @@ does **not** multiply that. Omit harness (both) ≈ **2×** again — e.g.
 the LLM judge on each trial (2× verifier *cost*). Judge subprocesses default
 to **four at a time** (`EVAL_JUDGE_WORKERS=4`) so the four skills overlap
 after the coding agent. Set `EVAL_JUDGE_WORKERS=1` to serialize them. Live
-coding trials on the machine default to **ten at a time**
-(`EVAL_LLM_MAX_CONCURRENT=10`). **Omit `-n`** to run at that cap — that is
-the fastest path. Passing `-n 20` does not go faster than the cap.
-`EVAL_LLM_MAX_CONCURRENT=2` restores the old quota-safe cap; `=0` disables
-it (IPAM only). Extra wrappers wait when that cap is already in use.
+coding trials have **no LLM cap** unless `EVAL_LLM_MAX_CONCURRENT` is set.
+**Omit `-n` to follow `-k`** — `-k 20` runs 20 trials at once. Stock Docker
+IPAM still limits live networks to about **28**. `EVAL_LLM_MAX_CONCURRENT=2`
+restores the old quota-safe cap. Extra wrappers wait when IPAM (or an explicit
+cap) is already in use.
 Programmatic judges (worktree) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
 Code `claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
 (`--reasoning-effort`). Judge defaults match those models at **low** effort
@@ -369,8 +369,8 @@ BuildKit cache stays — wiping it on every job forced a multi-minute image
 rebuild. Bare `python3 docker_networks.py prune` also drops dangling
 build cache when you need more disk.
 Concurrent `./run_benchmark.sh` processes **wait for a coding-trial slot**.
-The default machine-wide cap is ten live coding trials
-(`EVAL_LLM_MAX_CONCURRENT=10`). Omit Harbor `-n` to run ten trials at once.
+There is no default LLM cap. Omit Harbor `-n` to follow `-k` (`-k 20` runs
+20 at once). Stock Docker IPAM still limits live networks to about 28.
 `--run-separately` is a single Harbor job.
 Each job’s reservation is tracked in the current shell and
 released when that Harbor job finishes (wrapping `acquire` in `$()` used to
@@ -829,10 +829,10 @@ Manual examples:
 ./run_benchmark.sh --skills srp,commenting --run-separately -k 5 -n 5
 ```
 
-`-k 5` schedules five attempts **per task**. Omit `-n` to run as many trials
-at once as the machine cap allows (default **10**). Pass `-n 2` only when you
-want a cheaper/slower smoke. The wrapper defaults to `-k 5` and that cap when
-you pass no Harbor flags. After the job finishes it prints a categorized console summary.
+`-k 5` schedules five attempts **per task**. Omit `-n` to follow `-k` (so
+`-k 20` runs 20 trials at once). Pass `-n 2` only when you want a cheaper
+smoke. The wrapper defaults to `-k 5` (and therefore 5 concurrent) when you
+pass no Harbor flags. After the job finishes it prints a categorized console summary.
 Several terminals may start at once: the wrapper serializes Docker networks
 across processes when the daemon's address pool is tight (see
 [Install Docker](#install-docker-on-ubuntu-2404)).
@@ -853,10 +853,10 @@ Override defaults on the command line (or edit `harbor.codex.yaml` /
 | `evalAgentModel=…` | Judge model id (same idea as `-m`; one value or one per eval agent) |
 | `evalAgentReasoningEffort=…` | Judge effort (same idea as `--ak reasoning_effort=`) |
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
-| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine (default: **10**) |
+| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials (unset = none; Docker IPAM ~28) |
 | `--ak version=…` | CLI pin override |
 | `-k` / `--n-attempts` | Independent attempts per task (default: `5`) |
-| `-n` / `--n-concurrent` | How many trials run in parallel (omit = machine cap, default **10**) |
+| `-n` / `--n-concurrent` | How many trials run in parallel (omit = follow `-k`) |
 | `--skill` | Extra skill directory (job config already injects skills) |
 
 Examples:

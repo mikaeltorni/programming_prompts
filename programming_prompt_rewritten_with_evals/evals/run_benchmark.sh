@@ -47,11 +47,11 @@
 # and leftover ``*__env-main`` images plus BuildKit cache fill the disk.
 # docker_networks.py prunes exited containers and empty nets (keeps images
 # and BuildKit cache) and holds a cross-process slot lock.
-# Live coding trials are capped machine-wide (default
-# EVAL_LLM_MAX_CONCURRENT=10). Omit Harbor -n to run at that cap; passing
-# -n 20 does not go faster than the cap. Set EVAL_LLM_MAX_CONCURRENT=2 to
-# restore the old quota-safe cap. --run-separately is one job with all
-# selected skills.
+# Live coding trials have no LLM cap unless EVAL_LLM_MAX_CONCURRENT is set.
+# Omit Harbor -n to follow -k (so -k 20 runs 20 trials at once). Docker IPAM
+# still limits live networks (~28 on stock Docker). Set
+# EVAL_LLM_MAX_CONCURRENT=2 to restore the old quota-safe cap.
+# --run-separately is one job with all selected skills.
 
 set -euo pipefail
 
@@ -328,7 +328,11 @@ echo "Selected skill(s): ${SELECTED_SKILLS[*]}" >&2
 
 mapfile -t SELECTED_TASKS < <(resolve_tasks "$TASKS_ARG")
 echo "Selected coding task(s): ${SELECTED_TASKS[*]}" >&2
-echo "LLM trial cap: EVAL_LLM_MAX_CONCURRENT=${EVAL_LLM_MAX_CONCURRENT:-10} (coding trials live on this machine)" >&2
+if [[ -z "${EVAL_LLM_MAX_CONCURRENT:-}" ]]; then
+  echo "LLM trial cap: unset (no LLM cap; Docker IPAM only). Omit -n to follow -k." >&2
+else
+  echo "LLM trial cap: EVAL_LLM_MAX_CONCURRENT=$EVAL_LLM_MAX_CONCURRENT (coding trials live on this machine)" >&2
+fi
 echo "Judge workers: EVAL_JUDGE_WORKERS=${EVAL_JUDGE_WORKERS:-4}" >&2
 reclaim_docker_leftovers
 
