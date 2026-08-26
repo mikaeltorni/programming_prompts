@@ -47,9 +47,10 @@
 # and leftover ``*__env-main`` images plus BuildKit cache fill the disk.
 # docker_networks.py prunes exited containers and empty nets (keeps images
 # and BuildKit cache) and holds a cross-process slot lock.
-# Live coding trials are also capped machine-wide (default
-# EVAL_LLM_MAX_CONCURRENT=2) so ``-n 5`` in four terminals cannot burn API
-# rate limits. --run-separately is one job with all selected skills.
+# Live coding trials are capped machine-wide (default
+# EVAL_LLM_MAX_CONCURRENT=10) so ``-n 10`` actually runs 10 trials at once.
+# Set EVAL_LLM_MAX_CONCURRENT=2 to restore the old quota-safe cap.
+# --run-separately is one job with all selected skills.
 
 set -euo pipefail
 
@@ -326,8 +327,8 @@ echo "Selected skill(s): ${SELECTED_SKILLS[*]}" >&2
 
 mapfile -t SELECTED_TASKS < <(resolve_tasks "$TASKS_ARG")
 echo "Selected coding task(s): ${SELECTED_TASKS[*]}" >&2
-echo "LLM trial cap: EVAL_LLM_MAX_CONCURRENT=${EVAL_LLM_MAX_CONCURRENT:-2} (coding trials live on this machine)" >&2
-echo "Judge workers: EVAL_JUDGE_WORKERS=${EVAL_JUDGE_WORKERS:-1}" >&2
+echo "LLM trial cap: EVAL_LLM_MAX_CONCURRENT=${EVAL_LLM_MAX_CONCURRENT:-10} (coding trials live on this machine)" >&2
+echo "Judge workers: EVAL_JUDGE_WORKERS=${EVAL_JUDGE_WORKERS:-4}" >&2
 reclaim_docker_leftovers
 
 # --- install-only path uses a minimal generated config ---
