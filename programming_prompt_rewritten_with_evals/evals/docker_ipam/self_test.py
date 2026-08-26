@@ -24,11 +24,14 @@ from .math import (
     is_harbor_trial_network,
     is_pool_exhausted_message,
     is_stale_harbor_network,
+    leftover_harbor_container,
     merge_recommended_daemon_json,
     occupied_slots,
     parse_daemon_pools,
     pool_capacity,
+    run_stamp_from_working_dir,
     subnet_count,
+    trial_session_from_container,
     user_defined_capacity,
     wait_log_due,
 )
@@ -117,6 +120,86 @@ def _self_test() -> int:
         is_harbor_trial_container("todo__kbkd9sh__env-main-1"),
         "compose main service container",
     )
+    record(
+        "trial_session_from_container",
+        trial_session_from_container("calculator__hofedcp__env-main-1")
+        == "calculator__hofedcp",
+        trial_session_from_container("calculator__hofedcp__env-main-1") or "",
+    )
+    with tempfile.TemporaryDirectory(prefix="harbor-leftover-") as raw:
+        run = (
+            Path(raw)
+            / "2026-08-26_120000_1__harness-codex"
+            / "harbor"
+        )
+        env = (
+            run
+            / "task-trees"
+            / "codex-skills__stamp"
+            / "calculator"
+            / "environment"
+        )
+        env.mkdir(parents=True)
+        trial = run / "codex-skills__stamp" / "calculator__Hofedcp"
+        trial.mkdir(parents=True)
+        (trial / "result.json").write_text("{}\n", encoding="utf-8")
+        wd = str(env)
+        stamp = "2026-08-26_120000_1"
+        record(
+            "run_stamp_from_working_dir",
+            run_stamp_from_working_dir(wd) == stamp,
+            run_stamp_from_working_dir(wd) or "",
+        )
+        record(
+            "reap_finished_running_trial",
+            leftover_harbor_container(
+                "calculator__hofedcp__env-main-1",
+                "running",
+                wd,
+                live_stamps={stamp},
+            ),
+            "result.json means compose down failed",
+        )
+        record(
+            "keep_live_running_trial",
+            not leftover_harbor_container(
+                "todo__abc1234__env-main-1",
+                "running",
+                wd,
+                live_stamps={stamp},
+            ),
+            "in-progress trial without result.json",
+        )
+        record(
+            "reap_exited_trial",
+            leftover_harbor_container(
+                "todo__abc1234__env-main-1",
+                "exited",
+                wd,
+                live_stamps={stamp},
+            ),
+            "exited containers always go",
+        )
+        record(
+            "reap_dead_job_orphan",
+            leftover_harbor_container(
+                "todo__abc1234__env-main-1",
+                "running",
+                wd,
+                live_stamps=set(),
+            ),
+            "no live wrapper for this run stamp",
+        )
+        record(
+            "reap_missing_working_dir",
+            leftover_harbor_container(
+                "todo__abc1234__env-main-1",
+                "running",
+                str(Path(raw) / "gone" / "environment"),
+                live_stamps={stamp},
+            ),
+            "compose working dir is gone",
+        )
     record(
         "grant_llm_cap",
         grant_trial_slots(5, ipam_free=28, ipam_max=28, reserved=0, llm_cap=2) == 2,

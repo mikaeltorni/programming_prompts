@@ -179,6 +179,30 @@ def reserved_slots(state: dict[str, Any], *, excluding: str = "") -> int:
     return total
 
 
+def live_run_stamps() -> set[str]:
+    """Run stamps whose wrapper pid is still alive.
+
+    Parameters: none.
+
+    Returns: ``YYYY-MM-DD_HHMMSS_pid`` stamps from live slot holders.
+    """
+    stamps: set[str] = set()
+    with with_lock(write=False) as state:
+        for holder_id, info in state.get("holders", {}).items():
+            if not isinstance(info, dict):
+                continue
+            try:
+                pid = int(info.get("pid") or 0)
+            except (TypeError, ValueError):
+                continue
+            if pid < 1 or not pid_alive(pid):
+                continue
+            stamp = str(holder_id).split(":", 1)[0].strip()
+            if stamp:
+                stamps.add(stamp)
+    return stamps
+
+
 def llm_max_concurrent() -> int:
     """Read the machine-wide coding-trial cap.
 
