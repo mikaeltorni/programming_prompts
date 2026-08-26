@@ -10,14 +10,17 @@ A thin entrypoint may dispatch with if/elif and return what the helpers
 produced. It may also format already-computed state in one line (for
 example a `get` branch that returns `value=<n>` or `str(counter)`).
 Raising from a dispatch branch is still thin: unknown operation in
-`else`, or extra args on one verb (for example `list` with an argument).
-Those raises are not mixed parsing. Core-logic helpers may return a
-one-line formatted result (for example `added=1`). Converting an
-already-split token with `int()` / `float()` inside a state helper is
-still core logic, not mixed parsing. A format-only helper does not count
-as extracting core logic if the entrypoint still increments or does the
-real arithmetic. Logging prints are scored by the logging skill — they
-are not an SRP failure.
+`else`, extra args on one verb (for example `list` with an argument),
+or a missing required argument (`add` without text, `done` without an
+index). Those raises are not mixed parsing. Core-logic helpers may
+return a one-line formatted result (for example `added=1`). Converting
+an already-split token with `int()` / `float()` inside a state helper is
+still core logic, not mixed parsing. An empty or missing already-parsed
+argument guard inside a core helper (`if not text: raise`) is still
+that helper's job — do not require a separate validation-only function.
+A format-only helper does not count as extracting core logic if the
+entrypoint still increments or does the real arithmetic. Logging prints
+are scored by the logging skill — they are not an SRP failure.
 
 Answer no when any of these hold:
 - splitting/tokenizing the raw command and core arithmetic/state still

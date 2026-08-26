@@ -147,6 +147,17 @@ def run_self_test() -> int:
                 "unknown" in yes_block.lower() and "raise" in yes_block.lower(),
                 "thin entrypoint may raise on unknown op or extra args",
             ),
+            (
+                "srp_yes_allows_missing_required_arg",
+                "required" in yes_block.lower() and "add" in yes_block.lower(),
+                "thin entrypoint may raise when add/done omit an argument",
+            ),
+            (
+                "srp_yes_allows_helper_empty_guard",
+                "if not text" in yes_block.lower()
+                and "validation-only" in yes_block.lower(),
+                "empty already-parsed arg guard in a core helper is yes",
+            ),
         ]
         for item in srp_checks:
             check(*item)
