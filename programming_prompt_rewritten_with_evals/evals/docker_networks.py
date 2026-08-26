@@ -4,9 +4,10 @@
 See ``docker_ipam/cli.py`` for the command list. Default live coding-trial
 cap is unset (no LLM cap; Docker IPAM only). Omit Harbor ``-n`` to follow
 ``-k``. Automatic reclaim is
-``prune --keep-builder-cache`` (exited containers, empty networks, unused
-trial image tags; BuildKit cache kept). Bare ``prune`` also drops dangling
-BuildKit cache when you need disk back.
+``prune --keep-builder-cache`` (leftover containers including failed
+``compose down``, empty networks, unused trial image tags; BuildKit cache
+kept). Bare ``prune`` also drops dangling BuildKit cache when you need disk
+back.
 """
 
 from docker_ipam.cli import main

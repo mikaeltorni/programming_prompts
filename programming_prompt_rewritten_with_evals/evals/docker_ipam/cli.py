@@ -9,10 +9,11 @@ Harbor ``_prepare``.
 
 This helper:
 
-* prunes leftover Harbor trial containers, empty networks, and unused
-  ``*__env-main`` image tags between jobs (``prune --keep-builder-cache``)
-  so disk does not grow with every trial; BuildKit cache stays so the next
-  job does not rebuild. Bare ``prune`` also drops dangling BuildKit cache
+* prunes leftover Harbor trial containers (exited, or still running after a
+  failed ``compose down``), empty networks, and unused ``*__env-main`` image
+  tags (``prune --keep-builder-cache``) so disk does not grow with every
+  trial; in-progress trials stay. BuildKit cache is kept so the next job
+  does not rebuild. Bare ``prune`` also drops dangling BuildKit cache
   when you need more disk;
 * does not cap live coding trials unless ``EVAL_LLM_MAX_CONCURRENT`` is set.
   Omit Harbor ``-n`` to follow ``-k`` (``-k 20`` runs 20 at once). Docker

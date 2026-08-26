@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ipaddress
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from .constants import (
@@ -83,6 +84,103 @@ def is_harbor_trial_container(name: str) -> bool:
     Returns: true for ``<session>__env-main-1`` style names.
     """
     return f"{HARBOR_IMAGE_SUFFIX}-" in name or name.endswith(HARBOR_IMAGE_SUFFIX)
+
+
+def trial_session_from_container(name: str) -> str | None:
+    """Harbor compose session from a trial container name.
+
+    Parameters: name - Docker container name such as ``todo__abc__env-main-1``.
+
+    Returns: ``todo__abc``, or none when the name is not a Harbor trial container.
+    """
+    if not is_harbor_trial_container(name):
+        return None
+    base = name
+    replica = name.rsplit("-", 1)
+    if len(replica) == 2 and replica[1].isdigit():
+        base = replica[0]
+    if base.endswith(HARBOR_IMAGE_SUFFIX):
+        return base[: -len(HARBOR_IMAGE_SUFFIX)]
+    return None
+
+
+def run_stamp_from_working_dir(working_dir: str) -> str | None:
+    """Extract the evals run stamp from a Harbor compose working directory.
+
+    Parameters: working_dir - compose ``project.working_dir`` (task ``environment/``).
+
+    Returns: ``YYYY-MM-DD_HHMMSS_pid`` when the path is a Harbor task tree.
+    """
+    try:
+        run_dir = Path(working_dir).parents[4]
+    except IndexError:
+        return None
+    stamp = run_dir.name.split("__", 1)[0].strip()
+    return stamp or None
+
+
+def trial_result_path(working_dir: str, session: str) -> Path | None:
+    """Path to Harbor ``result.json`` for a compose session.
+
+    Parameters: working_dir - compose working directory; session - ``task__id``.
+
+    Returns: expected result file, or none when the path is not a Harbor task tree.
+    """
+    path = Path(working_dir)
+    try:
+        harbor_dir = path.parents[3]
+        job_name = path.parents[1].name
+    except IndexError:
+        return None
+    job_dir = harbor_dir / job_name
+    needle = session.lower()
+    try:
+        children = list(job_dir.iterdir()) if job_dir.is_dir() else []
+    except OSError:
+        children = []
+    for child in children:
+        if child.name.lower() == needle:
+            return child / "result.json"
+    return job_dir / session / "result.json"
+
+
+def leftover_harbor_container(
+    name: str,
+    state: str,
+    working_dir: str,
+    *,
+    live_stamps: set[str],
+) -> bool:
+    """Whether a Harbor trial container is safe to force-remove.
+
+    Finished trials (``result.json`` present) are leftovers when Harbor's
+    ``compose down`` failed. Containers from a run with no live slot holder
+    are orphans. Live trials without a result file are kept.
+
+    Parameters: name - container name; state - Docker state (running/exited);
+        working_dir - compose working directory; live_stamps - run stamps
+        still held by a live wrapper pid.
+
+    Returns: true when reclaim should ``docker rm -f`` the container.
+    """
+    session = trial_session_from_container(name)
+    if session is None:
+        return False
+    status = (state or "").strip().lower()
+    if status in {"exited", "dead", "created"}:
+        return True
+    if not working_dir.strip():
+        return True
+    env_dir = Path(working_dir)
+    if not env_dir.is_dir():
+        return True
+    result = trial_result_path(working_dir, session)
+    if result is not None and result.is_file():
+        return True
+    stamp = run_stamp_from_working_dir(working_dir)
+    if stamp and stamp not in live_stamps:
+        return True
+    return False
 
 
 def grant_trial_slots(

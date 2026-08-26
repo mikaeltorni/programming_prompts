@@ -2,9 +2,11 @@
 
 Harbor names one compose project per trial (``calculator__abc1234__env``),
 so ``docker compose up --build`` tags a unique ``*__env-main`` image even
-when layers are cached. Automatic reclaim only removes exited containers
-and empty networks (IPAM). Deleting unused image tags and BuildKit cache
-is opt-in so the next trial can reuse layers instead of rebuilding.
+when layers are cached. Harbor's ``compose down`` after each trial can
+fail (overlay/uv snapshot races), leaving ``sleep infinity`` containers
+Up. Reclaim force-removes those leftovers — finished trials and orphans
+from dead wrappers — then drops unused image tags. BuildKit cache stays
+so the next job reuses layers.
 """
 
 from __future__ import annotations
@@ -13,7 +15,10 @@ import subprocess
 from typing import Any
 
 from .log import log
-from .math import is_harbor_trial_container, is_harbor_trial_image
+from .math import (
+    is_harbor_trial_image,
+    leftover_harbor_container,
+)
 
 
 def _docker(args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -48,27 +53,54 @@ def _docker_rows(args: list[str]) -> list[str]:
 
 
 def prune_exited_harbor_containers() -> list[str]:
-    """Remove exited Harbor trial containers that hold networks and images.
+    """Remove leftover Harbor trial containers, including failed ``compose down``.
+
+    Drops exited containers always. Also force-removes still-running
+    ``sleep infinity`` trials whose ``result.json`` exists (Harbor already
+    finished) or whose run stamp has no live wrapper. In-progress trials
+    without a result file are kept.
 
     Parameters: none.
 
     Returns: removed container ids.
     """
+    from .slots import live_run_stamps
+
     rows = _docker_rows(
-        ["ps", "-a", "--filter", "status=exited", "--format", "{{.ID}}\t{{.Names}}"]
+        [
+            "ps",
+            "-a",
+            "--format",
+            '{{.ID}}\t{{.Names}}\t{{.State}}\t{{.Label "com.docker.compose.project.working_dir"}}',
+        ]
     )
+    live_stamps = live_run_stamps()
     removed: list[str] = []
+    running_leftovers = 0
     for row in rows:
-        container_id, _, name = row.partition("\t")
-        if not container_id or not is_harbor_trial_container(name):
+        parts = row.split("\t")
+        if len(parts) < 3:
+            continue
+        container_id = parts[0]
+        name = parts[1]
+        state = parts[2]
+        working_dir = parts[3] if len(parts) > 3 else ""
+        if not container_id or not leftover_harbor_container(
+            name, state, working_dir, live_stamps=live_stamps
+        ):
             continue
         proc = _docker(["rm", "-f", container_id])
         if proc.returncode == 0:
             removed.append(container_id)
+            if state.strip().lower() == "running":
+                running_leftovers += 1
         else:
             log(f"could not remove container {name}: {(proc.stderr or '').strip()}")
     if removed:
-        log(f"removed {len(removed)} exited Harbor container(s)")
+        log(
+            f"removed {len(removed)} leftover Harbor container(s) "
+            f"({running_leftovers} still running)"
+        )
     return removed
 
 
@@ -141,7 +173,8 @@ def reclaim_docker_leftovers(
 ) -> dict[str, Any]:
     """Free leftover Harbor Docker state in a safe order.
 
-    Automatic evals reclaim drops exited containers, empty networks, and
+    Automatic evals reclaim drops leftover Harbor containers (exited, or
+    still running after a failed ``compose down``), empty networks, and
     unused ``*__env-main`` image *tags* so disk does not grow with every
     trial. BuildKit cache stays so the next job reuses layers instead of
     rebuilding. Passing ``builder_cache`` is the manual full-disk path.
