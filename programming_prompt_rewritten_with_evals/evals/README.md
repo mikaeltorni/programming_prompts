@@ -98,14 +98,13 @@ Code `claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
 (`--reasoning-effort`). Judge defaults match those models at **low** effort
 unless `evalAgentModel` / `evalAgentReasoningEffort` override them.
 
-After each job the wrapper prints trials, then categorized rollups: **by
+After each job the wrapper prints trials, then reprints the interesting
+ones **above the recap** (with source): **failed** trials on a positive run,
+**successful** trials on a baseline run. Then categorized rollups: **by
 harness**, **by eval agent**, **harness × eval agent**, **harness × skill**,
 **harness × task**, **harness × task × skill**, plus a harness comparison
 table when both ran, and a GRAND TOTAL that includes the run's wall-clock
-runtime (`Xh YYm ZZs`, after the run stamp and before the mode). After the
-GRAND TOTAL the console reprints the interesting trials at the **bottom of
-the window** (with source): **failed** trials on a positive run, **successful**
-trials on a baseline run. Per-eval-agent answers show as
+runtime (`Xh YYm ZZs`, after the run stamp and before the mode). Per-eval-agent answers show as
 `judge[srp/cc]` / `judge[srp/codex]`. A skill (and the trial) passes only
 when **every** selected eval agent says yes.
 
