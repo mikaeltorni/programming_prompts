@@ -13,14 +13,17 @@ For every function or method you write or edit:
 1. At the **start** of the body, `print` each incoming parameter's **actual
    name** and value. Example: `print(f"command={command!r}")` or
    `print(f"operation={operation!r} value={value!r}")`.
-   A print at entry with no names is enough when the function has no
-   parameters.
+   When the function has **no parameters**, any entry `print(...)` is
+   enough — `print("entry")`, `print("_list_items()")`, or
+   `print("parameters=none")` all count.
 2. Just **before each `return`** (or before falling off the end when there is
    an implicit `None`), `print` the value that is about to leave the function.
 
-Do **not** rename parameters in the print. These are failures:
+Do **not** rename parameters in the print. These are failures **only when
+the function has named parameters**:
 
-- a generic label such as `input=` / `args=` / `params=`
+- a generic label such as `input=` / `args=` / `params=` standing in for
+  those names
 - packing several parameters into one unlabeled tuple, e.g.
   `print(f"input=({operation!r}, {value!r})")`
 

@@ -212,6 +212,11 @@ def run_self_test() -> int:
                 "input=" in text and "unlabeled tuple" in text,
                 "generic input= / unlabeled tuples are a no",
             ),
+            (
+                "logging_no_param_entry_print",
+                "parameters=none" in text and "no parameters" in text,
+                "no-parameter functions may print parameters=none",
+            ),
         ]:
             check(*item)
     else:
