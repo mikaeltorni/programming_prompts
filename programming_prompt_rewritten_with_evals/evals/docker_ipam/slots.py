@@ -253,10 +253,14 @@ def _validate_request(slots: int, holder: str) -> None:
         raise ValueError("--holder is required")
 
 
-def _capacity_snapshot(state: dict[str, Any], holder: str) -> dict[str, int]:
+def _capacity_snapshot(
+    state: dict[str, Any], holder: str, *, ignore_ipam: bool = False
+) -> dict[str, int]:
     """Collect capacity data needed for a grant.
 
-    Parameters: state - locked semaphore state; holder - requesting holder.
+    Parameters: state - locked semaphore state; holder - requesting holder;
+        ignore_ipam - skip Docker user-defined-network accounting (trials on
+        docker0).
 
     Returns: capacity and occupancy values.
     """
@@ -265,6 +269,15 @@ def _capacity_snapshot(state: dict[str, Any], holder: str) -> dict[str, int]:
     reaped = reap_holders(state)
     if reaped:
         log(f"reaped {len(reaped)} dead slot holder(s)")
+    reserved = reserved_slots(state, excluding=holder)
+    if ignore_ipam:
+        return {
+            "cap": LLM_MAX_CONCURRENT_UNLIMITED,
+            "used": 0,
+            "max_slots": LLM_MAX_CONCURRENT_UNLIMITED,
+            "reserved": reserved,
+            "free": LLM_MAX_CONCURRENT_UNLIMITED,
+        }
     try:
         networks = list_networks()
     except RuntimeError as exc:
@@ -280,7 +293,6 @@ def _capacity_snapshot(state: dict[str, Any], holder: str) -> dict[str, int]:
     used = user_defined_count(networks) if networks else 0
     harbor_live = harbor_trial_count(networks) if networks else 0
     max_slots = max(1, cap - SAFETY_MARGIN)
-    reserved = reserved_slots(state, excluding=holder)
     occupied = occupied_slots(used, harbor_live, reserved)
     return {
         "cap": cap,
@@ -331,11 +343,18 @@ def _try_grant(
             f"(llm_cap={llm_cap} IPAM free={snapshot['free']} "
             f"max_slots={snapshot['max_slots']})"
         )
-    log(
-        f"acquired {need} slot(s) for {holder} "
-        f"(reserved others={snapshot['reserved']} llm_cap={llm_cap}; "
-        f"docker user-defined={snapshot['used']}/{snapshot['cap']})"
-    )
+    if snapshot["cap"] == LLM_MAX_CONCURRENT_UNLIMITED:
+        log(
+            f"acquired {need} slot(s) for {holder} "
+            f"(reserved others={snapshot['reserved']} llm_cap={llm_cap}; "
+            "IPAM ignored, trials use docker0)"
+        )
+    else:
+        log(
+            f"acquired {need} slot(s) for {holder} "
+            f"(reserved others={snapshot['reserved']} llm_cap={llm_cap}; "
+            f"docker user-defined={snapshot['used']}/{snapshot['cap']})"
+        )
     return need
 
 
@@ -380,10 +399,14 @@ def acquire_slots(
     pid: int,
     *,
     timeout_sec: float | None = None,
+    ignore_ipam: bool = False,
 ) -> int:
-    """Reserve Docker network slots, blocking as needed.
+    """Reserve coding-trial slots, blocking as needed.
 
-    Parameters: slots - requested concurrent trials; holder - reservation identifier; pid - owning process; timeout_sec - optional wait limit.
+    Parameters: slots - requested concurrent trials; holder - reservation
+        identifier; pid - owning process; timeout_sec - optional wait limit;
+        ignore_ipam - do not clamp to Docker user-defined-network capacity
+        (Harbor trials on docker0).
 
     Returns: granted slot count.
     """
@@ -393,9 +416,12 @@ def acquire_slots(
     reclaim_docker_leftovers(images=True, builder_cache=False)
     started = time.monotonic()
     last_log = started - WAIT_LOG_SEC
+    snapshot: dict[str, int] = {}
     while True:
         with with_lock(write=True) as state:
-            snapshot = _capacity_snapshot(state, holder)
+            snapshot = _capacity_snapshot(
+                state, holder, ignore_ipam=ignore_ipam
+            )
             granted = _try_grant(state, slots, holder, pid, snapshot)
             if granted is not None:
                 return granted

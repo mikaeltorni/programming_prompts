@@ -25,6 +25,18 @@ harbor_uses_docker_env() {
   return 0
 }
 
+harbor_uses_per_trial_networks() {
+  # True when each Harbor trial still allocates a user-defined Docker network.
+  # The task-template compose overlay uses network_mode: bridge (docker0), so
+  # local docker jobs no longer consume IPAM slots. Cloud --env is not docker.
+  harbor_uses_docker_env || return 1
+  local compose="${SCRIPT_DIR}/task-template/environment/docker-compose.yaml"
+  if [[ -f "$compose" ]] && grep -Eq '^[[:space:]]*network_mode:[[:space:]]*bridge[[:space:]]*$' "$compose"; then
+    return 1
+  fi
+  return 0
+}
+
 release_docker_slots() {
   # Drop this shell's named Harbor IPAM reservation.
   if [[ -n "${_docker_slot_holder}" ]]; then
@@ -55,17 +67,25 @@ acquire_docker_slots() {
   # Reserve *slots* trial networks for *holder* in the *current* shell.
   # Do not wrap this function in $() — that subshell would lose the holder
   # and leak the reservation until the wrapper process exits.
+  # Pass ignore-ipam as $4 when trials use docker0 (no per-trial networks).
   local holder="$1"
   local slots="$2"
   local -n _granted_out="${3:-_docker_slots_granted}"
-  echo "Reserving up to $slots Docker network slot(s) for $holder (blocks if IPAM is full)." >&2
+  local ignore_ipam="${4:-}"
+  local -a acquire_args=(acquire --slots "$slots" --holder "$holder" --pid "${BASHPID:-$$}")
+  if [[ "$ignore_ipam" == "ignore-ipam" ]]; then
+    acquire_args+=(--ignore-ipam)
+    echo "Reserving up to $slots coding-trial slot(s) for $holder (default bridge; IPAM not used)." >&2
+  else
+    echo "Reserving up to $slots Docker network slot(s) for $holder (blocks if IPAM is full)." >&2
+  fi
   if [[ -n "${_docker_slot_holder}" && "${_docker_slot_holder}" != "$holder" ]]; then
     echo "Releasing leftover Docker slot holder $_docker_slot_holder before $holder" >&2
     python3 "$DOCKER_NETWORKS" release --holder "$_docker_slot_holder" || true
     _docker_slot_holder=""
   fi
   _docker_slot_holder="$holder"
-  _granted_out="$(python3 "$DOCKER_NETWORKS" acquire --slots "$slots" --holder "$holder" --pid "${BASHPID:-$$}")"
+  _granted_out="$(python3 "$DOCKER_NETWORKS" "${acquire_args[@]}")"
 }
 
 set_harbor_n_concurrent() {

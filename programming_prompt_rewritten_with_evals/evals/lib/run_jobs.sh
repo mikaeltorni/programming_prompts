@@ -75,12 +75,21 @@ run_one_job() {
 
   local docker_holder="${RUN_STAMP}:${job_name}"
   local granted_slots=""
-  if harbor_uses_docker_env; then
+  if harbor_uses_per_trial_networks; then
     acquire_docker_slots "$docker_holder" "$concurrent_for_job" granted_slots
     if [[ "$user_passed_n" -eq 0 ]]; then
       echo "Job $job_name omitted -n; following -k $attempts_per_task → $granted_slots concurrent trial(s)." >&2
     elif [[ "$granted_slots" != "$concurrent_for_job" ]]; then
       echo "Docker IPAM/LLM cap clamped job $job_name -n $concurrent_for_job → $granted_slots" >&2
+    fi
+    set_harbor_n_concurrent harbor_args "$granted_slots"
+  elif harbor_uses_docker_env; then
+    echo "Job $job_name: Harbor trials use Docker's default bridge (no per-trial user-defined network)." >&2
+    acquire_docker_slots "$docker_holder" "$concurrent_for_job" granted_slots ignore-ipam
+    if [[ "$user_passed_n" -eq 0 ]]; then
+      echo "Job $job_name omitted -n; following -k $attempts_per_task → $granted_slots concurrent trial(s)." >&2
+    elif [[ "$granted_slots" != "$concurrent_for_job" ]]; then
+      echo "LLM cap clamped job $job_name -n $concurrent_for_job → $granted_slots" >&2
     fi
     set_harbor_n_concurrent harbor_args "$granted_slots"
   else

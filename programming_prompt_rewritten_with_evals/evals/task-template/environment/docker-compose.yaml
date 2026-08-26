@@ -1,0 +1,9 @@
+# Harbor's generated compose otherwise creates one user-defined network
+# (`<session>__env_default`) per trial. Stock Docker IPAM only has ~28 of
+# those /16 slots, so a -k 20 wave plus leftover nets exhausts the pool.
+# `network_mode: bridge` puts every trial on Docker's default docker0 (no
+# extra IPAM subnet). Agents still have internet. Isolation is one shared
+# L2; container names stay unique per Harbor session.
+services:
+  main:
+    network_mode: bridge

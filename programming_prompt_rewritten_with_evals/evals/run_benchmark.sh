@@ -42,15 +42,15 @@
 # second run). evalAgent does not multiply trials; it reruns the LLM judge
 # on each trial (serialized unless EVAL_JUDGE_WORKERS > 1).
 #
-# Parallel terminals: each Harbor trial creates a Docker network AND a unique
-# compose image tag. Docker's default IPAM only has ~30 user-defined /16 slots,
-# and leftover ``*__env-main`` images plus BuildKit cache fill the disk.
-# docker_networks.py prunes exited containers and empty nets (keeps images
-# and BuildKit cache) and holds a cross-process slot lock.
+# Parallel terminals: each Harbor trial is a Docker container on the default
+# bridge (task-template `network_mode: bridge`). That avoids Docker IPAM's
+# ~28 user-defined /16 slots. Leftover ``*__env-main`` images plus BuildKit
+# cache still fill the disk; docker_networks.py prunes leftover containers
+# and empty nets (keeps images and BuildKit cache).
 # Live coding trials have no LLM cap unless EVAL_LLM_MAX_CONCURRENT is set.
-# Omit Harbor -n to follow -k (so -k 20 runs 20 trials at once). Docker IPAM
-# still limits live networks (~28 on stock Docker). Set
-# EVAL_LLM_MAX_CONCURRENT=2 to restore the old quota-safe cap.
+# Omit Harbor -n to follow -k (so -k 20 runs 20 trials at once). Pass a larger
+# -n (up to tasks×k) to run more of the wave at once; IPAM no longer clamps.
+# EVAL_LLM_MAX_CONCURRENT=2 restores the old quota-safe cap.
 # --run-separately is one job with all selected skills.
 
 set -euo pipefail
@@ -329,7 +329,7 @@ echo "Selected skill(s): ${SELECTED_SKILLS[*]}" >&2
 mapfile -t SELECTED_TASKS < <(resolve_tasks "$TASKS_ARG")
 echo "Selected coding task(s): ${SELECTED_TASKS[*]}" >&2
 if [[ -z "${EVAL_LLM_MAX_CONCURRENT:-}" ]]; then
-  echo "LLM trial cap: unset (no LLM cap; Docker IPAM only). Omit -n to follow -k." >&2
+  echo "LLM trial cap: unset (no LLM cap). Trials use Docker's default bridge; omit -n to follow -k." >&2
 else
   echo "LLM trial cap: EVAL_LLM_MAX_CONCURRENT=$EVAL_LLM_MAX_CONCURRENT (coding trials live on this machine)" >&2
 fi
@@ -349,7 +349,11 @@ if [[ "$INSTALL_ONLY" -eq 1 ]]; then
     install_config="$JOBS/harbor.${install_job_name}.yaml"
     write_job_config "$install_harness" "$install_config" "$(skills_yaml_block "$SKILLS_ROOT/${SELECTED_SKILLS[0]}")" "$install_tasks_root"
     echo "Reinstalling/verifying $install_harness @$install_version inside the task environment" >&2
-    acquire_docker_slots "${RUN_STAMP}:${install_job_name}" 1 >/dev/null
+    if harbor_uses_per_trial_networks; then
+      acquire_docker_slots "${RUN_STAMP}:${install_job_name}" 1 >/dev/null
+    elif harbor_uses_docker_env; then
+      acquire_docker_slots "${RUN_STAMP}:${install_job_name}" 1 _install_slots ignore-ipam >/dev/null
+    fi
     run_harbor_for_harness "$install_harness" \
       -c "$install_config" \
       -o "$JOBS" \

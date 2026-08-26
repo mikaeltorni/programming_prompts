@@ -1,11 +1,9 @@
 """Host Docker IPAM hygiene for parallel Harbor eval jobs.
 
-Harbor creates one user-defined bridge per trial, named
-``<session>__env_default``. Docker's default local-scope pools hand each of
-those a whole ``/16`` (about 30 user-defined networks on the machine). A
-dozen ``./run_benchmark.sh … -n 5`` terminals therefore exhaust IPAM
-(``all predefined address pools have been fully subnetted``) and crash in
-Harbor ``_prepare``.
+This suite's tasks overlay ``network_mode: bridge`` so each trial is still a
+container but does **not** allocate a user-defined network. Stock Docker IPAM
+(~28 ``/16`` user-defined nets) is no longer the concurrency cap. Older jobs
+may still leave ``<session>__env_default`` networks; this helper prunes those.
 
 This helper:
 
@@ -16,13 +14,15 @@ This helper:
   does not rebuild. Bare ``prune`` also drops dangling BuildKit cache
   when you need more disk;
 * does not cap live coding trials unless ``EVAL_LLM_MAX_CONCURRENT`` is set.
-  Omit Harbor ``-n`` to follow ``-k`` (``-k 20`` runs 20 at once). Docker
-  IPAM still limits live networks (~28 on stock Docker).
+  Omit Harbor ``-n`` to follow ``-k`` (``-k 20`` runs 20 at once). Pass a
+  larger ``-n`` (up to tasks×k) to run more of the wave at once.
   ``EVAL_LLM_MAX_CONCURRENT=2`` restores the old quota-safe cap;
+* ``acquire --ignore-ipam`` reserves coding-trial slots without clamping to
+  Docker user-defined-network capacity (default for this suite);
 * estimates remaining IPAM slots from ``/etc/docker/daemon.json`` or Docker's
-  built-in pools;
+  built-in pools when a job still uses per-trial networks;
 * holds a cross-process counting semaphore so concurrent wrappers wait
-  instead of stampeding.
+  instead of stampeding when an LLM cap is set.
 
 Stdout is machine-readable (slot counts / JSON). Diagnostics go to stderr.
 
@@ -33,6 +33,7 @@ Usage (from ``evals/``)::
     python3 docker_networks.py prune --ipam-only
     python3 docker_networks.py prune
     python3 docker_networks.py acquire --slots 5 --holder STAMP --pid $$
+    python3 docker_networks.py acquire --slots 20 --holder STAMP --pid $$ --ignore-ipam
     python3 docker_networks.py release --holder STAMP
     python3 docker_networks.py release --pid $$
     python3 docker_networks.py fair-share --jobs 4 --requested 5
@@ -105,6 +106,11 @@ def _build_parser() -> argparse.ArgumentParser:
     acq.add_argument("--holder", required=True)
     acq.add_argument("--pid", type=int, default=os.getpid())
     acq.add_argument("--timeout-sec", type=float, default=None)
+    acq.add_argument(
+        "--ignore-ipam",
+        action="store_true",
+        help="Do not clamp to Docker user-defined-network capacity (docker0 trials)",
+    )
 
     rel = sub.add_parser("release", help="Drop a slot reservation")
     rel.add_argument("--holder", default="", help="Holder id passed to acquire")
@@ -175,6 +181,7 @@ def _acquire(args: Any) -> int:
             args.holder,
             args.pid,
             timeout_sec=args.timeout_sec,
+            ignore_ipam=args.ignore_ipam,
         )
     except (TimeoutError, ValueError) as exc:
         log(str(exc))
