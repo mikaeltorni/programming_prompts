@@ -25,6 +25,10 @@ When a function has **no parameters**, any entry `print(...)` is a yes
 — including `print("entry")`, `print("_list_items()")`, and
 `print("parameters=none")`. Those are not generic-label failures.
 
+Score only `def` / `async def` / methods. `lambda` expressions do **not**
+need entry or exit prints — including a parameterless dispatch table such
+as `{"+": lambda: left + right}`. Missing prints on a lambda is not a no.
+
 Use of `print(...)` only — not `logging`, log files, or a custom logger.
 
 Do **not** require prints before `raise` / exception exits. Exception paths

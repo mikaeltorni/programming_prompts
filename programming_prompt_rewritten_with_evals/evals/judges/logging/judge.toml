@@ -10,7 +10,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "entry_exit_prints"
-description = "every named parameter (including optional None) printed by real name at entry, including several names on one print; no-parameter functions any entry print; print return values before each return (ignore raise)"
+description = "def/async def/methods print every named parameter (including optional None) by real name at entry, including several names on one print; lambdas need no prints; no-parameter functions any entry print; print return values before each return (ignore raise)"
 type = "binary"
 
 [scoring]

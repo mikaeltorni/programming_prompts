@@ -302,6 +302,11 @@ def run_self_test() -> int:
                 "same line" in text and "unlabeled tuple" in text,
                 "one print with real names is a yes, not a generic label",
             ),
+            (
+                "logging_ignores_lambdas",
+                "lambda" in text and "not a no" in text,
+                "lambda dispatch tables are not a logging failure",
+            ),
         ]:
             check(*item)
     else:
