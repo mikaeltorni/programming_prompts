@@ -10,6 +10,7 @@ from typing import Any
 
 from .grok import DEFAULT_MAX_TURNS, build_grok_command, score_with_grok
 from .homes import claude_judge_env, claude_wrapper_script
+from .ratelimit import looks_like_judge_rate_limit
 from .reliability import unreliable_score_reason
 from .rewardkit import (
     _rewardkit_error_excerpt,
@@ -60,6 +61,19 @@ def run_self_test() -> int:
     )
     block = criteria_block(criteria)
     check("criteria_token", '"yes" or "no"' in block, "prompt lists yes/no scores")
+    check(
+        "ratelimit_detects_claude_is_error",
+        looks_like_judge_rate_limit(
+            "CalledProcessError: Agent CLI 'claude' exited with code 1: "
+            '{"is_error":true,"duration_api_ms":0}'
+        ),
+        "Claude is_error + exit 1 is a rate-limit skip",
+    )
+    check(
+        "ratelimit_ignores_scored_no",
+        not looks_like_judge_rate_limit("Judge srp: raw=no reasoning=too many helpers"),
+        "a scored no is not a rate-limit",
+    )
 
     source = Path(__file__).resolve()
     judge_candidates = [

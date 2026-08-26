@@ -248,6 +248,18 @@ def _check_results(record) -> None:
             str(headers[:5]),
         )
         record(
+            "results_ratelimit_after_pass",
+            "Pass" in headers
+            and "RateLimit" in headers
+            and headers.index("RateLimit") == headers.index("Pass") + 1,
+            str(headers),
+        )
+        record(
+            "results_ratelimit_zero",
+            bool(rows) and rows[0].get("RateLimit") == "0",
+            rows[0].get("RateLimit", "") if rows else "missing",
+        )
+        record(
             "results_runtime_hms",
             bool(rows)
             and rows[0]["Runtime"] == "1h 02m 03s"
@@ -313,6 +325,40 @@ def _check_results(record) -> None:
             and len(parse_results_table(replaced)) == 1
             and parse_results_table(replaced)[0]["Run"] == "2026-08-16_120000_3",
             "legacy one-liners are wiped",
+        )
+
+    with tempfile.TemporaryDirectory(prefix="archive-ratelimit-") as raw_rl:
+        rl_root = Path(raw_rl)
+        rl_run = _write_results_fixture(
+            rl_root, "2026-08-26_130000_rl", mode="positive",
+            harness="codex", eval_agent="cc", overall=1.0, skill_ok=1.0,
+            started_at="2026-08-26T10:00:00+00:00",
+            archived_at="2026-08-26T10:10:00+00:00",
+        )
+        flagged = rl_run / "jobs" / "codex-skills" / "trials" / "counter__flag"
+        flagged.mkdir(parents=True)
+        (flagged / "01-reward.json").write_text(
+            '{"reward": 0.0, "ratelimit": true}\n', encoding="utf-8"
+        )
+        heuristic = rl_run / "jobs" / "codex-skills" / "trials" / "todo__heur"
+        heuristic.mkdir(parents=True)
+        (heuristic / "01-reward.json").write_text('{"reward": 0.0}\n', encoding="utf-8")
+        (heuristic / "10-test-stdout.txt").write_text(
+            "CalledProcessError: Agent CLI 'claude' exited with code 1: "
+            '{"is_error":true,"duration_api_ms":0}\n',
+            encoding="utf-8",
+        )
+        rl_rows = parse_results_table(
+            rebuild_results_index(rl_root).read_text(encoding="utf-8")
+        )
+        record(
+            "results_ratelimit_excludes_from_pass",
+            bool(rl_rows)
+            and rl_rows[0]["Trials"] == "3"
+            and rl_rows[0]["Scored"] == "1"
+            and rl_rows[0]["Pass"] == "1/1"
+            and rl_rows[0]["RateLimit"] == "2",
+            str(rl_rows[0]) if rl_rows else "missing",
         )
 
 

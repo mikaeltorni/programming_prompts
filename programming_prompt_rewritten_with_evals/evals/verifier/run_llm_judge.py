@@ -4,9 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import subprocess
 from pathlib import Path
 
 from llm_judge.grok import DEFAULT_MAX_TURNS, score_with_grok
+from llm_judge.log import log
+from llm_judge.ratelimit import looks_like_judge_rate_limit
 from llm_judge.rewardkit import score_with_rewardkit
 from llm_judge.scores import write_reward
 from llm_judge.self_test import run_self_test
@@ -33,32 +36,44 @@ def run_eval_agent(
     template, criteria, toml_timeout = load_judge_dir(judge_dir)
     budget = timeout or toml_timeout
     files = list_workspace_python(workspace)
-    if agent == "grok":
-        raw, rows = score_with_grok(
-            template=template,
-            criteria=criteria,
-            workspace=workspace,
-            files=files,
-            model=model,
-            effort=effort,
-            timeout=budget,
-            max_turns=max_turns,
-        )
-    elif agent in {"cc", "codex"}:
-        raw, rows = score_with_rewardkit(
-            agent=agent,
-            judge_dir=judge_dir,
-            workspace=workspace,
-            files=files,
-            model=model,
-            effort=effort,
-            timeout=budget,
-            criteria=criteria,
-        )
-    else:
-        raise ValueError(
-            f"unknown eval agent {agent!r} (expected grok, cc, or codex)"
-        )
+    try:
+        if agent == "grok":
+            raw, rows = score_with_grok(
+                template=template,
+                criteria=criteria,
+                workspace=workspace,
+                files=files,
+                model=model,
+                effort=effort,
+                timeout=budget,
+                max_turns=max_turns,
+            )
+        elif agent in {"cc", "codex"}:
+            raw, rows = score_with_rewardkit(
+                agent=agent,
+                judge_dir=judge_dir,
+                workspace=workspace,
+                files=files,
+                model=model,
+                effort=effort,
+                timeout=budget,
+                criteria=criteria,
+            )
+        else:
+            raise ValueError(
+                f"unknown eval agent {agent!r} (expected grok, cc, or codex)"
+            )
+    except (subprocess.CalledProcessError, TimeoutError) as exc:
+        err = ""
+        if isinstance(exc, subprocess.CalledProcessError):
+            err = str(exc.stderr or exc.output or exc)
+        else:
+            err = str(exc)
+        if looks_like_judge_rate_limit(err):
+            log(f"evalAgent {agent} rate-limited; recording skip not a scored no")
+            write_reward(output, [], err, agent=agent, ratelimit=True)
+            return
+        raise
     write_reward(output, rows, raw, agent=agent)
 
 

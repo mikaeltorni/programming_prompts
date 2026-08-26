@@ -295,6 +295,7 @@ def write_reward(
     raw_output: str,
     *,
     agent: str = "grok",
+    ratelimit: bool = False,
 ) -> None:
     """Write ``reward-*.json`` plus sibling details JSON.
 
@@ -303,28 +304,45 @@ def write_reward(
         rows: Per-criterion scores from :func:`parse_scores`.
         raw_output: Unparsed judge stdout kept for audits.
         agent: Eval-agent id stored in details (``grok``, ``cc``, ``codex``).
+        ratelimit: When true, mark the score as a rate-limit skip, not a no.
     """
-    overall = 1.0 if rows and all(float(row["reward"]) >= 1.0 for row in rows) else 0.0
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(
-        json.dumps({"reward": overall}, indent=2) + "\n", encoding="utf-8"
+    overall = 0.0 if ratelimit else (
+        1.0 if rows and all(float(row["reward"]) >= 1.0 for row in rows) else 0.0
     )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    payload: dict[str, Any] = {"reward": overall}
+    if ratelimit:
+        payload["ratelimit"] = True
+        payload["error"] = "ratelimit"
+    output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    criteria_rows = rows
+    if ratelimit and not criteria_rows:
+        criteria_rows = [{
+            "name": "judge",
+            "reward": 0.0,
+            "raw": "ratelimit",
+            "description": "eval agent rate-limited",
+            "reasoning": "failed due to ratelimit",
+        }]
     details = {
         "reward": {
             "score": overall,
             "aggregation": "all_pass",
             "kind": "agent",
             "agent": agent,
+            "ratelimit": ratelimit,
             "criteria": [
                 {
                     "name": row["name"],
                     "value": row["reward"],
-                    "raw": row["raw"],
+                    "raw": "ratelimit" if ratelimit else row["raw"],
                     "weight": 1.0,
                     "description": row["description"],
-                    "reasoning": row["reasoning"],
+                    "reasoning": (
+                        "failed due to ratelimit" if ratelimit else row["reasoning"]
+                    ),
                 }
-                for row in rows
+                for row in criteria_rows
             ],
             "judge_output": raw_output[:8000],
         }
