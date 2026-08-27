@@ -108,18 +108,18 @@ run_one_job() {
 run_jobs_for_harness() {
   local harness="$1"
   if [[ "$RUN_SEPARATELY" -eq 1 ]]; then
-    run_separately_jobs_for_harness "$harness"
+    echo "NOTE: --run-separately does not start extra Harbor jobs." >&2
+    echo "All selected skills (${SELECTED_SKILLS[*]}) run together in one job for harness=$harness." >&2
+  fi
+  SELECTED_SKILLS_FOR_JOB=("${SELECTED_SKILLS[@]}")
+  if [[ "$BASELINE" -eq 1 ]]; then
+    run_one_job "$harness" "$(harbor_job_name "${harness}-baseline")" "baseline"
   else
-    SELECTED_SKILLS_FOR_JOB=("${SELECTED_SKILLS[@]}")
-    if [[ "$BASELINE" -eq 1 ]]; then
-      run_one_job "$harness" "$(harbor_job_name "${harness}-baseline")" "baseline"
-    else
-      local -a skill_paths=()
-      local skill
-      for skill in "${SELECTED_SKILLS[@]}"; do
-        skill_paths+=("$SKILLS_ROOT/$skill")
-      done
-      run_one_job "$harness" "$(harbor_job_name "${harness}-skills")" "positive" "${skill_paths[@]}"
-    fi
+    local -a skill_paths=()
+    local skill
+    for skill in "${SELECTED_SKILLS[@]}"; do
+      skill_paths+=("$SKILLS_ROOT/$skill")
+    done
+    run_one_job "$harness" "$(harbor_job_name "${harness}-skills")" "positive" "${skill_paths[@]}"
   fi
 }

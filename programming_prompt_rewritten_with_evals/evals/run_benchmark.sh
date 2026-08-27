@@ -117,7 +117,6 @@ source "$SCRIPT_DIR/lib/prepare_tasks.sh"
 source "$SCRIPT_DIR/lib/archive_run.sh"
 source "$SCRIPT_DIR/lib/harbor_invoke.sh"
 source "$SCRIPT_DIR/lib/run_jobs.sh"
-source "$SCRIPT_DIR/lib/separately_jobs.sh"
 trap on_eval_shell_exit EXIT
 
 echo "Committed CLI fallbacks: Codex $CODEX_VERSION | Claude Code $CLAUDE_VERSION | Grok $GROK_VERSION" >&2
