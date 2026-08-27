@@ -58,11 +58,6 @@ reclaim_docker_leftovers() {
   python3 "$DOCKER_NETWORKS" prune --keep-builder-cache >/dev/null || true
 }
 
-default_n_concurrent() {
-  # Fallback Harbor -n when neither -n nor -k is available (CLI helper).
-  python3 "$DOCKER_NETWORKS" default-n
-}
-
 acquire_docker_slots() {
   # Reserve *slots* trial networks for *holder* in the *current* shell.
   # Do not wrap this function in $() — that subshell would lose the holder
