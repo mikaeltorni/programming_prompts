@@ -373,7 +373,6 @@ echo "Discovered $TASK_COUNT coding task(s) under $TASKS_DIR" >&2
 
 # Estimate total trials for the user. --run-separately no longer multiplies
 # by skill count (one Harbor job, all selected skills).
-SKILL_FACTOR=1
 HARNESS_FACTOR=${#SELECTED_HARNESSES[@]}
 
 if [[ "$BASELINE" -eq 1 ]]; then
@@ -383,8 +382,8 @@ else
 fi
 init_run_archive "$RUN_MODE_LABEL"
 
-ESTIMATED_TRIALS=$((HARNESS_FACTOR * SKILL_FACTOR * TASK_COUNT * ATTEMPTS_PER_TASK))
-echo "Estimated trials ≈ $ESTIMATED_TRIALS (= $HARNESS_FACTOR harness(es) × $SKILL_FACTOR skill-job(s) × $TASK_COUNT task(s) × $ATTEMPTS_PER_TASK attempts)." >&2
+ESTIMATED_TRIALS=$((HARNESS_FACTOR * TASK_COUNT * ATTEMPTS_PER_TASK))
+echo "Estimated trials ≈ $ESTIMATED_TRIALS (= $HARNESS_FACTOR harness(es) × $TASK_COUNT task(s) × $ATTEMPTS_PER_TASK attempts)." >&2
 
 for HARNESS in "${SELECTED_HARNESSES[@]}"; do
   echo "======== harness=$HARNESS ========" >&2
