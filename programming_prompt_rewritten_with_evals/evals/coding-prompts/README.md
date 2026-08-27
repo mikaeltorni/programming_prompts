@@ -38,9 +38,9 @@ Select a subset when running the benchmark (default is all):
 ```
 
 ```bash
-./run_benchmark.sh --tasks todo,calculator --skills srp,commenting --run-separately -k 5 -n 5
+./run_benchmark.sh --tasks todo,calculator --skills srp,commenting --run-separately -k 5
 ```
 
 ```bash
-./run_benchmark.sh harness=codex evalAgent=cc,codex --tasks calculator --skills srp -k 1 -n 1
+./run_benchmark.sh harness=codex evalAgent=cc,codex --tasks calculator --skills srp -k 1
 ```

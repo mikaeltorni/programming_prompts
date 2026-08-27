@@ -1,5 +1,5 @@
 # Reference baseline config (no skills). Prefer:
-#   ./run_benchmark.sh harness=codex --baseline --skills srp,commenting -k 5 -n 5
+#   ./run_benchmark.sh harness=codex --baseline --skills srp,commenting -k 5
 # Judges for the selected skills still score the written code.
 
 agents:

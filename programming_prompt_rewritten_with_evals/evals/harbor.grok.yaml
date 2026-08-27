@@ -3,8 +3,8 @@
 # judges, and wires BenchmarkGrok with the pinned CLI version and a clean
 # skill tree.
 #
-#   ./run_benchmark.sh harness=grok --skills srp,worktree -k 5 -n 5
-#   ./run_benchmark.sh harness=grok --baseline --skills srp,worktree -k 5 -n 5
+#   ./run_benchmark.sh harness=grok --skills srp,worktree -k 5
+#   ./run_benchmark.sh harness=grok --baseline --skills srp,worktree -k 5
 #
 # Auth: grok login --oauth (SuperGrok) writes ~/.grok/auth.json. The runner
 # forwards that key as XAI_API_KEY and bind-mounts auth.json. Or export

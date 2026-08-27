@@ -83,6 +83,34 @@ acquire_docker_slots() {
   _granted_out="$(python3 "$DOCKER_NETWORKS" "${acquire_args[@]}")"
 }
 
+strip_user_harbor_n_concurrent() {
+  # Drop user -n / --n-concurrent from the nameref array. Harbor concurrency
+  # always follows -k: 5 tasks × -k 20 with -n 100 starts 100 simultaneous
+  # `docker compose build`s and Harbor aborts them with Environment start
+  # timed out after 300s. The same -k 20 with n=k scored every trial.
+  local -n _n_args="$1"
+  local i
+  local -a kept=() ignored=()
+  for ((i = 0; i < ${#_n_args[@]}; i++)); do
+    case "${_n_args[$i]}" in
+      -n|--n-concurrent)
+        ignored+=("${_n_args[$((i + 1))]:-}")
+        i=$((i + 1))
+        ;;
+      --n-concurrent=*)
+        ignored+=("${_n_args[$i]#--n-concurrent=}")
+        ;;
+      *)
+        kept+=("${_n_args[$i]}")
+        ;;
+    esac
+  done
+  _n_args=("${kept[@]}")
+  if [[ ${#ignored[@]} -gt 0 ]]; then
+    echo "Ignoring Harbor -n/--n-concurrent ${ignored[*]}: concurrent trials always follow -k (n>k starves docker compose build; Harbor then hits Environment start timed out after 300s)." >&2
+  fi
+}
+
 set_harbor_n_concurrent() {
   # Rewrite -n / --n-concurrent in the nameref array, or append -n.
   local -n _n_args="$1"
