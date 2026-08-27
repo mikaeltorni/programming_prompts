@@ -217,6 +217,11 @@ def run_self_test() -> int:
                 and "conservatively" in yes_block.lower(),
                 "core-helper if/elif dispatch is a yes, not a conservative no",
             ),
+            (
+                "srp_yes_allows_entrypoint_hour_range",
+                "run_greeter" in yes_block and "hour" in yes_block.lower(),
+                "already-parsed hour range check in run_greeter is yes",
+            ),
         ]
         for item in srp_checks:
             check(*item)

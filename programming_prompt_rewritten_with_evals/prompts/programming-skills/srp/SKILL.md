@@ -23,6 +23,8 @@ Concrete rules:
   or state updates in the entrypoint — a format-only helper is not enough.
   `int()` of an already-split token and `if not text: raise` inside a core
   helper stay that helper's job; do not add a validation-only function for
-  them.
+  them. A range check on an already-parsed value in the entrypoint
+  (`hour` not in 0–23 after `_parse_command`) is still thin — same as a
+  missing-arg raise. Do not add a validation-only helper just for it.
 - Do not leave parsing and core logic mixed in one monolithic function body.
 - Logging prints are a separate skill; they do not merge responsibilities.
