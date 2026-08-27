@@ -1,33 +1,25 @@
 Score whether the Python uses single-responsibility functions/methods.
 
 Answer yes when ALL of these hold:
-- input parsing of the raw command (split/tokenize) lives in its own helper(s),
+- input parsing of the raw command (split/tokenize/partition) lives in its own helper(s),
 - core logic (arithmetic, state change, or conversion) lives in its own
   helper(s), not in the public entrypoint,
 - the public entrypoint is thin: parse → call helpers → return/format.
 
-A thin entrypoint may dispatch with if/elif and return what the helpers
-produced. It may also format already-computed state in one line (for
-example a `get` branch that returns `value=<n>` or `str(counter)`).
-Raising from a dispatch branch is still thin: unknown operation in
-`else`, extra args on one verb (for example `list` with an argument),
-or a missing required argument (`add` without text, `done` without an
-index). Those raises are not mixed parsing. Raising when an
-already-parsed value is out of range in the entrypoint (for example
-`if not 0 <= hour <= 23: raise` in `run_greeter` after
-`_parse_command`) is still thin. That is not mixed parsing and does
-not require a validation-only helper — do not fail it because
-hour-range validation sits in the public entrypoint. A core helper may also
-dispatch operations with if/elif (for example `_apply_operation`) —
-that is still one responsibility (state/arithmetic), not mixed parsing.
-When parse lives in its own helper and the entrypoint is thin, answer
-yes; do not score conservatively because the core helper also
-dispatches or validates already-parsed arguments. Core-logic helpers may
-return a one-line formatted result (for example `added=1`). Converting
-an already-split token with `int()` / `float()` inside a state helper is
-still core logic, not mixed parsing. An empty or missing already-parsed
-argument guard inside a core helper (`if not text: raise`) is still
-that helper's job — do not require a separate validation-only function.
+A thin entrypoint may dispatch with if/elif, return what the helpers
+produced, and format already-computed state in one line. Raising from a
+dispatch branch is still thin: unknown operation, extra or missing
+required arguments, or an already-parsed value out of range. Those
+raises are not mixed parsing. A core helper may also dispatch operations
+with if/elif — that is still one responsibility (state/arithmetic), not
+mixed parsing. When parse lives in its own helper and the entrypoint is
+thin, answer yes; do not score conservatively because the core helper
+also dispatches or validates already-parsed arguments. Core-logic
+helpers may return a one-line formatted result. Converting an
+already-split token with `int()` / `float()` inside a state helper is
+still core logic, not mixed parsing. An empty or out-of-range guard on
+an already-parsed value (`if not text: raise`) is still that function's
+job — do not require a separate validation-only function.
 A format-only helper does not count as extracting core logic if the
 entrypoint still increments or does the real arithmetic. Logging prints
 are scored by the logging skill — they are not an SRP failure.
