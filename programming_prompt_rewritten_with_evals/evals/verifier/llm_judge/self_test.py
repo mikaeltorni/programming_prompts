@@ -202,8 +202,8 @@ def run_self_test() -> int:
             ),
             (
                 "srp_yes_allows_missing_required_arg",
-                "required" in yes_block.lower() and "add" in yes_block.lower(),
-                "thin entrypoint may raise when add/done omit an argument",
+                "required" in yes_block.lower() and "missing" in yes_block.lower(),
+                "thin entrypoint may raise when a required argument is missing",
             ),
             (
                 "srp_yes_allows_helper_empty_guard",
@@ -213,14 +213,16 @@ def run_self_test() -> int:
             ),
             (
                 "srp_yes_allows_core_helper_dispatch",
-                "_apply_operation" in yes_block
+                "core helper" in yes_block.lower()
+                and "dispatch" in yes_block.lower()
                 and "conservatively" in yes_block.lower(),
                 "core-helper if/elif dispatch is a yes, not a conservative no",
             ),
             (
                 "srp_yes_allows_entrypoint_hour_range",
-                "run_greeter" in yes_block and "hour" in yes_block.lower(),
-                "already-parsed hour range check in run_greeter is yes",
+                "already-parsed" in yes_block.lower()
+                and "out of range" in yes_block.lower(),
+                "already-parsed out-of-range check in the entrypoint is yes",
             ),
         ]
         for item in srp_checks:
