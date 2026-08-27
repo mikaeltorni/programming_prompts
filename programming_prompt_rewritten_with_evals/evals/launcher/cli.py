@@ -55,11 +55,6 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="With --preset: log monitor + cascade placements, do not spawn windows",
     )
-    parser.add_argument(
-        "--yes",
-        action="store_true",
-        help="With --preset: accepted for compatibility (confirmation is gone)",
-    )
     args = parser.parse_args(argv)
 
     if args.self_test:
@@ -75,7 +70,6 @@ def main(argv: list[str] | None = None) -> int:
     if args.preset:
         path = resolve_preset(args.preset)
         preset = load_preset_file(path)
-        _ = args.yes
         launch_preset(preset, display, dry_run=args.dry_run)
         return 0
 
