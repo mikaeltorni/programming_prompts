@@ -156,7 +156,7 @@ def _cli(argv: list[str]) -> int:
     """
     usage = (
         "usage: harness_spec.py normalize|eval-agents|eval-models|"
-        "eval-efforts|eval-backend|field|version|mounts|oauth|static-env|"
+        "eval-efforts|field|version|mounts|oauth|static-env|"
         "choices|self-test"
     )
     if len(argv) < 2:
@@ -188,11 +188,6 @@ def _cli(argv: list[str]) -> int:
             agents = tuple(argv[2].split(",")) if len(argv) > 2 and argv[2] else ()
             raw = argv[3] if len(argv) > 3 else ""
             print(",".join(resolve_eval_efforts(agents, raw)), end="")
-            return 0
-        if cmd == "eval-backend":
-            if len(argv) < 3:
-                raise ValueError("eval-backend requires a harness id")
-            print(eval_backend(argv[2]), end="")
             return 0
         if len(argv) < 3:
             raise ValueError(f"{cmd} requires a harness id")
