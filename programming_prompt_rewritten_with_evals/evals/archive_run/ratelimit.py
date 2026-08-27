@@ -8,6 +8,9 @@ from .fsutil import load_json_lenient
 
 # Verifier stdout markers. Do not scan agent trajectories — those can
 # mention HTTP 429 without the *judge* having been rate-limited.
+# Harbor's wrapper log (21-trial.log) is different: when the *coding*
+# agent dies on quota, Harbor writes ApiRateLimitError there. Count
+# that as a rate-limit skip, not a skill no.
 _RATE_LIMIT_NEEDLES = (
     '"is_error"',
     "is_error",
@@ -85,5 +88,18 @@ def trial_is_ratelimited(trial_dir: Path) -> bool:
         except OSError:
             continue
         if looks_like_judge_rate_limit(text):
+            return True
+    for relative in (
+        "21-trial.log",
+        "logs/agent/21-trial.log",
+    ):
+        path = trial_dir / relative
+        if not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if "ApiRateLimitError" in text:
             return True
     return False

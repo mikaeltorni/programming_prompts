@@ -67,7 +67,8 @@ Stay on the feature branch in the worktree (`feat/…`), not `master`/`main`.
 ## Finish without pushing
 
 After the last worktree commit, merge into the default branch from the live
-checkout so the project repo contains the files:
+checkout so the project repo contains the files. Leaving the program only
+in the worktree (never merged) is a **fail**.
 
 ```bash
 cd "$REPO"
