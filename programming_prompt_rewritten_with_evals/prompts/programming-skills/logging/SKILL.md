@@ -37,8 +37,5 @@ the function has named parameters**:
 You do **not** need to print anything before a `raise` / exception exit —
 only normal return paths.
 
-Use only the built-in `print(...)` call. Do **not** create log files, do **not**
-import `logging`, and do **not** add a custom logger helper just for this.
-
-Keep the prints short and local to the function — this is temporary debug-style
-tracing, not a logging framework.
+Use only the built-in `print(...)` call. Keep prints short and local —
+no log files, no `logging` import, and no custom logger helper.
