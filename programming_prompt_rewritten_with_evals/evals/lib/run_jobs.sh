@@ -69,10 +69,6 @@ run_one_job() {
   echo "Model default: $(harness_model_name "$harness") @ reasoning_effort=low (CLI $(harness_cli_version "$harness"))" >&2
   echo "Job $job_name evalAgent: $(eval_agents_csv_for_harness "$harness") (inherit if evalAgent omitted)" >&2
 
-  if [[ "${SEPARATELY_QUIET:-0}" -eq 1 ]]; then
-    append_harbor_quiet harbor_args
-  fi
-
   local docker_holder="${RUN_STAMP}:${job_name}"
   local granted_slots=""
   if harbor_uses_per_trial_networks; then
