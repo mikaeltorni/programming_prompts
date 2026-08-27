@@ -13,8 +13,8 @@ required arguments, or an already-parsed value out of range. Those
 raises are not mixed parsing. A core helper may also dispatch operations
 with if/elif — that is still one responsibility (state/arithmetic), not
 mixed parsing. When parse lives in its own helper and the entrypoint is
-thin, answer yes; do not score conservatively because the core helper
-also dispatches or validates already-parsed arguments. Core-logic
+thin, answer yes. A core helper that also dispatches or validates
+already-parsed arguments is still one responsibility. Core-logic
 helpers may return a one-line formatted result. Converting an
 already-split token with `int()` / `float()` inside a state helper is
 still core logic, not mixed parsing. An empty or out-of-range guard on

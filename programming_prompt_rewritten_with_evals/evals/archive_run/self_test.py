@@ -379,6 +379,21 @@ def _check_results(record) -> None:
             "Harbor verifier/test-stdout.txt is scanned",
         )
 
+    with tempfile.TemporaryDirectory(prefix="archive-agent-rl-") as raw_agent:
+        live = Path(raw_agent) / "trial"
+        live.mkdir()
+        (live / "01-reward.json").write_text('{"reward": 0.0}\n', encoding="utf-8")
+        (live / "21-trial.log").write_text(
+            "Classified failed command as ApiRateLimitError "
+            "(pattern: 'too many requests')\n",
+            encoding="utf-8",
+        )
+        record(
+            "results_ratelimit_reads_coding_agent_log",
+            trial_is_ratelimited(live),
+            "Harbor 21-trial.log ApiRateLimitError is a rate-limit skip",
+        )
+
 
 def _self_test() -> int:
     """Run all archive fixture checks.

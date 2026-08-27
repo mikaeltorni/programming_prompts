@@ -18,6 +18,7 @@ For every `def` / `async def` / method you write or edit:
    enough. Do **not** add prints inside `lambda` expressions.
 2. Just **before each `return`** (or before falling off the end when there is
    an implicit `None`), `print` the value that is about to leave the function.
+   `print(result)` is enough — a `return=` label is not required.
 
 Do **not** rename parameters in the print. These are failures **only when
 the function has named parameters**:

@@ -214,9 +214,8 @@ def run_self_test() -> int:
             (
                 "srp_yes_allows_core_helper_dispatch",
                 "core helper" in yes_block.lower()
-                and "dispatch" in yes_block.lower()
-                and "conservatively" in yes_block.lower(),
-                "core-helper if/elif dispatch is a yes, not a conservative no",
+                and "dispatch" in yes_block.lower(),
+                "core-helper if/elif dispatch is a yes",
             ),
             (
                 "srp_yes_allows_entrypoint_hour_range",
@@ -313,6 +312,11 @@ def run_self_test() -> int:
                 "logging_ignores_lambdas",
                 "lambda" in text and "not a no" in text,
                 "lambda dispatch tables are not a logging failure",
+            ),
+            (
+                "logging_return_print_unlabeled_ok",
+                "print(result)" in text and "not required" in text,
+                "unlabeled print(result) is a yes; return= is optional",
             ),
         ]:
             check(*item)

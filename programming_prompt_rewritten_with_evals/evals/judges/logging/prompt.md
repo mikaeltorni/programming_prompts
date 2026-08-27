@@ -6,7 +6,8 @@ does both:
 - at the start of the body, `print` the incoming parameter names and values
   (a print at entry is enough when there are no parameters),
 - immediately before each `return`, `print` the value about to be returned
-  (or `None` when falling off the end with no meaningful return).
+  (`print(result)` is a yes; a `return=` label is not required). When
+  falling off the end with no meaningful return, print `None`.
 
 Each named parameter must appear **as that name** in the entry print,
 including optional parameters whose value is `None` — omitting
