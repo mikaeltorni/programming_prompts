@@ -1,7 +1,7 @@
 Score whether the Python uses single-responsibility functions/methods.
 
 Answer yes when ALL of these hold:
-- input parsing/validation lives in its own helper(s),
+- input parsing of the raw command (split/tokenize) lives in its own helper(s),
 - core logic (arithmetic, state change, or conversion) lives in its own
   helper(s), not in the public entrypoint,
 - the public entrypoint is thin: parse → call helpers → return/format.
@@ -12,7 +12,12 @@ example a `get` branch that returns `value=<n>` or `str(counter)`).
 Raising from a dispatch branch is still thin: unknown operation in
 `else`, extra args on one verb (for example `list` with an argument),
 or a missing required argument (`add` without text, `done` without an
-index). Those raises are not mixed parsing. A core helper may also
+index). Those raises are not mixed parsing. Raising when an
+already-parsed value is out of range in the entrypoint (for example
+`if not 0 <= hour <= 23: raise` in `run_greeter` after
+`_parse_command`) is still thin. That is not mixed parsing and does
+not require a validation-only helper — do not fail it because
+hour-range validation sits in the public entrypoint. A core helper may also
 dispatch operations with if/elif (for example `_apply_operation`) —
 that is still one responsibility (state/arithmetic), not mixed parsing.
 When parse lives in its own helper and the entrypoint is thin, answer
@@ -32,7 +37,7 @@ Answer no when any of these hold:
   share one function body,
 - the entrypoint still performs core arithmetic or state changes itself
   (beyond one-line formatting of an existing value),
-- there is no parse/validation helper,
+- there is no parse helper,
 - there is no core-logic helper.
 
 Ignore API wording. If unsure, answer no.
