@@ -5,7 +5,6 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 LLM_HELPER="$HERE/run_llm_judge.py"
 JUDGE_POOL="$HERE/judge_pool.py"
-CODEX_AUTH_SOURCE=""
 
 for library in "$HERE/lib/"*.sh; do
   # shellcheck source=/dev/null

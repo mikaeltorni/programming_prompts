@@ -9,7 +9,6 @@ find_codex_auth() {
       "${HOME}/.codex/auth.json"
   do
     if [[ -n "$candidate" && -f "$candidate" ]]; then
-      CODEX_AUTH_SOURCE="$candidate"
       return 0
     fi
   done
