@@ -878,7 +878,9 @@ not default to the pinned CLIs / low reasoning.
 ## Model and run parameters
 
 Override defaults on the command line (or edit `harbor.codex.yaml` /
-`harbor.claude.yaml` / `harbor.grok.yaml`). Useful Harbor flags:
+`harbor.claude.yaml` / `harbor.grok.yaml`). `harbor.codex.baseline.yaml` is
+the same Codex reference with `skills: []` for a hand-run baseline; prefer
+`./run_benchmark.sh --baseline`. Useful Harbor flags:
 
 | Flag | Meaning |
 | --- | --- |
