@@ -147,12 +147,6 @@ guidelines, the installer replaces that tag's body with the complete current
 configured Codex home plus Claude, Cline, Grok, and opencode. This keeps weak or
 free models from having to discover a second file after the session starts.
 
-After installation, verify the deployment with:
-
-```bash
-bash ~/projects/linux_codex_claude_code_setup/scripts/install_programming_plugins.sh verify
-```
-
 ### init-project
 
 Secure project initialization as a direct skill. Guides agents to set up new projects with UV by Astral as the required package manager, implementing a rolling 24-hour publication delay via uv's native `[tool.uv] exclude-newer = "24 hours"` setting to protect against supply-chain attacks. Plain `pip` installs must consume a hash-locked `uv export` rather than resolve dependencies directly.

@@ -47,7 +47,6 @@ Committed fallbacks:
 
 ## Layout
 
-- `analysis/` — design notes
 - `prompts/programming-skills/` — injectable skills (`srp`, `commenting`,
   `logging`, `worktree`, plus `*-vague` controls)
 - `evals/coding-prompts/` — one `.md` per write-from-scratch coding task
