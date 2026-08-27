@@ -14,6 +14,16 @@ generation and deployment.
 **Topics:** ai-agents · claude-code · codex · prompts · skills · plugins ·
 prompt-engineering · coding-standards · refactoring · developer-tooling
 
+## Contents
+
+- [AI coding-agent prompt features](#ai-coding-agent-prompt-features)
+- [Installation and usage of AI coding-agent prompts](#installation-and-usage-of-ai-coding-agent-prompts)
+- [Plugins](#plugins)
+- [Direct Skills](#direct-skills)
+- [Testing](#testing)
+- [Troubleshooting and FAQ](#troubleshooting-and-faq)
+- [Contributing](#contributing)
+
 The install catalog intentionally distinguishes plugins from direct skills:
 
 - Plugins: Commit Guidelines and Linux Desktop Configuration.
@@ -45,7 +55,7 @@ sed -n '1,120p' skills/general-programming-guidelines/SKILL.md
 The command prints the reusable engineering workflow that agents load for
 software tasks.
 
-## Features
+## AI coding-agent prompt features
 
 This repository maintains the canonical engineering standards used across all
 development projects in this workspace. Plugin prompts package exactly one skill
@@ -84,7 +94,7 @@ programming_prompts/
 └── README.md                              # This file
 ```
 
-## Installation and usage
+## Installation and usage of AI coding-agent prompts
 
 Installation belongs to the sibling installer repository. Its committed
 `default.json` maps each prompt to either a plugin or a direct skill and
