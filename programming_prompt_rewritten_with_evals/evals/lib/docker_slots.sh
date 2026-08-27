@@ -98,15 +98,3 @@ set_harbor_n_concurrent() {
     _n_args+=(-n "$n")
   fi
 }
-
-append_harbor_quiet() {
-  # Add Harbor --quiet unless the caller already passed -q/--quiet/--silent.
-  local -n _q_args="$1"
-  local i
-  for ((i = 0; i < ${#_q_args[@]}; i++)); do
-    case "${_q_args[$i]}" in
-      -q|--quiet|--silent) return 0 ;;
-    esac
-  done
-  _q_args+=(--quiet)
-}
