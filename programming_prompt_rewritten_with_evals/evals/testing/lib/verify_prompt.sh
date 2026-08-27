@@ -11,31 +11,33 @@ build_verify_prompt() {
   local positive_dir="$1"
   local baseline_dir="$2"
   cat <<EOF
-Verify the Harbor SRP+commenting eval results at these exact paths:
+Verify the Harbor eval results at these exact paths:
 
 POSITIVE (with skills):
 ${positive_dir}/
-  - ${positive_dir}/codex-srp/          (or codex-* skill job dirs)
-  - ${positive_dir}/codex-commenting/
+  - ${positive_dir}/codex-skills__*/     (one Harbor job; all selected skills)
 
 BASELINE (no skills):
 ${baseline_dir}/
-  - ${baseline_dir}/codex-baseline-srp/
-  - ${baseline_dir}/codex-baseline-commenting/
+  - ${baseline_dir}/codex-baseline__*/   (one Harbor job; same judges, no skills)
 
 Skill definitions (must follow exactly):
 - ${SKILLS_ROOT}/srp/SKILL.md
 - ${SKILLS_ROOT}/commenting/SKILL.md
+- ${SKILLS_ROOT}/logging/SKILL.md
+- ${SKILLS_ROOT}/worktree/SKILL.md
 
 Judge prompts (scoring rules):
 - ${JUDGES_ROOT}/srp/prompt.md
 - ${JUDGES_ROOT}/commenting/prompt.md
+- ${JUDGES_ROOT}/logging/prompt.md
+- worktree is programmatic (check_worktree.py), not an LLM prompt
 
 For every trial under those job dirs:
 1. Read artifacts/Projects/app/*.py, artifacts/Projects/.worktrees/**/*.py (or artifacts/app/*.py), and verifier/reward.json (+ reward-details.json / reward-*.json).
-2. Check line-by-line that positive code follows BOTH skills for sure (SRP: parse helper + separate core-logic helper + thin entrypoint; commenting: every function docstring has description + Parameters: + Returns: exactly).
+2. Check line-by-line that positive code follows ALL selected skills (SRP: parse helper + separate core-logic helper + thin entrypoint; commenting: every def docstring has description + Parameters: + Returns: on the same line; logging: named print at entry and before return on defs, not lambdas; worktree: edits in sibling .worktrees/, then merge).
 3. Confirm the judge verdict matches that structure (positive should be yes/1.0; baseline should be no/0.0).
-4. Confirm baseline code does NOT follow the skills for sure (monolithic entrypoint and/or missing Parameters:/Returns:).
+4. Confirm baseline code does NOT follow the skills (monolithic entrypoint and/or missing Parameters:/Returns: and/or missing entry prints and/or no worktree).
 5. Report any false positives or false negatives with exact file paths. End with pass totals and whether the claimed scores are trustworthy.
 EOF
 }
@@ -80,5 +82,4 @@ require_result_dirs() {
     echo "Baseline results dir not found: $baseline_dir" >&2
     return 1
   fi
-  return 0
 }
