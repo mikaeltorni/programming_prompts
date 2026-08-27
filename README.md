@@ -32,9 +32,7 @@ The install catalog intentionally distinguishes plugins from direct skills:
 
 ## Repository dependencies
 
-This repository has no runtime dependency. It is the content source consumed by
-`linux_codex_claude_code_setup`, which owns CLI, marketplace, and plugin
-installation.
+This repository has no runtime dependency.
 
 Repository ownership and routing are documented in [AGENTS.md](AGENTS.md).
 
