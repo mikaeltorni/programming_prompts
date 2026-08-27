@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use Programming Prompts, please cite this repository."
+title: "Programming Prompts"
+type: software
+abstract: "Programming Prompts is a prompt library that provides reusable AI coding-agent prompts and engineering guidance for Codex and Claude Code users."
+authors:
+  - family-names: Torni
+    given-names: Mikael
+repository-code: "https://github.com/mikaeltorni/programming_prompts"
+license: MIT

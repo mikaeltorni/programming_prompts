@@ -1,10 +1,15 @@
-# Programming Prompts
+# Programming Prompts — AI Coding-Agent Prompts
 
-Central repository of reusable **AI coding-agent prompts** — engineering
-guidelines, commit workflows, secure project setup, and refactoring methodology —
-packaged as installable **plugins and skills for Codex and Claude Code**. It is
-the canonical content source for the engineering standards used across this
-workspace's projects.
+[![Last commit](https://img.shields.io/github/last-commit/mikaeltorni/programming_prompts)](https://github.com/mikaeltorni/programming_prompts/commits/master)
+[![Commit activity](https://img.shields.io/github/commit-activity/m/mikaeltorni/programming_prompts)](https://github.com/mikaeltorni/programming_prompts/graphs/commit-activity)
+[![Issues](https://img.shields.io/github/issues/mikaeltorni/programming_prompts)](https://github.com/mikaeltorni/programming_prompts/issues)
+
+Programming Prompts is a prompt library that provides reusable AI coding-agent prompts and engineering guidance for Codex and Claude Code users.
+
+This repository is the canonical content source for the engineering standards
+used across this workspace's projects. It contains installable plugins, direct
+skills, and dispatch skills; the separate installer repository owns marketplace
+generation and deployment.
 
 **Topics:** ai-agents · claude-code · codex · prompts · skills · plugins ·
 prompt-engineering · coding-standards · refactoring · developer-tooling
@@ -21,10 +26,26 @@ This repository has no runtime dependency. It is the content source consumed by
 `linux_codex_claude_code_setup`, which owns CLI, marketplace, and plugin
 installation.
 
-See the full cross-repository map in
-[installation_scripts/DEPENDENCIES.md](https://github.com/mikaeltorni/installation_scripts/blob/master/DEPENDENCIES.md).
+Repository ownership and routing are documented in [AGENTS.md](AGENTS.md).
 
-## Overview
+Related research is documented in [Prompt Engineering for Software Development](https://github.com/mikaeltorni/prompt_engineering_for_software_development),
+and challenge generation is covered by the
+[Prompt Challenge Generator](https://github.com/mikaeltorni/prompt_challenge_generator).
+
+## Quickstart
+
+Clone the content source and inspect a skill directly:
+
+```bash
+git clone https://github.com/mikaeltorni/programming_prompts.git
+cd programming_prompts
+sed -n '1,120p' skills/general-programming-guidelines/SKILL.md
+```
+
+The command prints the reusable engineering workflow that agents load for
+software tasks.
+
+## Features
 
 This repository maintains the canonical engineering standards used across all
 development projects in this workspace. Plugin prompts package exactly one skill
@@ -63,12 +84,11 @@ programming_prompts/
 └── README.md                              # This file
 ```
 
-## Installation
+## Installation and usage
 
-Installation belongs to the sibling
-[`linux_codex_claude_code_setup`](https://github.com/mikaeltorni/linux_codex_claude_code_setup)
-repository. Its committed `default.json` maps each prompt to either a plugin or
-a direct skill and controls default selection. This repository intentionally
+Installation belongs to the sibling installer repository. Its committed
+`default.json` maps each prompt to either a plugin or a direct skill and
+controls default selection. This repository intentionally
 contains no `install.sh`, installer libraries, or marketplace catalogs — marketplace
 generation is owned entirely by the installer repository (see `AGENTS.md`). Each
 `plugins/<name>` directory stays standalone-installable via its own Codex and
@@ -205,6 +225,50 @@ claude plugin validate --strict plugins/<name>
 codex plugin list
 claude plugin list --json
 ```
+
+## Configuration
+
+This content repository has no runtime configuration. Plugin manifests,
+direct-skill directories, and `dispatch-skills/` are the source of truth; the
+installer reads them when it deploys prompts to an agent environment.
+
+## Troubleshooting and FAQ
+
+### Where should I start with Programming Prompts?
+
+Start with [general-programming-guidelines](skills/general-programming-guidelines/SKILL.md)
+for the shared workflow, or browse the [plugin directories](plugins/) when you
+need a packaged Codex and Claude Code integration.
+
+### Is this repository a plugin marketplace?
+
+No. It is the content source for plugins and skills. Marketplace generation and
+installation are owned by the external installer workflow, so no marketplace
+catalog is committed here.
+
+### Which prompt is used for GitHub SEO audits?
+
+Use the [github-seo dispatch skill](dispatch-skills/github-seo/SKILL.md). It
+audits a repository, records a scorecard, and loops over verified gaps.
+
+### How do I validate a plugin?
+
+Run `claude plugin validate --strict plugins/<name>` from a checkout with the
+Claude Code CLI installed. The two plugin directories each contain their own
+Codex and Claude manifests.
+
+### Why is there no install.sh in this repository?
+
+The repository deliberately keeps deployment ownership in the sibling
+installer. Direct skill and plugin content remains independently inspectable
+and can also be installed from its directory by compatible CLIs.
+
+## Contributing
+
+Keep each skill self-contained, preserve the plugin/direct-skill ownership
+rules in [AGENTS.md](AGENTS.md), and run `python3 -m pytest tests -v` before
+opening a pull request. Changes to prompt-only content should include a clear
+description of the behavior or policy they improve.
 
 ## License
 
