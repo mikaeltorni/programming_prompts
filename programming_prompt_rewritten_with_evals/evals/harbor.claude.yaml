@@ -2,8 +2,8 @@
 # Prefer ./run_benchmark.sh harness=cc — it materializes tasks/, isolates judges,
 # and wires BenchmarkClaudeCode with the pinned CLI version.
 #
-#   ./run_benchmark.sh harness=cc --skills srp,commenting -k 5 -n 5
-#   ./run_benchmark.sh --harness cc --baseline --skills srp,commenting -k 5 -n 5
+#   ./run_benchmark.sh harness=cc --skills srp,commenting -k 5
+#   ./run_benchmark.sh --harness cc --baseline --skills srp,commenting -k 5
 
 agents:
   - import_path: harbor_agents.benchmark_claude_code:BenchmarkClaudeCode

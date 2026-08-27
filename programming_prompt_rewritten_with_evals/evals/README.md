@@ -48,7 +48,7 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `evalAgentModel=claude-opus-5` / `--evalAgentModel …` / `--eval-agent-model=…` | Judge model id (same idea as `-m` / `--model`). One value for every eval agent, or one per agent |
 | `evalAgentReasoningEffort=low` / `--evalAgentReasoningEffort high` | Judge effort: `low`, `medium`, or `high` (same idea as `--ak reasoning_effort=`). One value or one per agent |
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
-| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine. **Unset = no LLM cap**. Omit Harbor `-n` to follow `-k`. `2` is the old quota-safe cap |
+| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine. **Unset = no LLM cap**. Harbor `-n` always follows `-k`. `2` is the old quota-safe cap |
 | `--skills srp,commenting` | Which skills to inject (default: all non-`*-vague`) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
@@ -398,9 +398,12 @@ image rebuild. Bare `python3 docker_networks.py prune` also drops dangling
 build cache when you need more disk.
 Concurrent `./run_benchmark.sh` processes **wait for a coding-trial slot**
 only when `EVAL_LLM_MAX_CONCURRENT` is set (or a job still uses per-trial
-networks). There is no default LLM cap. Omit Harbor `-n` to follow `-k` (`-k 20` runs
-20 at once). Pass `-n 100` with 5 tasks × `-k 20` to run the whole wave at
-once. `--run-separately` is a single Harbor job.
+networks). There is no default LLM cap. Harbor `-n` / `--n-concurrent` is
+**not a user flag**: the wrapper always sets concurrency from `-k` (`-k 20`
+runs 20 at once). Passing `-n 100` with 5 tasks × `-k 20` starts 100
+`docker compose build`s at once; Harbor then aborts with
+`Environment start timed out after 300.0 seconds` and Scored drops well
+below Trials. `--run-separately` is a single Harbor job.
 Each job’s reservation is tracked in the current shell and
 released when that Harbor job finishes (wrapping `acquire` in `$()` used to
 leak slots until the whole wrapper exited). Optional: if you run other Harbor
@@ -547,17 +550,17 @@ keep the same tasks and inject **no skills**.
 
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-./run_benchmark.sh harness=codex --baseline --skills srp,commenting -k 5 -n 5
-./run_benchmark.sh harness=cc --baseline --skills srp,commenting -k 5 -n 5
+./run_benchmark.sh harness=codex --baseline --skills srp,commenting -k 5
+./run_benchmark.sh harness=cc --baseline --skills srp,commenting -k 5
 # both harnesses:
-./run_benchmark.sh --baseline --skills srp,commenting -k 5 -n 5
+./run_benchmark.sh --baseline --skills srp,commenting -k 5
 ```
 
 Compare to the with-skill runs:
 
 ```bash
-./run_benchmark.sh harness=codex --skills srp,commenting --run-separately -k 5 -n 5
-./run_benchmark.sh harness=cc --skills srp,commenting --run-separately -k 5 -n 5
+./run_benchmark.sh harness=codex --skills srp,commenting --run-separately -k 5
+./run_benchmark.sh harness=cc --skills srp,commenting --run-separately -k 5
 ```
 
 ## Logging skill (plain `print`, pair with SRP)
@@ -571,7 +574,7 @@ the logging judge enough entry/exit sites.
 `logging-vague` injects only “Use logging.” and has **no** judge of its own —
 the runner scores it with `judges/logging/`.
 
-Recommended six-command smoke set (`-k 2 -n 2` keeps cost down while
+Recommended six-command smoke set (`-k 2` keeps cost down while
 debugging). Each `./run_benchmark.sh` line is its own fenced block so it can
 be pasted into a separate terminal (see repo `AGENTS.md`):
 
@@ -580,27 +583,27 @@ cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 ```
 
 ```bash
-./run_benchmark.sh harness=codex --baseline --skills srp,logging -k 2 -n 2
+./run_benchmark.sh harness=codex --baseline --skills srp,logging -k 2
 ```
 
 ```bash
-./run_benchmark.sh harness=cc --baseline --skills srp,logging -k 2 -n 2
+./run_benchmark.sh harness=cc --baseline --skills srp,logging -k 2
 ```
 
 ```bash
-./run_benchmark.sh harness=codex --skills srp,logging -k 2 -n 2
+./run_benchmark.sh harness=codex --skills srp,logging -k 2
 ```
 
 ```bash
-./run_benchmark.sh harness=cc --skills srp,logging -k 2 -n 2
+./run_benchmark.sh harness=cc --skills srp,logging -k 2
 ```
 
 ```bash
-./run_benchmark.sh harness=codex --skills srp,logging-vague -k 2 -n 2
+./run_benchmark.sh harness=codex --skills srp,logging-vague -k 2
 ```
 
 ```bash
-./run_benchmark.sh harness=cc --skills srp,logging-vague -k 2 -n 2
+./run_benchmark.sh harness=cc --skills srp,logging-vague -k 2
 ```
 
 ## Worktree skill (sibling `/Projects/.worktrees/<project>/`, pair with SRP)
@@ -659,29 +662,29 @@ cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 ```
 
 ```bash
-./run_benchmark.sh harness=codex --baseline --skills srp,worktree -k 2 -n 2
+./run_benchmark.sh harness=codex --baseline --skills srp,worktree -k 2
 ```
 
 ```bash
-./run_benchmark.sh harness=cc --baseline --skills srp,worktree -k 2 -n 2
+./run_benchmark.sh harness=cc --baseline --skills srp,worktree -k 2
 ```
 
 ```bash
-./run_benchmark.sh harness=codex --skills srp,worktree -k 2 -n 2
+./run_benchmark.sh harness=codex --skills srp,worktree -k 2
 ```
 
 ```bash
-./run_benchmark.sh harness=cc --skills srp,worktree -k 2 -n 2
+./run_benchmark.sh harness=cc --skills srp,worktree -k 2
 ```
 
-Grok (SuperGrok quota; `-k 5 -n 5` ≈ 25 trials, ~2.5× the k2n2 smoke):
+Grok (SuperGrok quota; `-k 5` ≈ 25 trials, ~2.5× the k2 smoke):
 
 ```bash
-./run_benchmark.sh harness=grok --baseline --skills srp,worktree -k 5 -n 5
+./run_benchmark.sh harness=grok --baseline --skills srp,worktree -k 5
 ```
 
 ```bash
-./run_benchmark.sh harness=grok --skills srp,worktree -k 5 -n 5
+./run_benchmark.sh harness=grok --skills srp,worktree -k 5
 ```
 
 ## Eval agent (LLM judge harness)
@@ -704,7 +707,7 @@ Auth for the judge is the matching CLI: Codex `~/.codex/auth.json`, Claude
 `CLAUDE_CODE_OAUTH_TOKEN`, Grok `XAI_API_KEY` / `~/.grok/auth.json`. Mixing
 eval agents requires every listed judge’s credentials.
 
-Cheap smoke (`calculator` + `srp`, `-k 1 -n 1`). Shared setup, then **each**
+Cheap smoke (`calculator` + `srp`, `-k 1`). Shared setup, then **each**
 `./run_benchmark.sh` in its own terminal (see repo `AGENTS.md`):
 
 ```bash
@@ -714,37 +717,37 @@ cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 Baseline, inherit judge (Codex codes and Codex grades):
 
 ```bash
-./run_benchmark.sh harness=codex --baseline --skills srp --tasks calculator -k 1 -n 1
+./run_benchmark.sh harness=codex --baseline --skills srp --tasks calculator -k 1
 ```
 
 Positive, inherit judge:
 
 ```bash
-./run_benchmark.sh harness=codex --skills srp --tasks calculator -k 1 -n 1
+./run_benchmark.sh harness=codex --skills srp --tasks calculator -k 1
 ```
 
 Baseline, Claude Code grades Codex output:
 
 ```bash
-./run_benchmark.sh harness=codex evalAgent=cc --baseline --skills srp --tasks calculator -k 1 -n 1
+./run_benchmark.sh harness=codex evalAgent=cc --baseline --skills srp --tasks calculator -k 1
 ```
 
 Positive, Claude Code grades Codex output:
 
 ```bash
-./run_benchmark.sh harness=codex evalAgent=cc --skills srp --tasks calculator -k 1 -n 1
+./run_benchmark.sh harness=codex evalAgent=cc --skills srp --tasks calculator -k 1
 ```
 
 Baseline, checked twice (Claude Code + Codex judges):
 
 ```bash
-./run_benchmark.sh harness=codex evalAgent=cc,codex --baseline --skills srp --tasks calculator -k 1 -n 1
+./run_benchmark.sh harness=codex evalAgent=cc,codex --baseline --skills srp --tasks calculator -k 1
 ```
 
 Positive, checked twice:
 
 ```bash
-./run_benchmark.sh harness=codex evalAgent=cc,codex --skills srp --tasks calculator -k 1 -n 1
+./run_benchmark.sh harness=codex evalAgent=cc,codex --skills srp --tasks calculator -k 1
 ```
 
 Same twice-check with explicit judge model/effort (format matches `-m` /
@@ -754,17 +757,17 @@ Same twice-check with explicit judge model/effort (format matches `-m` /
 ./run_benchmark.sh harness=codex evalAgent=cc,codex \
   evalAgentModel=claude-opus-5,gpt-5.6-luna \
   evalAgentReasoningEffort=low,low \
-  --skills srp --tasks calculator -k 1 -n 1
+  --skills srp --tasks calculator -k 1
 ```
 
 Grok as both coder and judge (inherit):
 
 ```bash
-./run_benchmark.sh harness=grok --baseline --skills srp --tasks calculator -k 1 -n 1
+./run_benchmark.sh harness=grok --baseline --skills srp --tasks calculator -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=grok --skills srp --tasks calculator -k 1 -n 1
+./run_benchmark.sh harness=grok --skills srp --tasks calculator -k 1
 ```
 
 Expect baseline pass rate well below positive for `srp`. Dual eval agents
@@ -816,7 +819,7 @@ Shipped files under [`presets/`](presets/):
 | `positive-cc` / `baseline-cc` | 1 | cc |
 | `positive-grok` / `baseline-grok` | 1 | grok |
 
-Each job is `harness=… evalAgent=<included harnesses> --skills srp,commenting,logging,worktree -k 5 -n 5`
+Each job is `harness=… evalAgent=<included harnesses> --skills srp,commenting,logging,worktree -k 5`
 (baseline adds `--baseline`). Windows open at a
 normal size on this monitor (cascaded, not maximised). After a job finishes the
 terminal stays open as a shell; Up-arrow recalls the `./run_benchmark.sh`
@@ -849,24 +852,26 @@ Manual examples:
 
 ```bash
 # Codex positive, both skills in one session (~25 trials at -k 5)
-./run_benchmark.sh harness=codex --skills srp,commenting -k 5 -n 5
+./run_benchmark.sh harness=codex --skills srp,commenting -k 5
 ```
 
 ```bash
 # Claude Code positive, one skill per job (~50 trials)
-./run_benchmark.sh harness=cc --skills srp,commenting --run-separately -k 5 -n 5
+./run_benchmark.sh harness=cc --skills srp,commenting --run-separately -k 5
 ```
 
 ```bash
 # Both harnesses × separately × 2 skills × 5 tasks × -k 5 ≈ 100 trials
-./run_benchmark.sh --skills srp,commenting --run-separately -k 5 -n 5
+./run_benchmark.sh --skills srp,commenting --run-separately -k 5
 ```
 
-`-k 5` schedules five attempts **per task**. Omit `-n` to follow `-k` (so
-`-k 20` runs 20 trials at once). Pass `-n 100` with 5 tasks × `-k 20` to run
-the whole wave at once. Pass `-n 2` only when you want a cheaper
-smoke. The wrapper defaults to `-k 5` (and therefore 5 concurrent) when you
-pass no Harbor flags. After the job finishes it prints a categorized console summary.
+`-k 5` schedules five attempts **per task** and that many concurrent
+trials. `-k 20` is the full-speed setting (20 at once). The wrapper
+strips user `-n` / `--n-concurrent` so a leftover `-n 100` cannot starve
+`docker compose build` past Harbor's 300s environment-start budget. Use a
+smaller `-k` for a cheaper smoke. The wrapper defaults to `-k 5` (and
+therefore 5 concurrent) when you pass no Harbor flags. After the job
+finishes it prints a categorized console summary.
 Several terminals may start at once. Trials use Docker's default bridge, so
 stock IPAM is not the cap (see
 [Install Docker](#install-docker-on-ubuntu-2404)).
@@ -891,8 +896,8 @@ the same Codex reference with `skills: []` for a hand-run baseline; prefer
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
 | `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials (unset = none) |
 | `--ak version=…` | CLI pin override |
-| `-k` / `--n-attempts` | Independent attempts per task (default: `5`) |
-| `-n` / `--n-concurrent` | How many trials run in parallel (omit = follow `-k`) |
+| `-k` / `--n-attempts` | Independent attempts per task **and** Harbor concurrency (default: `5`) |
+| `-n` / `--n-concurrent` | Ignored. The wrapper always sets Harbor `-n` from `-k` (`-n 100` with `-k 20` timed out ~half the trials at 300s on `docker compose build`) |
 | `--skill` | Extra skill directory (job config already injects skills) |
 
 Examples:
@@ -900,39 +905,39 @@ Examples:
 ```bash
 # Default Luna-low / Opus-low / Grok-4.6-low via harness selection
 # (judge inherits the same harness when evalAgent is omitted)
-./run_benchmark.sh harness=codex --skills srp -k 5 -n 5
+./run_benchmark.sh harness=codex --skills srp -k 5
 ```
 
 ```bash
-./run_benchmark.sh harness=cc --skills srp -k 5 -n 5
+./run_benchmark.sh harness=cc --skills srp -k 5
 ```
 
 ```bash
-./run_benchmark.sh harness=grok --skills srp -k 5 -n 5
+./run_benchmark.sh harness=grok --skills srp -k 5
 ```
 
 ```bash
 # Higher reasoning for the coding agent
-./run_benchmark.sh harness=codex --skills srp -k 5 -n 5 --ak reasoning_effort=high
+./run_benchmark.sh harness=codex --skills srp -k 5 --ak reasoning_effort=high
 ```
 
 ```bash
-./run_benchmark.sh harness=cc --skills srp -k 5 -n 5 --ak reasoning_effort=high
+./run_benchmark.sh harness=cc --skills srp -k 5 --ak reasoning_effort=high
 ```
 
 ```bash
-./run_benchmark.sh harness=grok --skills srp -k 5 -n 5 --ak reasoning_effort=high
+./run_benchmark.sh harness=grok --skills srp -k 5 --ak reasoning_effort=high
 ```
 
 ```bash
 # Different coding-agent model, one attempt
-./run_benchmark.sh harness=codex --skills srp -k 1 -n 1 \
+./run_benchmark.sh harness=codex --skills srp -k 1 \
   -m openai/gpt-5.4 --ak reasoning_effort=medium
 ```
 
 ```bash
 # Different judge: Claude grades Codex output
-./run_benchmark.sh harness=codex evalAgent=cc --skills srp -k 1 -n 1 \
+./run_benchmark.sh harness=codex evalAgent=cc --skills srp -k 1 \
   evalAgentModel=claude-opus-5 evalAgentReasoningEffort=low
 ```
 

@@ -3,7 +3,7 @@
 # discovers selected skills under ../prompts/programming-skills/, syncs judges,
 # looks up the newest stable Codex CLI, and keeps gpt-5.6-luna at low reasoning effort.
 #
-#   ./run_benchmark.sh harness=codex --skills srp,commenting -k 5 -n 5
+#   ./run_benchmark.sh harness=codex --skills srp,commenting -k 5
 #   ./sync_tasks.sh && harbor run -c harbor.codex.yaml …
 
 agents:

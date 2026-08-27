@@ -26,10 +26,10 @@
 #   ./run_benchmark.sh harness=codex
 #   ./run_benchmark.sh harness=cc
 #   ./run_benchmark.sh harness=grok
-#   ./run_benchmark.sh --harness both --skills srp,commenting --run-separately -k 5 -n 5
-#   ./run_benchmark.sh --baseline --skills srp,commenting -k 5 -n 5
-#   ./run_benchmark.sh --skills srp,logging -k 2 -n 2
-#   ./run_benchmark.sh --skills srp,worktree -k 2 -n 2
+#   ./run_benchmark.sh --harness both --skills srp,commenting --run-separately -k 5
+#   ./run_benchmark.sh --baseline --skills srp,commenting -k 5
+#   ./run_benchmark.sh --skills srp,logging -k 2
+#   ./run_benchmark.sh --skills srp,worktree -k 2
 #   ./run_benchmark.sh --install-only harness=grok
 #   ./run_benchmark.sh --no-pin-refresh --install-only harness=codex
 #   ./run_benchmark.sh harness=codex evalAgent=cc,codex
@@ -48,8 +48,10 @@
 # cache still fill the disk; docker_networks.py prunes leftover containers
 # and empty nets (keeps images and BuildKit cache).
 # Live coding trials have no LLM cap unless EVAL_LLM_MAX_CONCURRENT is set.
-# Omit Harbor -n to follow -k (so -k 20 runs 20 trials at once). Pass a larger
-# -n (up to tasks×k) to run more of the wave at once; IPAM no longer clamps.
+# Harbor -n is not a user flag: the wrapper always sets concurrency from -k
+# (-k 20 → 20 concurrent). Passing -n 100 with 5 tasks × -k 20 starts 100
+# docker compose builds at once; Harbor's 300s environment-start budget then
+# drops roughly half the trials (EnvironmentStartTimeoutError).
 # EVAL_LLM_MAX_CONCURRENT=2 restores the old quota-safe cap.
 # --run-separately is one job with all selected skills.
 
@@ -273,6 +275,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# User -n / --n-concurrent is ignored. Harbor concurrency always follows -k.
+strip_user_harbor_n_concurrent HARBOR_ARGS
+
 _norm_out="$(normalize_harness "$HARNESS_ARG")" || exit 1
 mapfile -t SELECTED_HARNESSES <<< "$_norm_out"
 unset _norm_out
@@ -328,7 +333,7 @@ echo "Selected skill(s): ${SELECTED_SKILLS[*]}" >&2
 mapfile -t SELECTED_TASKS < <(resolve_tasks "$TASKS_ARG")
 echo "Selected coding task(s): ${SELECTED_TASKS[*]}" >&2
 if [[ -z "${EVAL_LLM_MAX_CONCURRENT:-}" ]]; then
-  echo "LLM trial cap: unset (no LLM cap). Trials use Docker's default bridge; omit -n to follow -k." >&2
+  echo "LLM trial cap: unset (no LLM cap). Trials use Docker's default bridge; Harbor -n follows -k." >&2
 else
   echo "LLM trial cap: EVAL_LLM_MAX_CONCURRENT=$EVAL_LLM_MAX_CONCURRENT (coding trials live on this machine)" >&2
 fi

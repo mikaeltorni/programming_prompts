@@ -39,7 +39,7 @@ conversation before they can act belong in `skills/`, not here.
 When an agent changes Harbor wrappers, verifier code, `run_benchmark.sh`,
 or other evals runtime — not prompt-only edits — it must run a **1-attempt
 baseline and a 1-attempt positive** job for **every coding harness**
-(`codex`, `grok`, `cc`) before reporting the task done. Use `-k 1 -n 1`.
+(`codex`, `grok`, `cc`) before reporting the task done. Use `-k 1`.
 Put `evalAgent=codex,cc` so both LLM judges write reward files (worktree is
 programmatic and still runs). Prompt-only work still uses Harbor when a
 live check is needed; do not add pytest under
@@ -52,27 +52,27 @@ cd programming_prompt_rewritten_with_evals/evals
 ```
 
 ```bash
-./run_benchmark.sh harness=codex evalAgent=codex,cc --baseline --no-pin-refresh -k 1 -n 1
+./run_benchmark.sh harness=codex evalAgent=codex,cc --baseline --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=codex evalAgent=codex,cc --no-pin-refresh -k 1 -n 1
+./run_benchmark.sh harness=codex evalAgent=codex,cc --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=grok evalAgent=codex,cc --baseline --no-pin-refresh -k 1 -n 1
+./run_benchmark.sh harness=grok evalAgent=codex,cc --baseline --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=grok evalAgent=codex,cc --no-pin-refresh -k 1 -n 1
+./run_benchmark.sh harness=grok evalAgent=codex,cc --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=cc evalAgent=codex,cc --baseline --no-pin-refresh -k 1 -n 1
+./run_benchmark.sh harness=cc evalAgent=codex,cc --baseline --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=cc evalAgent=codex,cc --no-pin-refresh -k 1 -n 1
+./run_benchmark.sh harness=cc evalAgent=codex,cc --no-pin-refresh -k 1
 ```
 
 ## Never generate tests for rewritten-prompt evals
