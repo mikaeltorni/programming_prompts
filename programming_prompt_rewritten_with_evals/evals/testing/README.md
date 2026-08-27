@@ -16,9 +16,9 @@ cd programming_prompt_rewritten_with_evals/evals/testing
 Parameters:
 
 1. `positive_jobs_dir` — job root from a with-skill run (contains
-   `codex-srp/`, `codex-commenting/`, … under `harbor/`)
+   `codex-skills__<stamp>/` under `harbor/`)
 2. `baseline_jobs_dir` — job root from a `--baseline` run (contains
-   `codex-baseline-srp/`, `codex-baseline-commenting/`, …)
+   `codex-baseline__<stamp>/`)
 
 `verify_with_ca.sh` runs `ca -h -sol "…"`.
 `verify_with_cca.sh` runs `cca -opus -h "…"`.
