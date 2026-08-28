@@ -22,6 +22,19 @@ carries its own Codex and Claude manifests plus its single skill, so the
 installer (or a manual `claude plugin`/`codex plugin` install pointed at a
 plugin directory) can consume them without any repo-level marketplace catalog.
 
+## Never add a docs site or an `llms.txt`
+
+This repository is not published as a website and does not carry a
+machine-readable index. Do not create — and do not restore — `docs/index.html`
+or any other HTML page, `sitemap.xml`, `robots.txt`, `llms.txt` (neither at the
+repository root nor under `docs/`), `.nojekyll`, `_config.yml`, Jekyll/Pages
+scaffolding, a GitHub Pages deployment, or a README badge or link pointing at a
+`github.io` URL. SEO or discoverability work must score those rubric rows
+`N/A — out of scope by owner policy` instead of adding the files.
+
+Diagrams and images the README embeds (`docs/content-flow.svg`,
+`docs/social-card.png`) are repository assets, not a site — keep them.
+
 ## Dispatch skills are the only menu-selectable prompts
 
 `dispatch-skills/<name>/SKILL.md` holds prompts written to be handed to an agent

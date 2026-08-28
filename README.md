@@ -190,7 +190,7 @@ see [`dispatch-skills/README.md`](dispatch-skills/README.md).
 
 Audits a GitHub project's discoverability against a weighted 100-point rubric —
 repository metadata and topics, README above the fold, keyword coverage,
-AI/LLM citability (`llms.txt`, question-shaped FAQ, a quotable definitional
+AI/LLM citability (question-shaped FAQ, a quotable definitional
 sentence), community health signals, docs-site technical SEO, registry presence,
 cross-links, and freshness — minus penalties for keyword stuffing,
 unsupported claims, badge and topic spam, artificial engagement, and dead links.

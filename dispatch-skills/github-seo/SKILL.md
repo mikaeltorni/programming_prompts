@@ -1,7 +1,7 @@
 ---
 name: github-seo
 description: >-
-  v1.1.0 — Use when a GitHub project needs to be found: search-engine ranking, AI/LLM
+  v1.2.0 — Use when a GitHub project needs to be found: search-engine ranking, AI/LLM
   citability, GitHub-internal discovery, and registry presence. Runs a
   weighted 100-point audit, records a tracked scorecard, then closes the highest-value gap
   round after round until the score is a fully evidenced 100/100, and maintains it after.
@@ -51,6 +51,14 @@ discoverability work.
   workflows and their badges exactly as upstream ships them, and never delete
   them to satisfy this rule. If the user asks for CI explicitly in the current
   conversation, that request wins.
+- **Never build a static docs site on your own.** Do not create or restore
+  `index.html` or any other HTML page, `sitemap.xml`, `robots.txt`, `llms.txt`,
+  `_config.yml`, Jekyll/Pages scaffolding, or a GitHub Pages deployment, and do
+  not link a `github.io` URL from a README or the About homepage. A site is a
+  publication the owner must ask for; when the owner's project instructions rule
+  it out, score section `F` and row `D2` as `N/A` and normalize over the rest.
+  README-embedded diagrams and a social preview image are repository assets, not
+  a site — keep those.
 
 ## Where the score lives
 
@@ -256,7 +264,8 @@ rendered lines.
 - **D2 (2) `llms.txt`.** Full credit requires: `llms.txt` at the repository root
   (and served at the docs-site root when one exists) giving the one-line
   definition, install command, primary entry points, and links to the canonical
-  pages.
+  pages. Score `N/A` where the owner's project instructions rule `llms.txt` out
+  of scope, and never create the file there.
 - **D3 (2) Definitional sentence.** Full credit requires: one sentence of the
   form "*Name* is a *category* that *does X* for *audience*", placed early and
   repeated verbatim in the About text and `llms.txt`.
@@ -283,7 +292,10 @@ continuous integration* under *Non-negotiables*.
 
 ### F. Docs site and technical SEO — 10
 
-Score N/A only when the project genuinely should not have a public page.
+Score N/A only when the project genuinely should not have a public page — which
+includes an owner policy that rules static docs sites out of scope. When the
+whole section is N/A, so are the site-shaped parts of any other row; normalize
+over the remaining points instead of scoring a missing site as a gap.
 
 - **F1 (2) Published site.** A docs site (GitHub Pages or equivalent) on a
   stable canonical URL, linked from the About homepage.
