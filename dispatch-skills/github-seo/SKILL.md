@@ -1,7 +1,7 @@
 ---
 name: github-seo
 description: >-
-  v1.0.0 — Use when a GitHub project needs to be found: search-engine ranking, AI/LLM
+  v1.1.0 — Use when a GitHub project needs to be found: search-engine ranking, AI/LLM
   citability, GitHub-internal discovery, and registry presence. Runs a
   weighted 100-point audit, records a tracked scorecard, then closes the highest-value gap
   round after round until the score is a fully evidenced 100/100, and maintains it after.
@@ -43,6 +43,14 @@ discoverability work.
 - **Never publish anything on the user's behalf** — no posts, submissions, pull
   requests to other people's lists, or messages — without explicit approval in
   the current conversation. Draft them, record them, and wait.
+- **Never add continuous integration.** Do not create or restore
+  `.github/workflows/`, GitHub Actions, or any other CI/CD pipeline, and do not
+  add a CI or build-status badge to a README. CI earns no points in this rubric
+  and is not a discoverability signal. The one exception is CI a repository
+  already inherited from an upstream project it was forked from: leave those
+  workflows and their badges exactly as upstream ships them, and never delete
+  them to satisfy this rule. If the user asks for CI explicitly in the current
+  conversation, that request wins.
 
 ## Where the score lives
 
@@ -204,9 +212,9 @@ rendered lines.
 - **B2 (3) Value proposition.** Full credit requires: a single sentence inside
   the first 160 characters of prose that a search engine or an assistant can
   lift verbatim as the description — concrete, specific, no marketing adjectives.
-- **B3 (2) Badges.** Full credit requires: 3–6 badges that carry information
-  (CI status, license, released version/registry, supported platform), all
-  resolving, none redundant.
+- **B3 (2) Badges.** Full credit requires: 2–6 badges that carry information
+  (license, released version/registry, supported platform, activity), all
+  resolving, none redundant. Never add a CI/build-status badge.
 - **B4 (3) Visual proof.** Full credit requires: a screenshot, GIF, or diagram
   above the fold showing the project in use, with alt text that describes what
   is happening (not "screenshot" or "demo").
@@ -261,16 +269,17 @@ rendered lines.
 
 ### E. Repository health and trust signals — 10
 
-- **E1 (2) License.** Full credit requires: a LICENSE file GitHub recognizes as
+- **E1 (3) License.** Full credit requires: a LICENSE file GitHub recognizes as
   a specific SPDX license, and the same license named in the README and manifest.
 - **E2 (2) Community files.** `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and
   `SECURITY.md` present and specific to this project.
 - **E3 (2) Templates.** Issue templates and a pull request template under
   `.github/`.
-- **E4 (2) CI.** A CI workflow that runs the project's real tests, currently
-  passing, with its badge in the README.
-- **E5 (2) Community Standards.** GitHub's community profile checklist reports
+- **E4 (3) Community Standards.** GitHub's community profile checklist reports
   every item complete.
+
+Continuous integration is deliberately absent from this rubric; see *Never add
+continuous integration* under *Non-negotiables*.
 
 ### F. Docs site and technical SEO — 10
 

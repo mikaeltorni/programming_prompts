@@ -43,6 +43,30 @@ def normalized_skill_text() -> str:
     return " ".join(skill_text().split())
 
 
+def seo_criteria_with_descriptions() -> list[tuple[str, int, int, str]]:
+    """Return every rubric criterion as ``(letter, index, points, description)``.
+
+    A criterion bullet may wrap over several lines, so each description runs
+    from its own ``- **X1 (n) ...`` marker to the start of the next bullet or
+    heading, with whitespace collapsed for stable substring assertions.
+    """
+    text = skill_text()
+    criteria: list[tuple[str, int, int, str]] = []
+    matches = list(CRITERION_PATTERN.finditer(text))
+
+    for position, match in enumerate(matches):
+        end = matches[position + 1].start() if position + 1 < len(matches) else len(text)
+        body = text[match.start():end]
+        heading = re.search(r"^#{2,3} ", body, re.MULTILINE)
+        if heading:
+            body = body[: heading.start()]
+        criteria.append(
+            (match.group(1), int(match.group(2)), int(match.group(3)), " ".join(body.split()))
+        )
+
+    return criteria
+
+
 def dispatch_skill_paths() -> list[Path]:
     """Return every ``dispatch-skills/<name>/SKILL.md`` in the repository."""
     return sorted(DISPATCH_DIR.glob("*/SKILL.md"))
@@ -165,3 +189,21 @@ def test_seo_skill_prefers_rg_over_grep_examples():
 
     assert "rg -n" in content
     assert "grep -rn" not in content
+
+
+def test_seo_rubric_awards_no_points_for_continuous_integration():
+    """No criterion may make CI worth points.
+
+    The rubric previously scored "E4 (2) CI", which pushed the agent to add a
+    GitHub Actions workflow to every repository it audited. CI is out of scope
+    for this project family, so no criterion description may reward it.
+    """
+    for _, _, _, description in seo_criteria_with_descriptions():
+        assert "CI workflow" not in description
+        assert "CI status" not in description
+
+
+def test_seo_skill_forbids_adding_continuous_integration():
+    content = normalized_skill_text()
+
+    assert "Never add continuous integration" in content
