@@ -3,12 +3,12 @@ name: worktree
 description: >-
   MUST invoke before the first file Write or Edit in this git repo (including
   /app and /Projects/app). Create a sibling .worktrees/<project>/ worktree, do
-  all coding and commits there, merge back, never push. Skipping this fails the
+  all coding there, commit in that worktree, merge back, never push. Skipping this fails the
   task even if the code is correct. Apply on every coding task, including new
   files from scratch. Not a substitute: Claude EnterWorktree / ExitWorktree.
 ---
 
-# Git worktree + incremental commits
+# Git worktree isolation
 
 The workspace is already a git repository with one **empty initial commit**.
 Do not `git init` again. Do not rewrite history.
@@ -55,14 +55,10 @@ Hard rules:
 - The folder under `.worktrees/` must match the project name (`basename` of
   the repo). For this eval that is `/Projects/.worktrees/app/…`.
 
-## Commit each finished part
-
-Whenever one part of the program is done (a helper, then another helper, then
-the entrypoint), **commit that part in the worktree** before starting the next.
-Do not batch the whole program into one end-of-task commit if you built it in
-pieces.
-
 Stay on the feature branch in the worktree (`feat/…`), not `master`/`main`.
+Commit your work in the worktree so the merge has something to bring back.
+Splitting the prompt into Features and committing each one while the program
+still works is a separate skill.
 
 ## Finish without pushing
 

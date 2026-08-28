@@ -1,6 +1,6 @@
 # Harbor evaluation
 
-Five small write-from-scratch tasks measure whether Codex, Claude Code, and/or
+Five small write-from-scratch tasks plus one two-Feature shop measure whether Codex, Claude Code, and/or
 Grok follow selected programming skills while implementing tiny Python programs:
 
 | Prompt | Entrypoint |
@@ -10,6 +10,7 @@ Grok follow selected programming skills while implementing tiny Python programs:
 | [`coding-prompts/counter.md`](coding-prompts/counter.md) | `/app/counter.py` → `run_counter` |
 | [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` |
 | [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` |
+| [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (`add` then `total`; `features: 2`) |
 
 Each coding prompt is the product instruction (what to build) plus “Follow the
 provided programming skill.” Skills under
@@ -26,11 +27,14 @@ Skills and judges:
 - [`../prompts/programming-skills/logging-vague/SKILL.md`](../prompts/programming-skills/logging-vague/SKILL.md)
   (control — vague one-liner; scored by the logging judge)
 - [`../prompts/programming-skills/worktree/SKILL.md`](../prompts/programming-skills/worktree/SKILL.md)
+- [`../prompts/programming-skills/commits/SKILL.md`](../prompts/programming-skills/commits/SKILL.md)
 - [`judges/srp/prompt.md`](judges/srp/prompt.md)
 - [`judges/commenting/prompt.md`](judges/commenting/prompt.md)
 - [`judges/logging/prompt.md`](judges/logging/prompt.md)
 - [`judges/worktree/judge.toml`](judges/worktree/judge.toml)
   (programmatic git-layout checker; no LLM prompt)
+- [`judges/commits/judge.toml`](judges/commits/judge.toml)
+  (programmatic Feature-commit checker; no LLM prompt)
 
 Coding tasks — one markdown file each under
 [`coding-prompts/`](coding-prompts/). Harbor task trees are **generated** under
@@ -96,7 +100,7 @@ cap. `EVAL_LLM_MAX_CONCURRENT=20` serializes overlapping jobs to one proven
 wave. `EVAL_LLM_MAX_CONCURRENT=2`
 restores the old quota-safe cap. Extra wrappers wait when an explicit
 cap is already in use.
-Programmatic judges (worktree) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
+Programmatic judges (worktree, commits) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
 Code `claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
 (`--reasoning-effort`). Judge defaults match those models at **low** effort
 unless `evalAgentModel` / `evalAgentReasoningEffort` override them.
@@ -134,7 +138,9 @@ evals/
 │   ├── logging/
 │   │   ├── prompt.md
 │   │   └── judge.toml
-│   └── worktree/
+│   ├── worktree/
+│   │   └── judge.toml          # programmatic
+│   └── commits/
 │       └── judge.toml          # programmatic
 ├── verifier/
 │   ├── README.md
@@ -143,6 +149,8 @@ evals/
 │   ├── judge_pool.py           # concurrent LLM + programmatic judges
 │   ├── check_worktree.py       # thin CLI for the worktree layout judge
 │   ├── worktree_check/         # git I/O, rules, reward, fixtures
+│   ├── check_commits.py        # thin CLI for the Feature-commit judge
+│   ├── commits_check/          # Feature-count rules and fixtures
 │   ├── run_llm_judge.py        # thin CLI; Codex / Claude Code / Grok eval agent
 │   ├── run_grok_judge.py       # shim → run_llm_judge.py --agent grok
 │   └── llm_judge/              # pin-and-retry helpers + self_test
@@ -617,18 +625,23 @@ cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 
 Each trial image starts `/Projects/app` as a git repo with **one empty initial
 commit** (`/app` is a symlink to that clone). The worktree skill requires a
-feature-branch worktree at `/Projects/.worktrees/app/<dir>/`. Commit each
-finished part there, merge back, **never push**. Scoring is **programmatic**
-(`verifier/check_worktree.py`), not an LLM judge.
+feature-branch worktree at `/Projects/.worktrees/app/<dir>/`. Commit there,
+merge back, **never push**. Scoring is **programmatic**
+(`verifier/check_worktree.py`), not an LLM judge. Splitting the prompt into
+Features and committing each one is the separate `commits` skill.
 
 After a run, open `evals/runs/<stamp>/Projects/<trial>/` — `app/` is the cloned
 initial state and `.worktrees/app/<dir>/` holds the work.
 
-Pair with **`srp`** so there are several helpers to commit one-by-one. Prove the
-checker against every pass/fail layout before a Harbor run:
+Pair with **`srp`**. Prove the checker against every pass/fail layout before a
+Harbor run:
 
 ```bash
 python3 verifier/check_worktree.py --self-test
+```
+
+```bash
+python3 verifier/check_commits.py --self-test
 ```
 
 ```bash

@@ -5,6 +5,7 @@ Canonical Harbor verify script for every coding task.
 - Edit [`run_judges.sh`](run_judges.sh) (sources [`lib/`](lib/)),
   [`judge_pool.py`](judge_pool.py),
   [`check_worktree.py`](check_worktree.py) plus [`worktree_check/`](worktree_check/),
+  [`check_commits.py`](check_commits.py) plus [`commits_check/`](commits_check/),
   [`run_llm_judge.py`](run_llm_judge.py), and [`llm_judge/`](llm_judge/) here.
   [`run_grok_judge.py`](run_grok_judge.py) is a compatibility shim.
 - `../sync_judges.sh` copies the entry scripts, `worktree_check/`, `llm_judge/`,
@@ -30,16 +31,17 @@ to `uvx --from`. A `subprocess.TimeoutExpired` (uvx warmup under a
 Grok uses the CLI. Judge subprocesses
 default to one worker so dual eval agents do not stampede subscription
 rate limits.
-Programmatic worktree scoring is unchanged.
+Programmatic worktree and commits scoring is unchanged.
 
-LLM judge text stays in `../judges/<skill>/prompt.md`. The worktree skill is
-**programmatic**: `run_judges.sh` runs `check_worktree.py` against
+LLM judge text stays in `../judges/<skill>/prompt.md`. The worktree and commits
+skills are **programmatic**: `run_judges.sh` runs `check_<skill>.py` against
 `/Projects/app`.
 
 Prove the checkers without a Harbor trial:
 
 ```bash
 python3 check_worktree.py --self-test
+python3 check_commits.py --self-test
 python3 run_llm_judge.py --self-test
 python3 judge_pool.py --self-test
 ```

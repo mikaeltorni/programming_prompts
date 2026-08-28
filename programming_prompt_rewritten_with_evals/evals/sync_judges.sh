@@ -4,11 +4,11 @@
 #   evals/judges/<skill>/prompt.md (+ judge.toml)
 #   evals/verifier/run_judges.sh
 #   evals/verifier/judge_pool.py
-#   evals/verifier/check_worktree.py
+#   evals/verifier/check_*.py
 #   evals/verifier/run_llm_judge.py
 #   evals/verifier/run_grok_judge.py
 #   evals/verifier/llm_judge/*.py
-#   evals/verifier/worktree_check/*.py
+#   evals/verifier/*_check/*.py
 #   evals/verifier/lib/*.sh
 # Never edit the synced copies under .generated/tasks/*/tests/ (generated).
 # Usage: ./sync_judges.sh [skill ...]
@@ -18,13 +18,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 JUDGES_ROOT="$SCRIPT_DIR/judges"
 VERIFIER_SRC="$SCRIPT_DIR/verifier/run_judges.sh"
-WORKTREE_CHECK_SRC="$SCRIPT_DIR/verifier/check_worktree.py"
 GROK_JUDGE_SRC="$SCRIPT_DIR/verifier/run_grok_judge.py"
 JUDGE_POOL_SRC="$SCRIPT_DIR/verifier/judge_pool.py"
 LLM_JUDGE_CLI="$SCRIPT_DIR/verifier/run_llm_judge.py"
 LLM_JUDGE_SRC="$SCRIPT_DIR/verifier/llm_judge"
-WORKTREE_CHECK_PACKAGE="$SCRIPT_DIR/verifier/worktree_check"
 VERIFIER_LIB_SRC="$SCRIPT_DIR/verifier/lib"
+mapfile -t PROGRAMMATIC_CHECKERS < <(find "$SCRIPT_DIR/verifier" -maxdepth 1 -type f -name 'check_*.py' | sort)
+mapfile -t PROGRAMMATIC_PACKAGES < <(find "$SCRIPT_DIR/verifier" -maxdepth 1 -type d -name '*_check' | sort)
 # Allow callers to target an isolated job copy (see run_benchmark.sh).
 TASKS_DIR="${TASKS_DIR:-$SCRIPT_DIR/.generated/tasks}"
 
@@ -41,8 +41,12 @@ if [[ ! -f "$VERIFIER_SRC" ]]; then
   echo "Missing shared verifier: $VERIFIER_SRC" >&2
   exit 1
 fi
-if [[ ! -f "$WORKTREE_CHECK_SRC" ]]; then
-  echo "Missing worktree checker: $WORKTREE_CHECK_SRC" >&2
+if [[ ${#PROGRAMMATIC_CHECKERS[@]} -eq 0 ]]; then
+  echo "Missing programmatic checkers under $SCRIPT_DIR/verifier/check_*.py" >&2
+  exit 1
+fi
+if [[ ${#PROGRAMMATIC_PACKAGES[@]} -eq 0 ]]; then
+  echo "Missing programmatic packages under $SCRIPT_DIR/verifier/*_check" >&2
   exit 1
 fi
 if [[ ! -f "$GROK_JUDGE_SRC" ]]; then
@@ -59,10 +63,6 @@ if [[ ! -f "$LLM_JUDGE_CLI" ]]; then
 fi
 if [[ ! -f "$LLM_JUDGE_SRC/workspace.py" ]]; then
   echo "Missing LLM judge package: $LLM_JUDGE_SRC" >&2
-  exit 1
-fi
-if [[ ! -f "$WORKTREE_CHECK_PACKAGE/__init__.py" ]]; then
-  echo "Missing worktree checker package: $WORKTREE_CHECK_PACKAGE" >&2
   exit 1
 fi
 if [[ ! -f "$VERIFIER_LIB_SRC/eval_agents.sh" ]]; then
@@ -107,12 +107,16 @@ for tests_dir in "$TASKS_DIR"/*/tests; do
   rm -rf "$tests_dir/judges"
   mkdir -p "$tests_dir/judges"
   install -m 755 "$VERIFIER_SRC" "$tests_dir/run_judges.sh"
-  install -m 755 "$WORKTREE_CHECK_SRC" "$tests_dir/check_worktree.py"
+  for checker in "${PROGRAMMATIC_CHECKERS[@]}"; do
+    install -m 755 "$checker" "$tests_dir/$(basename "$checker")"
+  done
+  for pkg in "${PROGRAMMATIC_PACKAGES[@]}"; do
+    rm -rf "$tests_dir/$(basename "$pkg")"
+    cp -r "$pkg" "$tests_dir/$(basename "$pkg")"
+  done
   install -m 755 "$LLM_JUDGE_CLI" "$tests_dir/run_llm_judge.py"
   install -m 755 "$JUDGE_POOL_SRC" "$tests_dir/judge_pool.py"
   install -m 755 "$GROK_JUDGE_SRC" "$tests_dir/run_grok_judge.py"
-  rm -rf "$tests_dir/worktree_check"
-  cp -r "$WORKTREE_CHECK_PACKAGE" "$tests_dir/worktree_check"
   rm -rf "$tests_dir/lib"
   install -d "$tests_dir/lib"
   install -m 644 "$VERIFIER_LIB_SRC"/*.sh "$tests_dir/lib/"

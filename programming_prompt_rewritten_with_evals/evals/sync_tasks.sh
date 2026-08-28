@@ -171,6 +171,13 @@ for prompt_path in prompt_files:
     meta, body = parse_prompt(prompt_path)
     artifact = meta["artifact"]
     description = meta["description"].replace('"', '\\"')
+    features_text = meta.get("features", "1").strip()
+    try:
+        feature_count = int(features_text)
+    except ValueError as exc:
+        raise SystemExit(f"{prompt_path}: features must be an integer, got {features_text!r}") from exc
+    if feature_count < 1:
+        raise SystemExit(f"{prompt_path}: features must be >= 1, got {feature_count}")
     oracle_src = oracles_dir / f"{name}.py"
     if not oracle_src.is_file():
         raise SystemExit(f"Missing oracle for '{name}': {oracle_src}")
@@ -188,6 +195,9 @@ for prompt_path in prompt_files:
     shutil.copy2(compose_src, task_dir / "environment" / "docker-compose.yaml")
     shutil.copy2(template_dir / "tests" / "test.sh", task_dir / "tests" / "test.sh")
     (task_dir / "tests" / "test.sh").chmod(0o755)
+    (task_dir / "tests" / "feature_count.txt").write_text(
+        f"{feature_count}\n", encoding="utf-8"
+    )
     shutil.copy2(oracle_src, task_dir / "solution" / "oracle.py")
     write_solve_sh(task_dir / "solution" / "solve.sh", artifact, name)
     print(f"materialized task {name} -> {task_dir}", flush=True)
