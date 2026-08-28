@@ -6,7 +6,7 @@ timeout = 60
 
 [[criterion]]
 name = "feature_commits"
-description = "one worktree commit per Feature; each commit leaves the program working"
+description = "one Python commit per Feature; later Features must not already be in earlier commits"
 type = "binary"
 
 [scoring]

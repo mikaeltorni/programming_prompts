@@ -1,0 +1,4 @@
+# Per-commit Python tokens for the commits checker (not shown to the agent).
+# Feature 1 must ship catalog without checkout; Feature 2 adds checkout.
+1 has:added= lacks:total=
+2 has:total=

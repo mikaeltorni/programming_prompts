@@ -21,6 +21,7 @@ When **two or more Features** are found:
 - **Commit that Feature in the worktree** before starting the next.
 - After each Feature commit the program must **still work**. Do not land a
   commit that only works after later Features arrive.
+- Do not put a later Feature into an earlier Feature's commit.
 - Do not batch every Feature into one end-of-task commit.
 
 A single Feature (or none) is one commit. Commits happen in the worktree;

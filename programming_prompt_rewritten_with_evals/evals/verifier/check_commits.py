@@ -7,7 +7,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from commits_check import check_repo, read_required_features, run_self_test
+from commits_check import check_repo, parse_feature_spec, run_self_test
 from worktree_check import write_reward
 
 DEFAULT_REPO = Path("/Projects/app")
@@ -37,7 +37,7 @@ def main(argv: list[str] | None = None) -> int:
         "--feature-count-file",
         type=Path,
         default=Path("/tests/feature_count.txt"),
-        help="file with the coding-prompt Feature count",
+        help="file with Feature count (first line) and optional per-commit markers",
     )
     parser.add_argument(
         "--self-test",
@@ -47,13 +47,13 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.self_test:
         return run_self_test()
-    required = read_required_features(args.feature_count_file)
-    result = check_repo(args.repo, required=required)
+    required, markers = parse_feature_spec(args.feature_count_file)
+    result = check_repo(args.repo, required=required, markers=markers)
     write_reward(
         result,
         args.output,
         criterion="feature_commits",
-        description="one worktree commit per Feature; each commit leaves the program working",
+        description="one Python commit per Feature; later Features must not already be in earlier commits",
     )
     print(
         f"commits check: {'yes' if result.ok else 'no'} — {result.reasoning}",

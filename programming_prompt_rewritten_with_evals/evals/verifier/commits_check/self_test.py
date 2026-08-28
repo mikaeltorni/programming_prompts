@@ -13,7 +13,13 @@ from worktree_check.fixtures import (
     write_python,
 )
 
-from .rules import SEED_SUBJECT, check_repo, read_required_features
+from .rules import (
+    SEED_SUBJECT,
+    FeatureMarker,
+    check_repo,
+    parse_feature_spec,
+    read_required_features,
+)
 
 
 def _commit_py(repo: Path, filename: str, message: str, body: str = "x = 1\n") -> None:
@@ -113,6 +119,90 @@ def run_self_test() -> int:
                 "missing_feature_count_defaults_to_one",
                 read_required_features(root / "no-such.txt") == 1,
                 "missing file yields 1",
+            )
+        )
+
+        shop_markers = [
+            FeatureMarker(1, has=["added="], lacks=["total="]),
+            FeatureMarker(2, has=["total="], lacks=[]),
+        ]
+        sequential = root / "sequential" / "app"
+        init_empty_repo(sequential)
+        _commit_py(
+            sequential,
+            "shop.py",
+            "feat(shop): catalog",
+            "def run_shop(c):\n    return 'added=' + c\n",
+        )
+        _commit_py(
+            sequential,
+            "shop.py",
+            "feat(shop): checkout",
+            "def run_shop(c):\n    if c == 'total':\n        return 'total=0'\n    return 'added=' + c\n",
+        )
+        record("pass_sequential_feature_markers", True, sequential, 2)
+        got_seq = check_repo(sequential, required=2, markers=shop_markers)
+        cases.append(
+            (
+                "pass_sequential_feature_markers_tokens",
+                got_seq.ok,
+                got_seq.reasoning,
+            )
+        )
+
+        dumped = root / "dumped" / "app"
+        init_empty_repo(dumped)
+        _commit_py(
+            dumped,
+            "shop.py",
+            "feat(shop): everything",
+            "def run_shop(c):\n    return 'added=x total=0'\n",
+        )
+        _commit_py(
+            dumped,
+            "shop.py",
+            "feat(shop): tweak",
+            "def run_shop(c):\n    return 'added=x total=1'\n",
+        )
+        got_dump = check_repo(dumped, required=2, markers=shop_markers)
+        cases.append(
+            (
+                "fail_feature1_already_contains_checkout",
+                (not got_dump.ok) and "later-Feature" in got_dump.reasoning,
+                got_dump.reasoning,
+            )
+        )
+
+        dummy = root / "dummy-second" / "app"
+        init_empty_repo(dummy)
+        _commit_py(
+            dummy,
+            "shop.py",
+            "feat(shop): catalog",
+            "def run_shop(c):\n    return 'added=' + c\n",
+        )
+        _commit_py(dummy, "extra.py", "feat(shop): dummy", "x = 1\n")
+        got_dummy = check_repo(dummy, required=2, markers=shop_markers)
+        cases.append(
+            (
+                "fail_dummy_second_python_file",
+                (not got_dummy.ok) and "missing" in got_dummy.reasoning,
+                got_dummy.reasoning,
+            )
+        )
+
+        spec = root / "feature_count_with_markers.txt"
+        spec.write_text(
+            "2\n1 has:added= lacks:total=\n2 has:total=\n",
+            encoding="utf-8",
+        )
+        need, parsed = parse_feature_spec(spec)
+        cases.append(
+            (
+                "parse_feature_spec_markers",
+                need == 2
+                and parsed == shop_markers,
+                f"need={need} markers={parsed!r}",
             )
         )
 
