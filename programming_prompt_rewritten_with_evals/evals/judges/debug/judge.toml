@@ -6,7 +6,7 @@ timeout = 60
 
 [[criterion]]
 name = "read_logs_first"
-description = "when .log/ exists, workspace Python matches the log diagnosis"
+description = "when .log/ exists, workspace Python matches the expected output in the logs"
 type = "binary"
 
 [scoring]
