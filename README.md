@@ -38,6 +38,8 @@ Repository ownership and routing are documented in [AGENTS.md](AGENTS.md).
 Related research is documented in [Prompt Engineering for Software Development](https://github.com/mikaeltorni/prompt_engineering_for_software_development),
 and challenge generation is covered by the
 [Prompt Challenge Generator](https://github.com/mikaeltorni/prompt_challenge_generator).
+For local conventional commit suggestions from Git diffs, see the
+[coding_tools local AI commit message generator](https://github.com/mikaeltorni/coding_tools).
 
 ## Quickstart
 
