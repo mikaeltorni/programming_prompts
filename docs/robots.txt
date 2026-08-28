@@ -1,0 +1,5 @@
+# https://mikaeltorni.github.io/programming_prompts/
+User-agent: *
+Allow: /
+
+Sitemap: https://mikaeltorni.github.io/programming_prompts/sitemap.xml

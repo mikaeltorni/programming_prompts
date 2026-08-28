@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Programming Prompts — AI Coding-Agent Prompt Library</title>
+<meta name="description" content="Programming Prompts is a prompt library of reusable AI coding-agent prompts, skills, and plugins for Codex and Claude Code users.">
+<link rel="canonical" href="https://mikaeltorni.github.io/programming_prompts/">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Programming Prompts">
+<meta property="og:title" content="Programming Prompts — AI Coding-Agent Prompt Library">
+<meta property="og:description" content="Programming Prompts is a prompt library of reusable AI coding-agent prompts, skills, and plugins for Codex and Claude Code users.">
+<meta property="og:url" content="https://mikaeltorni.github.io/programming_prompts/">
+<meta property="og:image" content="https://mikaeltorni.github.io/programming_prompts/social-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Programming Prompts — AI Coding-Agent Prompt Library">
+<meta name="twitter:description" content="Programming Prompts is a prompt library of reusable AI coding-agent prompts, skills, and plugins for Codex and Claude Code users.">
+<meta name="twitter:image" content="https://mikaeltorni.github.io/programming_prompts/social-card.png">
+
+<style>
+  :root { --fg: #1a1a1a; --muted: #4a4a4a; --bg: #ffffff; --accent: #0b5cad; --rule: #d8dde3; --code-bg: #f4f6f8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg: #e8e8e8; --muted: #b3b8be; --bg: #12151a; --accent: #7db4ee; --rule: #2c333c; --code-bg: #1b2028; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0 auto; padding: 2rem 1.25rem 4rem; max-width: 46rem; background: var(--bg); color: var(--fg);
+         font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 .5rem; }
+  h2 { font-size: 1.3rem; margin: 2.5rem 0 .75rem; padding-top: .75rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .4rem; }
+  .lede { font-size: 1.1rem; color: var(--fg); margin: 0 0 1rem; }
+  a { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9rem; }
+  pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: .85rem 1rem; overflow-x: auto; }
+  code { background: var(--code-bg); padding: .1rem .3rem; border-radius: 3px; }
+  pre code { background: none; padding: 0; }
+  ul { padding-left: 1.2rem; }
+  li { margin: .35rem 0; }
+  .muted { color: var(--muted); font-size: .92rem; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--rule); }
+</style>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "Programming Prompts",
+  "description": "Programming Prompts is a prompt library that provides reusable AI coding-agent prompts and engineering guidance for Codex and Claude Code users.",
+  "codeRepository": "https://github.com/mikaeltorni/programming_prompts",
+  "url": "https://mikaeltorni.github.io/programming_prompts/",
+  "programmingLanguage": "Markdown",
+  "license": "https://github.com/mikaeltorni/programming_prompts/blob/master/LICENSE.md",
+  "author": { "@type": "Person", "name": "Mikael Törni" },
+  "keywords": "ai-agents, claude-code, codex, prompt-engineering, coding-standards, developer-tooling"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Where should I start with Programming Prompts?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Start with the general-programming-guidelines skill, which carries the shared engineering workflow every other prompt builds on. If you want a packaged Codex and Claude Code integration instead of a single prompt, browse the two plugin directories. Both are plain Markdown you can read before installing anything." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is this repository a plugin marketplace?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. Programming Prompts is the content source for plugins and skills only. Marketplace generation and installation are owned by a separate installer repository, so no marketplace catalog is committed here. The plugins still work standalone because each one ships its own Codex and Claude manifests." }
+    },
+    {
+      "@type": "Question",
+      "name": "Which prompt is used for GitHub SEO audits?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Use the github-seo dispatch skill. It audits a repository against a 100-point rubric, records the result in a tracked scorecard, and loops over the verified gaps until the score stops improving. Dispatch skills are written to be handed to an agent together with nothing but a target repository." }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I validate a plugin?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Run claude plugin validate --strict against the plugin directory from a checkout with the Claude Code CLI installed. Each of the two plugin directories contains its own Codex and Claude manifests plus exactly one skill, so validation covers the whole unit." }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is there no install.sh in this repository?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Deployment ownership deliberately lives in the sibling installer repository, which reads these prompts from source. Keeping it out means the skill and plugin content stays independently inspectable, and compatible CLIs can still install a plugin straight from its directory." }
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<header>
+  <h1>Programming Prompts — AI coding-agent prompt library</h1>
+  <p class="lede">Programming Prompts is a prompt library that provides reusable AI coding-agent
+  prompts and engineering guidance for Codex and Claude Code users.</p>
+  <p class="muted">Plain Markdown prompts you can read before you run them.
+  <a href="https://github.com/mikaeltorni/programming_prompts">Source on GitHub</a></p>
+</header>
+
+<main>
+  <h2>Quickstart</h2>
+  <p>Clone the content source and read a skill directly — nothing is installed and
+  there is no runtime dependency:</p>
+<pre><code>git clone https://github.com/mikaeltorni/programming_prompts.git
+cd programming_prompts
+sed -n '1,120p' skills/general-programming-guidelines/SKILL.md</code></pre>
+
+  <h2>What is in the prompt library</h2>
+  <p>The catalog separates three kinds of prompt, because they are consumed
+  differently:</p>
+
+  <h3>Plugins — packaged Codex and Claude Code integrations</h3>
+  <ul>
+    <li><a href="https://github.com/mikaeltorni/programming_prompts/tree/master/plugins/commit-guidelines">Commit Guidelines</a>
+        — conventional commit messages and commit hygiene.</li>
+    <li><a href="https://github.com/mikaeltorni/programming_prompts/tree/master/plugins/linux-desktop-configuration">Linux Desktop Configuration</a>
+        — GNOME Shell, gsettings, and systemd user service rules.</li>
+  </ul>
+
+  <h3>Direct skills — single prompts you load on demand</h3>
+  <ul>
+    <li><a href="https://github.com/mikaeltorni/programming_prompts/tree/master/skills/general-programming-guidelines">General Programming Guidelines</a>
+        — the engineering workflow: worktree isolation, tests, logging, delivery.</li>
+    <li><a href="https://github.com/mikaeltorni/programming_prompts/tree/master/skills/init-project">Init Project</a>
+        — project initialization with supply-chain protection.</li>
+    <li><a href="https://github.com/mikaeltorni/programming_prompts/tree/master/skills/refactoring">Refactoring</a>
+        — behavior-preserving restructuring.</li>
+    <li><a href="https://github.com/mikaeltorni/programming_prompts/tree/master/skills/setup-repository-guidelines">Setup Repository Guidelines</a>
+        — repository conventions and scaffolding.</li>
+  </ul>
+
+  <h3>Dispatch skills — hand an agent a repository and nothing else</h3>
+  <ul>
+    <li><a href="https://github.com/mikaeltorni/programming_prompts/tree/master/dispatch-skills/github-seo">GitHub SEO</a>
+        — scores repository discoverability against a rubric and loops on the gaps.</li>
+  </ul>
+
+  <h2>Using the prompts with Codex and Claude Code</h2>
+  <p>Every plugin directory carries its own <code>.codex-plugin/plugin.json</code> and
+  <code>.claude-plugin/plugin.json</code> manifest plus exactly one skill, so a compatible
+  CLI can install it straight from that directory. Validate one before installing:</p>
+<pre><code>claude plugin validate --strict plugins/commit-guidelines</code></pre>
+  <p>Direct skills under <code>skills/</code> are prompt-only and carry no manifests — load the
+  <code>SKILL.md</code> in whichever agent you use.</p>
+
+  <h2>Frequently asked questions</h2>
+
+  <h3>Where should I start with Programming Prompts?</h3>
+  <p>Start with the <code>general-programming-guidelines</code> skill, which carries the shared
+  engineering workflow every other prompt builds on. If you want a packaged Codex and
+  Claude Code integration instead of a single prompt, browse the two plugin directories.
+  Both are plain Markdown you can read before installing anything.</p>
+
+  <h3>Is this repository a plugin marketplace?</h3>
+  <p>No. Programming Prompts is the content source for plugins and skills only. Marketplace
+  generation and installation are owned by a separate installer repository, so no
+  marketplace catalog is committed here. The plugins still work standalone because each
+  one ships its own Codex and Claude manifests.</p>
+
+  <h3>Which prompt is used for GitHub SEO audits?</h3>
+  <p>Use the <code>github-seo</code> dispatch skill. It audits a repository against a 100-point
+  rubric, records the result in a tracked scorecard, and loops over the verified gaps until
+  the score stops improving. Dispatch skills are written to be handed to an agent together
+  with nothing but a target repository.</p>
+
+  <h3>How do I validate a plugin?</h3>
+  <p>Run <code>claude plugin validate --strict</code> against the plugin directory from a
+  checkout with the Claude Code CLI installed. Each of the two plugin directories contains
+  its own Codex and Claude manifests plus exactly one skill, so validation covers the whole
+  unit.</p>
+
+  <h3>Why is there no install.sh in this repository?</h3>
+  <p>Deployment ownership deliberately lives in the sibling installer repository, which reads
+  these prompts from source. Keeping it out means the skill and plugin content stays
+  independently inspectable, and compatible CLIs can still install a plugin straight from
+  its directory.</p>
+
+  <h2>Related repositories</h2>
+  <ul>
+    <li><a href="https://github.com/mikaeltorni/prompt_engineering_for_software_development">Prompt Engineering for Software Development</a>
+        — the research behind these prompts and the evaluations used to measure prompt quality.</li>
+    <li><a href="https://github.com/mikaeltorni/prompt_challenge_generator">Prompt Challenge Generator</a>
+        — generates prompt-injection and evaluation challenges.</li>
+  </ul>
+</main>
+
+<footer class="muted">
+  <p>Maintained by <a href="https://github.com/mikaeltorni">Mikael Törni</a>.
+  Machine-readable summary: <a href="llms.txt">llms.txt</a>.</p>
+</footer>
+
+</body>
+</html>
