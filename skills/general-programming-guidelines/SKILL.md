@@ -1,7 +1,7 @@
 ---
 name: general-programming-guidelines
 description: >-
-  v1.12.1 — Mandatory engineering workflow and coding standards for every software task:
+  v1.13.0 — Mandatory engineering workflow and coding standards for every software task:
   implementation, debugging, review, testing, and refactoring.
 ---
 
@@ -242,6 +242,14 @@ sends you back to the relevant Work Loop step.
   placeholders such as `0`, empty strings, or generic models.
 - Keep installers, migrations, generators, and setup scripts idempotent and
   non-destructive; preserve root-optional paths where the repo supports them.
+- **Never add CI to a repository unless the user explicitly asks for it.** Do
+  not create `.github/workflows/`, GitHub Actions, or any other CI/CD pipeline,
+  and do not add a CI or build-status badge to a README. Verification runs
+  locally through the Work Loop (tests, lint, type, build) — a hosted pipeline
+  is not a substitute and is not a deliverable. When a repository already ships
+  CI, leave it exactly as it is: keep it working, do not delete it to satisfy
+  this rule, and do not expand it. Propose CI under pending user actions
+  instead of adding it unprompted.
 - Before touching user-global state — installed skills, generated wrappers,
   desktop config, services, installer output — test in a sandbox or temporary
   home when feasible; deploy for real only after focused tests pass.
