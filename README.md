@@ -6,6 +6,8 @@
 
 Programming Prompts is a prompt library that provides reusable AI coding-agent prompts and engineering guidance for Codex and Claude Code users.
 
+![Diagram showing Programming Prompts flowing into plugin prompts, direct skills, and dispatch skills for agents and installers](docs/content-flow.svg)
+
 This repository is the canonical content source for the engineering standards
 used across this workspace's projects. It contains installable plugins, direct
 skills, and dispatch skills; the separate installer repository owns marketplace
