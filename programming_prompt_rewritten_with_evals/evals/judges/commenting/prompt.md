@@ -8,8 +8,7 @@ Score whether every function or method docstring uses this format:
 
 Answer yes only if every `def` / `async def` / method has that docstring.
 `lambda` expressions do **not** need docstrings — missing docs on a lambda
-is not a no. The labels must start
-on the same line as their content. A long parameter list that continues on
+is not a no. The labels must start on the same line as their content. A long parameter list that continues on
 the next line after `Parameters:` already has content is still a yes. A
 blank line between the description and the `Parameters:` line is required
 by the skill example and is a yes. Capitalization of `none` / `None` after

@@ -12,8 +12,10 @@ Write code as single-responsibility functions/methods.
 
 Concrete rules:
 - Put input parsing of the raw command (split/tokenize/partition) in its own helper(s).
-- Put core logic (arithmetic, state updates, conversions, business rules) in
+- Put core logic (arithmetic, state updates, business conversions) in
   its own helper(s). Helpers may return a one-line formatted result.
+  `int()` / `float()` of an already-split token is not a business
+  conversion.
 - Keep the public entrypoint thin: parse → call helpers → return/format.
   if/elif dispatch, raises on unknown/extra/missing arguments, and a range
   check on an already-parsed value may live in the entrypoint or a core
