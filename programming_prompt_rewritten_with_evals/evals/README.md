@@ -335,8 +335,11 @@ This suite’s tasks also require the trial image (`task-template/environment/Do
 `docker-compose.yaml` sets `network_mode: bridge` so each trial is still a
 container but does **not** allocate a user-defined Docker network (stock
 IPAM's ~28 `/16` slots). The same overlay mounts per-container **tmpfs**
-on `/tmp`, `/var/tmp`, and `/root/.cache` so uv/agent scratch skips
-overlay2 copy-up (the usual community fix for overlay2 write amplification).
+on `/tmp/scratch` (`TMPDIR`), `/var/tmp`, and `/root/.cache` so uv/agent
+scratch skips overlay2 copy-up. Do **not** tmpfs all of `/tmp`: Harbor
+copies Codex auth to `/tmp/codex-secrets` and uses `CODEX_HOME=/tmp/codex-home`.
+A tmpfs over `/tmp` made `docker compose cp … auth.json` fail on every
+trial and Codex 403/429-retried until Harbor recorded `ApiRateLimitError`.
 Each mount is private RAM — not a shared volume, not a host bind — so
 trials stay isolated; only the image layers stay on disk. Each trial also
 gets a **1 CPU cgroup quota** plus `GOMAXPROCS=1` / `UV_THREADPOOL_SIZE=2`
