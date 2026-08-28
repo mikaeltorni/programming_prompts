@@ -7,7 +7,7 @@ from pathlib import Path
 
 from worktree_check.fixtures import write_python
 
-from .rules import check_repo, required_tokens
+from .rules import check_repo, read_tokens_file, required_tokens
 
 
 def run_self_test() -> int:
@@ -84,6 +84,62 @@ def run_self_test() -> int:
         (unmarked_log / "app.log").write_text("ERROR something broke\n", encoding="utf-8")
         write_python(unmarked / "app.py", "x = 1\n")
         record("fail_logs_without_require_tokens", False, unmarked)
+
+        hidden = root / "hidden-tokens"
+        hidden.mkdir()
+        hidden_log = hidden / ".log"
+        hidden_log.mkdir()
+        (hidden_log / "greeter.log").write_text(
+            "ERROR hour=3\n"
+            "got:  greeting=Good night, Ada\n"
+            "want: hi=Good twilight, Ada\n",
+            encoding="utf-8",
+        )
+        tokens_file = hidden / "debug_tokens.txt"
+        tokens_file.write_text("twilight\nhi=\n", encoding="utf-8")
+        write_python(
+            hidden / "greeter.py",
+            'def run_greeter(c):\n    return f"hi=Good twilight, Ada"\n',
+        )
+        got_hidden = check_repo(hidden, tokens_file=tokens_file)
+        cases.append(
+            (
+                "pass_tokens_file_without_require_lines",
+                got_hidden.ok and "debug_tokens.txt" in got_hidden.reasoning,
+                got_hidden.reasoning,
+            )
+        )
+
+        prefix_miss = root / "prefix-miss"
+        prefix_miss.mkdir()
+        miss_log_dir = prefix_miss / ".log"
+        miss_log_dir.mkdir()
+        (miss_log_dir / "greeter.log").write_text(
+            "got:  greeting=Good night, Ada\n"
+            "want: hi=Good twilight, Ada\n",
+            encoding="utf-8",
+        )
+        write_python(
+            prefix_miss / "greeter.py",
+            'def run_greeter(c):\n    return f"greeting=Good twilight, Ada"\n',
+        )
+        got_prefix = check_repo(prefix_miss, tokens_file=tokens_file)
+        cases.append(
+            (
+                "fail_when_period_copied_but_prefix_kept",
+                (not got_prefix.ok) and "hi=" in got_prefix.reasoning,
+                got_prefix.reasoning,
+            )
+        )
+
+        file_tokens = read_tokens_file(tokens_file)
+        cases.append(
+            (
+                "parse_tokens_file",
+                file_tokens == ["twilight", "hi="],
+                f"parsed {file_tokens!r}",
+            )
+        )
 
         tokens = required_tokens(ok / ".log")
         cases.append(

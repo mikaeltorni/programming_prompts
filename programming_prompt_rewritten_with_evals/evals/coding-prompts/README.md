@@ -10,6 +10,7 @@ coding-prompts/
 ├── greeter.md
 ├── greeter-fix.md
 ├── shop.md
+├── shop.markers
 ├── temperature.md
 └── todo.md
 ```
@@ -31,6 +32,11 @@ skill scores that count. `sync_tasks.sh` writes it to `tests/feature_count.txt`.
 An optional sibling `<name>.markers` file lists per-commit Python tokens
 (`1 has:added= lacks:total=`) so the checker rejects dumping every Feature
 into the first commit or padding with a dummy second `.py` file.
+
+`greeter-fix` plants a broken greeter plus `.log/` (`got:` / `want:`). Hidden
+`seeds/greeter-fix/debug_tokens.txt` is copied to `tests/debug_tokens.txt` so
+the debug checker can score the expected output without putting `require:`
+lines in the agent-visible log.
 
 The filename stem is the task name (`calculator.md` → task `calculator`).
 `/app` is a symlink to `/Projects/app` inside the trial image. Do **not** edit

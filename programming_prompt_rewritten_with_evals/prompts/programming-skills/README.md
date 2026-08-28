@@ -35,10 +35,12 @@ The checker counts non-merge Python commits after the empty initial commit
 Feature 1's tree has catalog tokens and still lacks checkout tokens, then
 that Feature 2 adds checkout. A dummy extra `.py` commit does not pass.
 
-**Debug eval note:** pair `debug` with `greeter-fix` (planted `.log/` plus a
-broken `/app/greeter.py`). The checker is a no-op when `.log/` is missing, so
-write-from-scratch tasks stay a pass. When logs exist, workspace Python must
-match the log diagnosis.
+**Debug eval note:** pair `debug` with `greeter-fix` (broken `/app/greeter.py`
+plus planted `.log/` with a `got:` / `want:` diagnosis). The checker is a
+no-op when `.log/` is missing, so write-from-scratch tasks such as `shop`
+stay a pass. When logs exist, workspace Python must match the expected
+output — including prefixes such as `hi=` — using hidden
+`tests/debug_tokens.txt` (not `require:` lines in the agent-visible log).
 
 **Docs eval note:** after the code, write `README.md` naming the public
 `run_*` entrypoint and the commands. Function docstrings stay on the

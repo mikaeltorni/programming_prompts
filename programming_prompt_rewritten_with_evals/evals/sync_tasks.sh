@@ -81,7 +81,9 @@ def install_seed(seed_src: Path, env_dir: Path, dockerfile: Path) -> bool:
 
     Returns: true when a seed commit was added. A ``log/`` folder is copied to
         ``.log/`` in the image so the gitignored ``.log/`` path is not stored
-        in this repository. The commit subject must stay ``Seed task files``.
+        in this repository. ``debug_tokens.txt`` stays out of the image (it is
+        copied to ``tests/`` for the checker only). The commit subject must
+        stay ``Seed task files``.
     """
     if not seed_src.is_dir():
         return False
@@ -89,6 +91,8 @@ def install_seed(seed_src: Path, env_dir: Path, dockerfile: Path) -> bool:
     dest.mkdir(parents=True, exist_ok=True)
     copied = False
     for item in sorted(seed_src.iterdir()):
+        if item.name == "debug_tokens.txt":
+            continue
         if item.name == "log" and item.is_dir():
             shutil.copytree(item, dest / ".log", dirs_exist_ok=True)
             copied = True
@@ -254,6 +258,9 @@ for prompt_path in prompt_files:
     (task_dir / "tests" / "feature_count.txt").write_text(
         "\n".join(count_lines) + "\n", encoding="utf-8"
     )
+    tokens_src = template_dir.parent / "seeds" / name / "debug_tokens.txt"
+    if tokens_src.is_file():
+        shutil.copy2(tokens_src, task_dir / "tests" / "debug_tokens.txt")
     shutil.copy2(oracle_src, task_dir / "solution" / "oracle.py")
     write_solve_sh(task_dir / "solution" / "solve.sh", artifact, name)
     print(f"materialized task {name} -> {task_dir}", flush=True)

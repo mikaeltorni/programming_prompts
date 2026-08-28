@@ -34,6 +34,12 @@ def main(argv: list[str] | None = None) -> int:
         help="reward JSON path",
     )
     parser.add_argument(
+        "--tokens-file",
+        type=Path,
+        default=Path("/tests/debug_tokens.txt"),
+        help="hidden diagnosis tokens (one per line); not shown to the agent",
+    )
+    parser.add_argument(
         "--self-test",
         action="store_true",
         help="run built-in pass/fail fixtures and exit",
@@ -41,12 +47,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.self_test:
         return run_self_test()
-    result = check_repo(args.repo)
+    result = check_repo(args.repo, tokens_file=args.tokens_file)
     write_reward(
         result,
         args.output,
         criterion="read_logs_first",
-        description="when .log/ exists, workspace Python matches the log diagnosis",
+        description="when .log/ exists, workspace Python matches the expected output in the logs",
     )
     print(
         f"debug check: {'yes' if result.ok else 'no'} — {result.reasoning}",
