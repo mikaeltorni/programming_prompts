@@ -2,27 +2,32 @@
 name: commits
 description: >-
   Use whenever the user prompt can be split into Features, including vague
-  "should have X" asks: break them into a 3–5 step plan, implement one at a
-  time, and commit each Feature in the worktree while the program still works.
-  Apply on every coding task, including small scripts and new files from scratch.
+  "should have X" asks: break them into about 3 Feature groups, implement one
+  at a time, and commit each Feature in the worktree while the program still
+  works. Apply on every coding task, including small scripts and new files
+  from scratch.
 ---
 
 # Feature commits
 
-When the user prompt is vague ("a calculator should have add", "build a
-shop") or lists several capabilities in one request, **break it into a
-multi-step plan of 3–5 Features** before writing Feature code. Start with
-the basic implementation that already works, then add further features one
-at a time.
+When the user prompt is vague ("a calculator should have add") or lists
+several capabilities in one request, **break it into about 3 Features**
+before writing Feature code:
 
-A Feature is a self-contained unit of shippable behavior. Record the Feature
-list. Do not skip the breakdown because the script is small or the prompt
-did not number the steps.
+1. the basic implementation that already works
+2. the next distinct capability
+3. the remaining extras (one Feature, even if that extras group names two
+   related commands)
+
+A Feature is one **group** the prompt names, not every operator or hour
+band. Morning/afternoon/evening in one sentence is one Feature. Multiply
+and divide in one sentence is one Feature. Record the Feature list. Do not
+skip the breakdown because the script is small.
 
 Illustrative breakdowns (not the current task):
 
-- calculator: add two numbers, then subtract, then multiply, then divide
-- counter: increment, then decrement, then read, then set
+- calculator: add, then subtract, then multiply-and-divide
+- greeter: hello, then hour-based greetings, then farewell
 
 When **two or more Features** are found:
 
@@ -32,6 +37,7 @@ When **two or more Features** are found:
 - After each Feature commit the program must **still work**. Do not land a
   commit that only works after later Features arrive.
 - Do not put a later Feature into an earlier Feature's commit.
+- Do not merge two prompt groups into one commit.
 - Do not batch every Feature into one end-of-task commit.
 
 A single Feature (or none) is one commit. Commits happen in the worktree;

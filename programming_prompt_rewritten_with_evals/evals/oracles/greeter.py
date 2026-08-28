@@ -25,6 +25,18 @@ def hello_name(name: str) -> str:
     return f"hello={name}"
 
 
+def farewell(name: str) -> str:
+    """Format a farewell.
+
+    Parameters:
+        name: Person to farewell.
+
+    Returns:
+        String like "bye=<name>".
+    """
+    return f"bye={name}"
+
+
 def timed_greeting(name: str, hour: int) -> str:
     """Greet by name and hour of day.
 
@@ -50,7 +62,7 @@ def run_greeter(command: str) -> str:
     """Build a greeting from a command.
 
     Parameters:
-        command: "hello <name>" or "<name> <hour>".
+        command: "hello <name>", "<name> <hour>", or "bye <name>".
 
     Returns:
         Formatted greeting string.
@@ -60,6 +72,10 @@ def run_greeter(command: str) -> str:
         if len(rest) != 1:
             raise ValueError("hello requires a name")
         return hello_name(rest[0])
+    if first == "bye":
+        if len(rest) != 1:
+            raise ValueError("bye requires a name")
+        return farewell(rest[0])
     if len(rest) != 1:
         raise ValueError("expected '<name> <hour>'")
     return timed_greeting(first, int(rest[0]))
