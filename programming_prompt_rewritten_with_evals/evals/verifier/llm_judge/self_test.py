@@ -197,6 +197,12 @@ def run_self_test() -> int:
                 "int() of a split token in a state helper is core logic",
             ),
             (
+                "srp_yes_allows_int_in_entrypoint",
+                "helper(int" in yes_block.lower()
+                and "conversion-only" in yes_block.lower(),
+                "int() of a split token passed into a helper from the entrypoint is thin",
+            ),
+            (
                 "srp_yes_allows_dispatch_raises",
                 "unknown" in yes_block.lower() and "raise" in yes_block.lower(),
                 "thin entrypoint may raise on unknown op or extra args",
@@ -264,6 +270,11 @@ def run_self_test() -> int:
                 "commenting_blank_line_ok",
                 "blank line" in text,
                 "blank line before Parameters: is a yes",
+            ),
+            (
+                "commenting_ignores_lambdas",
+                "lambda" in text and "not a no" in text,
+                "lambda dispatch tables are not a commenting failure",
             ),
         ]:
             check(*item)
