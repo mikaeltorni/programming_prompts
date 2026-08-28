@@ -66,14 +66,25 @@ def trial_is_ratelimited(trial_dir: Path) -> bool:
     Parameters: trial_dir - Harbor trial directory (live or archived).
 
     Returns: true when reward JSON is flagged or verifier stdout matches.
+        A trial that already scored 1.0 is never a skip — Harbor may log
+        ApiRateLimitError on a command it then retried successfully.
     """
+    completed = False
     for relative in ("01-reward.json", "verifier/reward.json"):
         payload = load_json_lenient(trial_dir / relative) or {}
+        reward = payload.get("reward")
+        try:
+            if reward is not None and float(reward) >= 1.0:
+                completed = True
+        except (TypeError, ValueError):
+            pass
         if payload.get("ratelimit") is True:
             return True
         error = str(payload.get("error") or "").lower()
         if "ratelimit" in error or error in {"rate_limit", "rate-limit"}:
             return True
+    if completed:
+        return False
     for relative in (
         "10-test-stdout.txt",
         "verifier/10-test-stdout.txt",

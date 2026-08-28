@@ -394,6 +394,21 @@ def _check_results(record) -> None:
             "Harbor 21-trial.log ApiRateLimitError is a rate-limit skip",
         )
 
+    with tempfile.TemporaryDirectory(prefix="archive-recovered-rl-") as raw_ok:
+        live = Path(raw_ok) / "trial"
+        live.mkdir()
+        (live / "01-reward.json").write_text('{"reward": 1.0}\n', encoding="utf-8")
+        (live / "21-trial.log").write_text(
+            "Classified failed command as ApiRateLimitError "
+            "(pattern: 'too many requests')\n",
+            encoding="utf-8",
+        )
+        record(
+            "results_ratelimit_ignores_recovered_coding_429",
+            not trial_is_ratelimited(live),
+            "ApiRateLimitError after a 1.0 reward is a pass, not a skip",
+        )
+
 
 def _self_test() -> int:
     """Run all archive fixture checks.
