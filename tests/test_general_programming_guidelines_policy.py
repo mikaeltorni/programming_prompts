@@ -202,7 +202,7 @@ def test_general_guidelines_description_shows_current_version_before_mandatory()
     """The skill picker must expose the current version before its mandate."""
     content = skill_text()
 
-    assert "description: >-\n  v1.12.1 — Mandatory engineering workflow" in content
+    assert "description: >-\n  v1.13.0 — Mandatory engineering workflow" in content
 
 
 def test_general_guidelines_respect_project_agents_and_claude_first():
@@ -341,3 +341,25 @@ def test_wrapper_and_readme_versions_match_the_skill_version():
 
     readme = (root / "README.md").read_text(encoding="utf-8")
     assert f"Current version: **v{version}**." in readme
+
+
+def test_general_guidelines_forbid_unrequested_ci():
+    """CI is opt-in: agents must never add pipelines or badges unprompted."""
+    content = skill_text()
+
+    assert "Never add CI to a repository unless the user explicitly asks" in content
+    assert ".github/workflows/" in content
+    assert "build-status badge" in content
+    assert "leave it exactly as it is" in content
+
+
+def test_ci_prohibition_is_carried_by_the_always_on_wrapper():
+    """Hosts that only read the wrapper must still see the CI prohibition."""
+    wrapper = (
+        SKILL_PATH.resolve().parents[2]
+        / "global-instructions"
+        / "general-programming-guidelines.md"
+    ).read_text(encoding="utf-8")
+
+    assert "Never add CI" in wrapper
+    assert "unless the user explicitly asks" in wrapper
