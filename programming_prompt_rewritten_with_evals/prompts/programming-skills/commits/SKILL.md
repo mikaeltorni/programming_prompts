@@ -1,18 +1,28 @@
 ---
 name: commits
 description: >-
-  Use whenever the user prompt can be split into Features: classify those
-  Features first, implement one at a time, and commit each Feature in the
-  worktree while the program still works. Apply on every coding task,
-  including small scripts and new files from scratch.
+  Use whenever the user prompt can be split into Features, including vague
+  "should have X" asks: break them into a 3–5 step plan, implement one at a
+  time, and commit each Feature in the worktree while the program still works.
+  Apply on every coding task, including small scripts and new files from scratch.
 ---
 
 # Feature commits
 
-Classify the user prompt into discrete Features before writing Feature code.
-A Feature is a self-contained unit of shippable behavior (for example
-"add catalog" and "add checkout" in one request). Record the Feature list,
-or record that no multi-feature split applies.
+When the user prompt is vague ("a calculator should have add", "build a
+shop") or lists several capabilities in one request, **break it into a
+multi-step plan of 3–5 Features** before writing Feature code. Start with
+the basic implementation that already works, then add further features one
+at a time.
+
+A Feature is a self-contained unit of shippable behavior. Record the Feature
+list. Do not skip the breakdown because the script is small or the prompt
+did not number the steps.
+
+Illustrative breakdowns (not the current task):
+
+- calculator: add two numbers, then subtract, then multiply, then divide
+- counter: increment, then decrement, then read, then set
 
 When **two or more Features** are found:
 

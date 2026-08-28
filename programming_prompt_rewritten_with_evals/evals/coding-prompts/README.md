@@ -6,13 +6,19 @@ task at runtime via [`../sync_tasks.sh`](../sync_tasks.sh).
 ```text
 coding-prompts/
 ├── calculator.md
+├── calculator.markers
 ├── counter.md
+├── counter.markers
 ├── greeter.md
+├── greeter.markers
 ├── greeter-fix.md
+├── greeter-fix.markers
 ├── shop.md
 ├── shop.markers
 ├── temperature.md
-└── todo.md
+├── temperature.markers
+├── todo.md
+└── todo.markers
 ```
 
 Frontmatter (required):
@@ -26,11 +32,12 @@ features: 1
 Follow every provided programming skill. Write `/app/calculator.py` with …
 ```
 
-`features:` is optional and defaults to `1`. Use `2` (or more) when the
-instruction has two self-contained units of shippable behavior — the `commits`
-skill scores that count. `sync_tasks.sh` writes it to `tests/feature_count.txt`.
-An optional sibling `<name>.markers` file lists per-commit Python tokens
-(`1 has:added= lacks:total=`) so the checker rejects dumping every Feature
+`features:` is optional and defaults to `1`. Every coding prompt in this
+tree declares **3–5** Features as a vague "should have X, also Y" list — the
+`commits` skill must break that into a multi-step plan (basic first, then
+extras). `sync_tasks.sh` writes the count to `tests/feature_count.txt`.
+A sibling `<name>.markers` file lists per-commit Python tokens
+(`1 has:sum= lacks:diff=`) so the checker rejects dumping every Feature
 into the first commit or padding with a dummy second `.py` file.
 
 `greeter-fix` plants a broken greeter plus `.log/` (`got:` / `want:`). Hidden

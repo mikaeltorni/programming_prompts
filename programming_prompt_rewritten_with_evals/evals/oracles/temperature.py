@@ -2,7 +2,7 @@ def parse_command(command: str) -> tuple[str, float]:
     """Parse a temperature conversion command.
 
     Parameters:
-        command: Text like "c2f 20" or "f2c 68".
+        command: Text like "c2f 20", "f2c 68", "c2k 20", or "k2c 293.15".
 
     Returns:
         A tuple of operation name and numeric value.
@@ -14,42 +14,70 @@ def parse_command(command: str) -> tuple[str, float]:
     return op, float(value_text)
 
 
-def celsius_to_fahrenheit(celsius: float) -> float:
+def celsius_to_fahrenheit(celsius: float) -> str:
     """Convert Celsius to Fahrenheit.
 
     Parameters:
         celsius: Temperature in Celsius.
 
     Returns:
-        Temperature in Fahrenheit.
+        String like "f=<value>".
     """
-    return celsius * 9 / 5 + 32
+    return f"f={celsius * 9 / 5 + 32:g}"
 
 
-def fahrenheit_to_celsius(fahrenheit: float) -> float:
+def fahrenheit_to_celsius(fahrenheit: float) -> str:
     """Convert Fahrenheit to Celsius.
 
     Parameters:
         fahrenheit: Temperature in Fahrenheit.
 
     Returns:
-        Temperature in Celsius.
+        String like "c=<value>".
     """
-    return (fahrenheit - 32) * 5 / 9
+    return f"c={(fahrenheit - 32) * 5 / 9:g}"
+
+
+def celsius_to_kelvin(celsius: float) -> str:
+    """Convert Celsius to Kelvin.
+
+    Parameters:
+        celsius: Temperature in Celsius.
+
+    Returns:
+        String like "k=<value>".
+    """
+    return f"k={celsius + 273.15:g}"
+
+
+def kelvin_to_celsius(kelvin: float) -> str:
+    """Convert Kelvin to Celsius.
+
+    Parameters:
+        kelvin: Temperature in Kelvin.
+
+    Returns:
+        String like "fromk=<value>".
+    """
+    return f"fromk={kelvin - 273.15:g}"
 
 
 def run_temperature(command: str) -> str:
     """Run one temperature conversion command.
 
     Parameters:
-        command: Text like "c2f 20" or "f2c 68".
+        command: Conversion command such as "c2f 20".
 
     Returns:
         Formatted conversion result string.
     """
     op, value = parse_command(command)
     if op == "c2f":
-        return f"f={celsius_to_fahrenheit(value)}"
+        return celsius_to_fahrenheit(value)
     if op == "f2c":
-        return f"c={fahrenheit_to_celsius(value)}"
+        return fahrenheit_to_celsius(value)
+    if op == "c2k":
+        return celsius_to_kelvin(value)
+    if op == "k2c":
+        return kelvin_to_celsius(value)
     raise ValueError(f"unsupported op: {op}")

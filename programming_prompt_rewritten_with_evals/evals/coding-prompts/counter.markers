@@ -1,0 +1,4 @@
+1 has:up= lacks:down=
+2 has:down= lacks:value=
+3 has:value= lacks:set=
+4 has:set=

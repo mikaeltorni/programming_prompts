@@ -62,11 +62,25 @@ def done_item(args: list[str]) -> str:
     return f"done={text}"
 
 
+def clear_items() -> str:
+    """Remove every todo item.
+
+    Parameters:
+        None
+
+    Returns:
+        String like "cleared=<n>" for how many items were removed.
+    """
+    n = len(_ITEMS)
+    _ITEMS.clear()
+    return f"cleared={n}"
+
+
 def run_todo(command: str) -> str:
     """Execute one todo command.
 
     Parameters:
-        command: Todo command such as "add milk", "list", or "done 1".
+        command: Todo command such as "add milk", "list", "done 1", or "clear".
 
     Returns:
         Command result string.
@@ -80,4 +94,8 @@ def run_todo(command: str) -> str:
         return list_items()
     if action == "done":
         return done_item(args)
+    if action == "clear":
+        if args:
+            raise ValueError("clear takes no arguments")
+        return clear_items()
     raise ValueError(f"unsupported command: {action}")
