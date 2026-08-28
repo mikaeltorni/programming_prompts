@@ -24,6 +24,10 @@ already-split token with `int()` / `float()` inside a state helper is
 still core logic, not mixed parsing. An empty or out-of-range guard on
 an already-parsed value (`if not text: raise`) is still that function's
 job — do not require a separate validation-only function.
+`helper(int(token))` or `helper(float(token))` in the entrypoint is still
+thin: converting an already-split token there is not leftover core
+logic and does not need a conversion-only helper. Converting that token
+inside a state helper is also yes.
 A format-only helper does not count as extracting core logic if the
 entrypoint still increments or does the real arithmetic. Logging prints
 are scored by the logging skill — they are not an SRP failure.

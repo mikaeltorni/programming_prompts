@@ -21,6 +21,9 @@ Do not use `Args:` or other section names. Do not put `Parameters:` or
 `Returns:` on a line by themselves. A long parameter list may continue on
 the next line after the label already has content.
 
+`lambda` expressions do **not** need docstrings. Missing docs on a lambda
+is not a failure.
+
 Match this layout exactly:
 
 ```text

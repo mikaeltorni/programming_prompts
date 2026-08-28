@@ -25,6 +25,7 @@ Concrete rules:
   a format-only helper is not enough.
   `int()` of an already-split token and empty or out-of-range guards stay
   with the function that already owns that value; do not add a
-  validation-only function for them.
+  validation-only function for them. Passing `helper(int(token))` from the
+  entrypoint is still thin — that is not leftover core conversion.
 - Do not leave parsing and core logic mixed in one monolithic function body.
 - Logging prints are a separate skill; they do not merge responsibilities.
