@@ -33,9 +33,11 @@ Follow every provided programming skill. Write `/app/calculator.py` with …
 ```
 
 `features:` is optional and defaults to `1`. Every coding prompt in this
-tree declares **3–5** Features as a vague "should have X, also Y" list — the
-`commits` skill must break that into a multi-step plan (basic first, then
-extras). `sync_tasks.sh` writes the count to `tests/feature_count.txt`.
+tree declares **3** Feature **groups** as a vague "should have X, also Y,
+also extras" list — related extras in one sentence (multiply-and-divide,
+hour bands, Kelvin) are one Feature. The `commits` skill must break that
+into a multi-step plan (basic first, then extras). `sync_tasks.sh` writes
+the count to `tests/feature_count.txt`.
 A sibling `<name>.markers` file lists per-commit Python tokens
 (`1 has:sum= lacks:diff=`) so the checker rejects dumping every Feature
 into the first commit or padding with a dummy second `.py` file.
