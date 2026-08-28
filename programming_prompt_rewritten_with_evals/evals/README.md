@@ -48,7 +48,7 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `evalAgentModel=claude-opus-5` / `--evalAgentModel …` / `--eval-agent-model=…` | Judge model id (same idea as `-m` / `--model`). One value for every eval agent, or one per agent |
 | `evalAgentReasoningEffort=low` / `--evalAgentReasoningEffort high` | Judge effort: `low`, `medium`, or `high` (same idea as `--ak reasoning_effort=`). One value or one per agent |
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
-| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine. **Unset = 20** (one proven `-k 20` job; a second wrapper waits). `0` disables the cap. `2` is the old quota-safe cap. Harbor `-n` always follows `-k`. |
+| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine. **Unset = no LLM cap**. Overlapping jobs run at full `-k`; Harbor retries `ApiRateLimitError`. `20` serializes to one proven job. `2` is the old quota-safe cap. Harbor `-n` always follows `-k`. |
 | `--skills srp,commenting` | Which skills to inject (default: all non-`*-vague`) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
@@ -86,15 +86,16 @@ does **not** multiply that. Omit harness (both) ≈ **2×** again — e.g.
 the LLM judge on each trial (2× verifier *cost*). Judge subprocesses default
 to **four at a time** (`EVAL_JUDGE_WORKERS=4`) so the four skills overlap
 after the coding agent. Set `EVAL_JUDGE_WORKERS=1` to serialize them. Live
-coding trials default to **20** concurrent across every wrapper (`EVAL_LLM_MAX_CONCURRENT=20`).
-A second overlapping `./run_benchmark.sh` **waits for a slot** instead of
-starting 40 Codex CLIs. Set `EVAL_LLM_MAX_CONCURRENT=0` to disable the cap.
+coding trials have **no LLM cap** unless `EVAL_LLM_MAX_CONCURRENT` is set.
+Overlapping `./run_benchmark.sh` processes run at full `-k`; Harbor retries
+`ApiRateLimitError` (Codex `too many requests`) up to 4 times with backoff.
 **Omit `-n` to follow `-k`** — `-k 20` runs 20 trials at once. Pass a larger
 `-n` (up to tasks×attempts) to run more of the wave at once; trials sit on
 Docker's default `bridge` so stock IPAM (~28 user-defined nets) is not the
-cap. `EVAL_LLM_MAX_CONCURRENT=2`
-restores the old quota-safe cap. Extra wrappers wait when the cap is already
-in use.
+cap. `EVAL_LLM_MAX_CONCURRENT=20` serializes overlapping jobs to one proven
+wave. `EVAL_LLM_MAX_CONCURRENT=2`
+restores the old quota-safe cap. Extra wrappers wait when an explicit
+cap is already in use.
 Programmatic judges (worktree) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
 Code `claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
 (`--reasoning-effort`). Judge defaults match those models at **low** effort
@@ -399,9 +400,9 @@ kept. BuildKit cache stays — wiping it on every job forced a multi-minute
 image rebuild. Bare `python3 docker_networks.py prune` also drops dangling
 build cache when you need more disk.
 Concurrent `./run_benchmark.sh` processes **wait for a coding-trial slot**
-when the default cap of 20 is in use (or `EVAL_LLM_MAX_CONCURRENT` is set,
-or a job still uses per-trial networks). `EVAL_LLM_MAX_CONCURRENT=0` removes
-the LLM cap. Harbor `-n` / `--n-concurrent` is
+only when `EVAL_LLM_MAX_CONCURRENT` is set (or a job still uses per-trial
+networks). There is no default LLM cap. Harbor retries `ApiRateLimitError`
+so overlapping jobs can run at full `-k`. Harbor `-n` / `--n-concurrent` is
 **not a user flag**: the wrapper always sets concurrency from `-k` (`-k 20`
 runs 20 at once). Passing `-n 100` with 5 tasks × `-k 20` starts 100
 `docker compose build`s at once; Harbor then aborts with
@@ -849,7 +850,7 @@ Regenerate the 14 shipped JSON files after changing the matrix builder:
 `s` in the menu pastes new `./run_benchmark.sh` lines and writes another JSON
 file under `presets/` (commit it if you want it in git). Extra user JSON files
 appear **after** the shipped catalog. The Docker slot lock still queues extra
-jobs when the LLM cap is in use (default 20).
+jobs when `EVAL_LLM_MAX_CONCURRENT` is set.
 
 Manual examples:
 
@@ -875,10 +876,10 @@ strips user `-n` / `--n-concurrent` so a leftover `-n 100` cannot starve
 smaller `-k` for a cheaper smoke. The wrapper defaults to `-k 5` (and
 therefore 5 concurrent) when you pass no Harbor flags. After the job
 finishes it prints a categorized console summary.
-Several terminals may start at once. The default LLM cap keeps 20 coding
-trials live; extra wrappers wait. Trials use Docker's default bridge, so
+Several terminals may start at once. Trials use Docker's default bridge, so
 stock IPAM is not the cap (see
-[Install Docker](#install-docker-on-ubuntu-2404)).
+[Install Docker](#install-docker-on-ubuntu-2404)). Harbor retries Codex
+`ApiRateLimitError` so overlapping jobs are not serialized.
 
 Do not use bare `-a codex` / `-a claude-code` / `-a grok-build` for these skill
 benchmarks: those paths can leave host/user skill directories untouched and do
@@ -898,7 +899,7 @@ the same Codex reference with `skills: []` for a hand-run baseline; prefer
 | `evalAgentModel=…` | Judge model id (same idea as `-m`; one value or one per eval agent) |
 | `evalAgentReasoningEffort=…` | Judge effort (same idea as `--ak reasoning_effort=`) |
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
-| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials (unset = 20; `0` = none) |
+| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials (unset = none) |
 | `--ak version=…` | CLI pin override |
 | `-k` / `--n-attempts` | Independent attempts per task **and** Harbor concurrency (default: `5`) |
 | `-n` / `--n-concurrent` | Ignored. The wrapper always sets Harbor `-n` from `-k` (`-n 100` with `-k 20` timed out ~half the trials at 300s on `docker compose build`) |

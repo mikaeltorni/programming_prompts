@@ -13,6 +13,10 @@ collect_artifact_flags() {
 }
 
 write_job_config() {
+  # Materialize one Harbor job YAML. Retry ApiRateLimitError so overlapping
+  # -k 20 jobs can run at CPU/disk speed: a Codex 429 requeues the trial
+  # with backoff instead of leaving an unmerged worktree. Pass harbor -r 0
+  # to disable. Do not retry usage-limit / timeout / reward-file errors.
   local harness="$1"
   local config_file="$2"
   local skills_block="$3"
@@ -22,6 +26,14 @@ write_job_config() {
   model_name="$(harness_model_name "$harness")"
   version="$(harness_cli_version "$harness")"
   cat >"$config_file" <<EOF
+retry:
+  max_retries: 4
+  include_exceptions:
+    - ApiRateLimitError
+  wait_multiplier: 2.0
+  min_wait_sec: 5.0
+  max_wait_sec: 60.0
+
 agents:
   - import_path: ${import_path}
     model_name: ${model_name}

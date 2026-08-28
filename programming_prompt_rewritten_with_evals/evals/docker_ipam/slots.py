@@ -12,7 +12,6 @@ from typing import Any
 
 from .constants import (
     DEFAULT_N_WHEN_UNLIMITED,
-    LLM_MAX_CONCURRENT_DEFAULT,
     LLM_MAX_CONCURRENT_UNLIMITED,
     POLL_SEC,
     SAFETY_MARGIN,
@@ -209,18 +208,19 @@ def llm_max_concurrent() -> int:
 
     Parameters: none.
 
-    Returns: max live Harbor trials across every wrapper. Unset uses
-        ``LLM_MAX_CONCURRENT_DEFAULT`` (one proven ``-k 20`` job). ``0`` or a
+    Returns: max live Harbor trials across every wrapper. Unset, ``0``, or a
         negative ``EVAL_LLM_MAX_CONCURRENT`` disables the cap (IPAM only).
+        Harbor job YAML retries ``ApiRateLimitError`` so overlapping jobs can
+        run at full ``-k`` without dropping 429s as skill nos.
     """
     raw = os.environ.get("EVAL_LLM_MAX_CONCURRENT", "").strip()
     if not raw:
-        return LLM_MAX_CONCURRENT_DEFAULT
+        return LLM_MAX_CONCURRENT_UNLIMITED
     try:
         value = int(raw)
     except ValueError:
         log(f"ignoring invalid EVAL_LLM_MAX_CONCURRENT={raw!r}")
-        return LLM_MAX_CONCURRENT_DEFAULT
+        return LLM_MAX_CONCURRENT_UNLIMITED
     if value <= 0:
         log("EVAL_LLM_MAX_CONCURRENT<=0: LLM cap disabled")
         return LLM_MAX_CONCURRENT_UNLIMITED
@@ -233,8 +233,7 @@ def default_n_concurrent() -> int:
     Parameters: none.
 
     Returns: live coding-trial count when neither ``-n`` nor ``-k`` is
-        available. Unset ``EVAL_LLM_MAX_CONCURRENT`` follows
-        ``LLM_MAX_CONCURRENT_DEFAULT``. Disabled cap (``0``) returns
+        available. Unset / disabled ``EVAL_LLM_MAX_CONCURRENT`` returns
         ``DEFAULT_N_WHEN_UNLIMITED``; acquire still clamps that to free IPAM.
         Job wrappers prefer following ``-k`` instead of this helper.
     """

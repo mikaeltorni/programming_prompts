@@ -62,6 +62,7 @@ run_one_job() {
   echo "Job $job_name judges: ${SELECTED_SKILLS_FOR_JOB[*]:-(none)} (isolated under $tasks_root)" >&2
   echo "Model default: $(harness_model_name "$harness") @ reasoning_effort=low (CLI $(harness_cli_version "$harness"))" >&2
   echo "Job $job_name evalAgent: $(eval_agents_csv_for_harness "$harness") (inherit if evalAgent omitted)" >&2
+  echo "Job $job_name retries ApiRateLimitError up to 4 times (backoff 5–60s)." >&2
 
   local docker_holder="${RUN_STAMP}:${job_name}"
   local granted_slots=""

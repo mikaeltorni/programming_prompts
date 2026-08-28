@@ -285,17 +285,29 @@ def _self_test() -> int:
     prev_llm = os.environ.pop("EVAL_LLM_MAX_CONCURRENT", None)
     try:
         record(
-            "unset_llm_cap_is_default",
-            llm_max_concurrent() == LLM_MAX_CONCURRENT_DEFAULT,
+            "unset_llm_cap_unlimited",
+            llm_max_concurrent() == LLM_MAX_CONCURRENT_UNLIMITED,
             f"got {llm_max_concurrent()}",
         )
         record(
-            "default_n_unset_follows_cap",
-            default_n_concurrent() == LLM_MAX_CONCURRENT_DEFAULT,
+            "default_n_unset_unlimited",
+            default_n_concurrent() == DEFAULT_N_WHEN_UNLIMITED,
             f"got {default_n_concurrent()}",
         )
         record(
-            "grant_k20_at_default_cap",
+            "grant_overlapping_k20_when_uncapped",
+            grant_trial_slots(
+                20,
+                ipam_free=LLM_MAX_CONCURRENT_UNLIMITED,
+                ipam_max=LLM_MAX_CONCURRENT_UNLIMITED,
+                reserved=20,
+                llm_cap=LLM_MAX_CONCURRENT_UNLIMITED,
+            )
+            == 20,
+            "two overlapping -k 20 jobs both get 20 slots when the LLM cap is unset",
+        )
+        record(
+            "grant_k20_when_cap_set",
             grant_trial_slots(
                 20,
                 ipam_free=LLM_MAX_CONCURRENT_UNLIMITED,
@@ -304,10 +316,10 @@ def _self_test() -> int:
                 llm_cap=LLM_MAX_CONCURRENT_DEFAULT,
             )
             == 20,
-            "one -k 20 job still runs 20 trials under the default cap",
+            "EVAL_LLM_MAX_CONCURRENT=20 still lets one -k 20 job run 20 trials",
         )
         record(
-            "grant_second_k20_waits_at_default_cap",
+            "grant_second_k20_waits_when_cap_set",
             grant_trial_slots(
                 20,
                 ipam_free=LLM_MAX_CONCURRENT_UNLIMITED,
@@ -316,7 +328,7 @@ def _self_test() -> int:
                 llm_cap=LLM_MAX_CONCURRENT_DEFAULT,
             )
             is None,
-            "overlapping -k 20 wrapper waits instead of doubling Codex CLIs",
+            "EVAL_LLM_MAX_CONCURRENT=20 makes a second wrapper wait",
         )
         os.environ["EVAL_LLM_MAX_CONCURRENT"] = "2"
         record(
@@ -356,13 +368,15 @@ def _self_test() -> int:
         default_n_cli.returncode == 0 and default_n_cli.stdout.strip() == "7",
         f"rc={default_n_cli.returncode} out={default_n_cli.stdout!r} err={default_n_cli.stderr!r}",
     )
-    wrapper = Path(__file__).resolve().parents[1] / "run_benchmark.sh"
-    wrapper_text = wrapper.read_text(encoding="utf-8") if wrapper.is_file() else ""
+    job_config = Path(__file__).resolve().parents[1] / "lib" / "job_config.sh"
+    job_text = job_config.read_text(encoding="utf-8") if job_config.is_file() else ""
     record(
-        "wrapper_echoes_default_cap",
-        wrapper.is_file()
-        and f"{LLM_MAX_CONCURRENT_DEFAULT} (default)" in wrapper_text,
-        "run_benchmark.sh prints the default 20 cap when the env is unset",
+        "job_retries_api_rate_limit",
+        job_config.is_file()
+        and "max_retries: 4" in job_text
+        and "ApiRateLimitError" in job_text
+        and "wait_multiplier: 2.0" in job_text,
+        "Harbor job YAML retries Codex 429s instead of capping overlapping jobs",
     )
     record(
         "not_harbor_bridge",
