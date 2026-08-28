@@ -226,7 +226,7 @@ def _self_test() -> int:
             20, ipam_free=28, ipam_max=28, reserved=0,
             llm_cap=LLM_MAX_CONCURRENT_UNLIMITED,
         ) == 20,
-        "unset LLM cap lets -k 20 run 20 trials when IPAM has room",
+        "EVAL_LLM_MAX_CONCURRENT=0 lets -k 20 run 20 trials when IPAM has room",
     )
     record(
         "grant_k20_ipam_clamps",
@@ -280,19 +280,43 @@ def _self_test() -> int:
             10, ipam_free=28, ipam_max=28, reserved=0,
             llm_cap=LLM_MAX_CONCURRENT_DEFAULT,
         ) == 10,
-        "EVAL_LLM_MAX_CONCURRENT=10 still lets -n 10 run 10 trials",
+        "EVAL_LLM_MAX_CONCURRENT default still lets -n 10 run 10 trials",
     )
     prev_llm = os.environ.pop("EVAL_LLM_MAX_CONCURRENT", None)
     try:
         record(
-            "unset_llm_cap_unlimited",
-            llm_max_concurrent() == LLM_MAX_CONCURRENT_UNLIMITED,
+            "unset_llm_cap_is_default",
+            llm_max_concurrent() == LLM_MAX_CONCURRENT_DEFAULT,
             f"got {llm_max_concurrent()}",
         )
         record(
-            "default_n_unset_unlimited",
-            default_n_concurrent() == DEFAULT_N_WHEN_UNLIMITED,
+            "default_n_unset_follows_cap",
+            default_n_concurrent() == LLM_MAX_CONCURRENT_DEFAULT,
             f"got {default_n_concurrent()}",
+        )
+        record(
+            "grant_k20_at_default_cap",
+            grant_trial_slots(
+                20,
+                ipam_free=LLM_MAX_CONCURRENT_UNLIMITED,
+                ipam_max=LLM_MAX_CONCURRENT_UNLIMITED,
+                reserved=0,
+                llm_cap=LLM_MAX_CONCURRENT_DEFAULT,
+            )
+            == 20,
+            "one -k 20 job still runs 20 trials under the default cap",
+        )
+        record(
+            "grant_second_k20_waits_at_default_cap",
+            grant_trial_slots(
+                20,
+                ipam_free=LLM_MAX_CONCURRENT_UNLIMITED,
+                ipam_max=LLM_MAX_CONCURRENT_UNLIMITED,
+                reserved=LLM_MAX_CONCURRENT_DEFAULT,
+                llm_cap=LLM_MAX_CONCURRENT_DEFAULT,
+            )
+            is None,
+            "overlapping -k 20 wrapper waits instead of doubling Codex CLIs",
         )
         os.environ["EVAL_LLM_MAX_CONCURRENT"] = "2"
         record(
@@ -331,6 +355,14 @@ def _self_test() -> int:
         "default_n_cli",
         default_n_cli.returncode == 0 and default_n_cli.stdout.strip() == "7",
         f"rc={default_n_cli.returncode} out={default_n_cli.stdout!r} err={default_n_cli.stderr!r}",
+    )
+    wrapper = Path(__file__).resolve().parents[1] / "run_benchmark.sh"
+    wrapper_text = wrapper.read_text(encoding="utf-8") if wrapper.is_file() else ""
+    record(
+        "wrapper_echoes_default_cap",
+        wrapper.is_file()
+        and f"{LLM_MAX_CONCURRENT_DEFAULT} (default)" in wrapper_text,
+        "run_benchmark.sh prints the default 20 cap when the env is unset",
     )
     record(
         "not_harbor_bridge",
