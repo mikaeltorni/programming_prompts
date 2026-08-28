@@ -10,7 +10,7 @@ Grok follow selected programming skills while implementing tiny Python programs:
 | [`coding-prompts/counter.md`](coding-prompts/counter.md) | `/app/counter.py` → `run_counter` |
 | [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` |
 | [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` |
-| [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (`add` then `total`; `features: 2`) |
+| [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (Feature 1 `add`, Feature 2 `total`; `features: 2`) |
 | [`coding-prompts/greeter-fix.md`](coding-prompts/greeter-fix.md) | `/app/greeter.py` → `run_greeter` (broken seed + `.log/`) |
 
 Each coding prompt is the product instruction (what to build) plus “Follow the

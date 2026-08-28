@@ -28,6 +28,9 @@ Follow every provided programming skill. Write `/app/calculator.py` with …
 `features:` is optional and defaults to `1`. Use `2` (or more) when the
 instruction has two self-contained units of shippable behavior — the `commits`
 skill scores that count. `sync_tasks.sh` writes it to `tests/feature_count.txt`.
+An optional sibling `<name>.markers` file lists per-commit Python tokens
+(`1 has:added= lacks:total=`) so the checker rejects dumping every Feature
+into the first commit or padding with a dummy second `.py` file.
 
 The filename stem is the task name (`calculator.md` → task `calculator`).
 `/app` is a symlink to `/Projects/app` inside the trial image. Do **not** edit

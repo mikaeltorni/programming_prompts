@@ -244,8 +244,15 @@ for prompt_path in prompt_files:
     shutil.copy2(compose_src, task_dir / "environment" / "docker-compose.yaml")
     shutil.copy2(template_dir / "tests" / "test.sh", task_dir / "tests" / "test.sh")
     (task_dir / "tests" / "test.sh").chmod(0o755)
+    count_lines = [str(feature_count)]
+    markers_path = prompt_path.with_suffix(".markers")
+    if markers_path.is_file():
+        for raw in markers_path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if line and not line.startswith("#"):
+                count_lines.append(line)
     (task_dir / "tests" / "feature_count.txt").write_text(
-        f"{feature_count}\n", encoding="utf-8"
+        "\n".join(count_lines) + "\n", encoding="utf-8"
     )
     shutil.copy2(oracle_src, task_dir / "solution" / "oracle.py")
     write_solve_sh(task_dir / "solution" / "solve.sh", artifact, name)

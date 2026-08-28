@@ -28,11 +28,12 @@ the logging judge enough entry/exit sites to score. Prefer
 `/Projects/app` with an empty initial commit; worktrees must live at
 `/Projects/.worktrees/app/<dir>/`. `/app` is a symlink to `/Projects/app`.
 
-**Commits eval note:** pair `commits` with `worktree` and a multi-Feature task
-(`shop` declares `features: 2`). The checker counts non-merge Python commits
-after the empty initial commit (seed commits are skipped). A single-Feature
-task needs one such commit; two Features need two. Do not batch every Feature
-into one dump commit.
+**Commits eval note:** pair `commits` with a multi-Feature task (`shop`
+declares `features: 2` and labels Feature 1 then Feature 2 in one prompt).
+The checker counts non-merge Python commits after the empty initial commit
+(seed commits are skipped) and, when `<task>.markers` exists, checks that
+Feature 1's tree has catalog tokens and still lacks checkout tokens, then
+that Feature 2 adds checkout. A dummy extra `.py` commit does not pass.
 
 **Debug eval note:** pair `debug` with `greeter-fix` (planted `.log/` plus a
 broken `/app/greeter.py`). The checker is a no-op when `.log/` is missing, so
