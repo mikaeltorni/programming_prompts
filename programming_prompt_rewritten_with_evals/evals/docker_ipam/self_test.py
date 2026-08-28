@@ -262,10 +262,12 @@ def _self_test() -> int:
     record(
         "template_tmpfs_scratch",
         "tmpfs:" in compose_text
-        and "/tmp:exec" in compose_text
+        and "/tmp/scratch:exec" in compose_text
+        and "TMPDIR: /tmp/scratch" in compose_text
+        and "/tmp:exec" not in compose_text
         and "/var/tmp:" in compose_text
         and "/root/.cache:" in compose_text,
-        "per-container tmpfs keeps overlay2 off trial scratch",
+        "scratch tmpfs is /tmp/scratch so Harbor /tmp/codex-secrets stays on overlay2",
     )
     record(
         "template_cpu_quota",
