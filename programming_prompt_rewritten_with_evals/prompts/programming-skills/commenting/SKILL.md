@@ -8,8 +8,8 @@ description: >-
 
 # Function commenting
 
-Document every function or method with a docstring that always uses exactly
-this format:
+Document every `def` / `async def` / method with a docstring that always
+uses exactly this format:
 
 1. A short description of what the function does.
 2. One line starting with `Parameters:` listing each parameter and meaning
