@@ -30,6 +30,7 @@ Skills and judges:
 - [`../prompts/programming-skills/worktree/SKILL.md`](../prompts/programming-skills/worktree/SKILL.md)
 - [`../prompts/programming-skills/commits/SKILL.md`](../prompts/programming-skills/commits/SKILL.md)
 - [`../prompts/programming-skills/debug/SKILL.md`](../prompts/programming-skills/debug/SKILL.md)
+- [`../prompts/programming-skills/docs/SKILL.md`](../prompts/programming-skills/docs/SKILL.md)
 - [`judges/srp/prompt.md`](judges/srp/prompt.md)
 - [`judges/commenting/prompt.md`](judges/commenting/prompt.md)
 - [`judges/logging/prompt.md`](judges/logging/prompt.md)
@@ -39,6 +40,8 @@ Skills and judges:
   (programmatic Feature-commit checker; no LLM prompt)
 - [`judges/debug/judge.toml`](judges/debug/judge.toml)
   (programmatic read-logs checker; no LLM prompt)
+- [`judges/docs/judge.toml`](judges/docs/judge.toml)
+  (programmatic README checker; no LLM prompt)
 
 Coding tasks — one markdown file each under
 [`coding-prompts/`](coding-prompts/). Harbor task trees are **generated** under
@@ -104,7 +107,7 @@ cap. `EVAL_LLM_MAX_CONCURRENT=20` serializes overlapping jobs to one proven
 wave. `EVAL_LLM_MAX_CONCURRENT=2`
 restores the old quota-safe cap. Extra wrappers wait when an explicit
 cap is already in use.
-Programmatic judges (worktree, commits, debug) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
+Programmatic judges (worktree, commits, debug, docs) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
 Code `claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
 (`--reasoning-effort`). Judge defaults match those models at **low** effort
 unless `evalAgentModel` / `evalAgentReasoningEffort` override them.
@@ -149,7 +152,9 @@ evals/
 │   │   └── judge.toml          # programmatic
 │   ├── commits/
 │   │   └── judge.toml          # programmatic
-│   └── debug/
+│   ├── debug/
+│   │   └── judge.toml          # programmatic
+│   └── docs/
 │       └── judge.toml          # programmatic
 ├── verifier/
 │   ├── README.md
@@ -162,6 +167,8 @@ evals/
 │   ├── commits_check/          # Feature-count rules and fixtures
 │   ├── check_debug.py          # thin CLI for the read-logs-first judge
 │   ├── debug_check/            # log-token rules and fixtures
+│   ├── check_docs.py           # thin CLI for the README-after-code judge
+│   ├── docs_check/             # README rules and fixtures
 │   ├── run_llm_judge.py        # thin CLI; Codex / Claude Code / Grok eval agent
 │   ├── run_grok_judge.py       # shim → run_llm_judge.py --agent grok
 │   └── llm_judge/              # pin-and-retry helpers + self_test
@@ -657,6 +664,10 @@ python3 verifier/check_commits.py --self-test
 
 ```bash
 python3 verifier/check_debug.py --self-test
+```
+
+```bash
+python3 verifier/check_docs.py --self-test
 ```
 
 ```bash
