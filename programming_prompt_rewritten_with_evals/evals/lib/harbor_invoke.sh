@@ -63,7 +63,7 @@ run_harbor_for_harness() {
     esac
   done
 
-  # Judges default to four workers so the four skills (three LLM + worktree)
+  # Judges default to four workers so selected skills (LLM + programmatic)
   # overlap after the coding agent finishes. Set EVAL_JUDGE_WORKERS=1 to
   # serialize them.
 

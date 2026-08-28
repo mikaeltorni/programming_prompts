@@ -32,8 +32,13 @@ if [[ -d /tests/judges ]]; then
     skill_names+=("$skill")
     out="/logs/verifier/reward-${skill}.json"
     if grep -qE '^judge[[:space:]]*=[[:space:]]*"programmatic"' "$judge_dir/judge.toml"; then
+      checker="$HERE/check_${skill}.py"
+      if [[ ! -f "$checker" ]]; then
+        echo "Missing programmatic checker for skill '$skill': $checker" >&2
+        exit 1
+      fi
       echo "Queue programmatic judge for skill: $skill" >&2
-      append_judge_job "$skill" python3 "$HERE/check_worktree.py" \
+      append_judge_job "$skill" python3 "$checker" \
         --repo /Projects/app --output "$out"
       continue
     fi

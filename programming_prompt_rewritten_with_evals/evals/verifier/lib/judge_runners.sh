@@ -18,10 +18,11 @@ run_llm_eval_agent() {
 }
 
 run_programmatic_judge() {
-  local output_json="$1"
-  local checker="$HERE/check_worktree.py"
+  local skill="$1"
+  local output_json="$2"
+  local checker="$HERE/check_${skill}.py"
   if [[ ! -f "$checker" ]]; then
-    echo "Missing programmatic checker: $checker" >&2
+    echo "Missing programmatic checker for skill '$skill': $checker" >&2
     return 1
   fi
   python3 "$checker" --repo /Projects/app --output "$output_json"
@@ -34,7 +35,7 @@ run_one_judge() {
   skill="$(basename "$judge_dir")"
   if [[ -f "$judge_dir/judge.toml" ]] && grep -qE '^judge[[:space:]]*=[[:space:]]*"programmatic"' "$judge_dir/judge.toml"; then
     echo "Running programmatic judge for skill: $skill" >&2
-    run_programmatic_judge "$output_json"
+    run_programmatic_judge "$skill" "$output_json"
     return 0
   fi
   for idx in "${!EVAL_AGENT_LIST[@]}"; do

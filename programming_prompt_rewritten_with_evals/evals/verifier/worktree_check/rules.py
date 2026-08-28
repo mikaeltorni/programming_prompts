@@ -140,7 +140,7 @@ def check_repo(repo: Path) -> CheckResult:
             count = 0
         if count < 2:
             problems.append(
-                f"{path} has no commit after the empty initial commit; commit each finished part in the worktree"
+                f"{path} has no commit after the empty initial commit; commit your work in the worktree"
             )
             continue
         changed = git_ok(

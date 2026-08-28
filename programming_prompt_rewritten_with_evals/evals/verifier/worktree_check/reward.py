@@ -8,10 +8,17 @@ from pathlib import Path
 from .rules import CheckResult
 
 
-def write_reward(result: CheckResult, output: Path) -> None:
+def write_reward(
+    result: CheckResult,
+    output: Path,
+    *,
+    criterion: str = "worktree_layout",
+    description: str = "sibling .worktrees/<project>/ worktree, merge back, no push",
+) -> None:
     """Write reward and detail JSON files.
 
-    Parameters: result - checker outcome; output - reward JSON destination.
+    Parameters: result - checker outcome; output - reward JSON destination;
+        criterion - criterion name in the details payload; description - criterion text.
 
     Returns: None.
     """
@@ -26,11 +33,11 @@ def write_reward(result: CheckResult, output: Path) -> None:
             "score": reward,
             "criteria": [
                 {
-                    "name": "worktree_layout",
+                    "name": criterion,
                     "value": reward,
                     "raw": raw,
                     "weight": 1.0,
-                    "description": "sibling .worktrees/<project>/ worktree, merge back, no push",
+                    "description": description,
                     "reasoning": result.reasoning,
                 }
             ],
