@@ -39,6 +39,9 @@ When **two or more Features** are found:
 - Do not put a later Feature into an earlier Feature's commit.
 - Do not merge two prompt groups into one commit.
 - Do not batch every Feature into one end-of-task commit.
+- In that Feature's commit, use the return prefixes the prompt names
+  (`sum=`, `morning=`, `added=`). Do not hide them behind a variable if the
+  prompt showed a literal prefix.
 
 A single Feature (or none) is one commit. Commits happen in the worktree;
 where that worktree lives is a separate skill.
