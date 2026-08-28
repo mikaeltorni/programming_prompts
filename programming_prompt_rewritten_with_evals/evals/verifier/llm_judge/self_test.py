@@ -187,8 +187,9 @@ def run_self_test() -> int:
             (
                 "srp_yes_allows_get_format",
                 "already-computed" in yes_block.lower()
-                or "get" in yes_block.lower(),
-                "thin entrypoint may format existing state in one line",
+                and "get" in yes_block.lower()
+                and "do not require get" in yes_block.lower(),
+                "thin entrypoint may read existing state on get; helper not required",
             ),
             (
                 "srp_yes_allows_int_in_helper",
