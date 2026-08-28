@@ -27,6 +27,7 @@ Skill definitions (must follow exactly):
 - ${SKILLS_ROOT}/logging/SKILL.md
 - ${SKILLS_ROOT}/worktree/SKILL.md
 - ${SKILLS_ROOT}/commits/SKILL.md
+- ${SKILLS_ROOT}/debug/SKILL.md
 
 Judge prompts (scoring rules):
 - ${JUDGES_ROOT}/srp/prompt.md
@@ -34,10 +35,11 @@ Judge prompts (scoring rules):
 - ${JUDGES_ROOT}/logging/prompt.md
 - worktree is programmatic (check_worktree.py), not an LLM prompt
 - commits is programmatic (check_commits.py), not an LLM prompt
+- debug is programmatic (check_debug.py), not an LLM prompt
 
 For every trial under those job dirs:
 1. Read artifacts/Projects/app/*.py, artifacts/Projects/.worktrees/**/*.py (or artifacts/app/*.py), and verifier/reward.json (+ reward-details.json / reward-*.json).
-2. Check line-by-line that positive code follows ALL selected skills (SRP: parse helper + separate core-logic helper + thin entrypoint; commenting: every def docstring has description + Parameters: + Returns: on the same line; logging: named print at entry and before return on defs, not lambdas; worktree: edits in sibling .worktrees/, then merge; commits: one Python commit per Feature, not one dump of every Feature).
+2. Check line-by-line that positive code follows ALL selected skills (SRP: parse helper + separate core-logic helper + thin entrypoint; commenting: every def docstring has description + Parameters: + Returns: on the same line; logging: named print at entry and before return on defs, not lambdas; worktree: edits in sibling .worktrees/, then merge; commits: one Python commit per Feature, not one dump of every Feature; debug: when .log/ exists, the Python matches the log diagnosis).
 3. Confirm the judge verdict matches that structure (positive should be yes/1.0; baseline should be no/0.0).
 4. Confirm baseline code does NOT follow the skills (monolithic entrypoint and/or missing Parameters:/Returns: and/or missing entry prints and/or no worktree).
 5. Report any false positives or false negatives with exact file paths. End with pass totals and whether the claimed scores are trustworthy.

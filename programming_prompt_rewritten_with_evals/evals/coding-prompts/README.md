@@ -8,6 +8,7 @@ coding-prompts/
 ├── calculator.md
 ├── counter.md
 ├── greeter.md
+├── greeter-fix.md
 ├── shop.md
 ├── temperature.md
 └── todo.md

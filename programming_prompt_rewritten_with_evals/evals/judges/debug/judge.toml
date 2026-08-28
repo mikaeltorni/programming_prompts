@@ -1,0 +1,13 @@
+# Programmatic judge — no LLM. The verifier runs check_debug.py.
+
+[judge]
+judge = "programmatic"
+timeout = 60
+
+[[criterion]]
+name = "read_logs_first"
+description = "when .log/ exists, workspace Python matches the log diagnosis"
+type = "binary"
+
+[scoring]
+aggregation = "all_pass"

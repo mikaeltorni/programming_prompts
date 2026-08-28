@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Materialize Harbor task dirs from coding-prompts/*.md + shared template/oracles.
 # Edit only coding-prompts/<name>.md (and oracles/<name>.py for oracle runs).
-# Generated output lives under .generated/tasks/ (gitignored) — never hand-edit it.
+# Optional planted files live in seeds/<name>/ (a log/ folder becomes .log/ in
+# the image). Generated output lives under .generated/tasks/ (gitignored).
 # Usage: ./sync_tasks.sh
 set -euo pipefail
 
@@ -67,6 +68,49 @@ def patch_dockerfile_versions(path: Path) -> None:
             raise SystemExit(f"{path}: missing ARG {arg}= in template Dockerfile")
         text = updated
     path.write_text(text, encoding="utf-8")
+
+
+SEED_SUBJECT = "Seed task files"
+
+
+def install_seed(seed_src: Path, env_dir: Path, dockerfile: Path) -> bool:
+    """Copy optional planted files into the image and commit them as a seed.
+
+    Parameters: seed_src - evals/seeds/<task>/; env_dir - generated environment/;
+        dockerfile - generated Dockerfile to append COPY+commit steps.
+
+    Returns: true when a seed commit was added. A ``log/`` folder is copied to
+        ``.log/`` in the image so the gitignored ``.log/`` path is not stored
+        in this repository. The commit subject must stay ``Seed task files``.
+    """
+    if not seed_src.is_dir():
+        return False
+    dest = env_dir / "seed"
+    dest.mkdir(parents=True, exist_ok=True)
+    copied = False
+    for item in sorted(seed_src.iterdir()):
+        if item.name == "log" and item.is_dir():
+            shutil.copytree(item, dest / ".log", dirs_exist_ok=True)
+            copied = True
+            continue
+        if item.is_dir():
+            shutil.copytree(item, dest / item.name, dirs_exist_ok=True)
+        else:
+            shutil.copy2(item, dest / item.name)
+        copied = True
+    if not copied:
+        shutil.rmtree(dest, ignore_errors=True)
+        return False
+    text = dockerfile.read_text(encoding="utf-8")
+    text += (
+        "\nCOPY seed/ /tmp/task-seed/\n"
+        "RUN cp -a /tmp/task-seed/. /Projects/app/ \\\n"
+        " && git -C /Projects/app add -A \\\n"
+        f' && git -C /Projects/app commit -m "{SEED_SUBJECT}"\n'
+    )
+    dockerfile.write_text(text, encoding="utf-8")
+    log(f"seeded {seed_src.name} into {env_dir / 'seed'} as {SEED_SUBJECT!r}")
+    return True
 
 
 def parse_prompt(path: Path) -> tuple[dict[str, str], str]:
@@ -192,6 +236,11 @@ for prompt_path in prompt_files:
     write_task_toml(task_dir / "task.toml", name, description)
     shutil.copy2(template_dir / "environment" / "Dockerfile", task_dir / "environment" / "Dockerfile")
     patch_dockerfile_versions(task_dir / "environment" / "Dockerfile")
+    install_seed(
+        template_dir.parent / "seeds" / name,
+        task_dir / "environment",
+        task_dir / "environment" / "Dockerfile",
+    )
     shutil.copy2(compose_src, task_dir / "environment" / "docker-compose.yaml")
     shutil.copy2(template_dir / "tests" / "test.sh", task_dir / "tests" / "test.sh")
     (task_dir / "tests" / "test.sh").chmod(0o755)

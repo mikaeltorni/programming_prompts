@@ -15,6 +15,7 @@ Current skills:
 | [`logging-vague`](logging-vague/SKILL.md) | Control: one vague “Use logging.” line; scored by the logging judge |
 | [`worktree`](worktree/SKILL.md) | Sibling `.worktrees/<project>/` worktree, merge back, never push |
 | [`commits`](commits/SKILL.md) | Scan for Features; one working worktree commit per Feature |
+| [`debug`](debug/SKILL.md) | Read repo `.log/` before hypothesizing a bug |
 
 **Logging eval note:** pair `logging` (or `logging-vague`) with `srp` so the
 agent writes several helpers — otherwise a one-function script may not give
@@ -31,6 +32,11 @@ the logging judge enough entry/exit sites to score. Prefer
 after the empty initial commit (seed commits are skipped). A single-Feature
 task needs one such commit; two Features need two. Do not batch every Feature
 into one dump commit.
+
+**Debug eval note:** pair `debug` with `greeter-fix` (planted `.log/` plus a
+broken `/app/greeter.py`). The checker is a no-op when `.log/` is missing, so
+write-from-scratch tasks stay a pass. When logs exist, workspace Python must
+match the log diagnosis.
 
 Add a new skill by creating `programming-skills/<name>/SKILL.md` and
 `evals/judges/<name>/prompt.md` (+ `judge.toml`). For a vague control only,

@@ -14,8 +14,8 @@ RESULTS_FIXED_COLUMNS = (
     "Run", "Runtime", "Mode", "Harness", "Judge", "Skills", "Tasks",
     "k", "n", "Sep", "Trials", "Scored", "Pass", "RateLimit",
 )
-RESULTS_SKILL_ORDER = ("srp", "commenting", "logging", "worktree", "commits", "logging-vague")
-RESULTS_TASK_ORDER = ("calculator", "counter", "greeter", "shop", "temperature", "todo")
+RESULTS_SKILL_ORDER = ("srp", "commenting", "logging", "worktree", "commits", "debug", "logging-vague")
+RESULTS_TASK_ORDER = ("calculator", "counter", "greeter", "greeter-fix", "shop", "temperature", "todo")
 RESULTS_LEFT_ALIGN = frozenset(
     {"Run", "Runtime", "Mode", "Harness", "Judge", "Skills", "Tasks", "Sep"}
 )
