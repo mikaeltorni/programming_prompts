@@ -11,9 +11,6 @@ used across this workspace's projects. It contains installable plugins, direct
 skills, and dispatch skills; the separate installer repository owns marketplace
 generation and deployment.
 
-**Topics:** ai-agents · claude-code · codex · prompts · skills · plugins ·
-prompt-engineering · coding-standards · refactoring · developer-tooling
-
 ## Contents
 
 - [AI coding-agent prompt features](#ai-coding-agent-prompt-features)
