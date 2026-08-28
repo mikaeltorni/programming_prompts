@@ -20,6 +20,8 @@ Skills live under
   (programmatic judge)
 - [`commits`](prompts/programming-skills/commits/SKILL.md) — scan for
   Features; one working worktree commit per Feature (programmatic judge)
+- [`debug`](prompts/programming-skills/debug/SKILL.md) — read repo `.log/`
+  before hypothesizing (programmatic judge)
 
 Each real skill has a matching judge in
 [`evals/judges/<skill>/`](evals/judges/). Vague controls reuse the base judge.
@@ -30,7 +32,8 @@ enough functions to print. Pair `worktree` with `srp`. Pair `commits` with
 ## Current evaluation
 
 Five write-from-scratch tasks (`calculator`, `todo`, `counter`, `greeter`,
-`temperature`) plus `shop` (two Features: catalog then checkout) live as markdown under
+`temperature`) plus `shop` (two Features: catalog then checkout) and
+`greeter-fix` (broken greeter + planted logs) live as markdown under
 [`evals/coding-prompts/`](evals/coding-prompts/). The runner materializes Harbor
 task trees under `evals/.generated/tasks/` from those prompts. Selected skills
 are injected; each selected
@@ -50,9 +53,9 @@ Committed fallbacks:
 ## Layout
 
 - `prompts/programming-skills/` — injectable skills (`srp`, `commenting`,
-  `logging`, `worktree`, `commits`, plus `*-vague` controls)
+  `logging`, `worktree`, `commits`, `debug`, plus `*-vague` controls)
 - `evals/coding-prompts/` — one `.md` per write-from-scratch coding task
-- `evals/oracles/` — reference solutions for Harbor oracle
+- `evals/seeds/` — optional planted files for a task (`log/` → image `.log/`)
 - `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill
 - `evals/verifier/run_judges.sh` — shared Harbor verifier (one LLM judge pass per eval agent)
 - `evals/verifier/run_llm_judge.py` — Codex / Claude Code / Grok eval-agent runner

@@ -7,6 +7,7 @@ from pathlib import Path
 from worktree_check.git_io import git_ok, root_commits
 from worktree_check.rules import CheckResult
 
+# Keep in sync with sync_tasks.sh SEED_SUBJECT (skipped in Feature-commit counts).
 SEED_SUBJECT = "Seed task files"
 DEFAULT_FEATURE_COUNT_FILE = Path("/tests/feature_count.txt")
 

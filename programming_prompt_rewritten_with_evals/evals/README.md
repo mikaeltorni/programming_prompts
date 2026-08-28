@@ -1,6 +1,6 @@
 # Harbor evaluation
 
-Five small write-from-scratch tasks plus one two-Feature shop measure whether Codex, Claude Code, and/or
+Write-from-scratch tasks, a two-Feature shop, and a log-driven greeter fix measure whether Codex, Claude Code, and/or
 Grok follow selected programming skills while implementing tiny Python programs:
 
 | Prompt | Entrypoint |
@@ -11,6 +11,7 @@ Grok follow selected programming skills while implementing tiny Python programs:
 | [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` |
 | [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` |
 | [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (`add` then `total`; `features: 2`) |
+| [`coding-prompts/greeter-fix.md`](coding-prompts/greeter-fix.md) | `/app/greeter.py` → `run_greeter` (broken seed + `.log/`) |
 
 Each coding prompt is the product instruction (what to build) plus “Follow the
 provided programming skill.” Skills under
@@ -28,6 +29,7 @@ Skills and judges:
   (control — vague one-liner; scored by the logging judge)
 - [`../prompts/programming-skills/worktree/SKILL.md`](../prompts/programming-skills/worktree/SKILL.md)
 - [`../prompts/programming-skills/commits/SKILL.md`](../prompts/programming-skills/commits/SKILL.md)
+- [`../prompts/programming-skills/debug/SKILL.md`](../prompts/programming-skills/debug/SKILL.md)
 - [`judges/srp/prompt.md`](judges/srp/prompt.md)
 - [`judges/commenting/prompt.md`](judges/commenting/prompt.md)
 - [`judges/logging/prompt.md`](judges/logging/prompt.md)
@@ -35,6 +37,8 @@ Skills and judges:
   (programmatic git-layout checker; no LLM prompt)
 - [`judges/commits/judge.toml`](judges/commits/judge.toml)
   (programmatic Feature-commit checker; no LLM prompt)
+- [`judges/debug/judge.toml`](judges/debug/judge.toml)
+  (programmatic read-logs checker; no LLM prompt)
 
 Coding tasks — one markdown file each under
 [`coding-prompts/`](coding-prompts/). Harbor task trees are **generated** under
@@ -100,7 +104,7 @@ cap. `EVAL_LLM_MAX_CONCURRENT=20` serializes overlapping jobs to one proven
 wave. `EVAL_LLM_MAX_CONCURRENT=2`
 restores the old quota-safe cap. Extra wrappers wait when an explicit
 cap is already in use.
-Programmatic judges (worktree, commits) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
+Programmatic judges (worktree, commits, debug) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
 Code `claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
 (`--reasoning-effort`). Judge defaults match those models at **low** effort
 unless `evalAgentModel` / `evalAgentReasoningEffort` override them.
@@ -123,9 +127,12 @@ evals/
 │   ├── calculator.md
 │   ├── counter.md
 │   ├── greeter.md
+│   ├── greeter-fix.md
+│   ├── shop.md
 │   ├── temperature.md
 │   └── todo.md
 ├── oracles/                # reference solutions for Harbor oracle
+├── seeds/                  # optional planted files (log/ → image .log/)
 ├── task-template/          # shared Dockerfile + docker-compose.yaml + thin test.sh
 ├── judges/
 │   ├── README.md
@@ -140,7 +147,9 @@ evals/
 │   │   └── judge.toml
 │   ├── worktree/
 │   │   └── judge.toml          # programmatic
-│   └── commits/
+│   ├── commits/
+│   │   └── judge.toml          # programmatic
+│   └── debug/
 │       └── judge.toml          # programmatic
 ├── verifier/
 │   ├── README.md
@@ -151,6 +160,8 @@ evals/
 │   ├── worktree_check/         # git I/O, rules, reward, fixtures
 │   ├── check_commits.py        # thin CLI for the Feature-commit judge
 │   ├── commits_check/          # Feature-count rules and fixtures
+│   ├── check_debug.py          # thin CLI for the read-logs-first judge
+│   ├── debug_check/            # log-token rules and fixtures
 │   ├── run_llm_judge.py        # thin CLI; Codex / Claude Code / Grok eval agent
 │   ├── run_grok_judge.py       # shim → run_llm_judge.py --agent grok
 │   └── llm_judge/              # pin-and-retry helpers + self_test
@@ -642,6 +653,10 @@ python3 verifier/check_worktree.py --self-test
 
 ```bash
 python3 verifier/check_commits.py --self-test
+```
+
+```bash
+python3 verifier/check_debug.py --self-test
 ```
 
 ```bash

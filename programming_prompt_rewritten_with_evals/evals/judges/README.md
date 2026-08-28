@@ -17,7 +17,9 @@ judges/
 │   └── judge.toml
 ├── worktree/
 │   └── judge.toml     # programmatic (no prompt.md)
-└── commits/
+├── commits/
+│   └── judge.toml     # programmatic (no prompt.md)
+└── debug/
     └── judge.toml     # programmatic (no prompt.md)
 ```
 
@@ -28,6 +30,7 @@ judges/
 | [`logging`](logging/prompt.md) | entry/exit prints | builtin `print` of names+values at entry + return value before each `return` (ignore `raise`) |
 | [`worktree`](worktree/judge.toml) | *(programmatic)* | sibling `.worktrees/<project>/` worktree, merge into master, no remotes/push |
 | [`commits`](commits/judge.toml) | *(programmatic)* | one Python worktree commit per declared Feature (see `features:` / `tests/feature_count.txt`) |
+| [`debug`](debug/judge.toml) | *(programmatic)* | when `.log/` exists, workspace Python matches the log diagnosis |
 
 `logging-vague` has **no** judge directory — the runner maps it onto
 `judges/logging/` so the vague one-liner is scored by the real logging criteria.

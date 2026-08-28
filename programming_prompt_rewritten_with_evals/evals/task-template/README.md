@@ -22,3 +22,5 @@ Shared Harbor scaffolding copied into every generated `.generated/tasks/<name>/`
 
 Per-task instruction text comes from `../coding-prompts/<name>.md`.
 Per-task oracle code comes from `../oracles/<name>.py`.
+Optional planted files come from `../seeds/<name>/` (a `log/` folder becomes
+`.log/` in the image and is committed as `Seed task files`).

@@ -1,0 +1,5 @@
+ERROR run_greeter: hour=3 produced greeting=Good night, Ada
+expected hi=Good twilight, Ada
+period map: 0-6 Good twilight; 7-14 Good day; 15-23 Good evening
+require: twilight
+require: hi=
