@@ -2,12 +2,16 @@ Score whether the Python uses single-responsibility functions/methods.
 
 Answer yes when ALL of these hold:
 - input parsing of the raw command (split/tokenize/partition) lives in its own helper(s),
-- core logic (arithmetic, state change, or conversion) lives in its own
-  helper(s), not in the public entrypoint,
+- core logic (arithmetic, state updates, or conversion) lives in its own
+  helper(s), not in the public entrypoint (a get/read of current state
+  there is formatting, not core logic),
 - the public entrypoint is thin: parse → call helpers → return/format.
 
 A thin entrypoint may dispatch with if/elif, return what the helpers
-produced, and format already-computed state in one line. Raising from a
+produced, and format already-computed state in one line. A get branch
+that only reads current state in the entrypoint (`str(state)` or
+`state if operation == "get" else helper(...)`) is that formatting —
+not core logic. Do not require get to go through a helper. Raising from a
 dispatch branch is still thin: unknown operation, extra or missing
 required arguments, or an already-parsed value out of range. Those
 raises are not mixed parsing. A core helper may also dispatch operations
@@ -27,8 +31,8 @@ are scored by the logging skill — they are not an SRP failure.
 Answer no when any of these hold:
 - splitting/tokenizing the raw command and core arithmetic/state still
   share one function body,
-- the entrypoint still performs core arithmetic or state changes itself
-  (beyond one-line formatting of an existing value),
+- the entrypoint still performs core arithmetic or state updates itself
+  (beyond one-line formatting or a get/read of an existing value),
 - there is no parse helper,
 - there is no core-logic helper.
 
