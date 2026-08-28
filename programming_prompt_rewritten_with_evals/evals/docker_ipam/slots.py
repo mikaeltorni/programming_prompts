@@ -12,6 +12,7 @@ from typing import Any
 
 from .constants import (
     DEFAULT_N_WHEN_UNLIMITED,
+    LLM_MAX_CONCURRENT_DEFAULT,
     LLM_MAX_CONCURRENT_UNLIMITED,
     POLL_SEC,
     SAFETY_MARGIN,
@@ -208,18 +209,20 @@ def llm_max_concurrent() -> int:
 
     Parameters: none.
 
-    Returns: max live Harbor trials across every wrapper. Unset, ``0``, or a
+    Returns: max live Harbor trials across every wrapper. Unset uses
+        ``LLM_MAX_CONCURRENT_DEFAULT`` (one proven ``-k 20`` job). ``0`` or a
         negative ``EVAL_LLM_MAX_CONCURRENT`` disables the cap (IPAM only).
     """
     raw = os.environ.get("EVAL_LLM_MAX_CONCURRENT", "").strip()
     if not raw:
-        return LLM_MAX_CONCURRENT_UNLIMITED
+        return LLM_MAX_CONCURRENT_DEFAULT
     try:
         value = int(raw)
     except ValueError:
         log(f"ignoring invalid EVAL_LLM_MAX_CONCURRENT={raw!r}")
-        return LLM_MAX_CONCURRENT_UNLIMITED
+        return LLM_MAX_CONCURRENT_DEFAULT
     if value <= 0:
+        log("EVAL_LLM_MAX_CONCURRENT<=0: LLM cap disabled")
         return LLM_MAX_CONCURRENT_UNLIMITED
     return value
 
@@ -230,7 +233,8 @@ def default_n_concurrent() -> int:
     Parameters: none.
 
     Returns: live coding-trial count when neither ``-n`` nor ``-k`` is
-        available. Unset / disabled ``EVAL_LLM_MAX_CONCURRENT`` returns
+        available. Unset ``EVAL_LLM_MAX_CONCURRENT`` follows
+        ``LLM_MAX_CONCURRENT_DEFAULT``. Disabled cap (``0``) returns
         ``DEFAULT_N_WHEN_UNLIMITED``; acquire still clamps that to free IPAM.
         Job wrappers prefer following ``-k`` instead of this helper.
     """

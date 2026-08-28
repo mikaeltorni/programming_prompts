@@ -47,7 +47,9 @@
 # ~28 user-defined /16 slots. Leftover ``*__env-main`` images plus BuildKit
 # cache still fill the disk; docker_networks.py prunes leftover containers
 # and empty nets (keeps images and BuildKit cache).
-# Live coding trials have no LLM cap unless EVAL_LLM_MAX_CONCURRENT is set.
+# Live coding trials default to EVAL_LLM_MAX_CONCURRENT=20 (one proven -k 20
+# job). A second overlapping wrapper waits for a slot instead of doubling
+# Codex CLIs. EVAL_LLM_MAX_CONCURRENT=0 disables the cap.
 # Harbor -n is not a user flag: the wrapper always sets concurrency from -k
 # (-k 20 → 20 concurrent). Passing -n 100 with 5 tasks × -k 20 starts 100
 # docker compose builds at once; Harbor's 300s environment-start budget then
@@ -333,7 +335,7 @@ echo "Selected skill(s): ${SELECTED_SKILLS[*]}" >&2
 mapfile -t SELECTED_TASKS < <(resolve_tasks "$TASKS_ARG")
 echo "Selected coding task(s): ${SELECTED_TASKS[*]}" >&2
 if [[ -z "${EVAL_LLM_MAX_CONCURRENT:-}" ]]; then
-  echo "LLM trial cap: unset (no LLM cap). Trials use Docker's default bridge; Harbor -n follows -k." >&2
+  echo "LLM trial cap: 20 (default). Overlapping wrappers wait for a coding-trial slot. EVAL_LLM_MAX_CONCURRENT=0 disables." >&2
 else
   echo "LLM trial cap: EVAL_LLM_MAX_CONCURRENT=$EVAL_LLM_MAX_CONCURRENT (coding trials live on this machine)" >&2
 fi

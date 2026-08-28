@@ -25,7 +25,10 @@ BUILTIN_NETWORKS = frozenset({"bridge", "host", "none"})
 HARBOR_NETWORK_SUFFIX = "__env_default"
 HARBOR_IMAGE_SUFFIX = "__env-main"
 HARBOR_CONTENT_IMAGE_PREFIX = "hb__"
-LLM_MAX_CONCURRENT_DEFAULT = 10
+# Proven single-job Harbor ``-k 20`` Codex budget. Unset
+# ``EVAL_LLM_MAX_CONCURRENT`` uses this so a second overlapping wrapper
+# waits instead of starting 40 coding CLIs (ApiRateLimitError).
+LLM_MAX_CONCURRENT_DEFAULT = 20
 LLM_MAX_CONCURRENT_UNLIMITED = 10**9
 # Harbor ``-n`` when the caller omitted it *and* did not pass ``-k``, while
 # the LLM cap is disabled. Acquire still clamps to free IPAM.

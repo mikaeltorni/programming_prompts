@@ -13,10 +13,11 @@ This helper:
   trial; in-progress trials stay. BuildKit cache is kept so the next job
   does not rebuild. Bare ``prune`` also drops dangling BuildKit cache
   when you need more disk;
-* does not cap live coding trials unless ``EVAL_LLM_MAX_CONCURRENT`` is set.
-  Omit Harbor ``-n`` to follow ``-k`` (``-k 20`` runs 20 at once). Pass a
-  larger ``-n`` (up to tasks×k) to run more of the wave at once.
-  ``EVAL_LLM_MAX_CONCURRENT=2`` restores the old quota-safe cap;
+* caps live coding trials at 20 unless ``EVAL_LLM_MAX_CONCURRENT`` is set.
+  Omit Harbor ``-n`` to follow ``-k`` (``-k 20`` runs 20 at once). A second
+  overlapping wrapper waits for a slot instead of starting 40 Codex CLIs.
+  ``EVAL_LLM_MAX_CONCURRENT=0`` disables the cap; ``2`` restores the old
+  quota-safe cap;
 * ``acquire --ignore-ipam`` reserves coding-trial slots without clamping to
   Docker user-defined-network capacity (default for this suite);
 * estimates remaining IPAM slots from ``/etc/docker/daemon.json`` or Docker's
