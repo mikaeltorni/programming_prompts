@@ -1,8 +1,8 @@
 ---
 artifact: /app/shop.py
-features: 2
-description: Write a tiny shop; two features — catalog then checkout.
+features: 4
+description: Write a tiny shop; catalog, then total, remove, and count.
 ---
 Follow every provided programming skill. Write `/app/shop.py` with `run_shop(command: str) -> str`.
-Feature 1: catalog recording so `add <name> <price>` returns `added=<name>`.
-Feature 2: checkout so `total` returns `total=<sum>` of recorded prices.
+A shop should record catalog items (`add <name> <price>` returns `added=<name>`).
+It should also check out (`total` → `total=<sum>`), remove an item (`remove <name>` → `removed=<name>`), and count items (`count` → `count=<n>`).

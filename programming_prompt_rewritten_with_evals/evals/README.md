@@ -1,17 +1,18 @@
 # Harbor evaluation
 
-Write-from-scratch tasks, a two-Feature shop, and a log-driven greeter fix measure whether Codex, Claude Code, and/or
+Write-from-scratch tasks (each a 3–5 Feature "should have" list) and a
+log-driven greeter fix measure whether Codex, Claude Code, and/or
 Grok follow selected programming skills while implementing tiny Python programs:
 
 | Prompt | Entrypoint |
 | --- | --- |
-| [`coding-prompts/calculator.md`](coding-prompts/calculator.md) | `/app/calculator.py` → `run_calculator` |
-| [`coding-prompts/todo.md`](coding-prompts/todo.md) | `/app/todo.py` → `run_todo` |
-| [`coding-prompts/counter.md`](coding-prompts/counter.md) | `/app/counter.py` → `run_counter` |
-| [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` |
-| [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` |
-| [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (Feature 1 `add`, Feature 2 `total`; `features: 2`) |
-| [`coding-prompts/greeter-fix.md`](coding-prompts/greeter-fix.md) | `/app/greeter.py` → `run_greeter` (broken seed + `.log/` `got:`/`want:`) |
+| [`coding-prompts/calculator.md`](coding-prompts/calculator.md) | `/app/calculator.py` → `run_calculator` (`add` then `sub`/`mul`/`div`; `features: 4`) |
+| [`coding-prompts/todo.md`](coding-prompts/todo.md) | `/app/todo.py` → `run_todo` (`add` then `list`/`done`/`clear`; `features: 4`) |
+| [`coding-prompts/counter.md`](coding-prompts/counter.md) | `/app/counter.py` → `run_counter` (`inc` then `dec`/`get`/`set`; `features: 4`) |
+| [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` (`hello` then morning/afternoon/evening; `features: 4`) |
+| [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` (`c2f` then `f2c`/`c2k`/`k2c`; `features: 4`) |
+| [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (`add` then `total`/`remove`/`count`; `features: 4`) |
+| [`coding-prompts/greeter-fix.md`](coding-prompts/greeter-fix.md) | `/app/greeter.py` → `run_greeter` (fix from `.log/`, then `bye`/`period`; `features: 3`) |
 
 Each coding prompt is the product instruction (what to build) plus “Follow the
 provided programming skill.” Skills under

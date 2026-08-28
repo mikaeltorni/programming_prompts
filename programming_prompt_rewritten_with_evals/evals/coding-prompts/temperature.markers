@@ -1,0 +1,4 @@
+1 has:f= lacks:c=
+2 has:c= lacks:k=
+3 has:k= lacks:fromk=
+4 has:fromk=

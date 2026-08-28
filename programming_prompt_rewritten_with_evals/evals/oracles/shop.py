@@ -36,12 +36,36 @@ def checkout_total() -> str:
     return f"total={total:g}"
 
 
+def remove_item(name: str) -> str:
+    """Remove the first catalog item with this name.
+
+    Parameters: name - item name to drop.
+
+    Returns: formatted removed=<name> string.
+    """
+    for index, (item_name, _price) in enumerate(_ITEMS):
+        if item_name == name:
+            del _ITEMS[index]
+            return f"removed={name}"
+    raise ValueError(f"unknown item: {name}")
+
+
+def count_items() -> str:
+    """Count recorded catalog items.
+
+    Parameters: none.
+
+    Returns: formatted count=<n> string.
+    """
+    return f"count={len(_ITEMS)}"
+
+
 def run_shop(command: str) -> str:
     """Run one shop command.
 
-    Parameters: command - catalog add or checkout total.
+    Parameters: command - catalog add, total, remove, or count.
 
-    Returns: formatted catalog or checkout string.
+    Returns: formatted catalog string.
     """
     action, args = parse_command(command)
     if action == "add":
@@ -52,4 +76,12 @@ def run_shop(command: str) -> str:
         if args:
             raise ValueError("total takes no arguments")
         return checkout_total()
+    if action == "remove":
+        if len(args) != 1:
+            raise ValueError("remove requires <name>")
+        return remove_item(args[0])
+    if action == "count":
+        if args:
+            raise ValueError("count takes no arguments")
+        return count_items()
     raise ValueError(f"unsupported command: {action}")

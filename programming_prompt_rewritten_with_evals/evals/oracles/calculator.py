@@ -1,63 +1,103 @@
-def parse_command(command: str) -> tuple[float, str, float]:
-    """Parse a three-token arithmetic command.
+def parse_command(command: str) -> tuple[str, list[str]]:
+    """Split a calculator command into an action and argument tokens.
 
     Parameters:
-        command: Text like "<left> <op> <right>".
+        command: Raw calculator command text.
 
     Returns:
-        A tuple of left operand, operator symbol, and right operand.
+        A tuple of action name and remaining argument tokens.
     """
     parts = command.strip().split()
-    if len(parts) != 3:
-        raise ValueError("expected '<left> <op> <right>'")
-    left_text, op, right_text = parts
-    return float(left_text), op, float(right_text)
+    if not parts:
+        raise ValueError("empty command")
+    return parts[0], parts[1:]
 
 
-def apply_op(op: str, left: float, right: float) -> float:
-    """Apply one arithmetic operator to two operands.
+def _pair(args: list[str]) -> tuple[float, float]:
+    """Parse two numeric operands.
 
     Parameters:
-        op: One of "+", "-", "*", "/".
+        args: Token list that must contain exactly two numbers.
+
+    Returns:
+        Left and right operands as floats.
+    """
+    if len(args) != 2:
+        raise ValueError("expected two numbers")
+    return float(args[0]), float(args[1])
+
+
+def add_values(left: float, right: float) -> str:
+    """Add two numbers.
+
+    Parameters:
         left: Left operand.
         right: Right operand.
 
     Returns:
-        The computed numeric result.
+        String like "sum=<value>".
     """
-    if op == "+":
-        return left + right
-    if op == "-":
-        return left - right
-    if op == "*":
-        return left * right
-    if op == "/":
-        if right == 0:
-            raise ValueError("cannot divide by zero")
-        return left / right
-    raise ValueError(f"unsupported op: {op}")
+    return f"sum={left + right:g}"
 
 
-def format_result(value: float) -> str:
-    """Format a numeric result for the calculator API.
+def sub_values(left: float, right: float) -> str:
+    """Subtract two numbers.
 
     Parameters:
-        value: Numeric result to format.
+        left: Left operand.
+        right: Right operand.
 
     Returns:
-        A string like "result=<value>".
+        String like "diff=<value>".
     """
-    return f"result={value}"
+    return f"diff={left - right:g}"
+
+
+def mul_values(left: float, right: float) -> str:
+    """Multiply two numbers.
+
+    Parameters:
+        left: Left operand.
+        right: Right operand.
+
+    Returns:
+        String like "prod=<value>".
+    """
+    return f"prod={left * right:g}"
+
+
+def div_values(left: float, right: float) -> str:
+    """Divide two numbers.
+
+    Parameters:
+        left: Left operand.
+        right: Right operand.
+
+    Returns:
+        String like "quot=<value>".
+    """
+    if right == 0:
+        raise ValueError("cannot divide by zero")
+    return f"quot={left / right:g}"
 
 
 def run_calculator(command: str) -> str:
-    """Evaluate a calculator command and format the result.
+    """Run one calculator command.
 
     Parameters:
-        command: Text like "<left> <op> <right>".
+        command: Text like "add 2 3", "sub 5 1", "mul 3 4", or "div 8 2".
 
     Returns:
-        Formatted result string.
+        Formatted arithmetic string.
     """
-    left, op, right = parse_command(command)
-    return format_result(apply_op(op, left, right))
+    action, args = parse_command(command)
+    left, right = _pair(args)
+    if action == "add":
+        return add_values(left, right)
+    if action == "sub":
+        return sub_values(left, right)
+    if action == "mul":
+        return mul_values(left, right)
+    if action == "div":
+        return div_values(left, right)
+    raise ValueError(f"unsupported command: {action}")

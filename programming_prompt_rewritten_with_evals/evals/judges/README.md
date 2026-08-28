@@ -31,7 +31,7 @@ judges/
 | [`commenting`](commenting/prompt.md) | docstring format | description + same-line `Parameters:` + `Returns:` (no Google wrap; a long list may continue on the next line) |
 | [`logging`](logging/prompt.md) | entry/exit prints | builtin `print` of names+values at entry + return value before each `return` (ignore `raise`) |
 | [`worktree`](worktree/judge.toml) | *(programmatic)* | sibling `.worktrees/<project>/` worktree, merge into master, no remotes/push |
-| [`commits`](commits/judge.toml) | *(programmatic)* | one Python commit per declared Feature; optional `.markers` tokens must appear in that commit's tree (see `features:` / `tests/feature_count.txt`) |
+| [`commits`](commits/judge.toml) | *(programmatic)* | 3–5 sequential Python Feature commits; `.markers` tokens must appear in that commit's tree (see `features:` / `tests/feature_count.txt`) |
 | [`debug`](debug/judge.toml) | *(programmatic)* | when `.log/` exists, workspace Python matches the expected output (`want:`) via hidden `debug_tokens.txt` |
 | [`docs`](docs/judge.toml) | *(programmatic)* | README.md documents the program and public `run_*` entrypoint |
 

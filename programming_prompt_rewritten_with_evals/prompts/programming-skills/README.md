@@ -14,7 +14,7 @@ Current skills:
 | [`logging`](logging/SKILL.md) | Plain `print` of parameters at entry and return value before exit |
 | [`logging-vague`](logging-vague/SKILL.md) | Control: one vague “Use logging.” line; scored by the logging judge |
 | [`worktree`](worktree/SKILL.md) | Sibling `.worktrees/<project>/` worktree, merge back, never push |
-| [`commits`](commits/SKILL.md) | Scan for Features; one working worktree commit per Feature |
+| [`commits`](commits/SKILL.md) | Scan for Features; vague asks become a 3–5 step plan; one working worktree commit per Feature |
 | [`debug`](debug/SKILL.md) | Read repo `.log/` before hypothesizing a bug |
 | [`docs`](docs/SKILL.md) | README.md after the code: program, entrypoint, commands |
 
@@ -28,12 +28,12 @@ the logging judge enough entry/exit sites to score. Prefer
 `/Projects/app` with an empty initial commit; worktrees must live at
 `/Projects/.worktrees/app/<dir>/`. `/app` is a symlink to `/Projects/app`.
 
-**Commits eval note:** pair `commits` with a multi-Feature task (`shop`
-declares `features: 2` and labels Feature 1 then Feature 2 in one prompt).
-The checker counts non-merge Python commits after the empty initial commit
-(seed commits are skipped) and, when `<task>.markers` exists, checks that
-Feature 1's tree has catalog tokens and still lacks checkout tokens, then
-that Feature 2 adds checkout. A dummy extra `.py` commit does not pass.
+**Commits eval note:** every coding prompt is a vague multi-capability ask
+(3–5 Features: basic implementation first, then extras). The `commits` skill
+must break that down; the checker counts non-merge Python commits after the
+empty initial commit (seed commits are skipped) and, when `<task>.markers`
+exists, checks that Feature *n*'s tree has that Feature's tokens and still
+lacks later Features. A dummy extra `.py` commit does not pass.
 
 **Debug eval note:** pair `debug` with `greeter-fix` (broken `/app/greeter.py`
 plus planted `.log/` with a `got:` / `want:` diagnosis). The checker is a
