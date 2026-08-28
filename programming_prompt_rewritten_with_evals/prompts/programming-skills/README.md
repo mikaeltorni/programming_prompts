@@ -16,6 +16,7 @@ Current skills:
 | [`worktree`](worktree/SKILL.md) | Sibling `.worktrees/<project>/` worktree, merge back, never push |
 | [`commits`](commits/SKILL.md) | Scan for Features; one working worktree commit per Feature |
 | [`debug`](debug/SKILL.md) | Read repo `.log/` before hypothesizing a bug |
+| [`docs`](docs/SKILL.md) | README.md after the code: program, entrypoint, commands |
 
 **Logging eval note:** pair `logging` (or `logging-vague`) with `srp` so the
 agent writes several helpers — otherwise a one-function script may not give
@@ -37,6 +38,10 @@ into one dump commit.
 broken `/app/greeter.py`). The checker is a no-op when `.log/` is missing, so
 write-from-scratch tasks stay a pass. When logs exist, workspace Python must
 match the log diagnosis.
+
+**Docs eval note:** after the code, write `README.md` naming the public
+`run_*` entrypoint and the commands. Function docstrings stay on the
+commenting skill.
 
 Add a new skill by creating `programming-skills/<name>/SKILL.md` and
 `evals/judges/<name>/prompt.md` (+ `judge.toml`). For a vague control only,

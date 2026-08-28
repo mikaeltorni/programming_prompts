@@ -1,0 +1,13 @@
+# Programmatic judge — no LLM. The verifier runs check_docs.py.
+
+[judge]
+judge = "programmatic"
+timeout = 60
+
+[[criterion]]
+name = "readme_after_code"
+description = "README.md documents the program, public entrypoint, and commands"
+type = "binary"
+
+[scoring]
+aggregation = "all_pass"

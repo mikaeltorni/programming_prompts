@@ -22,6 +22,8 @@ Skills live under
   Features; one working worktree commit per Feature (programmatic judge)
 - [`debug`](prompts/programming-skills/debug/SKILL.md) — read repo `.log/`
   before hypothesizing (programmatic judge)
+- [`docs`](prompts/programming-skills/docs/SKILL.md) — README.md after the
+  code (programmatic judge)
 
 Each real skill has a matching judge in
 [`evals/judges/<skill>/`](evals/judges/). Vague controls reuse the base judge.
@@ -53,7 +55,7 @@ Committed fallbacks:
 ## Layout
 
 - `prompts/programming-skills/` — injectable skills (`srp`, `commenting`,
-  `logging`, `worktree`, `commits`, `debug`, plus `*-vague` controls)
+  `logging`, `worktree`, `commits`, `debug`, `docs`, plus `*-vague` controls)
 - `evals/coding-prompts/` — one `.md` per write-from-scratch coding task
 - `evals/seeds/` — optional planted files for a task (`log/` → image `.log/`)
 - `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill
