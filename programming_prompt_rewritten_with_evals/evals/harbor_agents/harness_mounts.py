@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from harbor_agents.codex_account import selected_codex_auth_parts
 from harbor_agents.harness_registry import (
-    CODEX_AUTH_MOUNT,
     BindMount,
     require_harness,
 )
@@ -55,7 +55,12 @@ def mounts_json(*names: str, home: Path | None = None) -> str:
         seen_targets.add(target)
         mounts.append(item)
 
-    _append(CODEX_AUTH_MOUNT)
+    _append(
+        BindMount(
+            source_parts=selected_codex_auth_parts(home),
+            target="/root/.codex/auth.json",
+        )
+    )
     for name in names:
         spec = require_harness(name)
         for extra in spec.extra_mounts:
