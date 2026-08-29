@@ -10,6 +10,7 @@ import json
 import os
 import shutil
 import stat
+import sys
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -30,6 +31,9 @@ def find_codex_auth() -> Path | None:
     candidates = []
     if home:
         candidates.append(Path(home) / "auth.json")
+    acc_auth = _acc_selected_codex_auth()
+    if acc_auth is not None:
+        candidates.append(acc_auth)
     candidates.extend(
         [
             Path("/tmp/codex-home/auth.json"),
@@ -40,6 +44,19 @@ def find_codex_auth() -> Path | None:
         if path and path.is_file():
             return path
     return None
+
+
+def _acc_selected_codex_auth() -> Path | None:
+    """Return the ACC-selected Codex auth file when the Harbor helper is importable."""
+    evals_root = Path(__file__).resolve().parents[2]
+    if str(evals_root) not in sys.path:
+        sys.path.insert(0, str(evals_root))
+    try:
+        from harbor_agents.codex_account import selected_codex_auth
+    except ImportError:
+        return None
+    path = selected_codex_auth()
+    return path if path.is_file() else None
 
 
 def setup_codex_home(effort: str) -> Path:

@@ -280,7 +280,9 @@ suite goes further:
 - [`harbor_agents/benchmark_codex.py`](harbor_agents/benchmark_codex.py) wipes
   `$HOME/.agents/skills`, `/etc/codex/skills`, and `$CODEX_HOME/skills`, then
   installs only the skills configured for that job.
-- Auth: host `~/.codex/auth.json` bind-mount + `CODEX_FORCE_AUTH_JSON=1`.
+- Auth: the ChatGPT login selected by Agent Command Center (`cat2` / `ca2`,
+  persisted in `codex-instances.json`) bind-mounts that home's `auth.json`
+  plus `CODEX_FORCE_AUTH_JSON=1`. Default is `~/.codex/auth.json`.
 
 ### Claude Code (`harness=cc`)
 
