@@ -66,7 +66,7 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
 | `--tasks todo,calculator` | Which coding prompts to run (default: all) |
 | `--tasks=greeter` / `task=todo,counter` | Same, equals / bare forms |
-| `--run-separately` / `--runSeparately` | One Harbor job per skill, **one after another** (solo install + judge) |
+| `--run-separately` / `--runSeparately` | One Harbor job (same trial count); skill Pass is **not AND** |
 | `--baseline` | No skills injected; selected judges still score |
 | `--install-only` | Reinstall/verify newest stable CLI(s) in the task image (no LLM) |
 | `--no-pin-refresh` | Skip registry lookup; use committed `*-version.txt` pins |
@@ -80,25 +80,20 @@ Grok. `evalAgent` uses the same aliases (`evalAgent=both`, `evalAgent=all`,
 matches that job’s coding harness (`harness=cc` → Claude Code judge).
 
 Without `--run-separately`, all selected skills are installed in **one** agent
-session and **each** matching judge scores the same written code. That is a
-single Harbor job: 5 tasks × `-k 5` = **25 trials**, then the wrapper stops.
-With `--run-separately`, each skill gets its own prompt instance + its own
-judge — **one Harbor job per skill**, so four skills are **4 × 25 = 100
-trials**. Those skill jobs run **one after another** (parallel skill jobs
-used to unpack a unique trial image each and start every coding agent at
-once, which filled the disk and burned API rate limits). The wrapper prints
-`=== separately: N skill job(s) … sequential ===` and
-`=== separately skill i/N: … ===` for each start. Each Harbor job still
-gets an **isolated** copy of the selected tasks under
+session and **each** matching judge scores the same written code. **Pass is
+AND** of those skills. That is a single Harbor job: 5 tasks × `-k 5` =
+**25 trials**, then the wrapper stops.
+With `--run-separately`, it is still **one Harbor job and the same trial
+count**. Skills are scored independently (Pass is **not AND**) — read the
+per-skill columns. The wrapper does **not** start a second job per skill.
+Each Harbor job still gets an **isolated** copy of the selected tasks under
 `$RUN_DIR/harbor/task-trees/<job>/` so `/tests/judges` cannot be clobbered by
-another skill job or a concurrent benchmark sharing
-`evals/.generated/tasks/`.
+a concurrent benchmark sharing `evals/.generated/tasks/`.
 
 Trial math: default `-k 5` is **5 attempts per selected coding task**. With all
 5 tasks that is **25 trials per Harbor job per harness**. `--run-separately`
-with 2 skills ≈ **2×** that. Omit harness (both) ≈ **2×** again — e.g.
-`harness` omitted + `--run-separately` + 2 skills + 5 tasks + `-k 5` ≈
-**100 trials**. `evalAgent=cc,codex` does **not** multiply trials; it reruns
+does **not** multiply that. Omit harness (both) ≈ **2×** again — e.g.
+`harness` omitted + 5 tasks + `-k 5` ≈ **50 trials**. `evalAgent=cc,codex` does **not** multiply trials; it reruns
 the LLM judge on each trial (2× verifier *cost*). Judge subprocesses default
 to **four at a time** (`EVAL_JUDGE_WORKERS=4`) so the four skills overlap
 after the coding agent. Set `EVAL_JUDGE_WORKERS=1` to serialize them. Live
@@ -205,7 +200,8 @@ After every non-install run the wrapper writes a durable archive under
 is an aligned table (newest row at the top, under the header): run stamp,
 runtime (`Xh YYm ZZs`, immediately after Run and before Mode), mode, harness,
 judge, skills, tasks, k/n, separately, trial/scored/pass counts, a
-**RateLimit** count (judge API/quota failures excluded from Pass), and
+**RateLimit** count (judge API/quota failures **and** coding-agent
+workspace-out-of-credits exits, excluded from Pass), and
 per-skill plus per-task rates. Folder names start with
 `YYYY-MM-DD_HHMMSS_<pid>` so they sort by time in the explorer, and encode
 harness, **evalagent** (`inherit` or `cc+codex`), mode, skills,
@@ -443,7 +439,7 @@ so overlapping jobs can run at full `-k`. Harbor `-n` / `--n-concurrent` is
 runs 20 at once). Passing `-n 100` with 5 tasks × `-k 20` starts 100
 `docker compose build`s at once; Harbor then aborts with
 `Environment start timed out after 300.0 seconds` and Scored drops well
-below Trials. `--run-separately` runs one skill Harbor job after another.
+below Trials. `--run-separately` is a single Harbor job (independent skill Pass).
 Each job’s reservation is tracked in the current shell and
 released when that Harbor job finishes (wrapping `acquire` in `$()` used to
 leak slots until the whole wrapper exited). Optional: if you run other Harbor

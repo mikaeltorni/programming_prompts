@@ -9,8 +9,9 @@ from .fsutil import load_json_lenient
 # Verifier stdout markers. Do not scan agent trajectories — those can
 # mention HTTP 429 without the *judge* having been rate-limited.
 # Harbor's wrapper log (21-trial.log) is different: when the *coding*
-# agent dies on quota, Harbor writes ApiRateLimitError there. Count
-# that as a rate-limit skip, not a skill no.
+# agent dies on quota, Harbor writes ApiRateLimitError there. Codex
+# workspace-empty errors land in exception.txt as NonZeroAgentExitCodeError
+# with "out of credits". Count both as a rate-limit skip, not a skill no.
 _RATE_LIMIT_NEEDLES = (
     '"is_error"',
     "is_error",
@@ -28,6 +29,11 @@ _JUDGE_CLI_NEEDLES = (
     "agent cli",
     "--judge",
     "pool finished with failures",
+)
+_CODING_QUOTA_NEEDLES = (
+    "out of credits",
+    "workspace is out of credits",
+    "ask your workspace owner to refill",
 )
 
 
@@ -58,6 +64,19 @@ def looks_like_judge_rate_limit(text: str) -> bool:
     if any(needle in lowered for needle in _JUDGE_CLI_NEEDLES):
         return True
     return any(needle.lower() in lowered for needle in _RATE_LIMIT_NEEDLES)
+
+
+def looks_like_coding_agent_quota(text: str) -> bool:
+    """Return whether the coding agent died on empty workspace credits.
+
+    Parameters: text - Harbor exception.txt, trial.log, or archived copies.
+
+    Returns: true when Codex refused the trial because the workspace has no credits.
+    """
+    if not text:
+        return False
+    lowered = text.lower()
+    return any(needle in lowered for needle in _CODING_QUOTA_NEEDLES)
 
 
 def trial_is_ratelimited(trial_dir: Path) -> bool:
@@ -101,6 +120,9 @@ def trial_is_ratelimited(trial_dir: Path) -> bool:
         if looks_like_judge_rate_limit(text):
             return True
     for relative in (
+        "exception.txt",
+        "20-exception.txt",
+        "trial.log",
         "21-trial.log",
         "logs/agent/21-trial.log",
     ):
@@ -111,6 +133,6 @@ def trial_is_ratelimited(trial_dir: Path) -> bool:
             text = path.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
-        if "ApiRateLimitError" in text:
+        if "ApiRateLimitError" in text or looks_like_coding_agent_quota(text):
             return True
     return False

@@ -37,11 +37,11 @@
 #       evalAgentReasoningEffort=low
 #
 # Trial count (rule of thumb): harnesses × tasks × -k. Example: one harness,
-# 5 tasks, -k 5 → 25 trials. --run-separately is one Harbor job per skill
-# (sequential): four skills → 4 × 25 = 100 trials. Omit it to install every
-# selected skill in one session and AND all matching judges. evalAgent does
-# not multiply trials; it reruns the LLM judge on each trial (serialized
-# unless EVAL_JUDGE_WORKERS > 1).
+# 5 tasks, -k 5 → 25 trials. --run-separately does not multiply jobs: one
+# Harbor job, same trial count. Combined Pass ANDs every selected skill;
+# separately scores each skill independently (Pass is not AND). evalAgent
+# does not multiply trials; it reruns the LLM judge on each trial
+# (serialized unless EVAL_JUDGE_WORKERS > 1).
 #
 # Parallel terminals: each Harbor trial is a Docker container on the default
 # bridge (task-template `network_mode: bridge`). That avoids Docker IPAM's
@@ -57,7 +57,7 @@
 # drops roughly half the trials (EnvironmentStartTimeoutError).
 # EVAL_LLM_MAX_CONCURRENT=20 serializes overlapping jobs to one proven -k 20
 # wave. EVAL_LLM_MAX_CONCURRENT=2 restores the old quota-safe cap.
-# --run-separately is one sequential Harbor job per selected skill.
+# --run-separately is one Harbor job; skill Pass is independent (not AND).
 
 set -euo pipefail
 
@@ -379,16 +379,9 @@ fi
 TASK_COUNT="$(list_task_dirs | wc -l | tr -d ' ')"
 echo "Discovered $TASK_COUNT coding task(s) under $TASKS_DIR" >&2
 
-# Estimate total trials for the user. --run-separately multiplies by skill
-# count (one Harbor job per skill, sequential).
+# Estimate total trials for the user. --run-separately does not multiply
+# by skill count (one Harbor job; independent skill Pass).
 HARNESS_FACTOR=${#SELECTED_HARNESSES[@]}
-SKILL_FACTOR=1
-if [[ "$RUN_SEPARATELY" -eq 1 ]]; then
-  SKILL_FACTOR=${#SELECTED_SKILLS[@]}
-  if [[ "$SKILL_FACTOR" -lt 1 ]]; then
-    SKILL_FACTOR=1
-  fi
-fi
 
 if [[ "$BASELINE" -eq 1 ]]; then
   RUN_MODE_LABEL="baseline"
@@ -397,19 +390,15 @@ else
 fi
 init_run_archive "$RUN_MODE_LABEL"
 
-ESTIMATED_TRIALS=$((HARNESS_FACTOR * SKILL_FACTOR * TASK_COUNT * ATTEMPTS_PER_TASK))
-if [[ "$RUN_SEPARATELY" -eq 1 ]]; then
-  echo "Estimated trials ≈ $ESTIMATED_TRIALS (= $HARNESS_FACTOR harness(es) × $SKILL_FACTOR skill job(s) × $TASK_COUNT task(s) × $ATTEMPTS_PER_TASK attempts)." >&2
-else
-  echo "Estimated trials ≈ $ESTIMATED_TRIALS (= $HARNESS_FACTOR harness(es) × $TASK_COUNT task(s) × $ATTEMPTS_PER_TASK attempts)." >&2
-fi
+ESTIMATED_TRIALS=$((HARNESS_FACTOR * TASK_COUNT * ATTEMPTS_PER_TASK))
+echo "Estimated trials ≈ $ESTIMATED_TRIALS (= $HARNESS_FACTOR harness(es) × $TASK_COUNT task(s) × $ATTEMPTS_PER_TASK attempts)." >&2
 
 for HARNESS in "${SELECTED_HARNESSES[@]}"; do
   echo "======== harness=$HARNESS ========" >&2
   run_jobs_for_harness "$HARNESS"
 done
 
-if [[ ${#SELECTED_HARNESSES[@]} -gt 1 || "$RUN_SEPARATELY" -eq 1 ]]; then
+if [[ ${#SELECTED_HARNESSES[@]} -gt 1 ]]; then
   echo "Combined categorized summary across all jobs in $JOBS:" >&2
   if [[ "$BASELINE" -eq 1 ]]; then
     capture_print_summary "$JOBS" "baseline-all" "${SELECTED_SKILLS[*]}"

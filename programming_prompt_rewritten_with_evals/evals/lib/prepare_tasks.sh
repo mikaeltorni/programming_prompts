@@ -38,5 +38,13 @@ prepare_job_tasks() {
   local judge_count
   judge_count="$(find "$dest" -type d -path '*/tests/judges/*' 2>/dev/null | wc -l | tr -d ' ')"
   echo "Prepared isolated tasks for $job_name at $dest (judge dirs=$judge_count)" >&2
+  if [[ "${RUN_SEPARATELY:-0}" -eq 1 ]]; then
+    local copied
+    for copied in "$dest"/*/; do
+      mkdir -p "${copied}tests"
+      printf '1\n' > "${copied}tests/eval_run_separately"
+    done
+    echo "Marked $dest tasks for independent skill Pass (not AND)." >&2
+  fi
   printf '%s\n' "$dest"
 }

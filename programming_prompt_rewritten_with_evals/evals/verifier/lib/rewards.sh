@@ -221,6 +221,13 @@ for name, reward in zip(names, rewards, strict=True):
     })
 
 overall = 1.0 if rewards and all(value >= 1.0 for value in rewards) else 0.0
+independent = Path("/tests/eval_run_separately").is_file()
+aggregation = "all_pass"
+if independent:
+    aggregation = "independent"
+    # One coding job; do not AND skills for Pass. Per-skill reward files
+    # stay the scores. Overall 1.0 means judges ran (unless rate-limited).
+    overall = 1.0 if rewards else 0.0
 ratelimited = False
 for name in names:
     skill_path = out_dir / f"reward-{name}.json"
@@ -243,14 +250,14 @@ if ratelimited:
 (out_dir / "reward-details.json").write_text(
     json.dumps({
         "reward": {
-            "aggregation": "all_pass",
+            "aggregation": aggregation,
             "overall": overall,
             "criteria": criteria,
         }
     }, indent=2) + "\n",
     encoding="utf-8",
 )
-print(f"Aggregate reward={overall} across skills: {', '.join(names)}", flush=True)
+print(f"Aggregate reward={overall} aggregation={aggregation} across skills: {', '.join(names)}", flush=True)
 for item in criteria:
     print(
         f"  {item['name']}: raw={item['raw']} reward={item['reward']} "
