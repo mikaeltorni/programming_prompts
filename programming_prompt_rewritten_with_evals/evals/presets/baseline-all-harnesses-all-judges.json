@@ -1,0 +1,45 @@
+{
+  "name": "baseline-all-harnesses-all-judges",
+  "description": "baseline; judges=codex,cc,grok on each coding run; k=5",
+  "jobs": [
+    {
+      "title": "codex x codex,cc,grok",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=codex",
+        "evalAgent=codex,cc,grok",
+        "--baseline",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5"
+      ]
+    },
+    {
+      "title": "cc x codex,cc,grok",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=cc",
+        "evalAgent=codex,cc,grok",
+        "--baseline",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5"
+      ]
+    },
+    {
+      "title": "grok x codex,cc,grok",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=grok",
+        "evalAgent=codex,cc,grok",
+        "--baseline",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5"
+      ]
+    }
+  ]
+}

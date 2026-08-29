@@ -1,0 +1,17 @@
+# Reward Kit harness config only — edit the prompt in prompt.md.
+# Keep the {criteria} token in prompt.md.
+
+[judge]
+judge = "codex"
+model = "gpt-5.6-luna"
+cwd = "."
+timeout = 180
+prompt_template = "prompt.md"
+
+[[criterion]]
+name = "single_responsibility"
+description = "workspace Python uses single-responsibility functions/methods"
+type = "binary"
+
+[scoring]
+aggregation = "all_pass"

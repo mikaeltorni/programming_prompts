@@ -1,0 +1,32 @@
+{
+  "name": "baseline-cc-grok",
+  "description": "baseline; judges=cc,grok on each coding run; no codex; k=5",
+  "jobs": [
+    {
+      "title": "cc x cc,grok",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=cc",
+        "evalAgent=cc,grok",
+        "--baseline",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5"
+      ]
+    },
+    {
+      "title": "grok x cc,grok",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=grok",
+        "evalAgent=cc,grok",
+        "--baseline",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5"
+      ]
+    }
+  ]
+}

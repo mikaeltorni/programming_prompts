@@ -1,0 +1,18 @@
+{
+  "name": "positive-codex",
+  "description": "positive; judges=codex on each coding run; no cc,grok; k=5",
+  "jobs": [
+    {
+      "title": "codex x codex",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=codex",
+        "evalAgent=codex",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5"
+      ]
+    }
+  ]
+}

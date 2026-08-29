@@ -1,0 +1,23 @@
+# Example Harbor config for Grok CLI rewritten-prompt evals.
+# Prefer ./run_benchmark.sh harness=grok — it materializes tasks/, isolates
+# judges, and wires BenchmarkGrok with the pinned CLI version and a clean
+# skill tree.
+#
+#   ./run_benchmark.sh harness=grok --skills srp,worktree -k 5
+#   ./run_benchmark.sh harness=grok --baseline --skills srp,worktree -k 5
+#
+# Auth: grok login --oauth (SuperGrok) writes ~/.grok/auth.json. The runner
+# forwards that key as XAI_API_KEY and bind-mounts auth.json. Or export
+# XAI_API_KEY yourself.
+
+agents:
+  - import_path: harbor_agents.benchmark_grok:BenchmarkGrok
+    model_name: grok-4.6
+    skills:
+      - ../prompts/programming-skills/srp
+      - ../prompts/programming-skills/worktree
+    kwargs:
+      version: "1.0.5"
+      reasoning_effort: low
+
+tasks: []

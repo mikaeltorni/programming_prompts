@@ -1,0 +1,17 @@
+# Reward Kit harness config only — edit the prompt in prompt.md.
+# Keep the {criteria} token in prompt.md.
+
+[judge]
+judge = "codex"
+model = "gpt-5.6-luna"
+cwd = "."
+timeout = 180
+prompt_template = "prompt.md"
+
+[[criterion]]
+name = "function_commenting"
+description = "functions document description, Parameters, and Returns"
+type = "binary"
+
+[scoring]
+aggregation = "all_pass"

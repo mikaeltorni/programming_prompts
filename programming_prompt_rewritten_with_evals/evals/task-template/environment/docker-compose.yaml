@@ -1,0 +1,35 @@
+# Harbor's generated compose otherwise creates one user-defined network
+# (`<session>__env_default`) per trial. Stock Docker IPAM only has ~28 of
+# those /16 slots, so a -k 20 wave plus leftover nets exhausts the pool.
+# `network_mode: bridge` puts every trial on Docker's default docker0 (no
+# extra IPAM subnet). Agents still have internet. Isolation is one shared
+# L2; container names stay unique per Harbor session.
+#
+# overlay2 copy-up of scratch dirs hammers disk when dozens of trials write
+# at once. Per-container tmpfs (Docker docs; not a shared volume) keeps
+# TMPDIR / var/tmp / pip cache in RAM. Do **not** tmpfs all of ``/tmp``:
+# Harbor copies Codex auth to ``/tmp/codex-secrets`` and sets
+# ``CODEX_HOME=/tmp/codex-home``. A tmpfs over ``/tmp`` hides those paths
+# (``docker compose cp … main:/tmp/codex-secrets/auth.json`` fails every
+# trial) and Codex then 403/429-retries until Harbor records ApiRateLimitError.
+#
+# 20 concurrent Codex CLIs on an 8-core host stay hot: that is the work.
+# Without a cgroup cap each process sees 16 host threads and sizes Go/Node
+# pools to match (community thread-explosion). `cpus: 1` is per-container
+# CFS quota — still isolated — plus GOMAXPROCS/UV_THREADPOOL_SIZE so pools
+# stay small. Total heat is still ~all cores busy.
+services:
+  main:
+    network_mode: bridge
+    cpus: 1.0
+    environment:
+      TMPDIR: /tmp/scratch
+      GOMAXPROCS: "1"
+      UV_THREADPOOL_SIZE: "2"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    tmpfs:
+      - /tmp/scratch:exec,mode=1777,size=268435456
+      - /var/tmp:mode=1777,size=67108864
+      - /root/.cache:mode=0700,size=134217728

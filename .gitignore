@@ -1,0 +1,20 @@
+
+project_paths.txt
+
+config.json
+.log/
+
+__pycache__/
+*.py[cod]
+
+# BEGIN programming-prompts-cursor (managed by linux_programming_setup)
+# Managed copies from programming_prompts — do not ignore other .cursor/skills/*
+.cursor/skills/programming-prompts/
+.cursor/rules/programming-prompts-always-on.mdc
+# END programming-prompts-cursor
+
+# Generated Harbor task trees (from coding-prompts/*.md via sync_tasks.sh)
+programming_prompt_rewritten_with_evals/evals/tasks/
+programming_prompt_rewritten_with_evals/evals/.generated/
+
+programming_prompt_rewritten_with_evals/evals/runs/

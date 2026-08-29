@@ -1,0 +1,643 @@
+"""Built-in fixture checks for Docker IPAM behavior."""
+
+import os
+import subprocess
+import sys
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
+
+from .constants import (
+    DEFAULT_ADDRESS_POOLS,
+    DEFAULT_N_WHEN_UNLIMITED,
+    LLM_MAX_CONCURRENT_DEFAULT,
+    LLM_MAX_CONCURRENT_UNLIMITED,
+    POOL_EXHAUSTED_NEEDLE,
+    RECOMMENDED_ADDRESS_POOLS,
+    WAIT_LOG_SEC,
+)
+from .math import (
+    fair_share_slots,
+    grant_trial_slots,
+    is_harbor_trial_container,
+    is_harbor_trial_image,
+    is_harbor_trial_network,
+    is_pool_exhausted_message,
+    is_stale_harbor_network,
+    leftover_harbor_container,
+    merge_recommended_daemon_json,
+    occupied_slots,
+    parse_daemon_pools,
+    pool_capacity,
+    run_stamp_from_working_dir,
+    subnet_count,
+    trial_session_from_container,
+    user_defined_capacity,
+    wait_log_due,
+)
+from .slots import (
+    default_n_concurrent,
+    llm_max_concurrent,
+    load_state,
+    reap_holders,
+    release_slots_for_pid,
+    reserved_slots,
+    state_path,
+    with_lock,
+)
+
+
+def _self_test() -> int:
+    """Run fixture checks for the extracted package.
+
+    Parameters: none.
+
+    Returns: zero when every case passes.
+    """
+    cases: list[tuple[str, bool, str]] = []
+
+    def record(name: str, ok: bool, detail: str) -> None:
+        cases.append((name, ok, detail))
+
+    record(
+        "default_pool_count",
+        pool_capacity(DEFAULT_ADDRESS_POOLS) == 31,
+        f"got {pool_capacity(DEFAULT_ADDRESS_POOLS)}",
+    )
+    record(
+        "default_user_capacity",
+        user_defined_capacity(None) == 30,
+        f"got {user_defined_capacity(None)}",
+    )
+    recommended = pool_capacity(RECOMMENDED_ADDRESS_POOLS)
+    record(
+        "recommended_pool_count",
+        recommended == 3840,
+        f"got {recommended}",
+    )
+    record(
+        "recommended_keeps_docker0",
+        user_defined_capacity(RECOMMENDED_ADDRESS_POOLS) == 3840,
+        "custom /24 pools do not include 172.17.0.0/16",
+    )
+    record(
+        "subnet_count_slash16",
+        subnet_count("172.18.0.0/16", 16) == 1,
+        "one /16 per /16 pool",
+    )
+    record(
+        "subnet_count_slash24",
+        subnet_count("172.18.0.0/16", 24) == 256,
+        "256 /24s per /16 pool",
+    )
+    record(
+        "harbor_name",
+        is_harbor_trial_network("todo__rj6kp52__env_default"),
+        "trial compose network",
+    )
+    record(
+        "harbor_image_compose",
+        is_harbor_trial_image("calculator__hqedu6c__env-main"),
+        "compose per-trial image tag",
+    )
+    record(
+        "harbor_image_tagged",
+        is_harbor_trial_image("greeter__z6op6af__env-main:latest"),
+        "repo:tag still matches",
+    )
+    record(
+        "harbor_image_content",
+        is_harbor_trial_image("hb__2fed48270ac9ac752100518869fe4d51"),
+        "content-addressed hb__ image",
+    )
+    record(
+        "harbor_image_not_python",
+        not is_harbor_trial_image("python"),
+        "leave unrelated images alone",
+    )
+    record(
+        "harbor_container",
+        is_harbor_trial_container("todo__kbkd9sh__env-main-1"),
+        "compose main service container",
+    )
+    record(
+        "trial_session_from_container",
+        trial_session_from_container("calculator__hofedcp__env-main-1")
+        == "calculator__hofedcp",
+        trial_session_from_container("calculator__hofedcp__env-main-1") or "",
+    )
+    with tempfile.TemporaryDirectory(prefix="harbor-leftover-") as raw:
+        run = (
+            Path(raw)
+            / "2026-08-26_120000_1__harness-codex"
+            / "harbor"
+        )
+        env = (
+            run
+            / "task-trees"
+            / "codex-skills__stamp"
+            / "calculator"
+            / "environment"
+        )
+        env.mkdir(parents=True)
+        trial = run / "codex-skills__stamp" / "calculator__Hofedcp"
+        trial.mkdir(parents=True)
+        (trial / "result.json").write_text("{}\n", encoding="utf-8")
+        wd = str(env)
+        stamp = "2026-08-26_120000_1"
+        record(
+            "run_stamp_from_working_dir",
+            run_stamp_from_working_dir(wd) == stamp,
+            run_stamp_from_working_dir(wd) or "",
+        )
+        record(
+            "reap_finished_running_trial",
+            leftover_harbor_container(
+                "calculator__hofedcp__env-main-1",
+                "running",
+                wd,
+                live_stamps={stamp},
+            ),
+            "result.json means compose down failed",
+        )
+        record(
+            "keep_live_running_trial",
+            not leftover_harbor_container(
+                "todo__abc1234__env-main-1",
+                "running",
+                wd,
+                live_stamps={stamp},
+            ),
+            "in-progress trial without result.json",
+        )
+        record(
+            "reap_exited_trial",
+            leftover_harbor_container(
+                "todo__abc1234__env-main-1",
+                "exited",
+                wd,
+                live_stamps={stamp},
+            ),
+            "exited containers always go",
+        )
+        record(
+            "reap_dead_job_orphan",
+            leftover_harbor_container(
+                "todo__abc1234__env-main-1",
+                "running",
+                wd,
+                live_stamps=set(),
+            ),
+            "no live wrapper for this run stamp",
+        )
+        record(
+            "reap_missing_working_dir",
+            leftover_harbor_container(
+                "todo__abc1234__env-main-1",
+                "running",
+                str(Path(raw) / "gone" / "environment"),
+                live_stamps={stamp},
+            ),
+            "compose working dir is gone",
+        )
+    record(
+        "grant_llm_cap",
+        grant_trial_slots(5, ipam_free=28, ipam_max=28, reserved=0, llm_cap=2) == 2,
+        "machine-wide LLM cap clamps -n 5 to 2",
+    )
+    record(
+        "grant_wait_when_llm_full",
+        grant_trial_slots(5, ipam_free=28, ipam_max=28, reserved=2, llm_cap=2) is None,
+        "second wrapper waits when two coding trials are already live",
+    )
+    record(
+        "grant_ipam_room",
+        grant_trial_slots(5, ipam_free=1, ipam_max=28, reserved=0, llm_cap=8) == 1,
+        "take remaining IPAM slot instead of waiting for full -n",
+    )
+    record(
+        "grant_unlimited_llm",
+        grant_trial_slots(5, ipam_free=20, ipam_max=28, reserved=0, llm_cap=10**9) == 5,
+        "EVAL_LLM_MAX_CONCURRENT=0 keeps requested -n when IPAM allows",
+    )
+    record(
+        "grant_k20_unlimited",
+        grant_trial_slots(
+            20, ipam_free=28, ipam_max=28, reserved=0,
+            llm_cap=LLM_MAX_CONCURRENT_UNLIMITED,
+        ) == 20,
+        "EVAL_LLM_MAX_CONCURRENT=0 lets -k 20 run 20 trials when IPAM has room",
+    )
+    record(
+        "grant_k20_ipam_clamps",
+        grant_trial_slots(
+            20, ipam_free=13, ipam_max=28, reserved=0,
+            llm_cap=LLM_MAX_CONCURRENT_UNLIMITED,
+        ) == 13,
+        "Docker IPAM still clamps -k 20 when leftover networks fill the pool",
+    )
+    record(
+        "grant_bridge_ignores_ipam",
+        grant_trial_slots(
+            20,
+            ipam_free=LLM_MAX_CONCURRENT_UNLIMITED,
+            ipam_max=LLM_MAX_CONCURRENT_UNLIMITED,
+            reserved=0,
+            llm_cap=LLM_MAX_CONCURRENT_UNLIMITED,
+        ) == 20,
+        "docker0 trials are not clamped by stock IPAM",
+    )
+    compose = (
+        Path(__file__).resolve().parents[1]
+        / "task-template"
+        / "environment"
+        / "docker-compose.yaml"
+    )
+    compose_text = compose.read_text(encoding="utf-8") if compose.is_file() else ""
+    record(
+        "template_bridge_network_mode",
+        compose.is_file() and "network_mode: bridge" in compose_text,
+        f"path={compose}",
+    )
+    record(
+        "template_tmpfs_scratch",
+        "tmpfs:" in compose_text
+        and "/tmp/scratch:exec" in compose_text
+        and "TMPDIR: /tmp/scratch" in compose_text
+        and "/tmp:exec" not in compose_text
+        and "/var/tmp:" in compose_text
+        and "/root/.cache:" in compose_text,
+        "scratch tmpfs is /tmp/scratch so Harbor /tmp/codex-secrets stays on overlay2",
+    )
+    record(
+        "template_cpu_quota",
+        "cpus: 1.0" in compose_text
+        and "GOMAXPROCS" in compose_text
+        and "UV_THREADPOOL_SIZE" in compose_text,
+        "per-container CFS quota stops host-nproc thread explosion",
+    )
+    record(
+        "grant_explicit_cap_honors_n10",
+        grant_trial_slots(
+            10, ipam_free=28, ipam_max=28, reserved=0,
+            llm_cap=LLM_MAX_CONCURRENT_DEFAULT,
+        ) == 10,
+        "EVAL_LLM_MAX_CONCURRENT default still lets -n 10 run 10 trials",
+    )
+    prev_llm = os.environ.pop("EVAL_LLM_MAX_CONCURRENT", None)
+    try:
+        record(
+            "unset_llm_cap_unlimited",
+            llm_max_concurrent() == LLM_MAX_CONCURRENT_UNLIMITED,
+            f"got {llm_max_concurrent()}",
+        )
+        record(
+            "default_n_unset_unlimited",
+            default_n_concurrent() == DEFAULT_N_WHEN_UNLIMITED,
+            f"got {default_n_concurrent()}",
+        )
+        record(
+            "grant_overlapping_k20_when_uncapped",
+            grant_trial_slots(
+                20,
+                ipam_free=LLM_MAX_CONCURRENT_UNLIMITED,
+                ipam_max=LLM_MAX_CONCURRENT_UNLIMITED,
+                reserved=20,
+                llm_cap=LLM_MAX_CONCURRENT_UNLIMITED,
+            )
+            == 20,
+            "two overlapping -k 20 jobs both get 20 slots when the LLM cap is unset",
+        )
+        record(
+            "grant_k20_when_cap_set",
+            grant_trial_slots(
+                20,
+                ipam_free=LLM_MAX_CONCURRENT_UNLIMITED,
+                ipam_max=LLM_MAX_CONCURRENT_UNLIMITED,
+                reserved=0,
+                llm_cap=LLM_MAX_CONCURRENT_DEFAULT,
+            )
+            == 20,
+            "EVAL_LLM_MAX_CONCURRENT=20 still lets one -k 20 job run 20 trials",
+        )
+        record(
+            "grant_second_k20_waits_when_cap_set",
+            grant_trial_slots(
+                20,
+                ipam_free=LLM_MAX_CONCURRENT_UNLIMITED,
+                ipam_max=LLM_MAX_CONCURRENT_UNLIMITED,
+                reserved=LLM_MAX_CONCURRENT_DEFAULT,
+                llm_cap=LLM_MAX_CONCURRENT_DEFAULT,
+            )
+            is None,
+            "EVAL_LLM_MAX_CONCURRENT=20 makes a second wrapper wait",
+        )
+        os.environ["EVAL_LLM_MAX_CONCURRENT"] = "2"
+        record(
+            "default_n_follows_env",
+            default_n_concurrent() == 2,
+            f"got {default_n_concurrent()}",
+        )
+        os.environ["EVAL_LLM_MAX_CONCURRENT"] = "0"
+        record(
+            "default_n_unlimited",
+            default_n_concurrent() == DEFAULT_N_WHEN_UNLIMITED,
+            f"got {default_n_concurrent()}",
+        )
+    finally:
+        if prev_llm is None:
+            os.environ.pop("EVAL_LLM_MAX_CONCURRENT", None)
+        else:
+            os.environ["EVAL_LLM_MAX_CONCURRENT"] = prev_llm
+    default_n_cli = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "docker_networks.py"),
+            "default-n",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd=str(Path(__file__).resolve().parents[1]),
+        env={
+            **os.environ,
+            "PYTHONPATH": str(Path(__file__).resolve().parents[1]),
+            "EVAL_LLM_MAX_CONCURRENT": "7",
+        },
+    )
+    record(
+        "default_n_cli",
+        default_n_cli.returncode == 0 and default_n_cli.stdout.strip() == "7",
+        f"rc={default_n_cli.returncode} out={default_n_cli.stdout!r} err={default_n_cli.stderr!r}",
+    )
+    job_config = Path(__file__).resolve().parents[1] / "lib" / "job_config.sh"
+    job_text = job_config.read_text(encoding="utf-8") if job_config.is_file() else ""
+    record(
+        "job_retries_api_rate_limit",
+        job_config.is_file()
+        and "max_retries: 4" in job_text
+        and "ApiRateLimitError" in job_text
+        and "wait_multiplier: 2.0" in job_text,
+        "Harbor job YAML retries Codex 429s instead of capping overlapping jobs",
+    )
+    record(
+        "not_harbor_bridge",
+        not is_harbor_trial_network("bridge"),
+        "builtin bridge",
+    )
+    record(
+        "pool_message",
+        is_pool_exhausted_message(
+            "failed to create network x: " + POOL_EXHAUSTED_NEEDLE
+        ),
+        "needle match",
+    )
+    now = datetime(2026, 8, 16, 20, 0, tzinfo=timezone.utc)
+    record(
+        "stale_empty_old",
+        is_stale_harbor_network(
+            "calculator__abc__env_default",
+            0,
+            "2026-08-16T18:17:51.123456789Z",
+            now=now,
+        ),
+        "hours-old leftover",
+    )
+    record(
+        "fresh_empty_kept",
+        not is_stale_harbor_network(
+            "calculator__abc__env_default",
+            0,
+            "2026-08-16T19:59:50.000000000Z",
+            now=now,
+        ),
+        "compose-up grace",
+    )
+    record(
+        "busy_kept",
+        not is_stale_harbor_network(
+            "calculator__abc__env_default",
+            1,
+            "2026-08-16T18:17:51Z",
+            now=now,
+        ),
+        "container attached",
+    )
+    merged = merge_recommended_daemon_json({"log-driver": "json-file"})
+    record(
+        "daemon_merge_preserves",
+        merged.get("log-driver") == "json-file"
+        and merged["default-address-pools"][0]["size"] == 24,
+        "other keys kept; /24 pools set",
+    )
+    record(
+        "parse_empty_daemon",
+        parse_daemon_pools({}) is None,
+        "missing key → built-in defaults",
+    )
+    parsed = parse_daemon_pools(merged)
+    record(
+        "parse_recommended",
+        parsed == RECOMMENDED_ADDRESS_POOLS,
+        str(parsed),
+    )
+
+    with tempfile.TemporaryDirectory(prefix="harbor-docker-slots-") as raw:
+        os.environ["HARBOR_DOCKER_SLOT_DIR"] = raw
+        dead = subprocess.Popen(["true"])
+        dead.wait()
+        with with_lock(write=True) as state:
+            state["holders"]["gone"] = {"pid": dead.pid, "slots": 3}
+            state["holders"]["job-a"] = {"pid": os.getpid(), "slots": 5}
+        with with_lock(write=True) as state:
+            reaped = reap_holders(state)
+            record(
+                "reap_dead_pid",
+                "gone" in reaped and "gone" not in state["holders"],
+                f"reaped={reaped}",
+            )
+        record(
+            "reserved_sum",
+            reserved_slots(load_state(state_path().read_text(encoding="utf-8")))
+            == 5,
+            "job-a holds 5 after reap",
+        )
+        extra = subprocess.Popen(["sleep", "60"])
+        try:
+            with with_lock(write=True) as state:
+                state["holders"]["job-b"] = {"pid": extra.pid, "slots": 2}
+                state["holders"]["job-a"] = {"pid": os.getpid(), "slots": 5}
+            dropped = release_slots_for_pid(extra.pid)
+            record(
+                "release_slots_for_pid",
+                dropped == 1
+                and "job-b"
+                not in load_state(state_path().read_text(encoding="utf-8"))["holders"]
+                and "job-a"
+                in load_state(state_path().read_text(encoding="utf-8"))["holders"],
+                f"dropped={dropped}",
+            )
+        finally:
+            extra.terminate()
+            extra.wait()
+    record(
+        "occupied_leftovers_only",
+        occupied_slots(used=8, harbor_live=8, reserved=0) == 8,
+        "empty Harbor leftovers still consume the pool",
+    )
+    record(
+        "occupied_reserved_before_compose",
+        occupied_slots(used=0, harbor_live=0, reserved=25) == 25,
+        "reservations count before networks exist",
+    )
+    record(
+        "occupied_no_double_count",
+        occupied_slots(used=25, harbor_live=25, reserved=25) == 25,
+        "live Harbor nets already reserved count once",
+    )
+    record(
+        "wait_log_immediate",
+        wait_log_due(100.0, 100.0 - WAIT_LOG_SEC),
+        "first wait logs immediately",
+    )
+    record(
+        "wait_log_interval",
+        not wait_log_due(100.0 + WAIT_LOG_SEC - 0.1, 100.0),
+        "no wait spam inside the interval",
+    )
+    share_cases = (
+        ((18, 4, 5), (4, 4), "four jobs share 18 slots under -n 5"),
+        ((18, 4, 2), (2, 4), "do not inflate -n above the request"),
+        ((20, 2, 5), (5, 2), "two jobs keep full -n 5"),
+        ((3, 4, 5), (1, 3), "queue the fourth job when only 3 slots remain"),
+        ((0, 4, 5), (1, 1), "block on a single worker when IPAM is empty"),
+        ((5, 1, 5), (5, 1), "one job uses its requested -n"),
+        ((5, 5, 5), (1, 5), "one slot each when jobs equal free slots"),
+    )
+    for (free, jobs, requested), expected, detail in share_cases:
+        got = fair_share_slots(free, jobs, requested)
+        record(
+            f"fair_share_{free}_{jobs}_{requested}",
+            got == expected,
+            f"{detail}; got {got}",
+        )
+    share_cli = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "docker_networks.py"),
+            "fair-share",
+            "--jobs",
+            "4",
+            "--requested",
+            "5",
+            "--free",
+            "18",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd=str(Path(__file__).resolve().parents[1]),
+        env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1])},
+    )
+    record(
+        "fair_share_cli",
+        share_cli.returncode == 0 and share_cli.stdout.strip() == "4 4 18",
+        f"rc={share_cli.returncode} out={share_cli.stdout!r} err={share_cli.stderr!r}",
+    )
+
+    from . import hygiene as hygiene_mod
+    from . import live as live_mod
+
+    reclaim_calls: list[str] = []
+    orig_containers = hygiene_mod.prune_exited_harbor_containers
+    orig_images = hygiene_mod.prune_unused_harbor_images
+    orig_cache = hygiene_mod.prune_unused_builder_cache
+    orig_networks = live_mod.prune_stale_networks
+
+    def fake_containers() -> list[str]:
+        reclaim_calls.append("containers")
+        return ["c1"]
+
+    def fake_networks() -> list[str]:
+        reclaim_calls.append("networks")
+        return ["n1"]
+
+    def fake_images() -> list[str]:
+        reclaim_calls.append("images")
+        return ["img"]
+
+    def fake_cache() -> bool:
+        reclaim_calls.append("cache")
+        return True
+
+    hygiene_mod.prune_exited_harbor_containers = fake_containers
+    hygiene_mod.prune_unused_harbor_images = fake_images
+    hygiene_mod.prune_unused_builder_cache = fake_cache
+    live_mod.prune_stale_networks = fake_networks
+    try:
+        ipam = hygiene_mod.reclaim_docker_leftovers()
+        record(
+            "reclaim_default_ipam_only",
+            reclaim_calls == ["containers", "networks"]
+            and ipam == {"containers": 1, "networks": 1, "images": 0},
+            f"calls={reclaim_calls} counts={ipam}",
+        )
+        reclaim_calls.clear()
+        tagged = hygiene_mod.reclaim_docker_leftovers(
+            images=True, builder_cache=False
+        )
+        record(
+            "reclaim_images_keep_builder_cache",
+            reclaim_calls == ["containers", "networks", "images"]
+            and tagged == {"containers": 1, "networks": 1, "images": 1},
+            f"calls={reclaim_calls} counts={tagged}",
+        )
+        reclaim_calls.clear()
+        full = hygiene_mod.reclaim_docker_leftovers(images=True, builder_cache=True)
+        record(
+            "reclaim_full_disk",
+            reclaim_calls == ["containers", "networks", "images", "cache"]
+            and full == {"containers": 1, "networks": 1, "images": 1},
+            f"calls={reclaim_calls} counts={full}",
+        )
+    finally:
+        hygiene_mod.prune_exited_harbor_containers = orig_containers
+        hygiene_mod.prune_unused_harbor_images = orig_images
+        hygiene_mod.prune_unused_builder_cache = orig_cache
+        live_mod.prune_stale_networks = orig_networks
+
+    from . import slots as slots_mod
+
+    orig_stamps = slots_mod.live_run_stamps
+    orig_rows = hygiene_mod._docker_rows
+    docker_calls: list[list[str]] = []
+
+    def fake_live_stamps() -> set[str]:
+        return {"2026-08-26_232733_1"}
+
+    def fake_rows(args: list[str]) -> list[str]:
+        docker_calls.append(list(args))
+        return []
+
+    slots_mod.live_run_stamps = fake_live_stamps
+    hygiene_mod._docker_rows = fake_rows
+    try:
+        skipped = hygiene_mod.prune_unused_harbor_images()
+        record(
+            "skip_image_prune_while_live",
+            skipped == [] and docker_calls == [],
+            f"removed={skipped} docker={docker_calls}",
+        )
+    finally:
+        slots_mod.live_run_stamps = orig_stamps
+        hygiene_mod._docker_rows = orig_rows
+
+    failed = [(name, msg) for name, ok, msg in cases if not ok]
+    for name, ok, msg in cases:
+        status = "PASS" if ok else "FAIL"
+        print(f"{status}  {name}: {msg}", flush=True)
+    if failed:
+        print(f"{len(failed)}/{len(cases)} docker_networks case(s) failed", flush=True)
+        return 1
+    print(f"{len(cases)}/{len(cases)} docker_networks cases passed", flush=True)
+    return 0

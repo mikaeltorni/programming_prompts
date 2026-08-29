@@ -1,0 +1,29 @@
+{
+  "name": "linux-desktop-configuration",
+  "version": "1.1.0",
+  "description": "Shared Linux desktop (GNOME/Ubuntu) configuration rules for Codex agents: safe GNOME Shell reloads, clean-install compatibility, and root-optional installers.",
+  "author": {
+    "name": "Mikael Torni"
+  },
+  "license": "MIT",
+  "keywords": [
+    "linux",
+    "gnome",
+    "ubuntu",
+    "installer"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Linux Desktop Configuration",
+    "shortDescription": "Console-only desktop deployment, clean-install rules, and sudo-free installer patterns.",
+    "longDescription": "Keeps the shared Linux desktop configuration guidance available as a reusable Codex skill: apply desktop changes silently from the command line, activate edited extension code with the sanctioned in-place X11 run-dialog reload (xdotool Alt+F2 r) while still forbidding destructive session restarts, ask for manual logout to activate extension code on Wayland, preserve user sessions, maintain clean installation compatibility, and avoid sudo wherever possible.",
+    "developerName": "Mikael Torni",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Instructions"
+    ],
+    "defaultPrompt": [
+      "Apply the Linux desktop configuration guidelines to this task."
+    ]
+  }
+}

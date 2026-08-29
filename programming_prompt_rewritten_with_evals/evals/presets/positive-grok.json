@@ -1,0 +1,18 @@
+{
+  "name": "positive-grok",
+  "description": "positive; judges=grok on each coding run; no codex,cc; k=5",
+  "jobs": [
+    {
+      "title": "grok x grok",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=grok",
+        "evalAgent=grok",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5"
+      ]
+    }
+  ]
+}

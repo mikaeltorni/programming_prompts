@@ -1,0 +1,71 @@
+"""Policy tests for the refactoring skill prompt."""
+
+from pathlib import Path
+
+
+SKILL_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "skills"
+    / "refactoring"
+    / "SKILL.md"
+)
+
+
+def skill_text() -> str:
+    return SKILL_PATH.read_text(encoding="utf-8")
+
+
+def normalized_skill_text() -> str:
+    return " ".join(skill_text().split())
+
+
+def test_refactoring_skill_supports_multi_repository_audits():
+    content = skill_text()
+
+    assert "multi-repository workspaces" in content
+    assert "Inventory every repository first" in content
+    assert "Run a second audit" in content
+
+
+def test_refactoring_skill_prefers_rg_over_grep_examples():
+    content = skill_text()
+
+    assert "rg --files" in content
+    assert "grep -rn" not in content
+
+
+def test_refactoring_skill_does_not_tell_agents_to_pip_install_lint_tools():
+    content = skill_text()
+
+    assert "pip install flake8" not in content
+    assert "Do not install new lint tools ad hoc" in content
+
+
+def test_refactoring_skill_requires_explicit_commit_request():
+    content = skill_text()
+
+    assert "Commit your finished work by default, in the worktree you are working on" in content
+
+
+def test_refactoring_skill_handles_completeness_challenges_with_audit():
+    content = normalized_skill_text()
+
+    assert "challenges completeness" in content
+    assert "concrete compliance audit" in content
+    assert "Do not merely answer that compliance is unproven" in content
+
+
+def test_refactoring_skill_checks_installed_import_copy_lists():
+    content = normalized_skill_text()
+
+    assert "project-local imports" in content
+    assert "copied helper modules or package manifests" in content
+    assert "missing deployed modules" in content
+
+
+def test_refactoring_skill_requires_shell_logging_cleanup():
+    content = normalized_skill_text()
+
+    assert "Bash and shell scripts use one sourced logging helper" in content
+    assert "remove old hardcoded log functions" in content
+    assert "update installer copy lists or package manifests" in content

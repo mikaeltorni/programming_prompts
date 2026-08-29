@@ -1,0 +1,19 @@
+{
+  "name": "baseline-grok",
+  "description": "baseline; judges=grok on each coding run; no codex,cc; k=5",
+  "jobs": [
+    {
+      "title": "grok x grok",
+      "args": [
+        "./run_benchmark.sh",
+        "harness=grok",
+        "evalAgent=grok",
+        "--baseline",
+        "--skills",
+        "srp,commenting,logging,worktree",
+        "-k",
+        "5"
+      ]
+    }
+  ]
+}

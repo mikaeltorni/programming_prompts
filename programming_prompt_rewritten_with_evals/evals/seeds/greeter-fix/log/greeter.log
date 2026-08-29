@@ -1,0 +1,4 @@
+ERROR run_greeter hour=3
+got:  greeting=Good night, Ada
+want: hi=Good twilight, Ada
+period map: 0-6 Good twilight; 7-14 Good day; 15-23 Good evening

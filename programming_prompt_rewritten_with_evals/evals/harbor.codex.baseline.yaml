@@ -1,0 +1,18 @@
+# Reference baseline config (no skills). Prefer:
+#   ./run_benchmark.sh harness=codex --baseline --skills srp,commenting -k 5
+# Judges for the selected skills still score the written code.
+
+agents:
+  - import_path: harbor_agents.benchmark_codex:BenchmarkCodex
+    model_name: openai/gpt-5.6-luna
+    skills: []
+    kwargs:
+      version: "0.149.0"
+      reasoning_effort: low
+
+tasks:
+  - path: .generated/tasks/calculator
+  - path: .generated/tasks/counter
+  - path: .generated/tasks/greeter
+  - path: .generated/tasks/temperature
+  - path: .generated/tasks/todo
