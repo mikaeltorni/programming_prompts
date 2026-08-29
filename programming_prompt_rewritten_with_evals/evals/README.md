@@ -277,8 +277,10 @@ suite goes further:
   `$HOME/.agents/skills`, `/etc/codex/skills`, and `$CODEX_HOME/skills`, then
   installs only the skills configured for that job.
 - Auth: the ChatGPT login selected by Agent Command Center (`cat2` / `ca2`,
-  persisted in `codex-instances.json`) bind-mounts that home's `auth.json`
-  plus `CODEX_FORCE_AUTH_JSON=1`. Default is `~/.codex/auth.json`.
+  persisted in `codex-instances.json`) is passed as `CODEX_AUTH_JSON_PATH`
+  so Harbor uploads that home's `auth.json`. A Docker bind-mount of the same
+  file is not enough: Harbor's Codex agent copies host `~/.codex/auth.json`
+  whenever only `CODEX_FORCE_AUTH_JSON` is set. Default home is `~/.codex`.
 
 ### Claude Code (`harness=cc`)
 

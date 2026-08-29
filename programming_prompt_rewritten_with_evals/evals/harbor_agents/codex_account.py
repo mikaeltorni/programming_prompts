@@ -63,6 +63,35 @@ def load_registry(home: Path | None = None) -> dict:
     return raw if isinstance(raw, dict) else {}
 
 
+def _instance_rows(registry: dict) -> list[dict]:
+    """Return registry instance dicts that have a numeric id."""
+    return [
+        row
+        for row in registry.get("instances") or []
+        if isinstance(row, dict) and str(row.get("id", "")).isdigit()
+    ]
+
+
+def selected_instance_id(home: Path | None = None) -> int:
+    """Return the persisted ACC Codex instance id.
+
+    Parameters: home - optional user home; defaults to ``Path.home()``.
+
+    Returns: Selected id, or ``1`` when nothing is registered.
+    """
+    registry = load_registry(home)
+    rows = _instance_rows(registry)
+    if not rows:
+        return PRIMARY_ID
+    try:
+        selected = int(registry.get("selected", PRIMARY_ID))
+    except (TypeError, ValueError):
+        selected = PRIMARY_ID
+    by_id = {int(row["id"]): row for row in rows}
+    row = by_id.get(selected) or by_id.get(PRIMARY_ID) or rows[0]
+    return int(row["id"])
+
+
 def selected_codex_home(home: Path | None = None) -> Path:
     """Return the Codex home for the persisted ACC instance selection.
 
@@ -72,17 +101,10 @@ def selected_codex_home(home: Path | None = None) -> Path:
     """
     root = home or Path.home()
     registry = load_registry(root)
-    rows = [
-        row
-        for row in registry.get("instances") or []
-        if isinstance(row, dict) and str(row.get("id", "")).isdigit()
-    ]
+    rows = _instance_rows(registry)
     if not rows:
         return root / ".codex"
-    try:
-        selected = int(registry.get("selected", PRIMARY_ID))
-    except (TypeError, ValueError):
-        selected = PRIMARY_ID
+    selected = selected_instance_id(root)
     by_id = {int(row["id"]): row for row in rows}
     row = by_id.get(selected) or by_id.get(PRIMARY_ID) or rows[0]
     home_value = str(row.get("home") or "").strip()
@@ -117,6 +139,28 @@ def selected_codex_auth_parts(home: Path | None = None) -> tuple[str, ...]:
     except ValueError:
         return (".codex", "auth.json")
     return rel.parts
+
+
+def harbor_codex_auth_env(home: Path | None = None) -> tuple[str, ...]:
+    """Return Harbor env pairs so trials upload the ACC-selected ``auth.json``.
+
+    Harbor's Codex agent honors ``CODEX_AUTH_JSON_PATH`` first. ``CODEX_FORCE_AUTH_JSON``
+    alone always copies the host ``~/.codex/auth.json``, which ignores ``cat2``.
+
+    Parameters: home - optional user home; defaults to ``Path.home()``.
+
+    Returns: Env lines for ``--ae``, including the selected auth path.
+    """
+    auth = selected_codex_auth(home)
+    instance_id = selected_instance_id(home)
+    print(
+        f"Codex Harbor auth: ACC instance {instance_id} path={auth}",
+        file=sys.stderr,
+    )
+    return (
+        "CODEX_FORCE_AUTH_JSON=true",
+        f"CODEX_AUTH_JSON_PATH={auth}",
+    )
 
 
 def self_test() -> int:
@@ -162,6 +206,11 @@ def self_test() -> int:
                 str(selected_codex_home(root)),
             )
             check(
+                "selected_instance_id_is_two",
+                selected_instance_id(root) == 2,
+                str(selected_instance_id(root)),
+            )
+            check(
                 "selected_auth_is_instance_two",
                 selected_codex_auth(root) == extra / "auth.json",
                 str(selected_codex_auth(root)),
@@ -170,6 +219,12 @@ def self_test() -> int:
                 "mount_parts_use_account_home",
                 selected_codex_auth_parts(root) == (".codex-account-2", "auth.json"),
                 str(selected_codex_auth_parts(root)),
+            )
+            env_pairs = harbor_codex_auth_env(root)
+            check(
+                "harbor_env_points_at_instance_two",
+                any(pair.endswith(str(extra / "auth.json")) for pair in env_pairs),
+                str(env_pairs),
             )
     finally:
         if previous is None:

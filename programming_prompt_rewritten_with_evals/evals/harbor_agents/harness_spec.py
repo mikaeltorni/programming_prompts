@@ -13,6 +13,7 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from harbor_agents.codex_account import harbor_codex_auth_env
 from harbor_agents.harness_mounts import _mount_dict, mounts_json
 from harbor_agents.harness_normalize import (
     _normalize_one_harness,
@@ -133,6 +134,46 @@ def _self_test() -> int:
         and "/root/.grok/auth.json" not in targets,
         f"targets={targets}",
     )
+    import os
+    import tempfile
+
+    previous = os.environ.get("CODEX_AGENT_TRACKER_STATE_DIR")
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            state = Path(tmp) / "tracker"
+            extra = Path(tmp) / "home" / ".codex-account-2"
+            extra.mkdir(parents=True)
+            (extra / "auth.json").write_text("{}", encoding="utf-8")
+            state.mkdir(parents=True)
+            (state / "codex-instances.json").write_text(
+                json.dumps(
+                    {
+                        "selected": 2,
+                        "instances": [
+                            {"id": 1, "home": str(Path(tmp) / "home" / ".codex")},
+                            {"id": 2, "home": str(extra)},
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            os.environ["CODEX_AGENT_TRACKER_STATE_DIR"] = str(state)
+            env_lines = static_env_lines("codex")
+            joined = "\n".join(env_lines)
+            check(
+                "codex_static_env_uses_selected_auth_path",
+                any(
+                    line.startswith("CODEX_AUTH_JSON_PATH=")
+                    and line.endswith(str(extra / "auth.json"))
+                    for line in env_lines
+                ),
+                joined,
+            )
+    finally:
+        if previous is None:
+            os.environ.pop("CODEX_AGENT_TRACKER_STATE_DIR", None)
+        else:
+            os.environ["CODEX_AGENT_TRACKER_STATE_DIR"] = previous
     failed = [name for name, ok, _ in cases if not ok]
     if failed:
         print(
@@ -145,6 +186,29 @@ def _self_test() -> int:
         file=sys.stderr,
     )
     return 0
+
+
+def static_env_lines(name: str) -> tuple[str, ...]:
+    """Return ``--ae`` env pairs for one harness, including ACC Codex auth.
+
+    Parameters: name - canonical harness id.
+
+    Returns: Env lines. Codex (and any harness that sets
+        ``CODEX_FORCE_AUTH_JSON``) also gets ``CODEX_AUTH_JSON_PATH`` pointing
+        at the last ``catN`` / ``caN`` login. Harbor otherwise copies host
+        ``~/.codex/auth.json`` and ignores the Docker bind mount.
+    """
+    spec = require_harness(name)
+    lines = list(spec.static_env)
+    if any(line.startswith("CODEX_FORCE_AUTH_JSON=") for line in lines):
+        lines = [
+            line
+            for line in lines
+            if not line.startswith("CODEX_FORCE_AUTH_JSON=")
+            and not line.startswith("CODEX_AUTH_JSON_PATH=")
+        ]
+        lines.extend(harbor_codex_auth_env())
+    return tuple(lines)
 
 
 def _cli(argv: list[str]) -> int:
@@ -212,8 +276,9 @@ def _cli(argv: list[str]) -> int:
             print(spec.oauth, end="")
             return 0
         if cmd == "static-env":
-            if spec.static_env:
-                print("\n".join(spec.static_env))
+            lines = static_env_lines(name)
+            if lines:
+                print("\n".join(lines))
             return 0
         print(f"unknown command {cmd!r}", file=sys.stderr)
         return 2
