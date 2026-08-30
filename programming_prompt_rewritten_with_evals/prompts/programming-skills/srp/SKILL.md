@@ -30,4 +30,17 @@ Concrete rules:
   validation-only function for them. Passing `helper(int(token))` from the
   entrypoint is still thin — that is not leftover core conversion.
 - Do not leave parsing and core logic mixed in one monolithic function body.
+- **The entrypoint never touches the raw command string.** Its first
+  statement calls the parse helper once; after that it dispatches only on
+  what the helper returned. Calling `strip()`, `split()`, `startswith()`,
+  `partition()`, slicing, or a regex on the raw command **inside the
+  entrypoint** — even for a single `bye`/`period` branch — is mixed
+  parsing and a failure. One parse helper covers **every** command
+  variant; do not parse most of them in a helper and one special case
+  inline.
+- **The entrypoint does not build a computed result literal.** If a
+  returned string like `f"hello={name}"` or `f"bye={name}"` needs a value
+  the helpers derived, that formatting belongs to the helper that owns the
+  logic. Only a plain read of existing state (`str(state)`,
+  `f"value={state}"`) may be formatted in the entrypoint.
 - Logging prints are a separate skill; they do not merge responsibilities.
