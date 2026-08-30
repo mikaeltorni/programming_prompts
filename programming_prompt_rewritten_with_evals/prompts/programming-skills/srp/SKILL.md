@@ -30,14 +30,20 @@ Concrete rules:
   validation-only function for them. Passing `helper(int(token))` from the
   entrypoint is still thin — that is not leftover core conversion.
 - Do not leave parsing and core logic mixed in one monolithic function body.
-- **The entrypoint never touches the raw command string.** Its first
-  statement calls the parse helper once; after that it dispatches only on
-  what the helper returned. Calling `strip()`, `split()`, `startswith()`,
-  `partition()`, slicing, or a regex on the raw command **inside the
-  entrypoint** — even for a single `bye`/`period` branch — is mixed
-  parsing and a failure. One parse helper covers **every** command
+- **The entrypoint never takes the raw command string apart.** The only
+  thing it may do with that string is hand it to the parse helper, in a
+  single call, before it branches on anything; after that it dispatches
+  only on what the helper returned. Calling `strip()`, `split()`,
+  `startswith()`, `partition()`, slicing, or a regex on the raw command
+  **inside the entrypoint** — even for a single `bye`/`period` branch — is
+  mixed parsing and a failure. One parse helper covers **every** command
   variant; do not parse most of them in a helper and one special case
   inline.
+  "Hands it to the parse helper first" is about **parsing work**, not about
+  line order: printing a parameter is not parsing. When a logging skill also
+  applies, that function's entry `print(...)` is the first statement in the
+  body and the parse-helper call comes after it. Both rules hold together —
+  never drop or delay the entry print to make the parse call come first.
 - **The entrypoint does not build a computed result literal.** If a
   returned string like `f"hello={name}"` or `f"bye={name}"` needs a value
   the helpers derived, that formatting belongs to the helper that owns the
