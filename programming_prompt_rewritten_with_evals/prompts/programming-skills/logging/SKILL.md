@@ -18,6 +18,21 @@ parameters. Only `lambda` expressions are exempt.
    optional parameters whose value is `None`. One print that lists every
    real name is enough. Omitting a named parameter because it is unused or
    `None` is a failure.
+   "First statement" is literal: nothing runs before it — no parse call, no
+   validation, no `global`, no dispatch. **This includes the public
+   entrypoint**, the thin `run_<thing>(command)` function that immediately
+   delegates. Writing `def run_todo(command): parsed = _parse_command(command)`
+   and printing only afterwards is the single most common failure of this
+   skill: `command` was never printed at entry. Correct shape:
+
+   ```python
+   def run_todo(command):
+       print(f"command={command}")        # entry print comes first
+       operation, arguments = _parse_command(command)
+   ```
+
+   A helper printing `command=` inside itself does **not** cover the
+   entrypoint — every function prints its own parameters.
    When the function has **no parameters** you still write an entry print
    as the first statement — `print("entry")` or
    `print("parameters=none")`. A no-parameter function with no entry print
