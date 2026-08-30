@@ -87,12 +87,12 @@ helpers`, `Add logging`, `Tidy up` — silently becomes "Feature 3", and the
 real Feature 3 lands one slot too late. That is a failure even though the
 finished program is correct and the history looks tidy.
 
-So finish a Feature **before** committing it: test it, fix it, and clean it up
-while the work is still uncommitted. If you spot a mistake right after
-committing, fold the correction into that same commit with
-`git commit --amend` instead of adding a follow-up code commit. Commits that
-touch no `.py` file at all (a README-only commit, the final merge) do not take
-a slot and are safe.
+So finish a Feature **before** committing it: run it, fix it, and clean it up
+while the work is still uncommitted — the correction belongs inside that
+Feature's own commit, not in a follow-up one. Do not rewrite history to
+repair a commit that already landed; simply do not commit a Feature until it
+is right. Commits that touch no `.py` file at all (a README-only commit, the
+final merge) do not take a slot and are safe.
 
 Three Features means the Python history is exactly three commits, in the
 prompt's order.
