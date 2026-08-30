@@ -111,6 +111,67 @@ block into a **different terminal**. Shared setup (`cd`, `export JOBS=…`) may
 sit in its own preceding block; every distinct benchmark invocation after that
 must be alone in a block.
 
+## The benchmark testing framework (read before running an eval)
+
+`evals/run_benchmark.sh` is the only supported entrypoint. It refreshes CLI
+versions, prepares tasks, starts one Harbor job per selected harness, then
+summarizes and archives each job under `evals/runs/<stamp>/`.
+
+Run it exactly as documented — one invocation per terminal, and **one run at a
+time on this machine**:
+
+```bash
+cd programming_prompt_rewritten_with_evals/evals
+./run_benchmark.sh --harness=codex --evalAgent=codex --no-pin-refresh
+```
+
+### Mistakes already made here — do not repeat them
+
+These are real failures from earlier sessions, each of which produced a
+misleading result rather than an obvious error.
+
+1. **Two runs at once wipe each other out → `0/140`.** Every run performs a
+   Docker reclaim/prune sweep. A second `./run_benchmark.sh` started while the
+   first was still executing deleted the first run's live trial containers, so
+   Harbor logged `no container found for service` and every trial scored zero.
+   The score was *not* a model result. Reclaim now protects containers owned by
+   a live run stamp, but the rule stands: **wait for a run to finish**, or check
+   for live containers before starting another. A bare `docker rm`/`docker
+   prune`/daemon restart during a run causes the identical failure.
+2. **`0/140` was reported as a real score.** Never present a zero run as a
+   model finding until the archived job has been read. A wiped run and a
+   genuinely failing model look identical in `RESULTS.txt`. Check the job's
+   `job.log` and the printed `DIAGNOSIS for job …` block first.
+3. **A failed job used to vanish silently.** Harbor exiting non-zero killed the
+   wrapper under `set -e` *before* the summary and archive steps, leaving no
+   `RESULTS.txt` row and nothing to read. `run_one_job` now captures the exit
+   code, always archives, and calls `diagnose_failed_job`. Do not reintroduce a
+   bare `run_harbor_for_harness …` call without `|| rc=$?`.
+4. **`--run-separately` was misread as "more trials".** It does not change the
+   trial count and does not start extra Harbor jobs: it is still one job per
+   harness. It only makes the judges score independently, so Pass is no longer
+   the AND of all judges. Comparing a `--run-separately` run against a combined
+   run as if the workload changed is an invalid comparison.
+5. **Docker address-pool exhaustion looks like a model failure.** When the
+   daemon runs out of network space, trials die during environment start. Use
+   the IPAM handling in `docker_networks.py` (`--ignore-ipam` only when you have
+   confirmed the pools are healthy) instead of assuming the harness misbehaved.
+
+### How to verify changes to this tree
+
+Per the rule above, **do not add pytest/unit/integration tests** for
+`programming_prompt_rewritten_with_evals/`. Verify instead with:
+
+- the standalone self-test scripts next to the code they cover —
+  `python3 evals/docker_ipam/self_test.py` and
+  `bash evals/lib/self_test_diagnose.sh` (no Docker, no GUI, no LLM calls);
+- `bash -n` on every edited shell file;
+- a real short run of `./run_benchmark.sh` when the change touches job
+  execution, and then **read the archived job**, not just the score line.
+
+A green self-test alone does not prove an eval fix. The change is only verified
+once a real run produced a non-zero scored trial and its archive was read.
+
 ## Mandatory programming guidelines prompt
 
 When generic agent defaults conflict with this file or the shared
