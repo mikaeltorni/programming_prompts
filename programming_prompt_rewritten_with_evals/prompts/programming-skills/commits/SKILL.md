@@ -19,10 +19,22 @@ before writing Feature code:
 3. the remaining extras (one Feature, even if that extras group names two
    related commands)
 
-A Feature is one **group** the prompt names, not every operator or hour
-band. Morning/afternoon/evening in one sentence is one Feature. Multiply
-and divide in one sentence is one Feature. Record the Feature list. Do not
-skip the breakdown because the script is small.
+## Find the Features by reading the sentences
+
+**Each capability sentence in the prompt is its own Feature.** The opening
+sentence that names the first behavior is Feature 1; every following
+"It should also …" sentence is the next Feature, in the order written.
+Three such sentences means **three Features and three commits** — do not
+collapse two sentences into one Feature because they feel like the same
+topic (C→F and F→C are two sentences, so two Features; catalog and total
+are two sentences, so two Features).
+
+Inside **one** sentence, a group stays one Feature: morning/afternoon/
+evening in one sentence is one Feature; multiply and divide in one
+sentence is one Feature; a sentence naming a main command plus an
+optional extra ("… and may count items") is one Feature. Record the
+Feature list before writing Feature code. Do not skip the breakdown
+because the script is small.
 
 Illustrative breakdowns (not the current task):
 
@@ -42,6 +54,17 @@ When **two or more Features** are found:
 - In that Feature's commit, use the return prefixes the prompt names
   (`sum=`, `morning=`, `added=`). Do not hide them behind a variable if the
   prompt showed a literal prefix.
+
+## Keep later Features out of the earlier commit
+
+A Feature's commit contains **only that Feature's** literal return
+prefixes. Before you commit, re-read the staged file and check that **no
+later Feature's prefix or command appears anywhere in it** — not in a
+branch, not in a dispatch table, not in a docstring, not as a
+"while I'm here" extra. Writing `total=` while committing the `added=`
+Feature is a failure even though the code works; leave `total=` out
+entirely and add it in its own commit. Only after that commit lands do you
+write the next Feature's prefix.
 
 A single Feature (or none) is one commit. Commits happen in the worktree;
 where that worktree lives is a separate skill.
