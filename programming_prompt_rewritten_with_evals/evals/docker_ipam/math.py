@@ -153,34 +153,39 @@ def leftover_harbor_container(
 ) -> bool:
     """Whether a Harbor trial container is safe to force-remove.
 
-    Finished trials (``result.json`` present) are leftovers when Harbor's
-    ``compose down`` failed. Containers from a run with no live slot holder
-    are orphans. Live trials without a result file are kept.
+    Ownership decides first, state second. AGENTS.md tells the user to run
+    each benchmark block in its own terminal, so wrappers overlap by design
+    and every reclaim sweep sees a sibling run's containers. A container is
+    removable only when its run stamp holds no live slot (an orphan from a
+    dead wrapper) or when Harbor already wrote the trial's ``result.json``
+    (a failed ``compose down``). Containers owned by a live run are kept in
+    every Docker state — notably ``created``, which is what ``docker compose
+    up`` shows for the seconds before a trial container starts. Removing
+    those cancelled all 20 in-flight trials of the older run and scored it
+    0/140 with ``no container found for service "main"``.
 
-    Parameters: name - container name; state - Docker state (running/exited);
-        working_dir - compose working directory; live_stamps - run stamps
-        still held by a live wrapper pid.
+    Unattributable containers (no compose ``working_dir`` label, or the
+    directory is already gone) cannot be tied to a run, so they are removed
+    only when no evals wrapper is live at all.
+
+    Parameters: name - container name; state - Docker state
+        (running/created/exited); working_dir - compose working directory;
+        live_stamps - run stamps still held by a live wrapper pid.
 
     Returns: true when reclaim should ``docker rm -f`` the container.
     """
     session = trial_session_from_container(name)
     if session is None:
         return False
-    status = (state or "").strip().lower()
-    if status in {"exited", "dead", "created"}:
-        return True
-    if not working_dir.strip():
-        return True
-    env_dir = Path(working_dir)
-    if not env_dir.is_dir():
+    if not working_dir.strip() or not Path(working_dir).is_dir():
+        return not live_stamps
+    stamp = run_stamp_from_working_dir(working_dir)
+    if stamp is None:
+        return not live_stamps
+    if stamp not in live_stamps:
         return True
     result = trial_result_path(working_dir, session)
-    if result is not None and result.is_file():
-        return True
-    stamp = run_stamp_from_working_dir(working_dir)
-    if stamp and stamp not in live_stamps:
-        return True
-    return False
+    return result is not None and result.is_file()
 
 
 def grant_trial_slots(

@@ -18,6 +18,7 @@ from .log import log
 from .math import (
     is_harbor_trial_image,
     leftover_harbor_container,
+    trial_session_from_container,
 )
 
 
@@ -55,10 +56,11 @@ def _docker_rows(args: list[str]) -> list[str]:
 def prune_exited_harbor_containers() -> list[str]:
     """Remove leftover Harbor trial containers, including failed ``compose down``.
 
-    Drops exited containers always. Also force-removes still-running
-    ``sleep infinity`` trials whose ``result.json`` exists (Harbor already
-    finished) or whose run stamp has no live wrapper. In-progress trials
-    without a result file are kept.
+    Removal is scoped by ownership (see ``leftover_harbor_container``): only
+    orphans whose run stamp holds no live slot, and trials whose
+    ``result.json`` Harbor already wrote. Containers belonging to a live
+    wrapper are kept in every state, so an overlapping ``./run_benchmark.sh``
+    in another terminal can never cancel this run's in-flight trials.
 
     Parameters: none.
 
@@ -75,8 +77,11 @@ def prune_exited_harbor_containers() -> list[str]:
         ]
     )
     live_stamps = live_run_stamps()
+    if live_stamps:
+        log(f"reclaim protects live run stamp(s): {', '.join(sorted(live_stamps))}")
     removed: list[str] = []
     running_leftovers = 0
+    protected = 0
     for row in rows:
         parts = row.split("\t")
         if len(parts) < 3:
@@ -88,6 +93,8 @@ def prune_exited_harbor_containers() -> list[str]:
         if not container_id or not leftover_harbor_container(
             name, state, working_dir, live_stamps=live_stamps
         ):
+            if container_id and trial_session_from_container(name) is not None:
+                protected += 1
             continue
         proc = _docker(["rm", "-f", container_id])
         if proc.returncode == 0:
@@ -96,6 +103,8 @@ def prune_exited_harbor_containers() -> list[str]:
                 running_leftovers += 1
         else:
             log(f"could not remove container {name}: {(proc.stderr or '').strip()}")
+    if protected:
+        log(f"kept {protected} Harbor trial container(s) owned by a live run")
     if removed:
         log(
             f"removed {len(removed)} leftover Harbor container(s) "

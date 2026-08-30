@@ -171,14 +171,47 @@ def _self_test() -> int:
             "in-progress trial without result.json",
         )
         record(
-            "reap_exited_trial",
-            leftover_harbor_container(
+            "keep_created_trial_of_live_run",
+            not leftover_harbor_container(
+                "todo__abc1234__env-main-1",
+                "created",
+                wd,
+                live_stamps={stamp},
+            ),
+            "compose up shows created before running; removing it cancels the trial",
+        )
+        record(
+            "keep_exited_trial_of_live_run",
+            not leftover_harbor_container(
                 "todo__abc1234__env-main-1",
                 "exited",
                 wd,
                 live_stamps={stamp},
             ),
-            "exited containers always go",
+            "the owning wrapper reclaims its own leftovers after releasing slots",
+        )
+        record(
+            "keep_live_run_from_sibling_terminal",
+            not any(
+                leftover_harbor_container(
+                    "todo__abc1234__env-main-1",
+                    state,
+                    wd,
+                    live_stamps={stamp, "2026-08-26_120500_2"},
+                )
+                for state in ("created", "running", "restarting", "paused", "exited")
+            ),
+            "a second ./run_benchmark.sh terminal must not touch this run",
+        )
+        record(
+            "reap_exited_orphan",
+            leftover_harbor_container(
+                "todo__abc1234__env-main-1",
+                "exited",
+                wd,
+                live_stamps={"2026-08-26_120500_2"},
+            ),
+            "exited container whose own run stamp is not live",
         )
         record(
             "reap_dead_job_orphan",
@@ -191,14 +224,54 @@ def _self_test() -> int:
             "no live wrapper for this run stamp",
         )
         record(
-            "reap_missing_working_dir",
-            leftover_harbor_container(
+            "keep_missing_working_dir_while_live",
+            not leftover_harbor_container(
                 "todo__abc1234__env-main-1",
                 "running",
                 str(Path(raw) / "gone" / "environment"),
                 live_stamps={stamp},
             ),
-            "compose working dir is gone",
+            "unattributable container is kept while any wrapper is live",
+        )
+        record(
+            "keep_unlabelled_container_while_live",
+            not leftover_harbor_container(
+                "todo__abc1234__env-main-1",
+                "created",
+                "",
+                live_stamps={stamp},
+            ),
+            "missing compose working_dir label is not proof of an orphan",
+        )
+        record(
+            "reap_missing_working_dir",
+            leftover_harbor_container(
+                "todo__abc1234__env-main-1",
+                "running",
+                str(Path(raw) / "gone" / "environment"),
+                live_stamps=set(),
+            ),
+            "compose working dir is gone and no wrapper is live",
+        )
+        record(
+            "reap_unlabelled_container_when_idle",
+            leftover_harbor_container(
+                "todo__abc1234__env-main-1",
+                "exited",
+                "",
+                live_stamps=set(),
+            ),
+            "no compose label and no live wrapper",
+        )
+        record(
+            "ignore_non_harbor_container",
+            not leftover_harbor_container(
+                "postgres",
+                "running",
+                "",
+                live_stamps=set(),
+            ),
+            "unrelated containers are never touched",
         )
     record(
         "grant_llm_cap",
