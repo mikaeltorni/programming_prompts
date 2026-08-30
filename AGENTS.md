@@ -194,6 +194,26 @@ misleading result rather than an obvious error.
      sanitize env, so the host process's value reaches the agent env, the
      container auth mount, and the LLM judge alike.
 
+7. **A skill that tells the agent to *search* before committing loses the
+   commit.** The `commits` skill used to end with "search the staged file for
+   that Feature's exact prefix text and confirm it is there". Agents obeyed it
+   literally and chained the search into the commit:
+   `git add counter.py && rg -n 'up=' counter.py && git commit -m 'Feature 1: …'`.
+   The task image has **no `ripgrep`**, so `rg` exited 127, the `&&` chain
+   short-circuited, and the Feature 1 commit never happened — while the agent
+   read the step as done. Feature 1's code then rode along in the "Feature 2"
+   commit, and `check_commits.py` correctly failed the trial ("found 2"). This
+   cost exactly one trial in `2026-08-30_150453_1483202`, but **27 of those 210
+   trials hit `rg: command not found`** — the rest happened to recover. Lessons:
+   - Never write an instruction into a skill that presumes a specific CLI tool
+     exists in the task container. `rg` does not; `grep` does.
+   - State a *requirement* ("the prefix is in the source"), not a *procedure*
+     that invokes tooling.
+   - When a trial fails a programmatic judge, read the agent transcript
+     (`harbor/<job>/<trial>/agent/codex.txt`) for `exit_code":127` and
+     `command not found` before assuming the model reasoned badly. Here the
+     model's plan was correct end to end; only the shell chain failed.
+
 ### How to verify changes to this tree
 
 Per the rule above, **do not add pytest/unit/integration tests** for
