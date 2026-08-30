@@ -156,6 +156,19 @@ misleading result rather than an obvious error.
    daemon runs out of network space, trials die during environment start. Use
    the IPAM handling in `docker_networks.py` (`--ignore-ipam` only when you have
    confirmed the pools are healthy) instead of assuming the harness misbehaved.
+6. **An out-of-credits workspace scores every trial `0.0`.** When the provider
+   account has no credits (or the API key is rejected), the agent turn fails
+   immediately and every LLM judge returns `raw=ratelimit reward=0.0`, so
+   `RESULTS.txt` shows a plausible-looking total failure with
+   `rate_limited=<all trials>` and `pass_rate=n/a`. The programmatic judges
+   (`commits`, `worktree`, `docs`) then honestly report an empty repository —
+   "found 0 commits", "missing README" — because the agent never ran, which
+   makes the run read like a catastrophic prompt regression. Before believing
+   any near-total zero, read a trial's `agent/<harness>.txt`: a line such as
+   `Your workspace is out of credits` or an `ApiRateLimitError` means the run is
+   void. `rate_limited` in the summary is an infrastructure counter, never a
+   score — a run with a non-zero `rate_limited` count cannot be compared against
+   any other run.
 
 ### How to verify changes to this tree
 
@@ -170,7 +183,15 @@ Per the rule above, **do not add pytest/unit/integration tests** for
   through the `docker_networks.py` CLI;
 - `bash -n` on every edited shell file;
 - a real short run of `./run_benchmark.sh` when the change touches job
-  execution, and then **read the archived job**, not just the score line.
+  execution, and then **read the archived job**, not just the score line;
+- for a change to the *skill prompts*, a fixture repository built by hand in
+  the exact shape the edited prompt prescribes, scored with the real
+  programmatic verifier — e.g. `PYTHONPATH=. python3 check_commits.py --repo
+  <fixture> --output /tmp/reward.json --feature-count-file
+  ../.generated/tasks/<task>/tests/feature_count.txt`. This needs no credits
+  and no Docker, and it proves the guidance is actually satisfiable by the
+  checker that scores it. Use it when an eval run is impossible; it does not
+  replace a real run for the LLM-scored skills.
 
 A green self-test alone does not prove an eval fix. The change is only verified
 once a real run produced a non-zero scored trial and its archive was read.
