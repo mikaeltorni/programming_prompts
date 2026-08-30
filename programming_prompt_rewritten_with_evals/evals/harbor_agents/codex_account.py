@@ -26,6 +26,11 @@ from pathlib import Path
 
 REGISTRY_NAME = "codex-instances.json"
 PRIMARY_ID = 1
+# Agent Command Center exports this for a numbered launch (``ca2``) and for
+# ``ACC_CODEX_INSTANCE=2 ca``. It overrides the persisted registry selection
+# for that process only, so a benchmark inherits the account it was started
+# under instead of whichever id ``caN`` last persisted.
+INSTANCE_ENV = "ACC_CODEX_INSTANCE"
 
 
 def tracker_state_dir(home: Path | None = None) -> Path:
@@ -73,21 +78,49 @@ def _instance_rows(registry: dict) -> list[dict]:
 
 
 def selected_instance_id(home: Path | None = None) -> int:
-    """Return the persisted ACC Codex instance id.
+    """Return the ACC Codex instance id this run must use.
+
+    ``ACC_CODEX_INSTANCE`` wins when set (``ca2`` and ``ACC_CODEX_INSTANCE=2
+    ca`` both export it), matching Agent Command Center's own
+    ``resolve_selected_instance``. Otherwise the persisted registry selection
+    is used. Without this override a benchmark launched from a ``ca2`` shell
+    silently ran on the registry's account 1 - an out-of-credits team plan -
+    and every trial scored zero.
 
     Parameters: home - optional user home; defaults to ``Path.home()``.
 
     Returns: Selected id, or ``1`` when nothing is registered.
+
+    Raises: ValueError - when ``ACC_CODEX_INSTANCE`` is not a registered id.
+        Failing loudly here is deliberate: a silent fallback to the wrong
+        account is indistinguishable from a real all-zero benchmark result.
     """
     registry = load_registry(home)
     rows = _instance_rows(registry)
+    by_id = {int(row["id"]): row for row in rows}
+
+    raw = (os.environ.get(INSTANCE_ENV) or "").strip()
+    if raw:
+        try:
+            requested = int(raw)
+        except ValueError as exc:
+            raise ValueError(
+                f"{INSTANCE_ENV}={raw!r} is not a Codex instance id"
+            ) from exc
+        if rows and requested not in by_id:
+            known = ", ".join(str(i) for i in sorted(by_id))
+            raise ValueError(
+                f"{INSTANCE_ENV}={requested} is not a registered Codex "
+                f"instance (known ids: {known})"
+            )
+        return requested
+
     if not rows:
         return PRIMARY_ID
     try:
         selected = int(registry.get("selected", PRIMARY_ID))
     except (TypeError, ValueError):
         selected = PRIMARY_ID
-    by_id = {int(row["id"]): row for row in rows}
     row = by_id.get(selected) or by_id.get(PRIMARY_ID) or rows[0]
     return int(row["id"])
 
@@ -176,6 +209,10 @@ def self_test() -> int:
         cases.append((name, ok, detail))
 
     previous = os.environ.get("CODEX_AGENT_TRACKER_STATE_DIR")
+    # The self-test is often run from a ``ca2`` shell, which exports
+    # ACC_CODEX_INSTANCE. Clear it so the registry-selection checks below
+    # assert on the registry, not on the operator's ambient account.
+    previous_instance = os.environ.pop(INSTANCE_ENV, None)
     try:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "home"
@@ -226,11 +263,72 @@ def self_test() -> int:
                 any(pair.endswith(str(extra / "auth.json")) for pair in env_pairs),
                 str(env_pairs),
             )
+
+            # ACC_CODEX_INSTANCE must override the persisted selection the
+            # same way Agent Command Center's resolve_selected_instance does.
+            payload["selected"] = 1
+            (state / REGISTRY_NAME).write_text(json.dumps(payload), encoding="utf-8")
+            check(
+                "registry_selection_is_one_without_env",
+                selected_instance_id(root) == 1,
+                str(selected_instance_id(root)),
+            )
+            os.environ[INSTANCE_ENV] = "2"
+            check(
+                "env_override_wins_over_registry",
+                selected_instance_id(root) == 2,
+                str(selected_instance_id(root)),
+            )
+            check(
+                "env_override_moves_auth_to_instance_two",
+                selected_codex_auth(root) == extra / "auth.json",
+                str(selected_codex_auth(root)),
+            )
+            check(
+                "env_override_moves_harbor_env",
+                any(
+                    pair.endswith(str(extra / "auth.json"))
+                    for pair in harbor_codex_auth_env(root)
+                ),
+                str(harbor_codex_auth_env(root)),
+            )
+            os.environ[INSTANCE_ENV] = "9"
+            unknown_rejected = False
+            try:
+                selected_instance_id(root)
+            except ValueError:
+                unknown_rejected = True
+            check(
+                "unknown_env_instance_raises",
+                unknown_rejected,
+                "ValueError raised" if unknown_rejected else "no error raised",
+            )
+            os.environ[INSTANCE_ENV] = "not-an-id"
+            garbage_rejected = False
+            try:
+                selected_instance_id(root)
+            except ValueError:
+                garbage_rejected = True
+            check(
+                "non_numeric_env_instance_raises",
+                garbage_rejected,
+                "ValueError raised" if garbage_rejected else "no error raised",
+            )
+            os.environ.pop(INSTANCE_ENV, None)
+            check(
+                "clearing_env_restores_registry_selection",
+                selected_instance_id(root) == 1,
+                str(selected_instance_id(root)),
+            )
     finally:
         if previous is None:
             os.environ.pop("CODEX_AGENT_TRACKER_STATE_DIR", None)
         else:
             os.environ["CODEX_AGENT_TRACKER_STATE_DIR"] = previous
+        if previous_instance is None:
+            os.environ.pop(INSTANCE_ENV, None)
+        else:
+            os.environ[INSTANCE_ENV] = previous_instance
 
     failed = [name for name, ok, _ in cases if not ok]
     for name, ok, detail in cases:
