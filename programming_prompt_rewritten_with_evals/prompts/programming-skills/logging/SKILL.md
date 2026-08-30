@@ -27,9 +27,20 @@ parameters. Only `lambda` expressions are exempt.
 
    ```python
    def run_todo(command):
+       """Execute a todo command.
+
+       Parameters: command - raw command text.
+
+       Returns: the formatted result.
+       """
        print(f"command={command}")        # entry print comes first
        operation, arguments = _parse_command(command)
    ```
+
+   A docstring is not a statement: when a docs/commenting skill also applies,
+   keep the docstring and put the entry print directly after it. Never delete
+   a docstring to make the print "first", and never skip the print because the
+   docstring is there.
 
    A helper printing `command=` inside itself does **not** cover the
    entrypoint — every function prints its own parameters.
