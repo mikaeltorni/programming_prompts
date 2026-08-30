@@ -90,13 +90,35 @@ run_one_job() {
     set_harbor_n_concurrent harbor_args "$concurrent_for_job"
   fi
 
-  run_harbor_for_harness "$harness" "${common[@]}" "${harbor_args[@]}"
+  # Never let a non-zero Harbor exit abort the wrapper under `set -e`: a job
+  # that lost its trials still has to release slots, summarize, and archive,
+  # otherwise the user sees a bare 0/N with no RESULTS row and no reason.
+  local harbor_rc=0
+  run_harbor_for_harness "$harness" "${common[@]}" "${harbor_args[@]}" || harbor_rc=$?
   release_docker_slots
   reclaim_docker_leftovers
+  if [[ "$harbor_rc" -ne 0 ]]; then
+    echo "Harbor exited $harbor_rc for job $job_name; summarizing and archiving anyway." >&2
+    diagnose_failed_job "$JOBS/$job_name" "$job_name" "$harbor_rc"
+  fi
   local summary_file
   summary_file="$(mktemp)"
   capture_print_summary "$JOBS/$job_name" "$run_mode" "$skills_csv" "$summary_file"
   archive_sync_job "$job_name" "$summary_file"
+  if [[ "$harbor_rc" -eq 0 ]] && ! job_scored_any_trial "$JOBS/$job_name"; then
+    echo "Job $job_name scored 0 trials even though Harbor exited 0." >&2
+    diagnose_failed_job "$JOBS/$job_name" "$job_name" "$harbor_rc"
+  fi
+  JOB_HARBOR_RC="$harbor_rc"
+}
+
+# Whether any trial in a Harbor job wrote a reward file.
+#
+# Parameters: $1 - Harbor job directory.
+# Returns: 0 when at least one *reward*.json exists.
+job_scored_any_trial() {
+  local job_dir="$1"
+  [[ -n "$(find "$job_dir" -mindepth 2 -maxdepth 2 -name '*reward*.json' -print -quit 2>/dev/null)" ]]
 }
 
 run_jobs_for_harness() {

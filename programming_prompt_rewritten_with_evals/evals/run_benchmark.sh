@@ -122,6 +122,7 @@ source "$SCRIPT_DIR/lib/job_config.sh"
 source "$SCRIPT_DIR/lib/prepare_tasks.sh"
 source "$SCRIPT_DIR/lib/archive_run.sh"
 source "$SCRIPT_DIR/lib/harbor_invoke.sh"
+source "$SCRIPT_DIR/lib/diagnose_job.sh"
 source "$SCRIPT_DIR/lib/run_jobs.sh"
 trap on_eval_shell_exit EXIT
 
