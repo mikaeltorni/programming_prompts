@@ -163,8 +163,11 @@ Per the rule above, **do not add pytest/unit/integration tests** for
 `programming_prompt_rewritten_with_evals/`. Verify instead with:
 
 - the standalone self-test scripts next to the code they cover —
-  `python3 evals/docker_ipam/self_test.py` and
-  `bash evals/lib/self_test_diagnose.sh` (no Docker, no GUI, no LLM calls);
+  `python3 docker_networks.py self-test` (74 cases covering pool math, stale
+  networks, and reclaim) and `bash lib/self_test_diagnose.sh` — both run from
+  `evals/`, with no Docker, no GUI, and no LLM calls. Do not call
+  `docker_ipam/self_test.py` as a script; it is a package module and only runs
+  through the `docker_networks.py` CLI;
 - `bash -n` on every edited shell file;
 - a real short run of `./run_benchmark.sh` when the change touches job
   execution, and then **read the archived job**, not just the score line.
