@@ -49,4 +49,20 @@ Concrete rules:
   the helpers derived, that formatting belongs to the helper that owns the
   logic. Only a plain read of existing state (`str(state)`,
   `f"value={state}"`) may be formatted in the entrypoint.
+- **Each command owns its own helper, amount, and label.** Do not collapse
+  two commands into one parameterized helper by computing the difference in
+  the entrypoint. This is a failure:
+
+  ```python
+  amount = 1 if operation == "inc" else -1      # arithmetic mapping, and
+  prefix = "up" if operation == "inc" else "down"   # label, both left in
+  result = _change_counter(amount, prefix)          # the entrypoint
+  ```
+
+  Give each command a helper that decides its own amount and writes its own
+  literal label — `_increment()` returning `f"up={_counter}"` and
+  `_decrement()` returning `f"down={_counter}"`. The entrypoint then only
+  dispatches: `result = _increment() if operation == "inc" else _decrement()`.
+  Two small helpers that share a private one-line updater are fine; choosing
+  the operand or the label in the entrypoint is not.
 - Logging prints are a separate skill; they do not merge responsibilities.

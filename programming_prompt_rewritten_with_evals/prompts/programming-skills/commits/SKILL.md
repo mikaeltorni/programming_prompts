@@ -55,6 +55,18 @@ When **two or more Features** are found:
   (`sum=`, `morning=`, `added=`). Do not hide them behind a variable if the
   prompt showed a literal prefix.
 
+## Write each prefix as a literal, with its `=`
+
+The prefix the prompt names must appear **verbatim in the source**, `=`
+included — `f"down={value}"`, not a label assembled at runtime. Building the
+name in a variable, a dict, or a shared parameterized helper
+(`prefix = "up" if op == "inc" else "down"` … `f"{prefix}={value}"`) means the
+text `down=` exists nowhere in the file: the Feature that was supposed to
+introduce it looks unimplemented even though the program behaves correctly.
+Each command's own helper writes its own literal prefix. Before committing a
+Feature, search the staged file for that Feature's exact prefix text and
+confirm it is there.
+
 ## Keep later Features out of the earlier commit
 
 A Feature's commit contains **only that Feature's** literal return
