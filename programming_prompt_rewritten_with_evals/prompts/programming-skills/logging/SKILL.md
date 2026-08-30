@@ -8,17 +8,30 @@ description: >-
 
 # Function entry/exit print logging
 
-For every `def` / `async def` / method you write or edit:
+**Every** `def` / `async def` / method you write or edit gets **two**
+prints: one at entry and one before it returns. No function is exempt —
+not private `_helpers`, not one-line functions, not functions with no
+parameters. Only `lambda` expressions are exempt.
 
-1. At the **start** of the body, `print` **every** incoming parameter's
-   **actual name** and value, including optional parameters whose value is
-   `None`. One print that lists every real name is enough.
-   Omitting a named parameter because it is unused or `None` is a failure.
-   When the function has **no parameters**, any entry `print(...)` is
-   enough. Do **not** add prints inside `lambda` expressions.
-2. Just **before each `return`** (or before falling off the end when there is
-   an implicit `None`), `print` the value that is about to leave the function.
-   `print(result)` is enough — a `return=` label is not required.
+1. **Entry print — always the first statement in the body.** `print`
+   **every** incoming parameter's **actual name** and value, including
+   optional parameters whose value is `None`. One print that lists every
+   real name is enough. Omitting a named parameter because it is unused or
+   `None` is a failure.
+   When the function has **no parameters** you still write an entry print
+   as the first statement — `print("entry")` or
+   `print("parameters=none")`. A no-parameter function with no entry print
+   is a failure.
+2. **Exit print — just before each `return`** (or before falling off the
+   end when there is an implicit `None`), `print` the value that is about
+   to leave the function. `print(result)` is enough — a `return=` label is
+   not required.
+
+The exit print never substitutes for the entry print. Computing a value
+and then writing only `print(result); return result` leaves the function
+**missing its entry print** — that is a failure. Before you finish a
+function, check it top to bottom: first statement is a print, last
+statement before each `return` is a print.
 
 Do **not** rename parameters in the print. These are failures **only when
 the function has named parameters**:
