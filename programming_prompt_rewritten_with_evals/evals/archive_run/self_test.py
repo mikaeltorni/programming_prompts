@@ -244,15 +244,15 @@ def _check_results(record) -> None:
         )
         headers = [cell.strip() for cell in text.splitlines()[0].split(" | ")]
         record(
-            "results_runtime_between_run_and_mode",
-            headers[:3] == ["Run", "Runtime", "Mode"],
+            "results_pass_before_runtime",
+            headers[:3] == ["Run", "Pass", "Runtime"],
             str(headers[:5]),
         )
         record(
-            "results_ratelimit_after_pass",
+            "results_ratelimit_after_scored",
             "Pass" in headers
             and "RateLimit" in headers
-            and headers.index("RateLimit") == headers.index("Pass") + 1,
+            and headers.index("RateLimit") == headers.index("Scored") + 1,
             str(headers),
         )
         record(

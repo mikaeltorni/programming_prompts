@@ -11,8 +11,8 @@ from .ratelimit import trial_is_ratelimited
 RESULTS_INDEX_NAME = "RESULTS.txt"
 RESULTS_COL_SEP = " | "
 RESULTS_FIXED_COLUMNS = (
-    "Run", "Runtime", "Mode", "Harness", "Judge", "Skills", "Tasks",
-    "k", "n", "Sep", "Trials", "Scored", "Pass", "RateLimit",
+    "Run", "Pass", "Runtime", "Mode", "Harness", "Judge", "Skills",
+    "Tasks", "k", "n", "Sep", "Trials", "Scored", "RateLimit",
 )
 RESULTS_SKILL_ORDER = ("srp", "commenting", "logging", "worktree", "commits", "debug", "docs", "logging-vague")
 RESULTS_TASK_ORDER = ("calculator", "counter", "greeter", "greeter-fix", "shop", "temperature", "todo")
@@ -288,7 +288,7 @@ def format_results_row(run_dir: Path) -> dict[str, str]:
 
     Parameters: run_dir - one archived run.
 
-    Returns: fixed fields (including Runtime between Run and Mode) and per-skill and per-task rates.
+    Returns: fixed fields (including Pass before Runtime) and per-skill and per-task rates.
     """
     meta = load_json_lenient(run_dir / "00-meta.json") or {}
     scores = collect_run_scores(run_dir)
@@ -299,6 +299,7 @@ def format_results_row(run_dir: Path) -> dict[str, str]:
     scored = int(scores["scored"])
     row = {
         "Run": str(meta.get("timestamp") or run_dir.name.split("__", 1)[0]),
+        "Pass": "n/a" if scored <= 0 else f"{int(scores['passed'])}/{scored}",
         "Runtime": runtime_cell(meta, run_dir=run_dir),
         "Mode": str(meta.get("mode") or "-"),
         "Harness": _csv(harnesses),
@@ -310,7 +311,6 @@ def format_results_row(run_dir: Path) -> dict[str, str]:
         "Sep": "yes" if meta.get("run_separately") else "no",
         "Trials": str(int(scores["trials"])),
         "Scored": str(scored),
-        "Pass": "n/a" if scored <= 0 else f"{int(scores['passed'])}/{scored}",
         "RateLimit": str(int(scores["ratelimited"])),
     }
     _add_rate_columns(row, skills, scores["skills"])
