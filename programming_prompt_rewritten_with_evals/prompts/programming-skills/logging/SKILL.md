@@ -52,6 +52,18 @@ parameters. Only `lambda` expressions are exempt.
    end when there is an implicit `None`), `print` the value that is about
    to leave the function. `print(result)` is enough — a `return=` label is
    not required.
+   Print **everything** that `return` hands back. When the statement
+   returns several comma-separated values, the return value is the whole
+   tuple, so the print must show every part of it:
+
+   ```python
+   print(result, [])          # covers `return result, []`
+   return result, []
+   ```
+
+   Printing only `result` there leaves the second element untraced and is a
+   failure. Each `return` gets its own exit print — an early or empty-input
+   branch that returns a different shape needs its own print too.
 
 The exit print never substitutes for the entry print. Computing a value
 and then writing only `print(result); return result` leaves the function
