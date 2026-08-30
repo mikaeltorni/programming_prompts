@@ -63,9 +63,9 @@ name in a variable, a dict, or a shared parameterized helper
 (`prefix = "up" if op == "inc" else "down"` … `f"{prefix}={value}"`) means the
 text `down=` exists nowhere in the file: the Feature that was supposed to
 introduce it looks unimplemented even though the program behaves correctly.
-Each command's own helper writes its own literal prefix. Before committing a
-Feature, search the staged file for that Feature's exact prefix text and
-confirm it is there.
+Each command's own helper writes its own literal prefix, typed into the file
+as you implement the Feature — so the prefix is already in the source by the
+time that Feature is committed.
 
 ## Keep later Features out of the earlier commit
 
@@ -93,6 +93,13 @@ Feature's own commit, not in a follow-up one. Do not rewrite history to
 repair a commit that already landed; simply do not commit a Feature until it
 is right. Commits that touch no `.py` file at all (a README-only commit, the
 final merge) do not take a slot and are safe.
+
+Run `git commit` as its own command. Chaining it behind a check
+(`… && grep … && git commit -m 'Feature 1: …'`) means one failing or missing
+tool silently skips the commit, and Feature 1's code then rides along inside
+the Feature 2 commit — a failure even though every commit message reads
+correctly. Do not assume a Feature landed because you issued the command;
+its code belongs in its own commit before you start the next Feature.
 
 Three Features means the Python history is exactly three commits, in the
 prompt's order.

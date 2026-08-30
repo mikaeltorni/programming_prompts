@@ -9,6 +9,13 @@ does both:
   (`print(result)` is a yes; a `return=` label is not required). When
   falling off the end with no meaningful return, print `None`.
 
+Judge every `return` in the function, not just the last one. The value
+about to be returned is the **whole** returned expression: for
+`return result, []` the value is the tuple, so a bare `print(result)`
+before it omits the second element and is a **no**, while
+`print(result, [])` or `print((result, []))` is a **yes**. A single
+`return value` covered by `print(value)` is a **yes**.
+
 Each named parameter must appear **as that name** in the entry print,
 including optional parameters whose value is `None` — omitting
 `argument=` because it is unused or `None` is a **no**. One print that
