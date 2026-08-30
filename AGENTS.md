@@ -169,6 +169,30 @@ misleading result rather than an obvious error.
    void. `rate_limited` in the summary is an infrastructure counter, never a
    score — a run with a non-zero `rate_limited` count cannot be compared against
    any other run.
+6. **The run used the wrong ChatGPT account and burned a whole eval.** The
+   Codex account is resolved by `harbor_agents/codex_account.py`, which used to
+   read *only* the persisted `selected` id in
+   `~/.local/state/codex-agent-tracker/codex-instances.json`. Launching the
+   benchmark from a `ca2` shell therefore still ran on instance 1 — the
+   out-of-credits **team** plan — and produced the void all-zero run described
+   in mistake 5. The resolver now honors `ACC_CODEX_INSTANCE` first, exactly
+   like Agent Command Center's own `resolve_selected_instance`, and raises
+   instead of silently falling back when the id is unknown. Notes:
+   - The switch is the env var `ACC_CODEX_INSTANCE` (which `ca2` exports), or
+     the persisted selection. **`cat2` is not a thing** — that dispatch name
+     was removed from ACC and there is a test asserting it stays gone; `caN` is
+     the current surface. Do not "restore" `cat2`.
+   - Confirm the account *before* a long run:
+     `ACC_CODEX_INSTANCE=2 python3 harbor_agents/codex_account.py --auth`
+     must print the intended home, and the startup line
+     `Codex Harbor auth: ACC instance <id> path=…` must match it.
+   - Instance 1 (`~/.codex`) is the team plan; instance 2
+     (`~/.codex-account-2`) is the plus plan that carries credits. Plan type is
+     in the access token's `chatgpt_plan_type` claim.
+   - Export the variable for the whole run
+     (`ACC_CODEX_INSTANCE=2 ./run_benchmark.sh …`); the runner does not
+     sanitize env, so the host process's value reaches the agent env, the
+     container auth mount, and the LLM judge alike.
 
 ### How to verify changes to this tree
 
@@ -180,7 +204,11 @@ Per the rule above, **do not add pytest/unit/integration tests** for
   networks, and reclaim) and `bash lib/self_test_diagnose.sh` — both run from
   `evals/`, with no Docker, no GUI, and no LLM calls. Do not call
   `docker_ipam/self_test.py` as a script; it is a package module and only runs
-  through the `docker_networks.py` CLI;
+  through the `docker_networks.py` CLI. Account resolution has its own:
+  `python3 harbor_agents/codex_account.py self-test` (13 cases; the
+  subcommand is `self-test`, **not** `--self-test` — the flag form silently
+  falls through to printing the selected home and exits 0, which looks like a
+  pass);
 - `bash -n` on every edited shell file;
 - a real short run of `./run_benchmark.sh` when the change touches job
   execution, and then **read the archived job**, not just the score line;
