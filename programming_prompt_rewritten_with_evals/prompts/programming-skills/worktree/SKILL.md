@@ -43,14 +43,21 @@ parent is `/Projects`, not `/`:
 REPO="/Projects/app"
 NAME="$(basename "$REPO")"
 PARENT="$(dirname "$REPO")"
-git worktree add -b feat/<task> "$PARENT/.worktrees/$NAME/feat-<task>"
-cd "$PARENT/.worktrees/$NAME/feat-<task>"
+WT="$PARENT/.worktrees/$NAME/feat-<task>"
+git worktree add -b feat/<task> "$WT"
+cd "$WT"
 ```
 
 Hard rules:
 
 - Create the worktree **before** the first file edit.
 - Do **all** edits and commits in that worktree, not in the live checkout.
+- Target every Write/Edit at a path under `$WT`. Immediately after each edit,
+  run `git -C "$WT" status --short` and confirm the intended path appears
+  there. If it does not, stop: the edit landed in the wrong checkout.
+- Never recover from a misplaced edit by staging or committing it in `$REPO`.
+  Put the intended file in `$WT`, keep the live checkout free of that direct
+  edit, then continue from the worktree.
 - Never put `.worktrees` inside the repo. Never use `worktrees/` (no dot).
 - The folder under `.worktrees/` must match the project name (`basename` of
   the repo). For this eval that is `/Projects/.worktrees/app/…`.
@@ -63,14 +70,24 @@ still works is a separate skill.
 ## Finish without pushing
 
 After the last worktree commit, merge into the default branch from the live
-checkout so the project repo contains the files. Leaving the program only
-in the worktree (never merged) is a **fail**.
+checkout so the project repo contains the files. Leaving any code or docs
+commit only in the worktree is a **fail**. The default branch receives merge
+commits only; never make a direct feature, fix, or docs commit there.
 
 ```bash
+git -C "$WT" status --short
 cd "$REPO"
 git checkout master
 git merge --no-ff feat/<task> -m "Merge feat/<task>: <summary>"
+git merge-base --is-ancestor "$(git -C "$WT" rev-parse HEAD)" HEAD
 ```
+
+The worktree status must be clean before the merge. If you make another
+worktree commit after an earlier merge — even a README-only correction — merge
+the branch again. The final `merge-base --is-ancestor` command must succeed;
+otherwise the newest worktree commit is still undelivered. Also read
+`git -C "$REPO" status --short` and resolve any intended file that was edited
+directly in the live checkout without committing it there.
 
 **Never push.** Do not `git remote add`, `git push`, or publish anywhere.
 This is a local eval repository only.
