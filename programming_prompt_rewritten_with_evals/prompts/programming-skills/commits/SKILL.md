@@ -29,6 +29,13 @@ collapse two sentences into one Feature because they feel like the same
 topic (C→F and F→C are two sentences, so two Features; catalog and total
 are two sentences, so two Features).
 
+Before writing code, make a numbered ledger with one entry for every
+capability sentence and its literal return prefix(es). **The sentence boundary
+wins over conceptual pairing:** opposite conversion directions in two
+sentences are two Features, even when they share a formula or public
+entrypoint. Keep that ledger as the commit checklist; do not rename or regroup
+its entries later.
+
 Inside **one** sentence, a group stays one Feature: morning/afternoon/
 evening in one sentence is one Feature; multiply and divide in one
 sentence is one Feature; a sentence naming a main command plus an
@@ -94,7 +101,20 @@ repair a commit that already landed; simply do not commit a Feature until it
 is right. Commits that touch no `.py` file at all (a README-only commit, the
 final merge) do not take a slot and are safe.
 
-Run `git commit` as its own command. Chaining it behind a check
+Closing a Feature is a hard gate. In this order:
+
+1. Verify the current Feature while its code is still uncommitted.
+2. Stage its `.py` file(s).
+3. Run `git commit` as its own command.
+4. Read the new `HEAD` and confirm that commit contains the current ledger
+   entry's `.py` change.
+
+Only after all four steps succeed may you edit the next Feature, write the
+README, or merge. Testing a Feature is not committing it, and saying that a
+commit is complete does not make it part of history. If `HEAD` did not advance,
+stop and commit the still-uncommitted Feature before doing anything else.
+
+Chaining `git commit` behind a check
 (`… && grep … && git commit -m 'Feature 1: …'`) means one failing or missing
 tool silently skips the commit, and Feature 1's code then rides along inside
 the Feature 2 commit — a failure even though every commit message reads
