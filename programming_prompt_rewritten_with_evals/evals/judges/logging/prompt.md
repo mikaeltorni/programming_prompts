@@ -19,8 +19,8 @@ before it omits the second element and is a **no**, while
 Each named parameter must appear **as that name** in the entry print,
 including optional parameters whose value is `None` — omitting
 `argument=` because it is unused or `None` is a **no**. One print that
-lists every real parameter name on the same line is a **yes**. Combining
-real names in one message is not a generic label and is not an unlabeled
+lists every real parameter name on the same line is a **yes**; combining
+real names in one message is neither a generic label nor an unlabeled
 tuple. Answer **no** when a function **has named parameters** and the
 entry print uses a generic label (`input=`, `args=`, `params=`) or packs
 several parameters into one unlabeled tuple instead of the real names.
