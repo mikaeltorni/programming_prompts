@@ -1,6 +1,6 @@
 """Resolve the ACC-selected ChatGPT Codex home for Harbor trials.
 
-Agent Command Center persists the last ``caN`` / ``catN`` login in
+Agent Command Center persists the last ``caN`` login in
 ``codex-instances.json``. Harbor must copy ``auth.json`` from that home so
 eval jobs use the same ChatGPT account the operator selected.
 
@@ -8,11 +8,13 @@ Components:
   - ``tracker_state_dir`` / ``load_registry``: read ACC's instance file.
   - ``selected_codex_home``: absolute ``CODEX_HOME`` for the selected id.
   - ``selected_codex_auth``: ``auth.json`` under that home.
+  - ``preflight_codex_account``: reject exhausted accounts before Harbor starts.
   - ``self_test``: sandbox checks that do not touch the operator's login.
 
 Usage:
     python3 harbor_agents/codex_account.py          # print selected home
     python3 harbor_agents/codex_account.py --auth   # print auth.json path
+    python3 harbor_agents/codex_account.py preflight
     python3 harbor_agents/codex_account.py self-test
 """
 
@@ -20,8 +22,11 @@ from __future__ import annotations
 
 import json
 import os
+import select
+import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 REGISTRY_NAME = "codex-instances.json"
@@ -31,6 +36,220 @@ PRIMARY_ID = 1
 # for that process only, so a benchmark inherits the account it was started
 # under instead of whichever id ``caN`` last persisted.
 INSTANCE_ENV = "ACC_CODEX_INSTANCE"
+PREFLIGHT_TIMEOUT_SECONDS = 15.0
+
+
+def codex_block_reason(rate_limits: dict) -> str | None:
+    """Return why a live Codex account snapshot cannot start an eval.
+
+    Parameters: rate_limits - ``rateLimits`` from
+        ``account/rateLimits/read``.
+
+    Returns: A stable reason string when the account is blocked, otherwise
+        ``None``. Explicit backend reasons take precedence over percentage
+        fallbacks so workspace-credit failures are not mislabeled as ordinary
+        rolling-window exhaustion.
+    """
+    reached_type = rate_limits.get("rateLimitReachedType")
+    if isinstance(reached_type, str) and reached_type:
+        return reached_type
+    if rate_limits.get("spendControlReached") is True:
+        return "spend control reached"
+    for window_name in ("primary", "secondary"):
+        window = rate_limits.get(window_name)
+        if not isinstance(window, dict):
+            continue
+        used = window.get("usedPercent")
+        if isinstance(used, (int, float)) and used >= 100:
+            return f"{window_name} usage window is {used:g}% used"
+    individual = rate_limits.get("individualLimit")
+    if isinstance(individual, dict) and individual.get("remainingPercent") == 0:
+        return "individual spend limit has 0% remaining"
+    return None
+
+
+def _write_app_server_message(process: subprocess.Popen[bytes], message: dict) -> None:
+    """Write one newline-delimited JSON request to a Codex app server."""
+    if process.stdin is None:
+        raise RuntimeError("Codex app-server stdin is unavailable")
+    process.stdin.write(json.dumps(message, separators=(",", ":")).encode() + b"\n")
+    process.stdin.flush()
+
+
+def _read_app_server_response(
+    process: subprocess.Popen[bytes], request_id: int, timeout: float
+) -> dict:
+    """Read one matching JSON response without consuming an LLM turn.
+
+    Parameters: process - running Codex app server; request_id - response id;
+        timeout - maximum seconds to wait.
+
+    Returns: Parsed response object for ``request_id``.
+
+    Raises: RuntimeError for EOF, protocol errors, or server errors;
+        TimeoutError when the endpoint does not answer in time.
+    """
+    if process.stdout is None:
+        raise RuntimeError("Codex app-server stdout is unavailable")
+    deadline = time.monotonic() + timeout
+    pending = b""
+    while True:
+        while b"\n" in pending:
+            raw_line, pending = pending.split(b"\n", 1)
+            if not raw_line.strip():
+                continue
+            try:
+                payload = json.loads(raw_line)
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                continue
+            if payload.get("id") != request_id:
+                continue
+            if payload.get("error") is not None:
+                raise RuntimeError(f"Codex app server returned {payload['error']}")
+            return payload
+
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError(
+                f"Codex app server did not answer request {request_id}"
+            )
+        readable, _, _ = select.select([process.stdout], [], [], remaining)
+        if not readable:
+            continue
+        chunk = os.read(process.stdout.fileno(), 65536)
+        if not chunk:
+            raise RuntimeError(
+                f"Codex app server closed before answering request {request_id}"
+            )
+        pending += chunk
+
+
+def read_codex_account_status(
+    codex_home: Path | None = None,
+    timeout: float = PREFLIGHT_TIMEOUT_SECONDS,
+) -> dict:
+    """Read the selected account's live limits without starting an LLM turn.
+
+    Parameters: codex_home - optional Codex home; defaults to the ACC-selected
+        instance. timeout - maximum seconds per app-server response.
+
+    Returns: Result from Codex's ``account/rateLimits/read`` endpoint.
+
+    Raises: OSError, RuntimeError, or TimeoutError when status cannot be read.
+    """
+    selected_home = codex_home or selected_codex_home()
+    env = os.environ.copy()
+    env["CODEX_HOME"] = str(selected_home)
+    command = [env.get("CODEX_BIN", "codex"), "app-server", "--stdio"]
+    process = subprocess.Popen(
+        command,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        env=env,
+        bufsize=0,
+    )
+    try:
+        _write_app_server_message(
+            process,
+            {
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "clientInfo": {
+                        "name": "programming-prompts-eval-preflight",
+                        "version": "1",
+                    }
+                },
+            },
+        )
+        _read_app_server_response(process, 1, timeout)
+        _write_app_server_message(process, {"method": "initialized"})
+        _write_app_server_message(
+            process,
+            {"id": 2, "method": "account/rateLimits/read", "params": None},
+        )
+        response = _read_app_server_response(process, 2, timeout)
+        result = response.get("result")
+        if not isinstance(result, dict) or not isinstance(
+            result.get("rateLimits"), dict
+        ):
+            raise RuntimeError("Codex account status omitted rateLimits")
+        return result
+    finally:
+        if process.stdin is not None:
+            process.stdin.close()
+        try:
+            process.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            process.terminate()
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+
+
+def preflight_codex_account() -> int:
+    """Fail fast when the ACC-selected Codex account cannot run evals.
+
+    Parameters: None.
+
+    Returns: 0 when usable, 1 when blocked, or 2 when status cannot be read.
+        This check never consumes reset credits and never switches accounts.
+    """
+    instance_id = selected_instance_id()
+    codex_home = selected_codex_home()
+    print(
+        f"Codex account preflight: ACC instance {instance_id} path={codex_home}",
+        file=sys.stderr,
+    )
+    try:
+        status = read_codex_account_status(codex_home)
+    except (OSError, RuntimeError, TimeoutError) as exc:
+        print(f"Codex account preflight failed: {exc}", file=sys.stderr)
+        print(
+            "Refusing to start Harbor without a verified Codex account; "
+            "update/login Codex and retry.",
+            file=sys.stderr,
+        )
+        return 2
+
+    limits = status["rateLimits"]
+    plan = limits.get("planType") or "unknown"
+    primary = limits.get("primary") or {}
+    secondary = limits.get("secondary") or {}
+    primary_used = primary.get("usedPercent", "n/a")
+    secondary_used = secondary.get("usedPercent", "n/a")
+    print(
+        "Codex account status: "
+        f"plan={plan} primary_used={primary_used}% "
+        f"secondary_used={secondary_used}%",
+        file=sys.stderr,
+    )
+    reason = codex_block_reason(limits)
+    if reason is None:
+        print("Codex account preflight: usable", file=sys.stderr)
+        return 0
+
+    print(f"Codex account preflight: BLOCKED ({reason})", file=sys.stderr)
+    upsell = status.get("rateLimitUpsell")
+    if isinstance(upsell, dict) and isinstance(upsell.get("title"), str):
+        print(upsell["title"], file=sys.stderr)
+    reset_summary = status.get("rateLimitResetCredits")
+    if isinstance(reset_summary, dict):
+        available = reset_summary.get("availableCount", 0)
+        if isinstance(available, int) and available > 0:
+            print(
+                f"Available rate-limit reset credits: {available} "
+                "(not consumed automatically).",
+                file=sys.stderr,
+            )
+    print(
+        f"Choose a usable account with {INSTANCE_ENV}=<id> before retrying.",
+        file=sys.stderr,
+    )
+    return 1
 
 
 def tracker_state_dir(home: Path | None = None) -> Path:
@@ -80,12 +299,12 @@ def _instance_rows(registry: dict) -> list[dict]:
 def selected_instance_id(home: Path | None = None) -> int:
     """Return the ACC Codex instance id this run must use.
 
-    ``ACC_CODEX_INSTANCE`` wins when set (``ca2`` and ``ACC_CODEX_INSTANCE=2
-    ca`` both export it), matching Agent Command Center's own
-    ``resolve_selected_instance``. Otherwise the persisted registry selection
-    is used. Without this override a benchmark launched from a ``ca2`` shell
-    silently ran on the registry's account 1 - an out-of-credits team plan -
-    and every trial scored zero.
+    ``ACC_CODEX_INSTANCE`` wins when set (``ca2`` and
+    ``ACC_CODEX_INSTANCE=2 ca`` both export it), matching Agent Command
+    Center's own ``resolve_selected_instance``. Otherwise the persisted
+    registry selection is used. Without this override a benchmark launched
+    from a ``ca2`` shell silently ran on the registry's account 1 - an
+    out-of-credits team plan - and every trial scored zero.
 
     Parameters: home - optional user home; defaults to ``Path.home()``.
 
@@ -178,7 +397,7 @@ def harbor_codex_auth_env(home: Path | None = None) -> tuple[str, ...]:
     """Return Harbor env pairs so trials upload the ACC-selected ``auth.json``.
 
     Harbor's Codex agent honors ``CODEX_AUTH_JSON_PATH`` first. ``CODEX_FORCE_AUTH_JSON``
-    alone always copies the host ``~/.codex/auth.json``, which ignores ``cat2``.
+    alone always copies the host ``~/.codex/auth.json``, which ignores ``ca2``.
 
     Parameters: home - optional user home; defaults to ``Path.home()``.
 
@@ -320,6 +539,47 @@ def self_test() -> int:
                 selected_instance_id(root) == 1,
                 str(selected_instance_id(root)),
             )
+
+            healthy_limits = {
+                "primary": {"usedPercent": 42},
+                "secondary": {"usedPercent": 17},
+                "spendControlReached": False,
+                "rateLimitReachedType": None,
+            }
+            check(
+                "healthy_rate_limits_are_usable",
+                codex_block_reason(healthy_limits) is None,
+                str(codex_block_reason(healthy_limits)),
+            )
+            depleted_limits = {
+                **healthy_limits,
+                "rateLimitReachedType": "workspace_member_credits_depleted",
+            }
+            check(
+                "workspace_credit_depletion_blocks",
+                codex_block_reason(depleted_limits)
+                == "workspace_member_credits_depleted",
+                str(codex_block_reason(depleted_limits)),
+            )
+            exhausted_window = {
+                **healthy_limits,
+                "primary": {"usedPercent": 100},
+            }
+            check(
+                "exhausted_primary_window_blocks",
+                codex_block_reason(exhausted_window)
+                == "primary usage window is 100% used",
+                str(codex_block_reason(exhausted_window)),
+            )
+            spend_control = {
+                **healthy_limits,
+                "spendControlReached": True,
+            }
+            check(
+                "spend_control_blocks",
+                codex_block_reason(spend_control) == "spend control reached",
+                str(codex_block_reason(spend_control)),
+            )
     finally:
         if previous is None:
             os.environ.pop("CODEX_AGENT_TRACKER_STATE_DIR", None)
@@ -342,17 +602,22 @@ def self_test() -> int:
 
 
 def _cli(argv: list[str]) -> int:
-    """Print the selected Codex home or auth path for Harbor wrappers.
+    """Inspect or preflight the selected Codex account for Harbor wrappers.
 
     Parameters: argv - command-line argument vector.
 
     Returns: Process exit code.
     """
     if len(argv) > 1 and argv[1] in {"-h", "--help"}:
-        print("usage: codex_account.py [--auth] | self-test", file=sys.stderr)
+        print(
+            "usage: codex_account.py [--auth] | preflight | self-test",
+            file=sys.stderr,
+        )
         return 0
     if len(argv) > 1 and argv[1] == "self-test":
         return self_test()
+    if len(argv) > 1 and argv[1] == "preflight":
+        return preflight_codex_account()
     if len(argv) > 1 and argv[1] in {"--auth", "auth"}:
         print(selected_codex_auth())
         return 0

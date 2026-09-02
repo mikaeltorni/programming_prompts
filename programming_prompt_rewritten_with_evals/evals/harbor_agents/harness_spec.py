@@ -195,7 +195,7 @@ def static_env_lines(name: str) -> tuple[str, ...]:
 
     Returns: Env lines. Codex (and any harness that sets
         ``CODEX_FORCE_AUTH_JSON``) also gets ``CODEX_AUTH_JSON_PATH`` pointing
-        at the last ``catN`` / ``caN`` login. Harbor otherwise copies host
+        at the last ``caN`` login. Harbor otherwise copies host
         ``~/.codex/auth.json`` and ignores the Docker bind mount.
     """
     spec = require_harness(name)
