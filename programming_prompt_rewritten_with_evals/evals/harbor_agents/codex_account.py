@@ -9,6 +9,7 @@ Components:
   - ``selected_codex_home``: absolute ``CODEX_HOME`` for the selected id.
   - ``selected_codex_auth``: ``auth.json`` under that home.
   - ``preflight_codex_account``: reject exhausted accounts before Harbor starts.
+  - ``native_codex_env``: keep the probe's ``codex`` child in this terminal.
   - ``self_test``: sandbox checks that do not touch the operator's login.
 
 Usage:
@@ -37,6 +38,35 @@ PRIMARY_ID = 1
 # under instead of whichever id ``caN`` last persisted.
 INSTANCE_ENV = "ACC_CODEX_INSTANCE"
 PREFLIGHT_TIMEOUT_SECONDS = 15.0
+
+# Agent Command Center installs a ``codex`` wrapper on PATH. Every launch that
+# is not a ``--help``/``--version`` probe is re-dispatched into a detached tmux
+# session with its own terminal window, labeled after the argv - so a plain
+# ``codex app-server --stdio`` opens an idle "app server" window instead of
+# answering on this process' pipes. These are ACC's own in-place markers: run
+# the real binary here, register no agent session, and stay silent. They are
+# inert on machines without ACC, so the benchmark keeps running in the terminal
+# it was started from.
+NATIVE_CODEX_ENV = {
+    "AGENT_COMMAND_CENTER_RAW_LAUNCH": "1",
+    "CODEX_AGENT_SKIP_TRACKER": "1",
+    "ATTS_SUPPRESS_ANNOUNCEMENTS": "1",
+}
+
+
+def native_codex_env(env: dict[str, str] | None = None) -> dict[str, str]:
+    """Return a child environment that runs ``codex`` in the current terminal.
+
+    Parameters: env - optional base environment; defaults to a copy of
+        ``os.environ``. The mapping passed in is never mutated.
+
+    Returns: A new mapping with :data:`NATIVE_CODEX_ENV` applied on top, so an
+        ACC-wrapped ``codex`` executes its native binary in place rather than
+        spawning a tracked tmux session window.
+    """
+    merged = dict(os.environ if env is None else env)
+    merged.update(NATIVE_CODEX_ENV)
+    return merged
 
 
 def codex_block_reason(rate_limits: dict) -> str | None:
@@ -138,9 +168,14 @@ def read_codex_account_status(
     Raises: OSError, RuntimeError, or TimeoutError when status cannot be read.
     """
     selected_home = codex_home or selected_codex_home()
-    env = os.environ.copy()
+    env = native_codex_env()
     env["CODEX_HOME"] = str(selected_home)
     command = [env.get("CODEX_BIN", "codex"), "app-server", "--stdio"]
+    print(
+        f"Codex account status: probing {command[0]} app-server in this "
+        f"terminal home={selected_home}",
+        file=sys.stderr,
+    )
     process = subprocess.Popen(
         command,
         stdin=subprocess.PIPE,
@@ -415,6 +450,37 @@ def harbor_codex_auth_env(home: Path | None = None) -> tuple[str, ...]:
     )
 
 
+# Stand-in for the ``codex`` CLI used by :func:`self_test`. It mimics the ACC
+# wrapper's fork in the road: without the in-place markers it "dispatches" (the
+# real wrapper opens a tmux session window and never answers), and with them it
+# behaves like ``codex app-server --stdio`` on the inherited pipes.
+FAKE_CODEX_CLI = """#!/usr/bin/env python3
+import json
+import os
+import sys
+
+if os.environ.get("AGENT_COMMAND_CENTER_RAW_LAUNCH") != "1":
+    with open(os.environ["FAKE_CODEX_DISPATCH_MARKER"], "w") as handle:
+        handle.write("dispatched to an ACC session window")
+    sys.exit(0)
+
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    message = json.loads(line)
+    request_id = message.get("id")
+    if request_id == 1:
+        reply = {"id": 1, "result": {}}
+    elif request_id == 2:
+        reply = {"id": 2, "result": {"rateLimits": {"primary": {"usedPercent": 3}}}}
+    else:
+        continue
+    sys.stdout.write(json.dumps(reply) + "\\n")
+    sys.stdout.flush()
+"""
+
+
 def self_test() -> int:
     """Run sandbox checks for the ACC instance registry reader.
 
@@ -579,6 +645,56 @@ def self_test() -> int:
                 "spend_control_blocks",
                 codex_block_reason(spend_control) == "spend control reached",
                 str(codex_block_reason(spend_control)),
+            )
+
+            # Regression: an ACC-wrapped ``codex`` must not re-dispatch the
+            # preflight probe into a tmux session window. The fake CLI records
+            # a dispatch when the in-place markers are absent and otherwise
+            # answers the two JSON-RPC requests on its pipes.
+            markers_seen = dict(native_codex_env({"PATH": "/usr/bin"}))
+            check(
+                "native_env_sets_in_place_markers",
+                all(
+                    markers_seen.get(key) == value
+                    for key, value in NATIVE_CODEX_ENV.items()
+                )
+                and markers_seen.get("PATH") == "/usr/bin",
+                str(sorted(markers_seen)),
+            )
+            base_env = {"PATH": "/usr/bin"}
+            native_codex_env(base_env)
+            check(
+                "native_env_does_not_mutate_input",
+                base_env == {"PATH": "/usr/bin"},
+                str(base_env),
+            )
+
+            marker = Path(tmp) / "acc-dispatch.txt"
+            fake_codex = Path(tmp) / "fake-codex"
+            fake_codex.write_text(FAKE_CODEX_CLI, encoding="utf-8")
+            fake_codex.chmod(0o755)
+            previous_bin = os.environ.get("CODEX_BIN")
+            os.environ["CODEX_BIN"] = str(fake_codex)
+            os.environ["FAKE_CODEX_DISPATCH_MARKER"] = str(marker)
+            try:
+                status = read_codex_account_status(root, timeout=10.0)
+            except (OSError, RuntimeError, TimeoutError) as exc:
+                status = {"error": str(exc)}
+            finally:
+                os.environ.pop("FAKE_CODEX_DISPATCH_MARKER", None)
+                if previous_bin is None:
+                    os.environ.pop("CODEX_BIN", None)
+                else:
+                    os.environ["CODEX_BIN"] = previous_bin
+            check(
+                "probe_runs_without_acc_session_window",
+                not marker.exists(),
+                "dispatched to ACC" if marker.exists() else "ran in place",
+            )
+            check(
+                "probe_reads_rate_limits_over_pipes",
+                isinstance(status.get("rateLimits"), dict),
+                str(status),
             )
     finally:
         if previous is None:
