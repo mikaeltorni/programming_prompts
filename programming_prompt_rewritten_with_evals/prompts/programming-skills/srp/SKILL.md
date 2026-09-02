@@ -10,59 +10,42 @@ description: >-
 
 Write code as single-responsibility functions/methods.
 
-Concrete rules:
-- Put input parsing of the raw command (split/tokenize/partition) in its own helper(s).
-- Put core logic (arithmetic, state updates, business conversions) in
-  its own helper(s). Helpers may return a one-line formatted result.
-  `int()` / `float()` of an already-split token is not a business
-  conversion.
-- Keep the public entrypoint thin: parse → call helpers → return/format.
-  if/elif dispatch, raises on unknown/extra/missing arguments, and a range
-  check on an already-parsed value may live in the entrypoint or a core
-  helper. A one-line format of already-computed state is fine, including a
-  get branch that reads current state in the entrypoint (`str(state)` or
-  `state if operation == "get" else helper(...)`). That is formatting, not
-  a state update — do not require get to go through a helper.
-  Do not leave increment, arithmetic, or state updates in the entrypoint —
-  a format-only helper is not enough.
-  `int()` of an already-split token and empty or out-of-range guards stay
-  with the function that already owns that value; do not add a
-  validation-only function for them. Passing `helper(int(token))` from the
-  entrypoint is still thin — that is not leftover core conversion.
-- Do not leave parsing and core logic mixed in one monolithic function body.
-- **The entrypoint never takes the raw command string apart.** The only
-  thing it may do with that string is hand it to the parse helper, in a
-  single call, before it branches on anything; after that it dispatches
-  only on what the helper returned. Calling `strip()`, `split()`,
-  `startswith()`, `partition()`, slicing, or a regex on the raw command
-  **inside the entrypoint** — even for a single `bye`/`period` branch — is
-  mixed parsing and a failure. One parse helper covers **every** command
-  variant; do not parse most of them in a helper and one special case
-  inline.
-  "Hands it to the parse helper first" is about **parsing work**, not about
-  line order: printing a parameter is not parsing. When a logging skill also
-  applies, that function's entry `print(...)` is the first statement in the
-  body and the parse-helper call comes after it. Both rules hold together —
-  never drop or delay the entry print to make the parse call come first.
-- **The entrypoint does not build a computed result literal.** If a
-  returned string like `f"hello={name}"` or `f"bye={name}"` needs a value
-  the helpers derived, that formatting belongs to the helper that owns the
-  logic. Only a plain read of existing state (`str(state)`,
-  `f"value={state}"`) may be formatted in the entrypoint.
-- **Each command owns its own helper, amount, and label.** Do not collapse
-  two commands into one parameterized helper by computing the difference in
-  the entrypoint. This is a failure:
+- **Parsing lives in its own helper(s).** Every `strip()`, `split()`,
+  `startswith()`, `partition()`, slice, or regex on the raw command belongs
+  there, and one parse helper covers **every** command variant — never parse
+  most commands in the helper and one special case (`bye`, `period`) inline.
+- **Core logic lives in its own helper(s).** Arithmetic, state updates, and
+  business conversions belong to helpers, which may return a one-line
+  formatted result. `int()` / `float()` of an already-split token is not a
+  business conversion.
+- **The public entrypoint stays thin: parse → call helpers → return/format.**
+  It hands the raw command to the parse helper in a single call before it
+  branches on anything, then dispatches only on what the helper returned. It
+  never takes the raw string apart, never increments or updates state, and
+  never builds a computed result literal (`f"hello={name}"`) — that string
+  belongs to the helper that owns the value.
+- **These belong in the entrypoint or a core helper, not a new function:**
+  if/elif dispatch, raises for an unknown operation or extra/missing
+  arguments, empty or out-of-range guards on an already-parsed value,
+  `helper(int(token))`, and a one-line format or read of existing state
+  (`str(state)`, `f"value={state}"`, `state if operation == "get" else
+  helper(...)`). Do not require `get` to go through a helper.
+- **Each command owns its own helper, amount, and label.** Do not collapse two
+  commands into one parameterized helper by computing the difference in the
+  entrypoint:
 
   ```python
-  amount = 1 if operation == "inc" else -1      # arithmetic mapping, and
+  amount = 1 if operation == "inc" else -1          # arithmetic mapping, and
   prefix = "up" if operation == "inc" else "down"   # label, both left in
   result = _change_counter(amount, prefix)          # the entrypoint
   ```
 
-  Give each command a helper that decides its own amount and writes its own
-  literal label — `_increment()` returning `f"up={_counter}"` and
-  `_decrement()` returning `f"down={_counter}"`. The entrypoint then only
-  dispatches: `result = _increment() if operation == "inc" else _decrement()`.
-  Two small helpers that share a private one-line updater are fine; choosing
-  the operand or the label in the entrypoint is not.
-- Logging prints are a separate skill; they do not merge responsibilities.
+  Instead `_increment()` returns `f"up={_counter}"`, `_decrement()` returns
+  `f"down={_counter}"`, and the entrypoint only dispatches:
+  `result = _increment() if operation == "inc" else _decrement()`. Two helpers
+  sharing a private one-line updater are fine.
+- Do not leave parsing and core logic mixed in one monolithic function body.
+- Logging prints are a separate skill; they never merge responsibilities.
+  When a logging skill applies, the entry `print(...)` is still the first
+  statement and the parse-helper call comes after it — printing is not
+  parsing, so both rules hold.
