@@ -214,6 +214,22 @@ misleading result rather than an obvious error.
      `command not found` before assuming the model reasoned badly. Here the
      model's plan was correct end to end; only the shell chain failed.
 
+8. **The commits checker matched Feature markers by commit *position*.** A
+   marker line (`3 has:bye=`) used to be tested against the *third* Python
+   commit. When the agent inserted a perfectly legitimate extra commit — e.g.
+   greeter's `Add hello…`, `Add hour-based greetings`, `Fix hour command
+   dispatch`, `Add farewell…` — every later Feature shifted by one and the trial
+   failed with `Feature 3 commit 'Fix hour command dispatch' missing ['bye=']`,
+   even though each Feature did land in its own commit in order. The skill never
+   forbade fixup commits, so this was a checker bug, not a model failure.
+   `_check_markers` now matches each marker to the **earliest commit at or after
+   the previous marker's commit + 1** whose Python tree holds all its
+   has-tokens, and still fails when a later Feature's token is already present
+   in that commit or when a Feature never lands after its predecessor. Lesson:
+   before "fixing" a prompt because one trial failed a programmatic judge, read
+   the trial's `git log` — if the model's history satisfies the skill's stated
+   rule, the judge is what needs the fix.
+
 ### How to verify changes to this tree
 
 Per the rule above, **do not add pytest/unit/integration tests** for
