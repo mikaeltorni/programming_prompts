@@ -98,6 +98,7 @@ fi
 
 export PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 HARNESS_SPEC="$SCRIPT_DIR/harbor_agents/harness_spec.py"
+CODEX_ACCOUNT="$SCRIPT_DIR/harbor_agents/codex_account.py"
 REFRESH_VERSIONS="$SCRIPT_DIR/harbor_agents/refresh_versions.py"
 DOCKER_NETWORKS="$SCRIPT_DIR/docker_networks.py"
 _docker_slot_holder=""
@@ -319,6 +320,24 @@ else
     python3 "$HARNESS_SPEC" eval-efforts "$_h" "$EVAL_AGENT_EFFORT_ARG" >/dev/null || exit 1
   done
   unset _h
+fi
+
+# Ask Codex's account endpoint before Docker/Harbor fan-out. Rolling-window
+# percentages and workspace credit state are separate fields; authentication
+# alone cannot prove the selected account can start an LLM turn. This read does
+# not consume a turn or an available one-time reset credit.
+if [[ "$INSTALL_ONLY" -eq 0 ]]; then
+  _codex_required=0
+  for _h in "${SELECTED_HARNESSES[@]}" "${SELECTED_EVAL_AGENTS[@]}"; do
+    if [[ "$_h" == "codex" ]]; then
+      _codex_required=1
+      break
+    fi
+  done
+  if [[ "$_codex_required" -eq 1 ]]; then
+    python3 "$CODEX_ACCOUNT" preflight || exit $?
+  fi
+  unset _codex_required _h
 fi
 
 # Look up newest stable CLIs for this instance (tiny registry GETs, no LLM).
