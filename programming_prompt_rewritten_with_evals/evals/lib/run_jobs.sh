@@ -112,13 +112,13 @@ run_one_job() {
   JOB_HARBOR_RC="$harbor_rc"
 }
 
-# Whether any trial in a Harbor job wrote a reward file.
+# Whether any trial in a Harbor job wrote its aggregate reward file.
 #
 # Parameters: $1 - Harbor job directory.
-# Returns: 0 when at least one *reward*.json exists.
+# Returns: 0 when at least one trial/verifier/reward.json exists.
 job_scored_any_trial() {
   local job_dir="$1"
-  [[ -n "$(find "$job_dir" -mindepth 2 -maxdepth 2 -name '*reward*.json' -print -quit 2>/dev/null)" ]]
+  [[ -n "$(find "$job_dir" -mindepth 3 -maxdepth 3 -type f -path '*/verifier/reward.json' -print -quit 2>/dev/null)" ]]
 }
 
 run_jobs_for_harness() {
