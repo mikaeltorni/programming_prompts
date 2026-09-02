@@ -150,6 +150,60 @@ def run_self_test() -> int:
             )
         )
 
+        fixup = root / "fixup-between" / "app"
+        init_empty_repo(fixup)
+        _commit_py(
+            fixup,
+            "shop.py",
+            "feat(shop): catalog",
+            "def run_shop(c):\n    return 'added=' + c\n",
+        )
+        _commit_py(
+            fixup,
+            "shop.py",
+            "fix(shop): tidy catalog",
+            "def run_shop(c):\n    return 'added=' + c.strip()\n",
+        )
+        _commit_py(
+            fixup,
+            "shop.py",
+            "feat(shop): checkout",
+            "def run_shop(c):\n    if c == 'total':\n        return 'total=0'\n"
+            "    return 'added=' + c.strip()\n",
+        )
+        got_fixup = check_repo(fixup, required=2, markers=shop_markers)
+        cases.append(
+            (
+                "pass_extra_fixup_commit_between_features",
+                got_fixup.ok,
+                got_fixup.reasoning,
+            )
+        )
+
+        out_of_order = root / "out-of-order" / "app"
+        init_empty_repo(out_of_order)
+        _commit_py(
+            out_of_order,
+            "shop.py",
+            "feat(shop): checkout first",
+            "def run_shop(c):\n    return 'total=0'\n",
+        )
+        _commit_py(
+            out_of_order,
+            "shop.py",
+            "feat(shop): catalog last",
+            "def run_shop(c):\n    if c == 'total':\n        return 'total=0'\n"
+            "    return 'added=' + c\n",
+        )
+        got_order = check_repo(out_of_order, required=2, markers=shop_markers)
+        cases.append(
+            (
+                "fail_features_committed_out_of_order",
+                not got_order.ok,
+                got_order.reasoning,
+            )
+        )
+
         dumped = root / "dumped" / "app"
         init_empty_repo(dumped)
         _commit_py(

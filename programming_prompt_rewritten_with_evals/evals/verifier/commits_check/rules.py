@@ -161,35 +161,66 @@ def _check_markers(
     commits: list[tuple[str, str]],
     markers: list[FeatureMarker],
 ) -> CheckResult | None:
-    """Fail when a Feature commit's Python tree misses a marker.
+    """Fail when Feature capabilities do not land one per commit, in order.
 
-    Parameters: repo - project checkout; commits - Feature commits oldest first;
-        markers - per-commit has/lacks tokens.
+    Each marker is matched to the earliest commit (at or after the commit that
+    matched the previous marker plus one) whose Python tree contains all of its
+    has-tokens. Matching by search rather than by position tolerates extra
+    non-Feature commits (fixups, docs, README) between Feature commits while
+    still requiring every Feature to land in its own, later commit and to keep
+    later-Feature tokens out of the earlier one.
+
+    Parameters: repo - project checkout; commits - Python-changing commits
+        oldest first; markers - per-Feature has/lacks tokens.
 
     Returns: failure result, or None when every marker matches.
     """
+    cursor = 0
+    sources: dict[str, str] = {}
+
+    def tree_of(commit: str) -> str:
+        """Return the concatenated Python sources at one commit, memoized.
+
+        Parameters: commit - hash to inspect.
+
+        Returns: joined file contents for substring search.
+        """
+        if commit not in sources:
+            sources[commit] = _python_at_commit(repo, commit)
+        return sources[commit]
+
     for marker in markers:
-        if marker.index > len(commits):
+        matched: int | None = None
+        for position in range(cursor, len(commits)):
+            commit, _subject = commits[position]
+            if all(token in tree_of(commit) for token in marker.has):
+                matched = position
+                break
+        if matched is None:
+            missing_all = sorted(
+                {
+                    token
+                    for token in marker.has
+                    if not any(
+                        token in tree_of(commit) for commit, _s in commits[cursor:]
+                    )
+                }
+            ) or list(marker.has)
             return CheckResult(
                 False,
-                f"Feature {marker.index} marker needs commit {marker.index} but "
-                f"only {len(commits)} Python Feature commit(s) exist",
+                f"Feature {marker.index} never lands in its own commit after "
+                f"Feature {marker.index - 1}: missing {missing_all!r} "
+                f"({len(commits)} Python commit(s) total)",
             )
-        commit, subject = commits[marker.index - 1]
-        source = _python_at_commit(repo, commit)
-        missing = [token for token in marker.has if token not in source]
-        leaked = [token for token in marker.lacks if token in source]
-        if missing or leaked:
-            bits: list[str] = []
-            if missing:
-                bits.append(f"missing {missing!r}")
-            if leaked:
-                bits.append(f"still contains later-Feature {leaked!r}")
+        commit, subject = commits[matched]
+        leaked = [token for token in marker.lacks if token in tree_of(commit)]
+        if leaked:
             return CheckResult(
                 False,
                 f"Feature {marker.index} commit {subject!r} "
-                + "; ".join(bits),
+                f"still contains later-Feature {leaked!r}",
             )
+        cursor = matched + 1
     return None
 
 
