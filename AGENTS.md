@@ -53,10 +53,9 @@ When an agent changes Harbor wrappers, verifier code, `run_benchmark.sh`,
 or other evals runtime — not prompt-only edits — it must run a **1-attempt
 baseline and a 1-attempt positive** job for **every coding harness**
 (`codex`, `grok`, `cc`) before reporting the task done. Use `-k 1`.
-Put `evalAgent=codex,cc` so both LLM judges write reward files (worktree is
-programmatic and still runs). Prompt-only work still uses Harbor when a
-live check is needed; do not add pytest under
-`programming_prompt_rewritten_with_evals/`.
+Always pass `evalAgent=codex` — see *Judges: Codex only while testing* below.
+Prompt-only work still uses Harbor when a live check is needed; do not add
+pytest under `programming_prompt_rewritten_with_evals/`.
 
 Example (each command in its own terminal):
 
@@ -65,28 +64,40 @@ cd programming_prompt_rewritten_with_evals/evals
 ```
 
 ```bash
-./run_benchmark.sh harness=codex evalAgent=codex,cc --baseline --no-pin-refresh -k 1
+./run_benchmark.sh harness=codex evalAgent=codex --baseline --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=codex evalAgent=codex,cc --no-pin-refresh -k 1
+./run_benchmark.sh harness=codex evalAgent=codex --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=grok evalAgent=codex,cc --baseline --no-pin-refresh -k 1
+./run_benchmark.sh harness=grok evalAgent=codex --baseline --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=grok evalAgent=codex,cc --no-pin-refresh -k 1
+./run_benchmark.sh harness=grok evalAgent=codex --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=cc evalAgent=codex,cc --baseline --no-pin-refresh -k 1
+./run_benchmark.sh harness=cc evalAgent=codex --baseline --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=cc evalAgent=codex,cc --no-pin-refresh -k 1
+./run_benchmark.sh harness=cc evalAgent=codex --no-pin-refresh -k 1
 ```
+
+## Judges: Codex only while testing
+
+**Every test run uses `evalAgent=codex` and nothing else.** Do not add `cc`,
+`grok`, or any second LLM judge to a run, and do not "just also check with the
+other judge" — a multi-judge run doubles cost and runtime, splits Pass across
+per-judge reward files, and makes results incomparable to the Codex-only
+baselines already in `evals/runs/`. The programmatic judges (`commits`,
+`worktree`, `docs`, `debug`) run regardless of this flag.
+
+Only use a different or additional eval agent when the user explicitly asks for
+it in that request, and drop back to `evalAgent=codex` on the next run.
 
 ## Never generate tests for rewritten-prompt evals
 
@@ -110,6 +121,15 @@ several `./run_benchmark.sh …` lines into one block — the user copies each
 block into a **different terminal**. Shared setup (`cd`, `export JOBS=…`) may
 sit in its own preceding block; every distinct benchmark invocation after that
 must be alone in a block.
+
+**Give commands for the requested model only.** When the user asks for commands
+to run the benchmark, produce exactly the harness/model they named — if they say
+"run codex", every command is `harness=codex` with `evalAgent=codex`, with no
+extra `harness=cc` / `harness=grok` variants, no second eval agent, and no
+"here's the grok one too" bonus block. Extra commands get pasted by mistake and
+burn a whole run on the wrong account. Vary only the axis the user asked to vary
+(e.g. separate vs. non-separate, baseline vs. positive) and keep the model
+fixed. If the request does not name a model, ask before emitting commands.
 
 ## The benchmark testing framework (read before running an eval)
 
