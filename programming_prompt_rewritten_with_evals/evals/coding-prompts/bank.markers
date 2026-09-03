@@ -1,4 +1,4 @@
-1 has:opened= lacks:balance= lacks:moved= lacks:history=
-2 has:balance= lacks:moved= lacks:history=
-3 has:moved= lacks:history=
+1 has:opened= lacks:balance= lacks:moved= lacks:history= lacks:assets=
+2 has:balance= lacks:moved= lacks:history= lacks:assets=
+3 has:moved= lacks:history= lacks:assets=
 4 has:history=

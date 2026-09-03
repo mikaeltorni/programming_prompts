@@ -1,4 +1,4 @@
-1 has:count= lacks:mean= lacks:low= lacks:high= lacks:median=
-2 has:mean= lacks:low= lacks:high= lacks:median=
-3 has:low= has:high= lacks:median=
+1 has:count= lacks:mean= lacks:low= lacks:high= lacks:median= lacks:cleared=
+2 has:mean= lacks:low= lacks:high= lacks:median= lacks:cleared=
+3 has:low= has:high= lacks:median= lacks:cleared=
 4 has:median=
