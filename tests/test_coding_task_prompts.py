@@ -20,6 +20,9 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+# Tokens shorter than this (``f=``, ``c=``, ``k=``) match unrelated code such as
+# ``self=`` or ``task=``, so leak coverage is not required for them.
+MIN_DISTINCTIVE_TOKEN = 4
 EVALS = ROOT / "programming_prompt_rewritten_with_evals" / "evals"
 PROMPTS_DIR = EVALS / "coding-prompts"
 ORACLES_DIR = EVALS / "oracles"
@@ -118,26 +121,40 @@ def test_markers_cover_every_feature_and_match_the_oracle(prompt: Path) -> None:
         f"{markers_path.name}: markers must index Features 1..{features} in order"
     )
     oracle_source = (ORACLES_DIR / f"{prompt.stem}.py").read_text(encoding="utf-8")
-    later_has = {
-        token
-        for index, has, _lacks in markers
-        for token in has
-    }
     for index, has, lacks in markers:
         assert has, f"{markers_path.name}: Feature {index} pins no has: token"
-        for token in has:
+        for token in has + lacks:
             assert token in oracle_source, (
-                f"{markers_path.name}: Feature {index} has:{token} never appears "
-                f"in oracles/{prompt.stem}.py"
+                f"{markers_path.name}: Feature {index} pins {token!r}, which never "
+                f"appears in oracles/{prompt.stem}.py"
             )
         for token in lacks:
-            assert token in later_has, (
-                f"{markers_path.name}: Feature {index} lacks:{token} is not a "
-                "later Feature's has: token"
-            )
             assert token not in has, (
                 f"{markers_path.name}: Feature {index} both has and lacks {token}"
             )
+
+
+@pytest.mark.parametrize("prompt", prompt_paths(), ids=lambda path: path.stem)
+def test_every_earlier_feature_rejects_later_feature_tokens(prompt: Path) -> None:
+    """Each Feature's commit must be checked against *every* later prefix.
+
+    Listing only the next Feature's prefix lets an agent dump Features 1 and 3
+    into the first commit unnoticed, which is exactly the multi-step failure the
+    ``commits`` skill forbids.
+    """
+    features = int(parse_frontmatter(prompt).get("features", "1"))
+    if features < 2:
+        return
+    markers = parse_markers(prompt.with_suffix(".markers"))
+    for position, (index, _has, lacks) in enumerate(markers):
+        for later_index, later_has, _later_lacks in markers[position + 1 :]:
+            for token in later_has:
+                if len(token) < MIN_DISTINCTIVE_TOKEN:
+                    continue
+                assert token in lacks, (
+                    f"{prompt.stem}.markers: Feature {index} must carry "
+                    f"lacks:{token} from Feature {later_index}"
+                )
 
 
 def test_bank_oracle_runs_the_full_multi_step_flow() -> None:

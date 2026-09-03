@@ -43,8 +43,18 @@ hour bands, Kelvin) are one Feature. The `commits` skill must break that
 into a multi-step plan (basic first, then extras). `sync_tasks.sh` writes
 the count to `tests/feature_count.txt`.
 A sibling `<name>.markers` file lists per-commit Python tokens
-(`1 has:sum= lacks:diff=`) so the checker rejects dumping every Feature
-into the first commit or padding with a dummy second `.py` file.
+(`1 has:sum= lacks:diff= lacks:prod= lacks:quot=`) so the checker rejects
+dumping every Feature into the first commit or padding with a dummy second
+`.py` file.
+
+Marker convention — Feature `N`'s line carries `has:` for that Feature's own
+literal prefixes and `lacks:` for **every** later Feature's prefixes, optional
+"may also" extras included. Listing only the next Feature would let an agent
+hide Feature 3 inside the Feature 1 commit. Prefixes shorter than four
+characters (`f=`, `c=`, `k=` in `temperature`) are exempt: they also match
+unrelated code such as `self=` or `task=`. `tests/test_coding_task_prompts.py`
+enforces this, that markers index Features `1..N`, and that every pinned token
+really appears in `../oracles/<name>.py`.
 
 `greeter-fix` plants a broken greeter plus `.log/` (`got:` / `want:`). Hidden
 `seeds/greeter-fix/debug_tokens.txt` is copied to `tests/debug_tokens.txt` so
