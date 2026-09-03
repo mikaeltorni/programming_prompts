@@ -17,6 +17,8 @@ coding-prompts/
 ├── greeter-fix.markers
 ├── shop.md
 ├── shop.markers
+├── stats.md
+├── stats.markers
 ├── temperature.md
 ├── temperature.markers
 ├── todo.md

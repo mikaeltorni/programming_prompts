@@ -14,6 +14,7 @@ Grok follow selected programming skills while implementing tiny Python programs:
 | [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (`add`, then `total`, then `remove`; `features: 3`) |
 | [`coding-prompts/greeter-fix.md`](coding-prompts/greeter-fix.md) | `/app/greeter.py` → `run_greeter` (fix from `.log/`, then `bye`, then `period`; `features: 3`) |
 | [`coding-prompts/bank.md`](coding-prompts/bank.md) | `/app/bank.py` → `run_bank` (`open`, then `deposit`/`withdraw`, then `transfer`, then `history`; `features: 4`) |
+| [`coding-prompts/stats.md`](coding-prompts/stats.md) | `/app/stats.py` → `run_stats` (`add`, then `mean`, then `low`/`high`, then `median`; `features: 4`) |
 
 Each coding prompt is the product instruction (what to build) plus “Follow the
 provided programming skill.” Skills under
@@ -134,6 +135,7 @@ evals/
 │   ├── greeter.md
 │   ├── greeter-fix.md
 │   ├── shop.md
+│   ├── stats.md
 │   ├── temperature.md
 │   └── todo.md
 ├── oracles/                # reference solutions for Harbor oracle

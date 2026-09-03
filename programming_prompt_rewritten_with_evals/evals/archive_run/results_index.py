@@ -15,7 +15,7 @@ RESULTS_FIXED_COLUMNS = (
     "Tasks", "k", "n", "Sep", "Trials", "Scored", "RateLimit",
 )
 RESULTS_SKILL_ORDER = ("srp", "commenting", "logging", "worktree", "commits", "debug", "docs", "logging-vague")
-RESULTS_TASK_ORDER = ("bank", "calculator", "counter", "greeter", "greeter-fix", "shop", "temperature", "todo")
+RESULTS_TASK_ORDER = ("bank", "calculator", "counter", "greeter", "greeter-fix", "shop", "stats", "temperature", "todo")
 RESULTS_LEFT_ALIGN = frozenset(
     {"Run", "Runtime", "Mode", "Harness", "Judge", "Skills", "Tasks", "Sep"}
 )
