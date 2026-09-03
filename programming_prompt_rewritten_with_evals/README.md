@@ -29,12 +29,13 @@ Each real skill has a matching judge in
 [`evals/judges/<skill>/`](evals/judges/). Vague controls reuse the base judge.
 Pair `logging` / `logging-vague` with `srp` when benchmarking so there are
 enough functions to print. Pair `worktree` with `srp`. Pair `commits` with
-`worktree` and a multi-Feature task (`shop`).
+`worktree` and a multi-Feature task (`shop`, or the four-Feature `bank`).
 
 ## Current evaluation
 
 Five write-from-scratch tasks (`calculator`, `todo`, `counter`, `greeter`,
-`temperature`) plus `shop` (two Features: catalog then checkout) and
+`temperature`) plus `shop` (three Features: catalog, total, remove), `bank`
+(four Features: open, deposit/withdraw, transfer, history) and
 `greeter-fix` (broken greeter + planted logs) live as markdown under
 [`evals/coding-prompts/`](evals/coding-prompts/). The runner materializes Harbor
 task trees under `evals/.generated/tasks/` from those prompts. Selected skills
