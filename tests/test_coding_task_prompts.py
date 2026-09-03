@@ -167,3 +167,31 @@ def test_bank_oracle_refuses_bad_commands() -> None:
         bank.run_bank("transfer ada ada 1")
     with pytest.raises(ValueError):
         bank.run_bank("fly ada")
+
+
+def test_stats_oracle_runs_the_full_multi_step_flow() -> None:
+    """The stats oracle implements all four Features of the prompt."""
+    stats = load_oracle("stats")
+    assert stats.run_stats("add 4") == "count=1"
+    assert stats.run_stats("add 1") == "count=2"
+    assert stats.run_stats("add 7") == "count=3"
+    assert stats.run_stats("mean") == "mean=4"
+    assert stats.run_stats("low") == "low=1"
+    assert stats.run_stats("high") == "high=7"
+    assert stats.run_stats("median") == "median=4"
+    assert stats.run_stats("add 5") == "count=4"
+    assert stats.run_stats("median") == "median=4.5"
+    assert stats.run_stats("reset") == "cleared=4"
+
+
+def test_stats_oracle_refuses_bad_commands() -> None:
+    """The stats oracle raises ValueError on an empty set and unknown commands."""
+    stats = load_oracle("stats")
+    with pytest.raises(ValueError):
+        stats.run_stats("mean")
+    with pytest.raises(ValueError):
+        stats.run_stats("median")
+    with pytest.raises(ValueError):
+        stats.run_stats("add")
+    with pytest.raises(ValueError):
+        stats.run_stats("fly")
