@@ -5,6 +5,8 @@ task at runtime via [`../sync_tasks.sh`](../sync_tasks.sh).
 
 ```text
 coding-prompts/
+├── bank.md
+├── bank.markers
 ├── calculator.md
 ├── calculator.markers
 ├── counter.md
@@ -33,7 +35,7 @@ Follow every provided programming skill. Write `/app/calculator.py` with …
 ```
 
 `features:` is optional and defaults to `1`. Every coding prompt in this
-tree declares **3** Feature **groups** as a vague "should have X, also Y,
+tree declares **3 or 4** Feature **groups** as a vague "should have X, also Y,
 also extras" list — related extras in one sentence (multiply-and-divide,
 hour bands, Kelvin) are one Feature. The `commits` skill must break that
 into a multi-step plan (basic first, then extras). `sync_tasks.sh` writes

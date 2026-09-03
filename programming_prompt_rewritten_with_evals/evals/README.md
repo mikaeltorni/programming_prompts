@@ -13,6 +13,7 @@ Grok follow selected programming skills while implementing tiny Python programs:
 | [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` (`c2f`, then `f2c`, then Kelvin; `features: 3`) |
 | [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (`add`, then `total`, then `remove`; `features: 3`) |
 | [`coding-prompts/greeter-fix.md`](coding-prompts/greeter-fix.md) | `/app/greeter.py` → `run_greeter` (fix from `.log/`, then `bye`, then `period`; `features: 3`) |
+| [`coding-prompts/bank.md`](coding-prompts/bank.md) | `/app/bank.py` → `run_bank` (`open`, then `deposit`/`withdraw`, then `transfer`, then `history`; `features: 4`) |
 
 Each coding prompt is the product instruction (what to build) plus “Follow the
 provided programming skill.” Skills under
@@ -127,6 +128,7 @@ when **every** selected eval agent says yes.
 ```text
 evals/
 ├── coding-prompts/         # edit these — one .md per coding task
+│   ├── bank.md
 │   ├── calculator.md
 │   ├── counter.md
 │   ├── greeter.md
