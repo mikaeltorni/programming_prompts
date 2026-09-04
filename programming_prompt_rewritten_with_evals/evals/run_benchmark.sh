@@ -8,7 +8,7 @@
 # Lookups are tiny HTTP GETs — they do not call an LLM.
 #
 # Harnesses: Codex (`codex`), Claude Code (`cc`), and Grok CLI (`grok`).
-# Omit --harness / harness= to run Codex and Claude Code. Defaults:
+# Omit --harness to run Codex and Claude Code. Defaults:
 #   codex → openai/gpt-5.6-luna @ reasoning_effort=low
 #   cc    → claude-opus-5       @ reasoning_effort=low (Claude CLI --effort)
 #   grok  → grok-4.6            @ reasoning_effort=low (Grok CLI --reasoning-effort)
@@ -21,25 +21,35 @@
 #   judges/<skill>/prompt.md
 #   coding-prompts/<task>.md
 #
+# Flag format — one style for every parameter: a long, double-dashed,
+# kebab-case flag followed by its value, `--skills commits,srp`. The
+# `--skills=commits,srp` spelling is the same flag for scripted callers.
+# Bare `harness=codex`, single-dash `-skills=…`, and camelCase `--evalAgent`
+# are rejected with the canonical flag (see lib/parse_flags.sh). Switches:
+# --install-only, --pin-refresh / --no-pin-refresh, --baseline,
+# --run-separately. Value flags: --harness, --eval-agent, --eval-agent-model,
+# --eval-agent-reasoning-effort, --skills, --tasks. Anything else (`-k 5`,
+# `--ak …`, or whatever follows `--`) is passed through to Harbor.
+#
 # Usage (from this directory):
 #   ./run_benchmark.sh
-#   ./run_benchmark.sh harness=codex
-#   ./run_benchmark.sh harness=cc
-#   ./run_benchmark.sh harness=grok
+#   ./run_benchmark.sh --harness codex
+#   ./run_benchmark.sh --harness cc
+#   ./run_benchmark.sh --harness grok
 #   ./run_benchmark.sh --harness both --skills srp,commenting --run-separately -k 5
 #   ./run_benchmark.sh --baseline --skills srp,commenting -k 5
 #   ./run_benchmark.sh --skills srp,logging -k 2
-#   ./run_benchmark.sh --skills srp,worktree -k 2
-#   ./run_benchmark.sh --install-only harness=grok
-#   ./run_benchmark.sh --no-pin-refresh --install-only harness=codex
-#   ./run_benchmark.sh harness=codex evalAgent=cc,codex
-#   ./run_benchmark.sh harness=cc evalAgent=grok evalAgentModel=grok-4.6 \
-#       evalAgentReasoningEffort=low
+#   ./run_benchmark.sh --skills srp,worktree --tasks bank,stats -k 2
+#   ./run_benchmark.sh --install-only --harness grok
+#   ./run_benchmark.sh --no-pin-refresh --install-only --harness codex
+#   ./run_benchmark.sh --harness codex --eval-agent cc,codex
+#   ./run_benchmark.sh --harness cc --eval-agent grok --eval-agent-model grok-4.6 \
+#       --eval-agent-reasoning-effort low
 #
 # Trial count (rule of thumb): harnesses × tasks × -k. Example: one harness,
 # 5 tasks, -k 5 → 25 trials. --run-separately does not multiply jobs: one
 # Harbor job, same trial count. Combined Pass ANDs every selected skill;
-# separately scores each skill independently (Pass is not AND). evalAgent
+# separately scores each skill independently (Pass is not AND). --eval-agent
 # does not multiply trials; it reruns the LLM judge on each trial
 # (serialized unless EVAL_JUDGE_WORKERS > 1).
 #
@@ -115,6 +125,7 @@ JUDGES_ROOT="$SCRIPT_DIR/judges"
 CODING_PROMPTS_DIR="$SCRIPT_DIR/coding-prompts"
 TASKS_DIR="$SCRIPT_DIR/.generated/tasks"
 
+source "$SCRIPT_DIR/lib/parse_flags.sh"
 source "$SCRIPT_DIR/lib/docker_slots.sh"
 source "$SCRIPT_DIR/lib/harness_cli.sh"
 source "$SCRIPT_DIR/lib/skills_tasks.sh"
@@ -143,143 +154,9 @@ EVAL_AGENT_MODEL_ARG=""
 EVAL_AGENT_EFFORT_ARG=""
 HARBOR_ARGS=()
 
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --install-only)
-      INSTALL_ONLY=1
-      shift
-      ;;
-    --no-pin-refresh|--offline-pins)
-      PIN_REFRESH=0
-      shift
-      ;;
-    --pin-refresh)
-      PIN_REFRESH=1
-      shift
-      ;;
-    --baseline|--no-skill)
-      BASELINE=1
-      shift
-      ;;
-    --negative|--oneshot|--anti-srp)
-      echo "Unknown option $1 (inverted-skill mode was removed; use --baseline for no-skill runs)" >&2
-      exit 1
-      ;;
-    --run-separately|--runSeparately)
-      RUN_SEPARATELY=1
-      shift
-      ;;
-    --harness)
-      HARNESS_ARG="${2:-}"
-      if [[ -z "$HARNESS_ARG" ]]; then
-        echo "--harness requires a value: $(python3 "$HARNESS_SPEC" choices)" >&2
-        exit 1
-      fi
-      shift 2
-      ;;
-    --harness=*)
-      HARNESS_ARG="${1#--harness=}"
-      shift
-      ;;
-    harness=*)
-      HARNESS_ARG="${1#harness=}"
-      shift
-      ;;
-    --evalAgent|--eval-agent)
-      EVAL_AGENT_ARG="${2:-}"
-      if [[ -z "$EVAL_AGENT_ARG" ]]; then
-        echo "--evalAgent requires a value: $(python3 "$HARNESS_SPEC" choices)" >&2
-        exit 1
-      fi
-      shift 2
-      ;;
-    --evalAgent=*|--eval-agent=*)
-      EVAL_AGENT_ARG="${1#*=}"
-      shift
-      ;;
-    evalAgent=*|eval-agent=*)
-      EVAL_AGENT_ARG="${1#*=}"
-      shift
-      ;;
-    --evalAgentModel|--eval-agent-model)
-      EVAL_AGENT_MODEL_ARG="${2:-}"
-      if [[ -z "$EVAL_AGENT_MODEL_ARG" ]]; then
-        echo "--evalAgentModel requires a model id (same idea as -m / --model)" >&2
-        exit 1
-      fi
-      shift 2
-      ;;
-    --evalAgentModel=*|--eval-agent-model=*)
-      EVAL_AGENT_MODEL_ARG="${1#*=}"
-      shift
-      ;;
-    evalAgentModel=*|eval-agent-model=*)
-      EVAL_AGENT_MODEL_ARG="${1#*=}"
-      shift
-      ;;
-    --evalAgentReasoningEffort|--eval-agent-reasoning-effort)
-      EVAL_AGENT_EFFORT_ARG="${2:-}"
-      if [[ -z "$EVAL_AGENT_EFFORT_ARG" ]]; then
-        echo "--evalAgentReasoningEffort requires low, medium, or high (same as --ak reasoning_effort=)" >&2
-        exit 1
-      fi
-      shift 2
-      ;;
-    --evalAgentReasoningEffort=*|--eval-agent-reasoning-effort=*)
-      EVAL_AGENT_EFFORT_ARG="${1#*=}"
-      shift
-      ;;
-    evalAgentReasoningEffort=*|eval-agent-reasoning-effort=*)
-      EVAL_AGENT_EFFORT_ARG="${1#*=}"
-      shift
-      ;;
-    --skills)
-      SKILLS_ARG="${2:-}"
-      if [[ -z "$SKILLS_ARG" ]]; then
-        echo "--skills requires a value like srp,commenting" >&2
-        exit 1
-      fi
-      shift 2
-      ;;
-    --skills=*)
-      SKILLS_ARG="${1#--skills=}"
-      shift
-      ;;
-    -skills=*)
-      SKILLS_ARG="${1#-skills=}"
-      shift
-      ;;
-    --tasks|--task)
-      TASKS_ARG="${2:-}"
-      if [[ -z "$TASKS_ARG" ]]; then
-        echo "--tasks requires a value like todo,calculator" >&2
-        exit 1
-      fi
-      shift 2
-      ;;
-    --tasks=*|--task=*)
-      TASKS_ARG="${1#*=}"
-      shift
-      ;;
-    -tasks=*|-task=*)
-      TASKS_ARG="${1#*=}"
-      shift
-      ;;
-    tasks=*|task=*)
-      TASKS_ARG="${1#*=}"
-      shift
-      ;;
-    --)
-      shift
-      HARBOR_ARGS+=("$@")
-      break
-      ;;
-    *)
-      HARBOR_ARGS+=("$1")
-      shift
-      ;;
-  esac
-done
+# Canonical flag format lives in lib/parse_flags.sh: --flag value.
+BENCHMARK_HARNESS_CHOICES="$(python3 "$HARNESS_SPEC" choices)"
+parse_benchmark_flags "$@" || exit 1
 
 # User -n / --n-concurrent is ignored. Harbor concurrency always follows -k.
 strip_user_harbor_n_concurrent HARBOR_ARGS
@@ -289,8 +166,8 @@ mapfile -t SELECTED_HARNESSES <<< "$_norm_out"
 unset _norm_out
 echo "Selected harness(es): ${SELECTED_HARNESSES[*]}" >&2
 
-# Empty evalAgent → inherit the coding harness for each job. Explicit values
-# use the same aliases/groups as harness= (comma lists, both, all).
+# Empty --eval-agent → inherit the coding harness for each job. Explicit
+# values use the same aliases/groups as --harness (comma lists, both, all).
 _eval_out="$(python3 "$HARNESS_SPEC" eval-agents "$EVAL_AGENT_ARG")" || exit 1
 SELECTED_EVAL_AGENTS=()
 if [[ -n "$_eval_out" ]]; then
@@ -298,7 +175,7 @@ if [[ -n "$_eval_out" ]]; then
 fi
 unset _eval_out
 if [[ ${#SELECTED_EVAL_AGENTS[@]} -eq 0 ]]; then
-  echo "Eval agent: inherit coding harness (same CLI as harness=)" >&2
+  echo "Eval agent: inherit coding harness (same CLI as --harness)" >&2
 else
   echo "Eval agent(s): ${SELECTED_EVAL_AGENTS[*]}" >&2
 fi
