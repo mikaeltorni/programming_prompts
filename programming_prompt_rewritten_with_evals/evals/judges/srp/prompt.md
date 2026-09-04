@@ -16,8 +16,11 @@ operation, extra or missing required arguments, or an already-parsed value
 out of range — those raises are not mixed parsing.
 
 `int()` / `float()` of an already-split token is never core logic: it is
-thin in the entrypoint (`helper(int(token))`) and still core logic, not
-mixed parsing, inside a state helper.
+thin in the entrypoint when the converted value goes straight into the call
+(`helper(int(token))`), and still core logic, not mixed parsing, inside a
+state helper. Arithmetic on that converted value (`int(token) - 1`),
+validating it against current state, or assigning it into state
+(`_total = int(token)`) in the entrypoint is core logic, not a conversion.
 
 A core helper may itself dispatch operations with if/elif, validate
 already-parsed arguments, guard empty or out-of-range values
