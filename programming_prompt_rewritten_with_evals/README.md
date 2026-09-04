@@ -42,9 +42,10 @@ Features: add, mean, low/high, median) and
 task trees under `evals/.generated/tasks/` from those prompts. Selected skills
 are injected; each selected
 skill’s judge scores the result. See [`evals/README.md`](evals/README.md) for
-CLI parameters (`harness=`, `evalAgent=`, `evalAgentModel=`,
-`evalAgentReasoningEffort=`). Omit `evalAgent` and the LLM judge is the same
-harness as the coding agent; pass `evalAgent=cc,codex` to grade twice.
+CLI parameters, which all take the same `--flag value` form (`--harness`,
+`--eval-agent`, `--eval-agent-model`, `--eval-agent-reasoning-effort`,
+`--skills`, `--tasks`). Omit `--eval-agent` and the LLM judge is the same
+harness as the coding agent; pass `--eval-agent cc,codex` to grade twice.
 
 Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
 @ low; Grok `grok-4.6` @ low. Each new Harbor instance looks up the newest
@@ -65,12 +66,12 @@ Committed fallbacks:
 - `evals/verifier/run_llm_judge.py` — Codex / Claude Code / Grok eval-agent runner
 - `evals/verifier/llm_judge/` — pin workspace `*.py` files and retry skip-inspect scores
 - `evals/.generated/tasks/` — generated at runtime (gitignored, hidden)
-- `evals/run_benchmark.sh` — multi-harness runner (`harness=codex|cc|grok|both|all`, `evalAgent=…`)
+- `evals/run_benchmark.sh` — multi-harness runner (`--harness codex|cc|grok|both|all`, `--eval-agent …`)
 - `evals/launch_benchmarks.sh` — preset menu; opens one terminal per job on this monitor
 - `evals/presets/` — git-tracked launch presets (one coding run per harness; included harnesses all judge that tree)
 - `evals/docker_networks.py` — prune leftover Harbor nets; slot lock so parallel terminals do not exhaust Docker IPAM
-- `evals/run_codex_benchmark.sh` — shim → `run_benchmark.sh harness=codex`
-- `evals/run_grok_benchmark.sh` — shim → `run_benchmark.sh harness=grok`
+- `evals/run_codex_benchmark.sh` — shim → `run_benchmark.sh --harness codex`
+- `evals/run_grok_benchmark.sh` — shim → `run_benchmark.sh --harness grok`
 - `evals/runs/` — timestamped archives; `RESULTS.txt` is a newest-first table
 - `evals/testing/` — open a new terminal to verify `evals/runs/…/harbor` job roots with `ca` / `cca`
 

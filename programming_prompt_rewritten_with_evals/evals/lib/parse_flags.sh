@@ -13,6 +13,7 @@
 #
 # Components:
 #   benchmark_flag_die   — error helper (stderr, non-zero return)
+#   benchmark_flag_usage — the canonical `--flag value` usage text
 #   benchmark_flag_value — read a required value for a flag
 #   parse_benchmark_flags — the parser; sets the wrapper's globals
 #
@@ -21,6 +22,33 @@
 # Canonical value-taking flags, for error messages and the self-test.
 BENCHMARK_VALUE_FLAGS=(--harness --eval-agent --eval-agent-model \
   --eval-agent-reasoning-effort --skills --tasks)
+
+# Print the canonical usage on stdout.
+#
+# Parameters: none.
+# Returns 0. Used by --help and by the "unknown flag" hint.
+benchmark_flag_usage() {
+  cat <<'USAGE'
+Usage: ./run_benchmark.sh [--flag value ...] [-- harbor args ...]
+
+Every wrapper parameter is a long, kebab-case flag followed by its value:
+  --harness <codex|cc|grok|both|all>   coding harness(es) to run
+  --eval-agent <codex|cc|grok>         LLM judge harness (default: inherit)
+  --eval-agent-model <id>              judge model id
+  --eval-agent-reasoning-effort <low|medium|high>
+  --skills <a,b,c>                     skills to evaluate (default: all)
+  --tasks <a,b,c>                      tasks to run (default: all)
+
+Switches:
+  --baseline           run without the skill prompt
+  --run-separately     one job per skill instead of one combined job
+  --install-only       prepare CLIs/images and exit
+  --pin-refresh | --no-pin-refresh
+  --help               show this text
+
+Anything else (e.g. -k 5) is passed through to Harbor unchanged.
+USAGE
+}
 
 # Report a CLI error on stderr.
 #
@@ -66,6 +94,10 @@ parse_benchmark_flags() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
+      --help|-h)
+        benchmark_flag_usage
+        return 10
+        ;;
       --install-only)
         INSTALL_ONLY=1
         shift

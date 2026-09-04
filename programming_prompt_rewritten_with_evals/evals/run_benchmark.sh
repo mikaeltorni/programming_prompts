@@ -156,7 +156,7 @@ HARBOR_ARGS=()
 
 # Canonical flag format lives in lib/parse_flags.sh: --flag value.
 BENCHMARK_HARNESS_CHOICES="$(python3 "$HARNESS_SPEC" choices)"
-parse_benchmark_flags "$@" || exit 1
+parse_benchmark_flags "$@" || { rc=$?; [[ $rc -eq 10 ]] && exit 0; exit 1; }
 
 # User -n / --n-concurrent is ignored. Harbor concurrency always follows -k.
 strip_user_harbor_n_concurrent HARBOR_ARGS

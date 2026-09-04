@@ -114,6 +114,17 @@ check_rejects "missing value: --harness empty =" "--harness requires a value" --
 # Case 6: removed inverted-skill modes still explain themselves.
 check_rejects "removed: --negative" "--baseline" --negative
 
+# Case 7: --help prints the canonical usage and asks the caller to exit 0.
+reset_globals
+help_out="$(parse_benchmark_flags --help)"; help_rc=$?
+check "help: rc 10 (caller exits 0)" "10" "$help_rc"
+if [[ "$help_out" == *"--harness <codex|cc|grok|both|all>"* ]]; then
+  echo "PASS help: lists canonical flags"
+else
+  echo "FAIL help: usage text missing canonical flags"
+  fails=$((fails + 1))
+fi
+
 if [[ $fails -eq 0 ]]; then
   echo "ALL FLAG PARSING SELF-TESTS PASSED"
 else
