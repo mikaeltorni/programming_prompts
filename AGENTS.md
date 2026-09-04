@@ -250,6 +250,34 @@ misleading result rather than an obvious error.
    the trial's `git log` — if the model's history satisfies the skill's stated
    rule, the judge is what needs the fix.
 
+9. **A skill that names a Feature *count* caps the split.** The `commits` skill
+   opened with "break it into about 3 Features" and closed with "three Features
+   means exactly three commits". Every three-capability task passed, but the
+   four-capability tasks (`bank`, `stats`) failed
+   `need at least 4 Python Feature commit(s) …; found 3` — 13/15 bank trials in
+   `2026-09-04_110517_989702` — because agents folded the last two sentences
+   ("transfer" + "history") into one commit to reach the number the skill
+   advertised. The per-sentence rule further down was correct; the leading
+   number outranked it. Lessons:
+   - Skill text must state the *rule* ("one Feature per capability the prompt
+     names; N sentences means N commits"), never a concrete count, an example
+     count, or a closing line that repeats one.
+   - Prompts stay task-agnostic: no skill may be worded around the particular
+     tasks in the suite (no "calculator: add, subtract, multiply-and-divide"
+     ledgers). If a skill only works for the shapes currently in
+     `coding-prompts/`, adding one task of a different shape silently
+     regresses it. Adding a task with a new Feature count is the cheap way to
+     detect this class of anchoring.
+10. **An SRP allowance was read as a licence.** The `srp` skill said
+    "`int()`/`float()` of an already-split token is not a business conversion"
+    and listed `helper(int(token))` as thin. Agents extended that to
+    `index = int(token) - 1` and `_total = int(token)` in the entrypoint, and
+    the judge — correctly, per its own "the entrypoint still performs core
+    arithmetic or state updates" clause — failed those trials. Lesson: every
+    allowance in a skill needs its boundary in the same bullet ("the converted
+    value is passed on, never worked on"), and the judge prompt has to carry
+    the identical boundary so skill and judge stay 1-1.
+
 ### How to verify changes to this tree
 
 Per the rule above, **do not add pytest/unit/integration tests** for
