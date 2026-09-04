@@ -2,43 +2,45 @@
 name: commits
 description: >-
   Use whenever the user prompt can be split into Features, including vague
-  "should have X" asks: break them into about 3 Feature groups, implement one
-  at a time, and commit each Feature in the worktree while the program still
-  works. Apply on every coding task, including small scripts and new files
-  from scratch.
+  "should have X" asks: break it into one Feature per capability the prompt
+  names, implement one at a time, and commit each Feature in the worktree
+  while the program still works. Apply on every coding task, including small
+  scripts and new files from scratch.
 ---
 
 # Feature commits
 
-When the user prompt is vague ("a calculator should have add") or lists
-several capabilities, **break it into about 3 Features** before writing
-Feature code:
-
-1. the basic implementation that already works
-2. the next distinct capability
-3. the remaining extras (one Feature, even when that group names two related
-   commands)
+When the user prompt is vague ("it should have add") or lists several
+capabilities, **split it into Features before writing Feature code — one
+Feature per capability the prompt names, however many that is.** There is no
+target number: count the capabilities the prompt actually names and use that
+count. Two named capabilities are two Features; four are four.
 
 ## Find the Features by reading the sentences
 
 **Each capability sentence in the prompt is its own Feature.** The opening
 sentence is Feature 1; every following "It should also …" sentence is the next
-Feature, in the order written. Three such sentences means **three Features and
-three commits**. The sentence boundary wins over conceptual pairing: opposite
-conversion directions in two sentences are two Features even when they share a
-formula or entrypoint (C→F and F→C; catalog and total).
+Feature, in the order written. **Count those sentences first: N capability
+sentences means N Features and N commits** — never fold the last two into one
+because the split "felt like enough" or because a smaller number looked
+tidier. The sentence boundary wins over conceptual pairing: two sentences stay
+two Features even when they share a formula, a data structure, or an
+entrypoint (opposite conversion directions; a per-item report and a total).
 
-Inside **one** sentence, a group stays one Feature: morning/afternoon/evening
-is one Feature; multiply and divide is one Feature; a main command plus an
-optional extra ("… and may count items") is one Feature.
+Inside **one** sentence, a group stays one Feature: several bands or cases
+listed together are one Feature; two commands named in the same sentence are
+one Feature; a main command plus an optional extra ("… and may report the
+total") is one Feature.
 
 Before writing code, make a numbered ledger with one entry per capability
 sentence and its literal return prefix(es); it is your commit checklist. Do
-not rename or regroup its entries later, and do not skip the breakdown because
-the script is small. Illustrative breakdowns (not the current task):
+not rename, merge, or regroup its entries later, and do not skip the breakdown
+because the script is small. The ledger's length is the number of commits you
+owe. Illustrative breakdowns (not the current task):
 
-- calculator: add, then subtract, then multiply-and-divide
-- greeter: hello, then hour-based greetings, then farewell
+- two sentences: normalize text, then report its length
+- four sentences: create a record, then update it, then link two records,
+  then report one record's applied changes
 
 ## Commit one Feature at a time
 
@@ -68,8 +70,8 @@ is a failure even though the code works.
 Feature commits are counted **in order**: the first commit that touches a
 `.py` file is Feature 1, the second is Feature 2, and so on. Any extra code
 commit slipped in between — `Fix hour command dispatch`, `Refactor helpers`,
-`Add logging`, `Tidy up` — silently takes Feature 3's slot. Commits that touch
-no `.py` file (a README-only commit, the final merge) take no slot.
+`Add logging`, `Tidy up` — silently takes the next Feature's slot. Commits
+that touch no `.py` file (a README-only commit, the final merge) take no slot.
 
 So finish a Feature **before** committing it: run it, fix it, and clean it up
 while the work is still uncommitted, so the correction lands inside that
@@ -89,6 +91,7 @@ Closing a Feature is a hard gate, in this order:
 Only after those four steps may you edit the next Feature, write the README,
 or merge. Testing a Feature is not committing it.
 
-Three Features means the Python history is exactly three commits, in the
-prompt's order. A single Feature (or none) is one commit. Commits happen in
-the worktree; where that worktree lives is a separate skill.
+N Features means the Python history is exactly N commits, in the prompt's
+order — before merging, count the ledger entries and the `.py` commits and
+confirm the two numbers match. A single Feature (or none) is one commit.
+Commits happen in the worktree; where that worktree lives is a separate skill.
