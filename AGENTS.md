@@ -53,7 +53,7 @@ When an agent changes Harbor wrappers, verifier code, `run_benchmark.sh`,
 or other evals runtime — not prompt-only edits — it must run a **1-attempt
 baseline and a 1-attempt positive** job for **every coding harness**
 (`codex`, `grok`, `cc`) before reporting the task done. Use `-k 1`.
-Always pass `evalAgent=codex` — see *Judges: Codex only while testing* below.
+Always pass `--eval-agent codex` — see *Judges: Codex only while testing* below.
 Prompt-only work still uses Harbor when a live check is needed; do not add
 pytest under `programming_prompt_rewritten_with_evals/`.
 
@@ -64,32 +64,32 @@ cd programming_prompt_rewritten_with_evals/evals
 ```
 
 ```bash
-./run_benchmark.sh harness=codex evalAgent=codex --baseline --no-pin-refresh -k 1
+./run_benchmark.sh --harness codex --eval-agent codex --baseline --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=codex evalAgent=codex --no-pin-refresh -k 1
+./run_benchmark.sh --harness codex --eval-agent codex --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=grok evalAgent=codex --baseline --no-pin-refresh -k 1
+./run_benchmark.sh --harness grok --eval-agent codex --baseline --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=grok evalAgent=codex --no-pin-refresh -k 1
+./run_benchmark.sh --harness grok --eval-agent codex --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=cc evalAgent=codex --baseline --no-pin-refresh -k 1
+./run_benchmark.sh --harness cc --eval-agent codex --baseline --no-pin-refresh -k 1
 ```
 
 ```bash
-./run_benchmark.sh harness=cc evalAgent=codex --no-pin-refresh -k 1
+./run_benchmark.sh --harness cc --eval-agent codex --no-pin-refresh -k 1
 ```
 
 ## Judges: Codex only while testing
 
-**Every test run uses `evalAgent=codex` and nothing else.** Do not add `cc`,
+**Every test run uses `--eval-agent codex` and nothing else.** Do not add `cc`,
 `grok`, or any second LLM judge to a run, and do not "just also check with the
 other judge" — a multi-judge run doubles cost and runtime, splits Pass across
 per-judge reward files, and makes results incomparable to the Codex-only
@@ -97,7 +97,7 @@ baselines already in `evals/runs/`. The programmatic judges (`commits`,
 `worktree`, `docs`, `debug`) run regardless of this flag.
 
 Only use a different or additional eval agent when the user explicitly asks for
-it in that request, and drop back to `evalAgent=codex` on the next run.
+it in that request, and drop back to `--eval-agent codex` on the next run.
 
 ## Never generate tests for rewritten-prompt evals
 
@@ -124,8 +124,8 @@ must be alone in a block.
 
 **Give commands for the requested model only.** When the user asks for commands
 to run the benchmark, produce exactly the harness/model they named — if they say
-"run codex", every command is `harness=codex` with `evalAgent=codex`, with no
-extra `harness=cc` / `harness=grok` variants, no second eval agent, and no
+"run codex", every command is `--harness codex` with `--eval-agent codex`, with no
+extra `--harness cc` / `--harness grok` variants, no second eval agent, and no
 "here's the grok one too" bonus block. Extra commands get pasted by mistake and
 burn a whole run on the wrong account. Vary only the axis the user asked to vary
 (e.g. separate vs. non-separate, baseline vs. positive) and keep the model
@@ -142,8 +142,24 @@ time on this machine**:
 
 ```bash
 cd programming_prompt_rewritten_with_evals/evals
-./run_benchmark.sh --harness=codex --evalAgent=codex --no-pin-refresh
+./run_benchmark.sh --harness codex --eval-agent codex --no-pin-refresh
 ```
+
+### One flag format: `--flag value`
+
+Every wrapper parameter is a long, double-dashed, kebab-case flag followed by
+its value — `--harness codex`, `--eval-agent codex`, `--skills commits,srp`,
+`--tasks bank,stats`, `--eval-agent-model …`,
+`--eval-agent-reasoning-effort …`. Switches are `--install-only`,
+`--pin-refresh` / `--no-pin-refresh`, `--baseline`, `--run-separately`. The
+`--skills=commits,srp` spelling is the same flag for scripted callers.
+
+The old spellings (`harness=codex`, `evalAgent=codex`, `-skills=srp`,
+`--evalAgentModel`, `--task`) are **rejected** with the canonical flag to use;
+`lib/parse_flags.sh` owns the parsing and `bash lib/self_test_flags.sh` covers
+it. Anything the wrapper does not own (`-k 5`, `--ak …`, or whatever follows
+`--`) is passed through to Harbor unchanged. When writing commands for the
+user, use only this format.
 
 ### Mistakes already made here — do not repeat them
 
