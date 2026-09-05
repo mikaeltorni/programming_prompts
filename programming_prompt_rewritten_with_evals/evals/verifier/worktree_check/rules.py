@@ -50,6 +50,57 @@ def is_default_branch(branch: str) -> bool:
     return branch.removeprefix("refs/heads/") in {"master", "main"}
 
 
+def store_entry_problems(store: Path, registered: set[Path]) -> list[str]:
+    """Report store contents that are not a registered worktree directory.
+
+    Every direct child of the project store must be one registered worktree.
+    Leftover copies, scratch directories, and stray files mean the task did not
+    work in the isolated worktree, and a worktree found deeper than one level
+    means the layout skipped the required ``<instance>_<type>-<feature>`` leaf.
+
+    Parameters: store - project worktree store; registered - resolved paths of
+    every worktree git knows about.
+
+    Returns: one message per unexpected store entry.
+    """
+    if not store.is_dir():
+        return []
+    problems: list[str] = []
+    for child in sorted(store.iterdir()):
+        resolved = child.resolve()
+        if resolved in registered:
+            continue
+        nested = sorted(
+            path for path in registered if path != resolved and _is_under(path, resolved)
+        )
+        if nested:
+            problems.append(
+                f"{nested[0]} is nested below {resolved}; the worktree must sit "
+                f"directly in {store} as <instance>_<type>-<feature>"
+            )
+            continue
+        kind = "directory" if child.is_dir() else "file"
+        problems.append(
+            f"{resolved} is an unregistered {kind} in the worktree store; "
+            "the store holds registered worktrees only"
+        )
+    return problems
+
+
+def _is_under(path: Path, parent: Path) -> bool:
+    """Check whether one path lies inside another.
+
+    Parameters: path - candidate descendant; parent - candidate ancestor.
+
+    Returns: true when path is contained in parent.
+    """
+    try:
+        path.relative_to(parent)
+    except ValueError:
+        return False
+    return True
+
+
 def check_repo(repo: Path, env: dict[str, str] | None = None) -> CheckResult:
     """Inspect a checkout against the worktree eval contract.
 
@@ -90,10 +141,17 @@ def check_repo(repo: Path, env: dict[str, str] | None = None) -> CheckResult:
     store = expected_store(repo)
     store_resolved = store.resolve() if store.exists() else store
     extra: list[dict[str, str]] = []
+    registered: set[Path] = set()
     for entry in parse_worktrees(repo):
         path_s = entry.get("worktree")
-        if path_s and Path(path_s).resolve() != repo:
+        if not path_s:
+            continue
+        resolved_entry = Path(path_s).resolve()
+        registered.add(resolved_entry)
+        if resolved_entry != repo:
             extra.append(entry)
+
+    strays = store_entry_problems(store_resolved, registered)
 
     if not extra:
         return CheckResult(
@@ -102,7 +160,7 @@ def check_repo(repo: Path, env: dict[str, str] | None = None) -> CheckResult:
         )
 
     valid: list[tuple[Path, dict[str, str]]] = []
-    problems: list[str] = []
+    problems: list[str] = list(strays)
     for entry in extra:
         path = Path(entry["worktree"]).resolve()
         try:
@@ -182,6 +240,8 @@ def check_repo(repo: Path, env: dict[str, str] | None = None) -> CheckResult:
                 False,
                 f"worktree(s) exist ({names}) but were not merged into the live checkout",
             )
+        if strays:
+            return CheckResult(False, "; ".join(strays))
         names = ", ".join(str(path) for path in merged)
         return CheckResult(
             True,

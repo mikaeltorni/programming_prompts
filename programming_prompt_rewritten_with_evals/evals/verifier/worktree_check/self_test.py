@@ -318,6 +318,30 @@ def run_self_test() -> int:
         merge_branch(repo, "feat/agent_calc")
         record("fail_instance_mismatch", False, repo)
 
+        repo, wt = _feature(root / "fail-stray-dir")
+        _commit_file(wt)
+        merge_branch(repo, "feat/agent_calc")
+        write_python(
+            root / "fail-stray-dir" / ".worktrees" / "app" / "scratch" / "calc.py"
+        )
+        record("fail_unregistered_dir_in_store", False, repo)
+
+        repo, wt = _feature(root / "fail-stray-file")
+        _commit_file(wt)
+        merge_branch(repo, "feat/agent_calc")
+        (root / "fail-stray-file" / ".worktrees" / "app" / "notes.txt").write_text(
+            "scratch\n", encoding="utf-8"
+        )
+        record("fail_unregistered_file_in_store", False, repo)
+
+        repo, wt = _feature(
+            root / "fail-nested",
+            leaf="nested/agent_feat-calc",
+        )
+        _commit_file(wt)
+        merge_branch(repo, "feat/agent_calc")
+        record("fail_worktree_nested_below_store", False, repo)
+
         repo, wt = _feature(
             root / "pass-env-instance",
             branch="feat/claude-account-2_calc",
