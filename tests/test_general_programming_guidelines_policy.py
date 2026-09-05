@@ -283,3 +283,68 @@ def test_ci_prohibition_is_carried_by_the_always_on_wrapper():
     assert "Never add CI" in wrapper
     assert "unless explicitly requested" in wrapper
     assert "leave existing CI unchanged" in wrapper
+
+
+LINUX_SKILL_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "plugins"
+    / "linux-desktop-configuration"
+    / "skills"
+    / "linux-configuration"
+    / "SKILL.md"
+)
+
+
+def test_general_guidelines_declare_linux_configuration_skill_ownership():
+    """Desktop and installer policy is owned by `linux-configuration`.
+
+    The guidelines used to carry their own condensed copy of the reload and
+    root-optional rules. Two copies of a safety rule drift, and the shorter one
+    silently wins whenever a reader stops at it, so the guidelines must name the
+    owner and send the reader there instead.
+    """
+    content = flat_skill_text()
+
+    assert "`linux-configuration` skill owns Linux desktop and session deployment" in content
+    assert "reload and reboot safety, clean-install compatibility" in content
+    assert "root-optional (sudo-free) installer pattern" in content
+    # Scope and Safety must delegate rather than restate.
+    assert (
+        "follow the `linux-configuration` skill rather than any rule restated here"
+        in content
+    )
+
+
+def test_general_guidelines_do_not_duplicate_linux_desktop_mechanics():
+    """The condensed desktop copy must not return to the guidelines skill.
+
+    Concrete session commands are the tell: anything a reader could act on
+    without opening `linux-configuration` is a second source of truth for a
+    rule whose whole purpose is preventing destructive session actions.
+    """
+    content = flat_skill_text()
+
+    for retired in (
+        "gnome-shell --replace",
+        "Alt+F2 r",
+        "xdotool",
+        "shell-kill commands",
+        "preserve root-optional paths",
+    ):
+        assert retired not in content, f"{retired!r} belongs to `linux-configuration`"
+
+
+def test_linux_configuration_skill_still_carries_the_delegated_rules():
+    """Delegation is only safe while the owning skill actually holds the rules.
+
+    These assertions fail if a future edit trims the owner after the guidelines
+    stopped restating it, which would otherwise delete the policy outright.
+    """
+    content = " ".join(LINUX_SKILL_PATH.read_text(encoding="utf-8").split())
+
+    assert "xdotool key --clearmodifiers alt+F2" in content
+    assert "gnome-shell --replace" in content
+    assert "## Clean Installation Compatibility" in LINUX_SKILL_PATH.read_text(encoding="utf-8")
+    assert "## Root-Optional Installers (avoid sudo)" in LINUX_SKILL_PATH.read_text(
+        encoding="utf-8"
+    )
