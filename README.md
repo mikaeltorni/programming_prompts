@@ -135,16 +135,17 @@ codex plugin list
 
 ### general-programming-guidelines
 
-Current version: **v1.13.0**.
+Engineering workflow, tests, logging, documentation, and supply-chain rules.
+Feature commits and worktree isolation/delivery are owned by the separately
+selected V2 `commits` and `worktree` skills. ACC's clean-install baseline enables
+all three; `acc pp enable --both --skill general-programming-guidelines,v2:commits,v2:worktree`
+reapplies them across harnesses. Verify with
+`acc pp status --skill general-programming-guidelines,commits,worktree --check`.
 
-The canonical programming guidelines as a direct skill (formerly a plugin). Provides shared engineering workflow and coding standards that apply to every software task — implementation, debugging, review, testing, and refactoring. The prompt requires agents to preserve the user's wording and local state, avoid clobbering existing configuration with placeholder defaults such as `0`, and sandbox-test user-global installers, wrapper generation, and config deployment before applying them to the real environment. New projects and projects adding Python for the first time must also implement a rolling 24-hour package-release delay with `uv`; plain `pip` installs must consume a hash-locked export rather than resolve dependencies directly.
-
-The bootstrap tag in `global-instructions/general-programming-guidelines.md` is
-merged by the installer into every agent's instruction file. For the always-on
-guidelines, the installer replaces that tag's body with the complete current
-`SKILL.md`, and verifies the exact payload and native skill copy for every
-configured Codex home plus Claude, Cline, Grok, and opencode. This keeps weak or
-free models from having to discover a second file after the session starts.
+Worktrees use `.worktrees/<project>/<instance>_<type-feature>` beside the live
+project. The instance is the sanitized agent-home basename, such as
+`codex-account-2`. Reapply after source edits; ongoing conversations can retain
+their previously loaded instructions.
 
 ### init-project
 
