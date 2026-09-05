@@ -1,7 +1,7 @@
 ---
 name: general-programming-guidelines
 description: >-
-  v1.13.0 — Mandatory engineering workflow and coding standards for every software task:
+  v1.14.0 — Mandatory engineering workflow and coding standards for every software task:
   implementation, debugging, review, testing, and refactoring.
 ---
 
@@ -17,221 +17,53 @@ local policy. Where this skill and those files agree — including commit, merge
 and reload delivery — follow both. Do not skip this skill; load it after
 honoring the project files.
 
-## Start here — the non-negotiables
+## Skill ownership
 
-Before you do anything else on a task that edits a repository:
-
-1. **Create a git worktree and branch first (Step 1 below). Do it before your
-   first file edit — no exceptions.** Not "later", not "if it seems worth it".
-   The very first tool call that changes state is `git worktree add`.
-2. **Prove the worktree before every edit.** After creating it, `cd` into that
-   path and confirm with `pwd` that you are under the shared `.worktrees/` store
-   (not the user's live checkout). Every later edit, commit, and follow-up turn
-   on this task must use that same worktree path.
-3. Run the whole task through the numbered **Work Loop** in order.
-4. Do not report the task done until the **Definition of Done** checklist passes
-   — including **commit in the worktree, merge into the default branch, and
-   reload**. Code that only lives on a worktree branch is not delivered.
-
-If you skip the worktree step, edit the live checkout, or report "done" without
-merge+reload, you have already failed the task — even if the code is correct.
+The independently selected `commits` skill owns Feature boundaries, commit
+sequencing, and commit verification. The `worktree` skill owns isolation,
+project/instance paths, branch policy, merging, and consumer reapplication.
+Follow those selected skills alongside this engineering workflow; this file
+does not duplicate their policies. ACC's installer baseline enables all three.
+Use `acc pp enable --both --skill general-programming-guidelines,v2:commits,v2:worktree`
+to apply them and `acc pp status --skill general-programming-guidelines,commits,worktree --check`
+to verify the selection. Changes to skill source require reapplication through
+that selector; existing conversations may retain earlier instructions.
 
 ## Work Loop
 
-Run every software task through these numbered steps in order. Do not skip a
-step, and do not report the task done until Step 10 passes.
+1. **Capture scope.** Preserve the user's exact paths, data, wording, and
+   constraints. Do not normalize or reinterpret input unless asked.
+2. **Inspect first.** Read the codebase, existing tests, centralized logger,
+   manifests, and deployment flow before editing.
+3. **Plan and verify the baseline.** For behavior changes with a practical
+   test path, add focused regression tests before implementation. For docs or
+   prompt edits, state and run direct verification instead of noisy tests.
+4. **Implement.** Follow project helpers and conventions, preserving existing
+   behavior outside the requested scope.
+5. **Instrument and document.** Cover new actions, transitions, boundaries,
+   and external calls through the centralized logger. Document public helpers
+   and non-obvious behavior, including parameters, subject to the exceptions below.
+6. **Verify.** Run relevant tests and configured lint/type/build checks, inspect
+   relevant logs, and resolve failures. Review the diff for duplication, dead
+   code, unused imports, debug spam, and accidental changes.
+7. **Deliver and self-check.** Follow the selected delivery skills and project
+   deployment instructions. Verify the actual consumer, then report what
+   changed, the evidence, and any remaining limitations.
 
-1. **Create an isolated worktree (do this first, before any edit).** For any
-   task that will modify a repository, you MUST be on a dedicated worktree
-   branch before your first file edit. This keeps the user's checkout clean and
-   makes the work trivially reviewable and reversible. Read-only inspection may
-   precede this, but the moment you intend to edit, stop and set up the
-   worktree.
-
-   **Worktree location (keep them out of the repo).** Do not create the worktree
-   inside the repository you are editing — that nests a git worktree inside a git
-   repo and clutters the user's checkout. Put every worktree under one *shared
-   worktree store*: a `.worktrees/` directory (leading dot) inside the parent
-   folder that holds the repository family. When the repos live under a
-   `projects/` folder, they all share `projects/.worktrees/` (absolute path
-   under that parent). Never use `projects/worktrees/` (no dot), and never
-   create `repo/.worktrees/` inside the repository itself. Concretely, from
-   inside the target repository:
-
-   ```bash
-   git rev-parse --show-toplevel                    # confirm you are in a git repo
-   git worktree add ../.worktrees/<repo>-wt-<task> -b <task-branch>   # shared store, not in-repo
-   cd ../.worktrees/<repo>-wt-<task>                # do ALL edits here
-   pwd                                              # MUST print .../.worktrees/<repo>-wt-<task>
-   git branch --show-current                        # MUST print <task-branch>, not master/main
-   ```
-
-   **Hard gates before the first file edit (and before every follow-up edit):**
-   - `pwd` is under `.../.worktrees/<repo>-wt-...` (shared store), not the live
-     checkout path (e.g. not `.../projects/<repo>` alone).
-   - `git branch --show-current` is the task branch (`<type>/<feature>`), not
-     `master`/`main`.
-   - File edits, patches, and commits use paths inside that worktree only.
-   - User follow-ups on the same task ("also rename…", "just shorten to…") stay
-     in the **same** worktree — do not drift back to the live checkout for a
-     "small" change.
-
-   Do this in every repository the task will touch — when a task spans multiple
-   repos, create a worktree on EACH one, not only the primary repo. Give every
-   worktree the SAME task/branch name (e.g. `<repo>-wt-<task>` with branch
-   `<task-branch>` in each repo) so the related changes stay grouped and easy to
-   review. Do all edits for a given repo inside that repo's own worktree, and
-   keep every original checkout unchanged. Only work directly in a current
-   checkout when the user *explicitly* tells you to (e.g. "work in the current
-   checkout / no worktree"). If a worktree genuinely cannot be created (not a
-   git repo, or a hook/tool blocks it), say so explicitly and get agreement
-   before editing in place — never silently fall back to editing the live
-   checkout.
-
-   **Name the worktree and branch with a type prefix.** Use a conventional
-   commit-style type as the prefix (`fix/`, `feat/`, `docs/`, `refactor/`,
-   `test/`, `chore/`, `build/`, `perf/`, `ci/` …) followed by the feature or
-   task it addresses, e.g. `fix/worktree-policy` or `feat/model-monitor`.
-   Apply the SAME `type/feature` name to both the branch and the worktree
-   directory (so `<repo>-wt-<type-feature>` and branch `type/feature` match),
-   keeping related changes grouped and easy to identify across every repo a
-   task spans.
-2. **Capture scope.** Preserve the user's exact scope, paths, data, wording,
-   and constraints. Do not normalize, reorder, truncate, or reinterpret input
-   unless asked.
-3. **Inspect first.** Read the codebase before editing — prefer `rg` /
-   `rg --files`. Learn the existing patterns, logging utility, tests,
-   manifests, and deployment flow your change must match.
-4. **Scan for Features (always run — do not skip).** This is a **separate step**
-   that always runs after scope capture and inspect, before plan/implement —
-   even when the answer is a single Feature or **none** (docs-only, chore, or
-   one undivided change). Classify the user prompt into discrete **Features**:
-   self-contained units of shippable behavior (e.g. "add auth", "add dashboard",
-   "add export" in one multi-step request). Record the Feature list explicitly,
-   or record that no multi-feature split applies.
-
-   When **two or more Features** are found:
-   - Plan **implementation order** *before* writing Feature code: **dependencies
-     first**, then dependents, so every intermediate commit leaves the project
-     **buildable** and working.
-   - Implement one Feature at a time in that order. Bundle that Feature's tests,
-     code, logging, and docs into **one self-contained** functional **commit**
-     **in the worktree** (never commit Feature work from the live checkout).
-   - After each Feature commit the program must **leave the program working**:
-     relevant tests/checks pass. **Do not land a commit that only works after
-     later** Features arrive.
-   - **After each Feature, deliver fully before the next Feature:** (A) commit
-     in the worktree, (B) merge the task branch into the default branch
-     (`master`/`main`) with `git merge --no-ff` from the live checkout, then
-     (C) **always reapply** — reload/reinstall consumers (installer, skill
-     deployment, service, session reload) so the merged Feature is live. Do not
-     batch Features into one end-of-task merge.
-   - **Per-Feature verify before the next Feature:** run the relevant tests (and
-     configured lint/type/build when practical), **monitor logs** while testing
-     that Feature after reapply, then return to the same worktree branch and
-     start the next Feature only after that Feature's commit+merge+reapply is
-     done.
-5. **Plan and write tests first.** For behavior changes, shared helpers,
-   installers, regressions, refactors, and logging changes, add or update
-   focused tests before changing code when the repo has a practical test path.
-   For docs-only or prompt-only edits, state and run direct verification
-   instead of inventing noisy tests. When Step 4 found multiple Features, plan
-   and write tests for the *current* Feature only (in the ordered sequence), not
-   the whole multi-feature backlog at once.
-6. **Implement.** Satisfy the requested scope using project-local helpers and
-   conventions. Edits stay inside the worktree path from Step 1. When multiple
-   Features were listed in Step 4, implement only the current Feature in the
-   planned order — do not interleave unrelated Feature work in one commit.
-7. **Instrument and document the code you just wrote.** Logging (see *Logging and
-   Diagnostics*) and comments/docstrings (see *Documentation*) are part of the
-   change, not optional polish. Cover new action paths, state transitions,
-   boundary failures, and external calls with logs; document new public
-   functions, helpers, and non-obvious behavior including parameters. If one
-   pass is error-prone, fall back to (a) make it work, (b) add logging,
-   (c) add docs — but the task is not done until all three exist.
-8. **Verify.** Run the relevant tests plus configured lint/type/build, read the
-   logs the change should now emit, and iterate until clean. For multi-feature
-   work this is the same **Per-Feature verify** gate as Step 4: green checks,
-   always reapply/reload, and log monitoring before the next Feature.
-9. **Deliver: commit, merge, reload.** This step is mandatory — not optional
-   polish and not "only if the user asks." Stopping after a worktree commit
-   leaves the live default branch unchanged; that is **not** done.
-
-   Run this full delivery **step by step after each Feature** (and after a
-   single-Feature or undivided change): (A) commit in the worktree, (B) merge
-   into the default branch from the live checkout, (C) **always reapply**
-   (reload/reinstall consumers). When Step 4 listed multiple Features, repeat
-   A→B→C for Feature 1, then implement Feature 2 on the same worktree branch,
-   then A→B→C again, and so on — never defer merge/reapply until the whole
-   multi-feature task is finished.
-
-   Concretely, for **each** repository the task touched (repeat after each
-   Feature):
-
-   ```bash
-   # A) Commit IN the worktree (never in the live checkout)
-   cd ../.worktrees/<repo>-wt-<task>
-   git status && git diff && git log -5 --oneline
-   git add <paths> && git commit -m "<type>(<worktree-name>): <summary>"
-
-   # B) Merge into the default branch FROM the repository's live checkout
-   cd /path/to/<repo>                    # the user's main checkout (master/main)
-   git checkout master                   # or main
-   git merge --no-ff <task-branch> -m "Merge <task-branch>: <summary>"
-
-   # C) Always reapply — reload/reinstall consumers so the merge is live
-   # (installer, skill deployment, service, session reload — project-specific)
-   ```
-
-   Commit message format is `<type>(<worktree-name>): <summary>`. Never push to
-   a remote and never rewrite history unless explicitly asked. Repeat A–C for
-   every repo the task spanned, and **after each Feature** when multiple
-   Features were scanned. After B+C, `cd` back into the worktree branch before
-   the next Feature's edits. Reporting "goal achieved" before B and C is a
-   Definition of Done failure.
-10. **Self-check and report.** Walk the *Definition of Done* checklist; reopen
-   any unchecked item, then report what changed and how it was verified. Do not
-   stop at a proposal unless the user asked for one. Do not claim completion
-   while the feature exists only on a worktree branch.
-
-If the user challenges completeness or asks whether a repository follows these
-guidelines, do not stop at "unproven": run a bounded compliance audit,
-fix concrete gaps that are in scope, and report the evidence and remaining
-risks.
+If the user challenges completeness, run a bounded compliance audit, fix
+concrete gaps in scope, and report the evidence and remaining risks.
 
 ## Definition of Done
 
-Every item must be checked before reporting completion; an incomplete checklist
-sends you back to the relevant Work Loop step.
-
-- [ ] All edits were made on a dedicated git worktree branch under the shared
-      `.worktrees/` store (Work Loop Step 1), not the user's live checkout —
-      unless the user explicitly waived it. Follow-up turns stayed in that same
-      worktree.
-- [ ] The code implements the exact requested scope, with no unrelated edits.
-- [ ] Multi-step work ran Work Loop Step 4 (**Scan for Features**): Features
-      were listed (or none recorded); multiple Features were ordered
-      dependencies-first; each Feature was delivered step by step — commit in
-      the worktree, merge into the default branch, **always reapply** — with
-      per-Feature verify (tests, log monitoring after reapply) before the next
-      Feature.
-- [ ] New or changed action paths, state transitions, boundary failures, and
-      external calls are logged through the existing centralized logger,
-      honoring the stdout/stderr and spam exceptions below.
-- [ ] New or changed public functions, reusable helpers, scripts, and non-obvious
-      behavior are documented including their parameters, honoring the
+- [ ] The change implements the requested scope with no unrelated edits.
+- [ ] Applicable selected skills and project instructions were followed.
+- [ ] Changed action paths and boundaries use the centralized logger, honoring
+      the stdout/stderr and spam exceptions below.
+- [ ] Public helpers and non-obvious behavior are documented, honoring the
       static-file and compatibility exceptions below.
-- [ ] Tests were added or updated for the change and pass; existing relevant
-      tests still pass.
-- [ ] The diff was reviewed for duplication, dead code, unused imports, debug
-      spam, and accidental behavior changes.
-- [ ] The finished work was committed in the worktree, **merged into the default
-      branch** (`master`/`main`) with `git merge --no-ff` from the live checkout,
-      and the consumers were reloaded/reinstalled — in every repository the task
-      touched. A worktree-only commit does **not** satisfy this item. Nothing was
-      pushed to a remote.
-- [ ] The final report states what changed, how it was verified (including that
-      the default branch contains the merge), and any remaining risks.
+- [ ] Relevant tests or direct prompt/document checks pass.
+- [ ] The diff was reviewed for accidental changes and maintainability.
+- [ ] Consumers are verified and the final report states evidence and limits.
 
 ## Scope and Safety
 
@@ -257,40 +89,6 @@ sends you back to the relevant Work Loop step.
   logout, reboot, `gnome-shell --replace`, or shell-kill commands. The only
   sanctioned Shell reload is the in-place X11 run-dialog reload
   (`xdotool` `Alt+F2 r`) used to activate edited extension code.
-- **Commit your finished work by default — you do not need to be asked.** Once a
-  feature is complete and verified, commit it in the worktree you are already
-  working on — never in the user's live checkout. When the change spans multiple repositories,
-  commit separately in each repo's own worktree. Commit one self-contained
-  feature at a time (Work Loop Step 4 Feature list):
-  stage only that feature's logical hunks, keep unrelated local changes out, and
-  complete its commit before starting the next feature's. After each Feature
-  commit the tree must still work — never depend on a later commit to restore
-  a build or test suite. **Format each commit message as
-  `<type>(<worktree-name>): <summary>`**, where `<type>` is the conventional type
-  (the same prefix used for the worktree/branch name) and `<worktree-name>` is
-  the feature portion of that name — e.g. for a worktree/branch named
-  `fix/worktree-policy` the message is
-  `fix(worktree-policy): keep worktrees in the shared family store`. Never ask the
-  user to commit for you.
-- **Always finish the delivery step by step: commit in the worktree, merge into
-  the default branch, then always reapply.** After each Feature's commit lands
-  and its tests pass — not only at the end of a multi-feature task — leave the
-  worktree and merge from the repository's **live** checkout (the one on
-  `master`/`main`): `git checkout master && git merge --no-ff <task-branch>`.
-  Then **always reapply**: reload/reinstall whatever consumes the change
-  (installer, skill deployment, service, session reload) so the merged work is
-  actually live. Return to the worktree for the next Feature. Do this for every
-  repository the change touched — you do not need to be asked. Local merge is
-  required by default; it is **not** the same as pushing.
-- **Never push, and never rewrite history**, unless the user explicitly asked for
-  it. Merging locally into the default branch is expected and required;
-  publishing to a remote is not. Do not treat "do not push" as "do not merge."
-- Use a dedicated Git worktree and a new branch for every task by default (this
-  is Work Loop Step 1 — set it up before your first edit, not afterwards). Edit
-  only in the worktree; merge into the live default branch after each Feature
-  (and at the end of undivided work), then reapply. Work in the current
-  checkout only when the user explicitly requests it.
-
 ## Design and Structure
 
 - Reuse project-local helpers, conventions, logging, tests, and manifests

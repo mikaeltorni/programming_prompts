@@ -66,7 +66,11 @@ pwd
 git branch --show-current
 ```
 
-Before every edit and commit, confirm the working directory and task branch.
+Before creating the worktree, resolve the proposed store physically and ensure
+no existing symlink redirects it into the live repository. Do not overwrite an
+existing path or follow a misleading store symlink; resolve that conflict first.
+Before every edit and commit, confirm `pwd -P` is physically under the external
+project group and confirm the task branch.
 Target all edits at this same worktree, including later follow-up turns.
 Check its status after editing to confirm the intended files changed there.
 Never stage accidental live-checkout edits there; recover only your own changes

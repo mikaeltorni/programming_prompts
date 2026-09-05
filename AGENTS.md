@@ -341,11 +341,9 @@ harness-native invocation for the runtime in use:
 - Claude Code, Cline, Grok: `/general-programming-guidelines`
 - OpenCode: load `general-programming-guidelines` with the skill tool
 
-Agent Command Center prepends this bare invocation to every dispatched prompt, so the
-harness activates the skill before reading the task. When you start a task by hand, invoke it
-yourself first. Then follow its Work Loop and Definition of Done exactly
-(tests, logging, documentation, commit, merge, reload), **except** where this
-file overrides that skill — including the ban on generating tests for
-`programming_prompt_rewritten_with_evals/`. Do not report the task done until
-that checklist passes. Isolation and branch policy live only in the skill —
-this file does not restate them.
+Agent Command Center selects `general-programming-guidelines`, V2 `commits`,
+and V2 `worktree` independently through `acc pp`. The engineering skill owns
+tests, logging, documentation, and verification; `commits` owns Feature commits;
+`worktree` owns isolation, merge, and reapplication. Follow their current
+instructions, except where this file overrides them (including the eval test
+ban). Reapply changed skills through the selector before reporting completion.
