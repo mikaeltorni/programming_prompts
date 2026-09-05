@@ -22,6 +22,10 @@ honoring the project files.
 The independently selected `commits` skill owns Feature boundaries, commit
 sequencing, and commit verification. The `worktree` skill owns isolation,
 project/instance paths, branch policy, merging, and consumer reapplication.
+The `linux-configuration` skill owns Linux desktop and session deployment,
+reload and reboot safety, clean-install compatibility, and the root-optional
+(sudo-free) installer pattern — load it for any GNOME, gsettings, systemd user
+unit, or `install.sh` change.
 Follow those selected skills alongside this engineering workflow; this file
 does not duplicate their policies. ACC's installer baseline enables all three.
 Use `acc pp enable --both --skill general-programming-guidelines,v2:commits,v2:worktree`
@@ -73,7 +77,7 @@ concrete gaps in scope, and report the evidence and remaining risks.
 - Preserve existing values and project defaults. Never reset user config to
   placeholders such as `0`, empty strings, or generic models.
 - Keep installers, migrations, generators, and setup scripts idempotent and
-  non-destructive; preserve root-optional paths where the repo supports them.
+  non-destructive.
 - **Never add CI to a repository unless the user explicitly asks for it.** Do
   not create `.github/workflows/`, GitHub Actions, or any other CI/CD pipeline,
   and do not add a CI or build-status badge to a README. Verification runs
@@ -85,10 +89,11 @@ concrete gaps in scope, and report the evidence and remaining risks.
 - Before touching user-global state — installed skills, generated wrappers,
   desktop config, services, installer output — test in a sandbox or temporary
   home when feasible; deploy for real only after focused tests pass.
-- For GUI/session changes, use command-line live settings and never automate
-  logout, reboot, `gnome-shell --replace`, or shell-kill commands. The only
-  sanctioned Shell reload is the in-place X11 run-dialog reload
-  (`xdotool` `Alt+F2 r`) used to activate edited extension code.
+- For desktop, session, service, or installer changes, follow the
+  `linux-configuration` skill rather than any rule restated here; it owns silent
+  deployment, reload and reboot safety, clean-install compatibility, and the
+  root-optional installer pattern.
+
 ## Design and Structure
 
 - Reuse project-local helpers, conventions, logging, tests, and manifests

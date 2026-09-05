@@ -48,3 +48,22 @@ def test_setup_guidelines_no_managed_global_instruction_block() -> None:
         path.name for path in (ROOT / "global-instructions").glob("*.md")
     }
     assert leftovers <= {"general-programming-guidelines.md"}
+
+
+def test_setup_guidelines_delegate_desktop_deployment_without_restating_it() -> None:
+    """Deployment safety must point at `linux-configuration`, not paraphrase it.
+
+    This skill used to name the owning skill and then repeat its reload and
+    forbidden-action list anyway, which is the drift the delegation was meant to
+    prevent: the paraphrase is what a reader acts on, and it ages independently
+    of the owner.
+    """
+    content = " ".join(SKILL_PATH.read_text(encoding="utf-8").split())
+
+    assert "`linux-configuration` skill owns deployment" in content
+    assert "this skill deliberately does not restate its rules" in content.lower()
+    # Only the repository-setup half stays here.
+    assert "apply the narrowest owning installer and verify installed state against source" in content
+
+    for retired in ("gnome-shell --replace", "Alt+F2 r", "xdotool", "session termination"):
+        assert retired not in content, f"{retired!r} belongs to `linux-configuration`"

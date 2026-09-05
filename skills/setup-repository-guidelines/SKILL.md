@@ -66,10 +66,9 @@ dialogs, or a keychain prompt while opening Claude Code:
 
 ## Deploy safely
 
-Follow the Linux desktop configuration skill for desktop settings, services,
-extensions, hotkeys, and installers. Apply the narrowest silent command and
-verify installed state against source. Never force changes through with logout,
-reboot, session termination, `gnome-shell --replace`, or shell-kill commands;
-the only Shell reload an agent may perform is the in-place X11 run-dialog reload
-(`xdotool` `Alt+F2 r`) for activating edited extension code, and on Wayland that
-activation stays a manual logout.
+The `linux-configuration` skill owns deployment for desktop settings, services,
+extensions, hotkeys, and installers — including which reload is sanctioned and
+which session actions are forbidden. Load it and follow it as written; this
+skill deliberately does not restate its rules, so a copy here cannot drift out
+of step with the owner. What belongs here is only the repository-setup side:
+apply the narrowest owning installer and verify installed state against source.
