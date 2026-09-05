@@ -13,6 +13,7 @@ from .git_io import (
     root_commits,
     run_git,
 )
+from .naming import check_names
 
 
 @dataclass(frozen=True)
@@ -49,10 +50,12 @@ def is_default_branch(branch: str) -> bool:
     return branch.removeprefix("refs/heads/") in {"master", "main"}
 
 
-def check_repo(repo: Path) -> CheckResult:
+def check_repo(repo: Path, env: dict[str, str] | None = None) -> CheckResult:
     """Inspect a checkout against the worktree eval contract.
 
-    Parameters: repo - project checkout initialized with an empty root commit.
+    Parameters: repo - project checkout initialized with an empty root commit;
+    env - environment mapping used to resolve the expected agent instance,
+    defaulting to the process environment.
 
     Returns: pass/fail state and reasoning.
     """
@@ -128,6 +131,10 @@ def check_repo(repo: Path) -> CheckResult:
             problems.append(
                 f"{path} is on {branch or 'detached HEAD'}; worktree must use a feature branch, not master/main"
             )
+            continue
+        naming = check_names(path.name, branch, env)
+        if naming:
+            problems.append(f"{path}: {'; '.join(naming)}")
             continue
         head = entry.get("HEAD") or git_ok(path, "rev-parse", "HEAD")
         if not head:
