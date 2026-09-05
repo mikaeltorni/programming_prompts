@@ -10,88 +10,62 @@ description: >-
 
 # Feature commits
 
-When the user prompt is vague ("it should have add") or lists several
-capabilities, **split it into Features before writing Feature code — one
-Feature per capability the prompt names, however many that is.** There is no
-target number: count the capabilities the prompt actually names and use that
-count. Two named capabilities are two Features; four are four.
+Before writing code, build a numbered ledger from the actual request. **Copy
+each capability sentence verbatim into its own entry**, then list that entry's
+commands and literal return prefixes. Exclude setup instructions that only name
+an artifact, signature, or skill. Read the request again and account for every
+capability sentence exactly once; derive the Feature count from that ledger,
+never from a summary or a preferred number of commits.
 
-## Find the Features by reading the sentences
+A following "It should also …" sentence starts a new Feature even when it
+shares state, helpers, or a topic with the preceding sentence. Within one
+capability sentence, commands, cases, and optional extras stay together. Do not
+merge adjacent ledger entries or move a command to another entry. Keep the
+request's order when it already places dependencies first; otherwise resolve
+implementation dependencies without changing the Feature boundaries.
 
-**Each capability sentence in the prompt is its own Feature.** The opening
-sentence is Feature 1; every following "It should also …" sentence is the next
-Feature, in the order written. **Count those sentences first: N capability
-sentences means N Features and N commits** — never fold the last two into one
-because the split "felt like enough" or because a smaller number looked
-tidier. The sentence boundary wins over conceptual pairing: two sentences stay
-two Features even when they share a formula, a data structure, or an
-entrypoint (opposite conversion directions; a per-item report and a total).
+## Complete and commit the current entry before starting the next
 
-Inside **one** sentence, a group stays one Feature: several bands or cases
-listed together are one Feature; two commands named in the same sentence are
-one Feature; a main command plus an optional extra ("… and may report the
-total") is one Feature.
+Treat the ledger as a queue. Work on only its first uncommitted entry:
 
-Before writing code, make a numbered ledger with one entry per capability
-sentence and its literal return prefix(es); it is your commit checklist. Do
-not rename, merge, or regroup its entries later, and do not skip the breakdown
-because the script is small. The ledger's length is the number of commits you
-owe. Illustrative breakdowns (not the current task):
+- Implement its commands, helpers, validation, and required output. Preserve
+  earlier Features; keep the program working at every commit.
+- Write each requested output prefix verbatim in Python source, including its
+  `=`: use a literal such as `f"result={value}"`, not a label assembled at
+  runtime. A command helper can own the literal while sharing private logic.
+- The staged Python tree contains earlier Features plus the current Feature,
+  **no later command or output prefix** in code, dispatch tables, or docstrings.
+  Shared state needed now is fine; a future report or command is not. Check this
+  against the next ledger entry before committing, including on the last pair
+  of entries — related capabilities still need separate commits.
+- Include that Feature's applicable tests, logging, comments, and documentation
+  in its commit. Do not postpone those obligations into planned cleanup commits.
 
-- two sentences: normalize text, then report its length
-- four sentences: create a record, then update it, then link two records,
-  then report one record's applied changes
+Close each entry with this gate:
 
-## Commit one Feature at a time
+1. Verify its behavior and resolve failures before staging.
+2. Stage only its changes in the worktree.
+3. Run `git commit` as its own command, not chained behind a search or check
+   that could fail and silently skip the commit.
+4. Read the new `HEAD`, confirm it advanced and contains this entry's Python
+   implementation, and record that commit beside the ledger entry. If the
+   commit failed, resolve it and commit before editing the next Feature.
 
-- Plan order **dependencies first**, then dependents.
-- Implement one Feature at a time and **commit it in the worktree** before
-  starting the next; after each commit the program must still work.
-- Do not put a later Feature into an earlier Feature's commit, merge two
-  prompt groups into one commit, or batch every Feature into one final commit.
+A statement that a Feature is tested or complete is not a commit. Only an
+entry with a verified commit may be removed from the queue.
 
-## Write each prefix as a literal, with its `=`
+## Verify delivery against the ledger
 
-The prefix the prompt names must appear **verbatim in the source**, `=`
-included — `f"down={value}"`, never a label assembled at runtime
-(`prefix = "up" if op == "inc" else "down"` … `f"{prefix}={value}"`), which
-leaves the text `down=` nowhere in the file and the Feature looking
-unimplemented. Each command's own helper types its own literal prefix as you
-implement that Feature.
+Each entry must map to a distinct commit in order; inspect what each mapped
+commit actually introduced, not just its subject or the total commit count.
+A later Feature must not already exist in an earlier Feature's Python tree.
+Do not batch missing entries into one final commit or split already-written
+Features into cosmetic commits after the fact.
 
-A Feature's commit contains **only that Feature's** prefixes. Before
-committing, re-read the staged file and confirm no later Feature's prefix or
-command appears in it — not in a branch, a dispatch table, a docstring, or a
-"while I'm here" extra. Writing `total=` while committing the `added=` Feature
-is a failure even though the code works.
+If a defect is discovered after a Feature was committed, make a focused fix
+without adding the next Feature. An extra repair commit does not replace a
+Feature commit or change the ledger. Never rewrite history to repair a commit.
 
-## No extra code commits between the Feature commits
-
-Feature commits are counted **in order**: the first commit that touches a
-`.py` file is Feature 1, the second is Feature 2, and so on. Any extra code
-commit slipped in between — `Fix hour command dispatch`, `Refactor helpers`,
-`Add logging`, `Tidy up` — silently takes the next Feature's slot. Commits
-that touch no `.py` file (a README-only commit, the final merge) take no slot.
-
-So finish a Feature **before** committing it: run it, fix it, and clean it up
-while the work is still uncommitted, so the correction lands inside that
-Feature's own commit. Never rewrite history to repair a commit that landed.
-
-Closing a Feature is a hard gate, in this order:
-
-1. Verify the current Feature while its code is still uncommitted.
-2. Stage its `.py` file(s).
-3. Run `git commit` as its own command — never chained behind a check
-   (`… && grep … && git commit -m …`), where one failing tool silently skips
-   the commit and Feature 1's code rides along in the Feature 2 commit.
-4. Read the new `HEAD` and confirm that commit contains the current ledger
-   entry's `.py` change. If `HEAD` did not advance, commit before anything
-   else.
-
-Only after those four steps may you edit the next Feature, write the README,
-or merge. Testing a Feature is not committing it.
-
-N Features means the Python history is exactly N commits, in the prompt's
-order — before merging, count the ledger entries and the `.py` commits and
-confirm the two numbers match. A single Feature (or none) is one commit.
-Commits happen in the worktree; where that worktree lives is a separate skill.
+A single Feature or an undivided change is one commit. Commits happen in the
+worktree; worktree location and merge policy belong to the applicable project
+instructions.
