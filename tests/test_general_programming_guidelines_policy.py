@@ -1,4 +1,13 @@
-"""Policy tests for the general programming guidelines prompt."""
+"""Policy tests for the general programming guidelines prompt.
+
+The guidelines skill owns the shared engineering Work Loop only. Feature
+boundaries and commit sequencing belong to the `commits` skill, and worktree
+isolation, merging, and consumer reapplication belong to the `worktree` skill.
+These tests pin that ownership split from the guidelines side: the Work Loop
+must stay intact, the delegation must stay explicit, and the retired commit and
+worktree mechanics must not creep back in as a duplicated second source of
+truth. `tests/test_delivery_skills_policy.py` covers the two owning skills.
+"""
 
 import re
 from pathlib import Path
@@ -11,15 +20,35 @@ SKILL_PATH = (
     / "SKILL.md"
 )
 
+WRAPPER_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "global-instructions"
+    / "general-programming-guidelines.md"
+)
+
 
 def skill_text() -> str:
     """Return the canonical general programming guidelines text."""
     return SKILL_PATH.read_text(encoding="utf-8")
 
 
+def flat_skill_text() -> str:
+    """Return the guidelines text with line wrapping collapsed.
+
+    Assertions on sentences must not break when a paragraph is re-wrapped, so
+    match against a single-space-joined form instead of the raw file.
+    """
+    return " ".join(skill_text().split())
+
+
+def wrapper_text() -> str:
+    """Return the always-on bootstrap wrapper text."""
+    return WRAPPER_PATH.read_text(encoding="utf-8")
+
+
 def test_general_guidelines_require_audit_when_completeness_is_challenged():
     """Completeness challenges should trigger audit and fixes, not caveats."""
-    content = skill_text()
+    content = flat_skill_text()
 
     assert "challenges completeness" in content
     assert "bounded compliance audit" in content
@@ -39,122 +68,111 @@ def test_general_guidelines_require_numbered_work_loop():
     """Software work should run through the full ordered work loop."""
     content = skill_text()
 
-    assert "Run every software task through these numbered steps in order" in content
-    # Step 1 must be creating the worktree, before any edit.
-    assert "1. **Create an isolated worktree (do this first, before any edit).**" in content
-    assert "2. **Capture scope.**" in content
-    assert "3. **Inspect first.**" in content
-    # Feature scan is its own always-run step before plan/implement.
-    assert "4. **Scan for Features" in content
-    assert "5. **Plan and write tests first.**" in content
-    assert "6. **Implement.**" in content
-    assert "7. **Instrument and document the code you just wrote.**" in content
-    assert "8. **Verify.**" in content
-    assert "9. **Deliver: commit, merge, reload.**" in content
-    assert "10. **Self-check and report.**" in content
+    assert "## Work Loop" in content
+    assert "1. **Capture scope.**" in content
+    assert "2. **Inspect first.**" in content
+    assert "3. **Plan and verify the baseline.**" in content
+    assert "4. **Implement.**" in content
+    assert "5. **Instrument and document.**" in content
+    assert "6. **Verify.**" in content
+    assert "7. **Deliver and self-check.**" in content
+    # The steps must stay in that order in the file, not just be present.
+    positions = [
+        content.index(step)
+        for step in (
+            "1. **Capture scope.**",
+            "2. **Inspect first.**",
+            "3. **Plan and verify the baseline.**",
+            "4. **Implement.**",
+            "5. **Instrument and document.**",
+            "6. **Verify.**",
+            "7. **Deliver and self-check.**",
+        )
+    ]
+    assert positions == sorted(positions)
 
 
-def test_general_guidelines_require_separate_feature_scan_step():
-    """Multi-step prompts must be scanned into Features as a dedicated Work Loop step.
+def test_general_guidelines_declare_commits_and_worktree_skill_ownership():
+    """Feature commits and worktree delivery are owned by the separate skills.
 
-    Agents that skip this step pile unrelated work into one commit or implement
-    out of dependency order. The scan always runs — even when the result is a
-    single Feature or none (docs/chore only).
+    Both used to be restated here, which let the copies drift apart. The
+    guidelines must now name the owning skill instead of repeating its rules.
     """
-    content = skill_text()
+    content = flat_skill_text()
 
-    assert "4. **Scan for Features" in content
-    assert "always run" in content.lower() or "Always run" in content
-    assert "do not skip" in content.lower() or "Do not skip" in content
-    # Classification vocabulary and outcome when no multi-feature split applies.
-    assert "discrete **Features**" in content or "discrete Features" in content
-    assert "none" in content.lower()  # record when none apply
-    # Explicitly a separate step, not buried inside Plan/Implement.
-    assert "separate step" in content.lower() or "its own numbered step" in content.lower() or "dedicated" in content.lower()
-
-
-def test_general_guidelines_require_ordered_multi_feature_plan():
-    """When multiple Features exist, plan implementation order before coding."""
-    content = " ".join(skill_text().split())
-
-    assert "two or more Features" in content or "multiple Features" in content
-    assert "implementation order" in content
-    # Dependencies first so intermediate commits stay buildable.
-    assert "dependencies first" in content
-    assert "buildable" in content or "working" in content
+    assert "## Skill ownership" in skill_text()
+    assert "`commits` skill owns Feature boundaries" in content
+    assert "commit sequencing, and commit verification" in content
+    assert "`worktree` skill owns isolation" in content
+    assert "project/instance paths, branch policy, merging, and consumer reapplication" in content
+    # Delegation is an instruction to follow them, not an optional pointer.
+    assert "Follow those selected skills alongside this engineering workflow" in content
+    assert "this file does not duplicate their policies" in content
+    # The Definition of Done must still gate on the selected skills.
+    assert "Applicable selected skills and project instructions were followed" in content
 
 
-def test_general_guidelines_require_one_green_functional_commit_per_feature():
-    """Each Feature is one self-contained commit that leaves the tree working."""
-    content = " ".join(skill_text().split())
+def test_general_guidelines_do_not_duplicate_commit_and_worktree_mechanics():
+    """The retired duplicate policy must not return to the guidelines skill.
 
-    assert "one self-contained" in content and "commit" in content
-    # After each Feature commit the project must still work — no "broken until
-    # the next commit" landings.
-    assert "leave the program working" in content or "must still work" in content or "leaves the project" in content
-    assert "Do not land a commit that only works after later" in content or (
-        "only works after later" in content
-    )
-
-
-def test_general_guidelines_require_per_feature_verify_reload_and_logs():
-    """After each Feature, verify with tests, always reapply/reload, and logs."""
-    content = " ".join(skill_text().split())
-
-    assert "Per-Feature verify" in content or "per-Feature verify" in content
-    assert "monitor logs" in content or "Monitor logs" in content
-    # Must happen before starting the next Feature.
-    assert "before the next Feature" in content or "before starting the next" in content
-    # Reload/reapply is mandatory after each Feature, not optional polish.
-    assert "always reapply" in content.lower() or "Always reapply" in content
-
-
-def test_general_guidelines_require_per_feature_commit_merge_and_reapply():
-    """Each Feature must: commit on worktree → merge to master/main → reapply.
-
-    Agents used to batch every Feature onto the worktree and merge only once at
-    the end. The user-facing policy is step-by-step delivery: after each green
-    Feature commit in the worktree, merge into the default branch and always
-    reapply/reload consumers before starting the next Feature.
+    Anything a reader could follow without opening `commits`/`worktree` is a
+    second source of truth. Concrete git recipes are the tell, so they must
+    live only in the owning skills.
     """
-    content = " ".join(skill_text().split())
+    content = flat_skill_text()
 
-    # Full delivery triad per Feature (not only after the last Feature).
-    assert "after each Feature" in content.lower() or "After each Feature" in content
-    assert "commit" in content.lower() and "worktree" in content.lower()
-    assert "git merge --no-ff" in content
-    assert "default branch" in content or "master/main" in content
-    # Must not tell agents to keep mid-task Feature commits off master.
-    assert "do not merge half-finished" not in content.lower()
-    assert "mid-task Feature commits stay on the worktree" not in content
-    # Reapply/reload is required every time, not deferred.
-    assert "always reapply" in content.lower() or (
-        "reapply" in content.lower() and "after each" in content.lower()
+    for retired in (
+        "git worktree add",
+        "git merge --no-ff",
+        "git branch --show-current",
+        ".worktrees/",
+        "<type>(<worktree-name>): <summary>",
+        "Never push",
+    ):
+        assert retired not in content, f"{retired!r} belongs to the owning skill"
+
+
+def test_general_guidelines_name_the_skill_selector_command():
+    """Applying the split must be reproducible on every harness.
+
+    The three skills are selected independently, so the guidelines carry the
+    exact ACC selector commands that enable and verify all of them at once.
+    """
+    content = flat_skill_text()
+
+    assert (
+        "acc pp enable --both --skill general-programming-guidelines,v2:commits,v2:worktree"
+        in content
     )
+    assert (
+        "acc pp status --skill general-programming-guidelines,commits,worktree --check"
+        in content
+    )
+    assert "ACC's installer baseline enables all three" in content
 
 
 def test_general_guidelines_definition_of_done_requires_logging_and_docs():
     """The done checklist should require logging and documentation coverage."""
-    content = skill_text()
+    content = flat_skill_text()
 
-    assert "## Definition of Done" in content
-    assert "New or changed action paths" in content
-    assert "external calls are logged through the existing centralized logger" in content
-    assert "New or changed public functions" in content
-    assert "non-obvious\n      behavior are documented including their parameters" in content
+    assert "## Definition of Done" in skill_text()
+    assert "Changed action paths and boundaries use the centralized logger" in content
+    assert "Public helpers and non-obvious behavior are documented" in content
+    assert "Relevant tests or direct prompt/document checks pass." in content
+    assert "Consumers are verified and the final report states evidence and limits." in content
 
 
 def test_general_guidelines_exempt_static_prompt_files_from_forced_instrumentation():
     """Prompt content should not be treated like runtime code."""
-    content = skill_text()
+    content = flat_skill_text()
 
     assert "Do not force function-doc, logging, or API-style comments" in content
-    assert "static prompt\n  files" in content
+    assert "static prompt files" in content
 
 
 def test_general_guidelines_define_shell_logging_contracts():
     """Bash scripts should centralize logging without breaking output contracts."""
-    content = skill_text()
+    content = flat_skill_text()
 
     assert "For Bash and other shell scripts" in content
     assert "one sourced logging helper" in content
@@ -164,45 +182,11 @@ def test_general_guidelines_define_shell_logging_contracts():
     assert "stdout must remain reserved for machine-readable output" in content
 
 
-def test_general_guidelines_require_worktrees_by_default():
-    """Agents should isolate changes unless the user requests the current checkout."""
-    content = " ".join(skill_text().split())
-
-    assert "Use a dedicated Git worktree and a new branch for every task by default" in content
-    assert "only when the user explicitly requests it" in content
-
-
-def test_general_guidelines_make_worktree_the_explicit_first_step():
-    """Worktree creation must be Step 1 with a concrete command, not a buried aside.
-
-    11 agents in a row skipped the worktree when it was one bullet in Scope and
-    Safety; making it the numbered first step with the exact command is what
-    drives consistent compliance.
-    """
-    content = skill_text()
-
-    assert "## Start here — the non-negotiables" in content
-    assert "Create a git worktree and branch first" in content
-    # The concrete command must be present so weak models can copy it verbatim.
-    assert "git worktree add ../.worktrees/<repo>-wt-<task> -b <task-branch>" in content
-    # Agents must prove cwd/branch before editing — create alone was not enough.
-    assert "pwd" in content
-    assert "git branch --show-current" in content
-    assert "Hard gates before the first file edit" in content
-    # Shared store is `.worktrees/` (leading dot), never bare `worktrees/`.
-    assert "`.worktrees/` directory (leading dot)" in content
-    assert "Never use `projects/worktrees/` (no dot)" in content
-    # The Definition of Done must gate on the worktree too.
-    assert "All edits were made on a dedicated git worktree branch" in content
-    # Follow-up turns must not drift back to the live checkout.
-    assert "Follow-up turns stayed in that same worktree" in " ".join(content.split())
-
-
 def test_general_guidelines_description_shows_current_version_before_mandatory():
     """The skill picker must expose the current version before its mandate."""
-    content = skill_text()
-
-    assert "description: >-\n  v1.13.0 — Mandatory engineering workflow" in content
+    assert re.search(
+        r"description: >-\n  v\d+\.\d+\.\d+ — Mandatory engineering workflow", skill_text()
+    )
 
 
 def test_general_guidelines_respect_project_agents_and_claude_first():
@@ -213,91 +197,36 @@ def test_general_guidelines_respect_project_agents_and_claude_first():
     assert "`AGENTS.md`" in content
     assert "`CLAUDE.md`" in content
     assert "take precedence" in content
-    # Project files come before the shared non-negotiables / Work Loop.
-    assert content.index("## Project instructions first") < content.index(
-        "## Start here — the non-negotiables"
-    )
-
-
-def test_general_guidelines_require_type_prefixed_worktree_names():
-    """Worktree/branch names should use a conventional type prefix + feature."""
-    content = " ".join(skill_text().split())
-
-    assert "Name the worktree and branch with a type prefix" in content
-    # Conventional types must be enumerated so agents pick the right one.
-    for prefix in (
-        "fix/", "feat/", "docs/", "refactor/", "test/", "chore/",
-        "build/", "perf/", "ci/",
-    ):
-        assert prefix in content
-    # The name must apply to both the branch and the worktree directory.
-    assert "type/feature" in content
-    assert "branch" in content and "worktree" in content
-
-
-def test_general_guidelines_commit_finished_work_by_default():
-    """Agents commit finished work without waiting to be asked."""
-    content = " ".join(skill_text().split())
-
-    assert "Commit your finished work by default" in content
-    assert "you do not need to be asked" in content
-    # Committing is default, but publishing to a remote still needs a request.
-    assert "Never push, and never rewrite history" in content
-
-
-def test_general_guidelines_require_commit_merge_reload_delivery():
-    """Finished work must be committed, merged to the default branch, reloaded."""
-    content = " ".join(skill_text().split())
-
-    assert "Always finish the delivery step by step: commit in the worktree, merge into the default branch, then always reapply" in content
-    assert "git merge --no-ff" in content
-    assert "Deliver: commit, merge, reload" in content
-    # Concrete merge recipe must live in the deliver step, not only Scope and Safety.
-    assert "Merge into the default branch FROM the repository's live checkout" in content
-    # Stopping after a worktree commit is explicitly a failure.
-    assert "A worktree-only commit does **not** satisfy this item" in content
-    assert 'Do not treat "do not push" as "do not merge."' in content
-    # The Definition of Done must gate on the full delivery, not just the commit.
+    # Project files, then skill ownership, then the shared Work Loop.
     assert (
-        "The finished work was committed in the worktree, **merged into the default branch**"
-        in content
+        content.index("## Project instructions first")
+        < content.index("## Skill ownership")
+        < content.index("## Work Loop")
     )
-    assert "Nothing was pushed to a remote." in content
+    # Delegating to project files must not become permission to skip this skill.
+    assert "Do not skip this skill" in " ".join(content.split())
 
 
-def test_wrapper_requires_worktree_proof_and_local_merge_not_push_ban():
-    """The slim always-on wrapper must not contradict the full skill.
+def test_wrapper_delegates_to_the_commits_and_worktree_skills():
+    """The slim always-on wrapper must not contradict the ownership split.
 
-    Agents that only skim the wrapper used to see "never … merge into the default
-    branch … unless the user asked," which blocked Step 8 delivery. The wrapper
-    must require worktree proof and local merge while still banning remote push.
+    Hosts such as Grok read only the wrapper. It must send them to all three
+    skills and must not carry a stale worktree/commit recipe of its own.
     """
-    root = SKILL_PATH.resolve().parents[2]
-    wrapper = (
-        root / "global-instructions" / "general-programming-guidelines.md"
-    ).read_text(encoding="utf-8")
+    wrapper = " ".join(wrapper_text().split())
 
-    assert "pwd" in wrapper
-    assert "git branch --show-current" in wrapper
-    assert "git merge --no-ff" in wrapper
-    assert "Local merge is required" in wrapper
+    assert "`commits` and `worktree` skills own Feature commits" in wrapper
+    assert "worktree isolation/delivery" in wrapper
+    assert (
+        "acc pp enable --both --skill general-programming-guidelines,v2:commits,v2:worktree"
+        in wrapper
+    )
     assert "`AGENTS.md`" in wrapper and "`CLAUDE.md`" in wrapper
     assert "Respect the repository's" in wrapper
-    # Must not tell agents that merge requires user permission.
-    assert "never push, merge into the default" not in wrapper.lower()
-    assert "never push or rewrite" in wrapper.lower() or "Never push or rewrite" in wrapper
-    # Must not claim the skill overrides project AGENTS/CLAUDE files.
+    # No duplicated mechanics, and no claim that the skill outranks project files.
+    assert "git worktree add" not in wrapper
+    assert "git merge --no-ff" not in wrapper
     assert "not optional, a fallback, or overridden by a" not in wrapper
-
-
-def test_general_guidelines_require_type_worktree_commit_messages():
-    """Commit messages should be <type>(<worktree-name>): <summary>."""
-    content = " ".join(skill_text().split())
-
-    assert "Format each commit message as" in content
-    assert "<type>(<worktree-name>): <summary>" in content
-    # A concrete example ties the rule to the worktree name.
-    assert "fix(worktree-policy): keep worktrees in the shared family store" in content
 
 
 def test_general_guidelines_require_silent_non_visual_tests():
@@ -318,29 +247,23 @@ def test_general_guidelines_require_silent_non_visual_tests():
     assert "Popen" in content or "subprocess" in content
 
 
-def test_wrapper_and_readme_versions_match_the_skill_version():
-    """The bootstrap wrapper and README must not drift from the skill version.
+def test_wrapper_version_matches_the_skill_version():
+    """The bootstrap wrapper must not drift from the skill version.
 
     Hosts such as Grok read the always-on wrapper, not the skill front matter,
     so a stale wrapper version makes agents report a version mismatch.
     """
-    root = SKILL_PATH.resolve().parents[2]
-
     skill_version = re.search(
         r"description: >-\n  v(\d+\.\d+\.\d+) — Mandatory", skill_text()
     )
     assert skill_version is not None, "skill description must declare a version"
     version = skill_version.group(1)
 
-    wrapper = (
-        root / "global-instructions" / "general-programming-guidelines.md"
-    ).read_text(encoding="utf-8")
+    wrapper = wrapper_text()
     assert f"## General Programming Guidelines v{version} (always on)" in wrapper
     assert f"These are v{version} MANDATORY instructions" in wrapper
+    # No other version string may survive in the wrapper.
     assert re.search(r"v(?!%s)\d+\.\d+\.\d+" % re.escape(version), wrapper) is None
-
-    readme = (root / "README.md").read_text(encoding="utf-8")
-    assert f"Current version: **v{version}**." in readme
 
 
 def test_general_guidelines_forbid_unrequested_ci():
@@ -355,11 +278,8 @@ def test_general_guidelines_forbid_unrequested_ci():
 
 def test_ci_prohibition_is_carried_by_the_always_on_wrapper():
     """Hosts that only read the wrapper must still see the CI prohibition."""
-    wrapper = (
-        SKILL_PATH.resolve().parents[2]
-        / "global-instructions"
-        / "general-programming-guidelines.md"
-    ).read_text(encoding="utf-8")
+    wrapper = " ".join(wrapper_text().split())
 
     assert "Never add CI" in wrapper
-    assert "unless the user explicitly asks" in wrapper
+    assert "unless explicitly requested" in wrapper
+    assert "leave existing CI unchanged" in wrapper

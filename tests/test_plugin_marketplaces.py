@@ -60,7 +60,8 @@ def test_general_programming_guidelines_global_tag_is_a_bootstrap_harness() -> N
     The installer embeds the complete skill body in each runtime's managed
     instruction file. The source tag remains small, but it must still be
     self-sufficient while a stale installation is being repaired: weak models
-    need an explicit load action, a hard worktree gate, and an ordered loop.
+    need an explicit load action, the ordered Work Loop, and a pointer to the
+    `commits` and `worktree` skills that own commits and worktree delivery.
     """
     tag = ROOT / "global-instructions" / "general-programming-guidelines.md"
     text = tag.read_text(encoding="utf-8")
@@ -70,16 +71,14 @@ def test_general_programming_guidelines_global_tag_is_a_bootstrap_harness() -> N
     assert "skill" in text.lower()
     assert "MANDATORY" in text
     assert "Open/invoke" in text
-    # Worktree-first must be stated inline with the concrete command so the rule
-    # survives even while the full body is being repaired.
-    assert "Worktree first" in text
-    assert "git worktree add" in text
-    assert "Then run the Work Loop in order" in text
-    assert "pwd" in text
-    assert "git branch --show-current" in text
-    # Delivery must require local merge; the tag must not ban merge with push.
-    assert "git merge --no-ff" in text
-    assert "Local merge is required" in text
+    # The ordered Work Loop must survive even while the full body is repaired.
+    assert "Run the engineering Work Loop" in text
+    # Commits and worktree delivery are owned by their own selected skills, so
+    # the tag routes to them instead of carrying a duplicate git recipe.
+    assert "`commits` and `worktree` skills own Feature commits" in text
+    assert "acc pp enable --both --skill" in text
+    assert "git worktree add" not in text
+    assert "git merge --no-ff" not in text
     assert "never push, merge into the default" not in text.lower()
     # The source tag is a compact bootstrap; the installer supplies the full
     # body from skills/general-programming-guidelines/SKILL.md.
