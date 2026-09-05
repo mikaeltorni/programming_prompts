@@ -1,86 +1,105 @@
 ---
 name: worktree
 description: >-
-  MUST invoke before the first file Write or Edit in this git repo (including
-  /app and /Projects/app). Create a sibling .worktrees/<project>/ worktree, do
-  all coding there, commit in that worktree, merge back, never push. Skipping this fails the
-  task even if the code is correct. Apply on every coding task, including new
-  files from scratch. Not a substitute: Claude EnterWorktree / ExitWorktree.
+  Use before editing a git repository: isolate work in a sibling
+  .worktrees project group with an instance/task directory, commit there,
+  merge into the live default branch, and reapply consumers. Applies to
+  coding, documentation, and follow-up edits. Never push unless requested.
 ---
 
 # Git worktree isolation
 
-The workspace is already a git repository with one **empty initial commit**.
-Do not `git init` again. Do not rewrite history.
+## Establish the project before editing
 
-## Do this first
+Read the project's AGENTS.md and CLAUDE.md first. Read-only inspection may
+precede isolation; the first repository mutation is `git worktree add`.
+Use the existing repository and history; do not initialize it again or rewrite
+history. If there is no git repository, explain the limitation before editing.
+An explicit user instruction to work in the current checkout overrides isolation.
+Claude's EnterWorktree / ExitWorktree is not a substitute for this layout.
 
-The first state-changing action of the task is `git worktree add` — never a
-`Write` of `/app/*.py` (or `/Projects/app/*.py`) in the live checkout, even if
-you already loaded another skill. Writing the program in `/app` without a
-worktree is a **fail** even when the code is correct. Claude's
-`EnterWorktree` / `ExitWorktree` tools are not a substitute.
+## Project and instance layout
 
-## Where the worktree goes
+Use `<project-parent>/.worktrees/<project>/<instance>_<type-feature>`.
+`<project>` is the physical live checkout's basename. Resolve symlinks first:
+for example, `/app` pointing at `/Projects/app` means the store is
+`/Projects/.worktrees/app/`, never `/.worktrees/` or `/app/.worktrees/`.
+When already inside a linked worktree, recover the live checkout from
+`git worktree list --porcelain` and the common Git directory; do not treat the
+worktree directory as a new project or nest another store below it.
 
-The store is **next to** the project repo (sibling of the repo folder), never
-inside it. This eval simulates a `Projects/` folder:
+`<instance>` identifies the agent home in use: use the basename of the explicit
+runtime home (such as CODEX_HOME or CLAUDE_CONFIG_DIR). Otherwise use the
+known harness home; if unavailable, use `agent`. Do not guess an account number.
+Strip leading dots and replace characters outside letters, digits, hyphens,
+and underscores with hyphens; use `agent` if empty. This also keeps the
+instance valid in a Git branch component. Never use the full home path. `<type-feature>`
+combines a conventional type and a descriptive task slug. The branch is
+`<type>/<instance>_<feature>`. Add a unique suffix to both names on collision;
+never reuse or delete another task's branch or worktree.
+
+For a live checkout `/home/mk/projects/widget` and runtime home
+`/home/mk/.codex-account-2`, a task can use:
 
 ```text
-/Projects/
-  app/                       # this git repo (cloned initial state)
+/home/mk/projects/
+  widget/
   .worktrees/
-    app/                     # folder named exactly after the repo basename
-      <worktree-dir>/        # your worktree lives here
+    widget/
+      codex-account-2_fix-parser/
 ```
 
-`/app` is a symlink to `/Projects/app`. Use the `/Projects/app` path so the
-parent is `/Projects`, not `/`:
+After resolving the actual live checkout and choosing the instance and task:
 
 ```bash
-REPO="/Projects/app"
-NAME="$(basename "$REPO")"
+REPO="/home/mk/projects/widget"    # replace with the resolved live checkout
+INSTANCE="codex-account-2"      # replace with the actual runtime home basename
+TYPE="fix"
+FEATURE="parser"
 PARENT="$(dirname "$REPO")"
-WT="$PARENT/.worktrees/$NAME/feat-<task>"
-git worktree add -b feat/<task> "$WT"
+PROJECT="$(basename "$REPO")"
+WT="$PARENT/.worktrees/$PROJECT/${INSTANCE}_${TYPE}-${FEATURE}"
+BRANCH="$TYPE/${INSTANCE}_${FEATURE}"
+git -C "$REPO" worktree add -b "$BRANCH" "$WT"
 cd "$WT"
+pwd
+git branch --show-current
 ```
 
-Hard rules:
+Before every edit and commit, confirm the working directory and task branch.
+Target all edits at this same worktree, including later follow-up turns.
+Check its status after editing to confirm the intended files changed there.
+Never stage accidental live-checkout edits there; recover only your own changes
+into the worktree without overwriting the user's work.
 
-- Create the worktree **before** the first file edit, and stay on its feature
-  branch (`feat/…`), not `master`/`main`.
-- Target every Write/Edit at a path under `$WT`, then run
-  `git -C "$WT" status --short` and confirm the intended path appears. If it
-  does not, the edit landed in the wrong checkout — put the file in `$WT` and
-  continue from there; never recover by staging that edit in `$REPO`.
-- Never put `.worktrees` inside the repo, and never use `worktrees/` (no dot).
-  The folder under `.worktrees/` matches the repo basename — here
-  `/Projects/.worktrees/app/…`.
-- Commit your work in the worktree so the merge has something to bring back.
-  Splitting the prompt into Features is a separate skill.
+For a task spanning repositories, create a worktree in each project's own
+`.worktrees/<project>/` group, using the same instance/task identity. Never use
+`worktrees/` without the dot, or put the store inside a repository.
+Feature splitting and commit contents belong to the commits skill.
 
-## Finish without pushing
+## Deliver each completed Feature
 
-After the last worktree commit, merge into the default branch from the live
-checkout so the project repo contains the files. Leaving any code or docs
-commit only in the worktree is a **fail**. The default branch receives merge
-commits only; never make a direct feature, fix, or docs commit there.
+Commit in the worktree; never make feature, fix, or documentation commits on
+the live default branch. Determine the actual default branch from repository
+metadata and project instructions rather than assuming `master`. Preserve
+unrelated work in the live checkout; do not force a checkout or overwrite it.
 
-```bash
-git -C "$WT" status --short
-cd "$REPO"
-git checkout master
-git merge --no-ff feat/<task> -m "Merge feat/<task>: <summary>"
-git merge-base --is-ancestor "$(git -C "$WT" rev-parse HEAD)" HEAD
-```
+After each completed Feature (or an undivided task), perform these steps before
+starting the next Feature:
 
-The worktree status must be clean before the merge, and the final
-`merge-base --is-ancestor` must succeed; otherwise the newest worktree commit
-is still undelivered. Any worktree commit made after an earlier merge — even a
-README-only correction — needs its own merge. Also read
-`git -C "$REPO" status --short` and resolve any intended file edited directly
-in the live checkout without being committed there.
+1. Verify the Feature and commit it in the worktree. Confirm the commit exists
+   and the worktree is clean.
+2. From the live checkout on its default branch, merge the task branch with
+   `git merge --no-ff "$BRANCH"`. Resolve conflicts without losing user changes.
+3. Verify `git merge-base --is-ancestor "$(git -C "$WT" rev-parse HEAD)" HEAD`
+   succeeds in the live checkout, and inspect its status.
+4. Reapply the merged change through the project's installer, skill selector,
+   or narrow service reload, then check the installed result and relevant logs.
+   Follow Linux configuration rules for desktop changes. Static content with
+   no installed consumer needs verification of the merged file only.
+5. Return to the same worktree for the next Feature or correction. Every later
+   commit, including a docs-only correction, needs its own merge and reapply.
 
-**Never push.** Do not `git remote add`, `git push`, or publish anywhere.
-This is a local eval repository only.
+Report completion only after the live default branch contains the work and its
+consumers are updated. Never push, publish, add remotes, or rewrite history
+unless the user explicitly requests it.
