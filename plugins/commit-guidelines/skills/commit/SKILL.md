@@ -1,14 +1,43 @@
 ---
 name: "commit"
 description: >-
-  Use when the user asks to inspect changes, split work into logical commits,
-  stage hunks, or create commits. Plan every requested repository and execute
-  the complete commit run in the same response.
+  Use when the user asks to commit work that already exists in a dirty
+  worktree: inspect the changes, split that diff into logical commits, stage
+  hunks, and create the commits. Plan every requested repository and execute
+  the complete commit run in the same response. Not for work this session is
+  still authoring — the `commits` skill owns that.
 ---
 
 # Commit skill
 
 Create small, reviewable conventional commits from the requested worktree(s).
+
+## Scope, and how this differs from the `commits` skill
+
+This skill is the **salvage** path: someone hands you an existing dirty
+worktree and asks for it to be committed. You did not author those changes in
+this session, so the only available grouping evidence is the diff itself, and
+the steps below derive the plan from changed hunks.
+
+The separately selected `commits` skill is the **authoring** path. When this
+session is writing the code, that skill owns the work: it derives a numbered
+Feature ledger from the user's request sentences and commits each Feature as it
+is finished, so a commit boundary is decided before the diff exists.
+
+The two must not run against the same work:
+
+- Session is authoring the change → follow `commits`. Do not re-plan its
+  Features from the accumulated diff, and do not defer its commits so this
+  skill can batch them at the end.
+- Change already exists and was not authored here → follow this skill.
+- Both selected and both apparently applicable → `commits` wins for anything it
+  has a ledger entry for; this skill covers only the leftover pre-existing
+  changes.
+
+Isolation, branch policy, merging, and reapplication belong to the `worktree`
+skill in every case. The temporary detached worktree in step 6 is a throwaway
+validation checkout, not a task worktree; create it outside the repository and
+remove it in the same step.
 
 ## Workflow
 
