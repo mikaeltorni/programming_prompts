@@ -116,3 +116,53 @@ def test_commits_skill_requires_one_verified_commit_per_ledger_entry():
     # No batching and no history rewriting to repair a commit.
     assert "Do not batch missing entries into one final commit" in content
     assert "Never rewrite history to repair a commit" in content
+
+
+COMMIT_PLUGIN_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "plugins"
+    / "commit-guidelines"
+    / "skills"
+    / "commit"
+    / "SKILL.md"
+)
+
+
+def test_commit_plugin_declares_the_salvage_scope_that_separates_it_from_commits():
+    """The `commit` plugin and the `commits` skill must not rival each other.
+
+    Both create commits and their names differ by one letter, so an agent with
+    both selected could follow either. They disagree on where a commit boundary
+    comes from: `commit` reads it out of an existing diff, `commits` decides it
+    from the request before the diff exists. The plugin therefore has to state
+    which situation it owns and hand the other one over.
+    """
+    content = flat(COMMIT_PLUGIN_PATH)
+
+    assert "## Scope, and how this differs from the `commits` skill" in content
+    # It owns pre-existing changes it did not author.
+    assert "This skill is the **salvage** path" in content
+    assert "You did not author those changes in this session" in content
+    # Authoring hands over to `commits`, including the tie-break.
+    assert "The separately selected `commits` skill is the **authoring** path" in content
+    assert "Session is authoring the change → follow `commits`" in content
+    assert "`commits` wins for anything it has a ledger entry for" in content
+    # The description must carry the boundary too, since selection reads it first.
+    assert "the `commits` skill owns that" in content
+
+
+def test_commit_plugin_defers_isolation_to_the_worktree_skill():
+    """Its validation checkout must not read as a competing worktree policy.
+
+    The plugin creates a temporary detached worktree to test a staged snapshot.
+    Without a boundary that looks like a second worktree layout rule, so it has
+    to name `worktree` as the owner and mark its own checkout as throwaway.
+    """
+    content = flat(COMMIT_PLUGIN_PATH)
+
+    assert (
+        "Isolation, branch policy, merging, and reapplication belong to the `worktree` skill"
+        in content
+    )
+    assert "a throwaway validation checkout, not a task worktree" in content
+    assert "create it outside the repository and remove it in the same step" in content
