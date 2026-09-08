@@ -32,3 +32,4 @@ A `dispatch-skills/<name>/SKILL.md` must:
 | Skill | Goal | Scorecard |
 | --- | --- | --- |
 | [`github-seo`](github-seo/SKILL.md) | Make a GitHub project findable by search engines, by AI assistants, and by the humans it is for | `docs/seo-scorecard.md` |
+| [`worktree-cleanup`](worktree-cleanup/SKILL.md) | Reclaim the disk space held by finished task worktrees, without ever removing work that is still alive | `docs/worktree-cleanup-scorecard.md` |
