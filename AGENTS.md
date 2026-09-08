@@ -43,8 +43,9 @@ Command Center / notes-app skill menu offers, so anything added there becomes
 one-click launchable against any project — keep the bar in
 [`dispatch-skills/README.md`](dispatch-skills/README.md): the directory name is
 the `name` in the front matter (the menu builds `/<name>` and `$<name>` from it),
-the prompt must define a measurable score plus a tracked scorecard, and it must
-define an improvement loop with an explicit stop condition. Prompts that need a
+the prompt must define a measurable score — tracked in a scorecard file, or
+reported in the run output when a stored audit would commit private detail —
+and it must define an improvement loop with an explicit stop condition. Prompts that need a
 conversation before they can act belong in `skills/`, not here.
 
 ## Harness smoke tests when the agent verifies evals code

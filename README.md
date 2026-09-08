@@ -185,9 +185,10 @@ notes-app skill menu, which launches one agent per selected project with the
 harness-native invocation — `/name` for Claude Code, Cline, and Grok, `$name`
 for the Codex family — built from the skill's directory name.
 
-A prompt qualifies for this folder only if it defines a measurable score, a
-tracked scorecard file, and an improvement loop with an explicit stop condition;
-see [`dispatch-skills/README.md`](dispatch-skills/README.md).
+A prompt qualifies for this folder only if it defines a measurable score — kept
+in a tracked scorecard file, or reported in the run output when storing the
+audit would commit private detail — and an improvement loop with an explicit
+stop condition; see [`dispatch-skills/README.md`](dispatch-skills/README.md).
 
 ### github-seo
 
