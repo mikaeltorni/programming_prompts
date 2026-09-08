@@ -1,10 +1,10 @@
 ---
 name: worktree-cleanup
 description: >-
-  v1.0.0 — Use when linked git worktrees have piled up and are eating disk: audit every
+  v1.1.0 — Use when linked git worktrees have piled up and are eating disk: audit every
   worktree of a repository against a fixed expiry rubric, remove only the ones that are
   provably finished — merged, clean, unreferenced by any live agent session and by any
-  open, in-progress, blocked or benched note — and record a tracked scorecard round after
+  open, in-progress, blocked or benched note — and report the round round after
   round until no expired worktree is left and none of the live ones was touched.
 ---
 
@@ -31,9 +31,9 @@ they outrank this skill for ownership, routing, deployment, and local policy.
 Then follow `general-programming-guidelines` for isolation, branch naming,
 testing, logging, documentation, and the commit → merge → reapply delivery step.
 This skill does not restate that policy; it only adds what is specific to
-worktree expiry. Any file this skill changes in a repository (its scorecard, its
-docs) is committed through that shared delivery policy, from a task worktree —
-never from the live default branch.
+worktree expiry. Any file this skill changes in a repository is committed
+through that shared delivery policy, from a task worktree — never from the live
+default branch.
 
 ## Non-negotiables
 
@@ -63,32 +63,32 @@ never from the live default branch.
   covers the repositories the user named; each is audited and reported
   separately.
 
-## Where the score lives
+## Where the score goes
 
-Each audited repository gets `docs/worktree-cleanup-scorecard.md`, committed
-with the round that produced it (fall back to the repository's existing docs
-folder name when it does not use `docs/`).
+**The audit is reported, never stored.** The score, the inventory, and the
+per-worktree evidence go into the run report you hand back to the user. This
+skill writes no scorecard file, adds no audit document to any repository, and
+commits nothing about the run. An audit names repositories, branches, task
+slugs, and filesystem paths — private infrastructure detail that a commit would
+publish the moment the host repository is pushed.
 
-When one round sweeps a shared worktree store covering many repositories at
-once, write a single consolidated scorecard in the repository that hosts the
-run instead of one file per repository. It uses the same sections, adds a
-per-repository summary table, and must still name every kept worktree with its
-failing gate — a consolidated card may never drop per-repository detail:
+Report each audited repository under its own heading. When one round sweeps a
+shared worktree store covering many repositories at once, report a
+per-repository summary plus, for every repository, each kept worktree with its
+failing gate — a consolidated report may never drop per-repository detail. Use
+these sections per repository:
 
-```markdown
-# Worktree cleanup scorecard — <repo name>
-
+```text
 Round: <n> — <ISO date> — Score: <points>/100 (<removed>/<expired> expired removed,
 <live> live worktrees preserved)
 
-## Inventory
+Inventory
 | Worktree | Branch | Verdict | Failing gate | Evidence |
 | --- | --- | --- | --- | --- |
 
-## Removed this round
-## Kept and why
-## Pending user actions
-## Round history
+Removed this round
+Kept and why
+Pending user actions
 ```
 
 `Verdict` is `EXPIRED`, `LIVE`, or `UNKNOWN`. `Failing gate` names the first
@@ -169,8 +169,9 @@ Repeat until the stop condition holds:
    against the pre-run inventory: every path missing from it must appear in
    *Removed this round* with an `EXPIRED` verdict. Any other difference is a
    defect — report it immediately and stop.
-6. **Score and record.** Update the scorecard, commit it, and report the
-   reclaimed size per repository.
+6. **Score and report.** Score the round from this round's evidence and state
+   the reclaimed size per repository in the run report. Nothing about the audit
+   is written to a file or committed.
 
 ### Stop condition
 
@@ -195,7 +196,7 @@ Removing nothing is a perfect round when nothing was expired.
 | 2 | Every `EXPIRED` worktree was removed with `git worktree remove` and its merged branch deleted with `git branch -d` | 25 |
 | 3 | Every `LIVE`/`UNKNOWN` worktree is verifiably still present and unmodified after the run | 25 |
 | 4 | Post-run `git worktree list` diff matches *Removed this round* exactly, with no extra deletions | 15 |
-| 5 | Scorecard updated and committed with reclaimed size per repository | 10 |
+| 5 | The run report states the score, the reclaimed size per repository, and every kept worktree with its failing gate | 10 |
 
 Penalties, subtracted from the total:
 
@@ -206,6 +207,7 @@ Penalties, subtracted from the total:
 | The notes store was written to, or a note was edited, during the run | −100 |
 | A branch was deleted on a remote, or history was rewritten or pushed | −100 |
 | A worktree was classified without recording the deciding command output | −20 |
+| The audit was written into a repository file or committed instead of reported | −20 |
 
 Criterion 3 is the one that matters. A run that removes nothing and proves
 everything is a pass; a run that reclaims gigabytes and loses one in-progress
@@ -255,5 +257,6 @@ over human-readable output that changes between versions.
 - [ ] Every removal used the non-forced commands and was verified afterwards.
 - [ ] The post-run inventory differs from the pre-run inventory only by the
       removed, expired worktrees.
-- [ ] The scorecard is updated, committed, and names the reclaimed size.
+- [ ] The run report names the score and the reclaimed size per repository, and
+      no audit file was written or committed anywhere.
 - [ ] Kept worktrees and anything needing the user's decision are reported.
