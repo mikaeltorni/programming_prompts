@@ -67,7 +67,13 @@ never from the live default branch.
 
 Each audited repository gets `docs/worktree-cleanup-scorecard.md`, committed
 with the round that produced it (fall back to the repository's existing docs
-folder name when it does not use `docs/`):
+folder name when it does not use `docs/`).
+
+When one round sweeps a shared worktree store covering many repositories at
+once, write a single consolidated scorecard in the repository that hosts the
+run instead of one file per repository. It uses the same sections, adds a
+per-repository summary table, and must still name every kept worktree with its
+failing gate — a consolidated card may never drop per-repository detail:
 
 ```markdown
 # Worktree cleanup scorecard — <repo name>
