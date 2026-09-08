@@ -21,14 +21,22 @@ def test_setup_guidelines_scope_comes_from_manifest_clone_repos() -> None:
     assert "New repositories\n   added to `CLONE_REPOS`" in content
 
 
-def test_setup_guidelines_invoked_only_on_request_or_new_project() -> None:
-    """The skill must not auto-trigger on every task; only on request or a new project."""
+def test_setup_guidelines_require_user_initialization_request_or_explicit_tag() -> None:
+    """Discovery and the body must gate setup on user intent, not missing files."""
     content = SKILL_PATH.read_text(encoding="utf-8")
+    description = content.split("---", 2)[1]
 
     assert "Mandatory for every software task" not in content
     assert "mandatory for every task" in content
-    assert "completely new project" in content
-    assert "explicitly requests" in content
+    assert "user requests repository initialization" in description
+    assert "explicitly invokes this skill" in description
+    assert "the user requests repository initialization" in content
+    assert "`$setup-repository-guidelines`" in content
+    assert "`/setup-repository-guidelines`" in content
+    assert "Missing `AGENTS.md`" in content
+    assert "do not authorize invocation" in content
+    assert "when beginning work on a completely new project" not in content
+    assert "you are starting work on a completely new project" not in content
 
 
 def test_setup_guidelines_no_managed_global_instruction_block() -> None:

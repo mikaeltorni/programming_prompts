@@ -168,9 +168,11 @@ Key principles:
 A direct skill (not an auto-applied global instruction) that applies owner
 routing, component selection, clean-install, deployment, and prompt-free
 keyring requirements to the repository family discovered from the sibling
-`installation_scripts` manifest. It is invoked only on explicit user request or
-when starting a completely new project that has no existing repository
-guidelines; it is no longer merged into `AGENTS.md`/`CLAUDE.md` as a managed
+`installation_scripts` manifest. Invoke it only when the user requests repository
+initialization or explicitly invokes `setup-repository-guidelines` by name or tag
+(`$setup-repository-guidelines` or `/setup-repository-guidelines`). Missing
+guidelines or a new directory do not trigger it. It is not merged into
+`AGENTS.md`/`CLAUDE.md` as a managed
 global conditional that fires at the start of every task. Membership is still
 read dynamically from `CLONE_REPOS`, so newly added repositories enter scope
 without changing this skill.

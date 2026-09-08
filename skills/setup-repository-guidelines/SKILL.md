@@ -1,18 +1,23 @@
 ---
 name: setup-repository-guidelines
-description: Invoked only on explicit user request, or when beginning work on a completely new project that has no existing repository guidelines. Detects membership from scripts/repository_manifest.sh and enforces owner routing, selectable installer integration, clean-install compatibility, safe deployment, and prompt-free keyring handling. Do not invoke it for routine tasks in repositories that already have guidelines.
+description: Use only when the user requests repository initialization or explicitly invokes this skill by name or tag. Missing repository guidelines, a new directory, and ordinary coding or installer work do not authorize invocation. Detects membership from scripts/repository_manifest.sh and enforces owner routing, selectable installer integration, clean-install compatibility, safe deployment, and prompt-free keyring handling.
 ---
 
 # Setup Repository Guidelines
 
 This skill is **not** mandatory for every task. Invoke it only when:
 
-- the user explicitly requests repository-guideline setup, or
-- you are starting work on a completely new project that has no existing
-  `AGENTS.md` or repository guidelines.
+- the user requests repository initialization (creating or initializing a
+  repository), or
+- the user explicitly invokes this skill by name or tag, such as
+  `$setup-repository-guidelines` or `/setup-repository-guidelines`.
 
-Do not invoke it for ordinary software tasks in repositories that already have
-guidelines in place.
+Missing `AGENTS.md` or other repository guidelines, a new or empty directory,
+and ordinary coding, dependency, or installer tasks do not authorize invocation.
+Check this user-intent gate before manifest discovery or any setup action. If
+neither condition holds, continue the requested task without invoking this skill
+or initiating repository setup. Manifest membership determines scope only after
+the invocation gate passes; it is not an invocation trigger.
 
 ## Determine scope dynamically
 
@@ -23,8 +28,8 @@ guidelines in place.
    repository is in scope when its basename is `installation_scripts` or occurs
    in that array.
 4. Do not maintain a copied repository-name list in this skill. New repositories
-   added to `CLONE_REPOS` must trigger this guidance
-   automatically.
+   added to `CLONE_REPOS` are in scope when this skill is invoked under the
+   user-intent gate above.
 5. If the current repository is not in scope, stop applying this skill.
 
 ## Route before editing
