@@ -1,6 +1,5 @@
 ---
 artifact: /app/shop.py
-features: 3
 description: Write a tiny shop; catalog, then total, then remove.
 ---
 Follow every provided programming skill. Write `/app/shop.py` with `run_shop(command: str) -> str`.

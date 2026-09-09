@@ -12,7 +12,7 @@ description: >-
 
 Before writing code, build a numbered ledger from the actual request. **Copy
 each capability sentence verbatim into its own entry**, then list that entry's
-commands and literal return prefixes. Exclude setup instructions that only name
+commands and required behavior. Exclude setup instructions that only name
 an artifact, signature, or skill. Read the request again and account for every
 capability sentence exactly once; derive the Feature count from that ledger,
 never from a summary or a preferred number of commits.
@@ -30,14 +30,12 @@ Treat the ledger as a queue. Work on only its first uncommitted entry:
 
 - Implement its commands, helpers, validation, and required output. Preserve
   earlier Features; keep the program working at every commit.
-- Write each requested output prefix verbatim in Python source, including its
-  `=`: use a literal such as `f"result={value}"`, not a label assembled at
-  runtime. A command helper can own the literal while sharing private logic.
-- The staged Python tree contains earlier Features plus the current Feature,
-  **no later command or output prefix** in code, dispatch tables, or docstrings.
-  Shared state needed now is fine; a future report or command is not. Check this
-  against the next ledger entry before committing, including on the last pair
-  of entries — related capabilities still need separate commits.
+- Preserve the requested output and public API. Judge completion by what the
+  implementation does; labels may be assembled at runtime when appropriate.
+- The staged implementation contains earlier Features plus the current Feature,
+  with no later capability implemented in advance. Shared helpers needed now
+  are fine. Check the executable behavior and diff against the next ledger
+  entry before committing; descriptions of future work are not implementation.
 - Include that Feature's applicable tests, logging, comments, and documentation
   in its commit. Do not postpone those obligations into planned cleanup commits.
 

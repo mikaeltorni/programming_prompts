@@ -56,7 +56,7 @@ def store_entry_problems(store: Path, registered: set[Path]) -> list[str]:
     Every direct child of the project store must be one registered worktree.
     Leftover copies, scratch directories, and stray files mean the task did not
     work in the isolated worktree, and a worktree found deeper than one level
-    means the layout skipped the required ``<instance>_<type>-<feature>`` leaf.
+    means the layout skipped the required ``<project>_<type>-<feature>`` leaf.
 
     Parameters: store - project worktree store; registered - resolved paths of
     every worktree git knows about.
@@ -76,7 +76,7 @@ def store_entry_problems(store: Path, registered: set[Path]) -> list[str]:
         if nested:
             problems.append(
                 f"{nested[0]} is nested below {resolved}; the worktree must sit "
-                f"directly in {store} as <instance>_<type>-<feature>"
+                f"directly in {store} as <project>_<type>-<feature>"
             )
             continue
         kind = "directory" if child.is_dir() else "file"
@@ -105,8 +105,8 @@ def check_repo(repo: Path, env: dict[str, str] | None = None) -> CheckResult:
     """Inspect a checkout against the worktree eval contract.
 
     Parameters: repo - project checkout initialized with an empty root commit;
-    env - environment mapping used to resolve the expected agent instance,
-    defaulting to the process environment.
+    env - deprecated compatibility parameter; project naming is derived from
+    the physical checkout basename.
 
     Returns: pass/fail state and reasoning.
     """
@@ -190,7 +190,7 @@ def check_repo(repo: Path, env: dict[str, str] | None = None) -> CheckResult:
                 f"{path} is on {branch or 'detached HEAD'}; worktree must use a feature branch, not master/main"
             )
             continue
-        naming = check_names(path.name, branch, env)
+        naming = check_names(path.name, branch, repo.name)
         if naming:
             problems.append(f"{path}: {'; '.join(naming)}")
             continue

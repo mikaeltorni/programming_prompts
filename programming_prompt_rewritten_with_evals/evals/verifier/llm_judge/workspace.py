@@ -141,7 +141,9 @@ def workspace_python_context(workspace: Path, files: list[Path]) -> str:
             "Do not invent paths such as app.py. Score only files that exist."
         )
     lines: list[str] = [
-        "Score ONLY these Python files. Do not invent other paths "
+        "Score ONLY these Python files as the current solution. When the criterion "
+        "requires Git history or original task/log evidence, inspect that too. "
+        "Do not invent paths "
         f"(for example {workspace / 'app.py'} is not a file unless listed):",
     ]
     root = workspace.resolve()

@@ -16,12 +16,12 @@ Skills live under
 - [`logging-vague`](prompts/programming-skills/logging-vague/SKILL.md) —
   control one-liner (“Use logging.”); scored by the logging judge
 - [`worktree`](prompts/programming-skills/worktree/SKILL.md) — sibling
-  `.worktrees/<project>/` worktree, merge back, never push
+  `.worktrees/<project>/<project>_<type-feature>` worktree, merge back, never push
   (programmatic judge)
 - [`commits`](prompts/programming-skills/commits/SKILL.md) — scan for
-  Features; one working worktree commit per Feature (programmatic judge)
+  Features; one working worktree commit per Feature (semantic LLM judge)
 - [`debug`](prompts/programming-skills/debug/SKILL.md) — read repo `.log/`
-  before hypothesizing (programmatic judge)
+  before hypothesizing; verify the log-guided fix (semantic LLM judge)
 - [`docs`](prompts/programming-skills/docs/SKILL.md) — README.md after the
   code (programmatic judge)
 

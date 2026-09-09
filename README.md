@@ -142,10 +142,10 @@ all three; `acc pp enable --both --skill general-programming-guidelines,v2:commi
 reapplies them across harnesses. Verify with
 `acc pp status --skill general-programming-guidelines,commits,worktree --check`.
 
-Worktrees use `.worktrees/<project>/<instance>_<type-feature>` beside the live
-project. The instance is the sanitized agent-home basename, such as
-`codex-account-2`. Reapply after source edits; ongoing conversations can retain
-their previously loaded instructions.
+Worktrees use `.worktrees/<project>/<project>_<type-feature>` beside the live
+project. The worktree leaf repeats the physical project basename, so it does
+not depend on the model or account running the task. Reapply after source
+edits; ongoing conversations can retain their previously loaded instructions.
 
 ### init-project
 

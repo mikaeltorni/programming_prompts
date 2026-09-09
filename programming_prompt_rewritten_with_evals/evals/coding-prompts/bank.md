@@ -1,6 +1,5 @@
 ---
 artifact: /app/bank.py
-features: 4
 description: Write a tiny bank ledger; open, then deposit/withdraw, then transfer, then history.
 ---
 Follow every provided programming skill. Write `/app/bank.py` with `run_bank(command: str) -> str`.

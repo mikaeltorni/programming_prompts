@@ -5,8 +5,6 @@ Canonical Harbor verify script for every coding task.
 - Edit [`run_judges.sh`](run_judges.sh) (sources [`lib/`](lib/)),
   [`judge_pool.py`](judge_pool.py),
   [`check_worktree.py`](check_worktree.py) plus [`worktree_check/`](worktree_check/),
-  [`check_commits.py`](check_commits.py) plus [`commits_check/`](commits_check/),
-  [`check_debug.py`](check_debug.py) plus [`debug_check/`](debug_check/),
   [`check_docs.py`](check_docs.py) plus [`docs_check/`](docs_check/),
   [`run_llm_judge.py`](run_llm_judge.py), and [`llm_judge/`](llm_judge/) here.
   [`run_grok_judge.py`](run_grok_judge.py) is a compatibility shim.
@@ -33,18 +31,23 @@ to `uvx --from`. A `subprocess.TimeoutExpired` (uvx warmup under a
 Grok uses the CLI. Judge subprocesses
 default to one worker so dual eval agents do not stampede subscription
 rate limits.
-Programmatic worktree, commits, debug, and docs scoring is unchanged.
+Worktree and docs remain programmatic. Commits and debug use the same LLM
+runner as the other semantic skills.
 
-LLM judge text stays in `../judges/<skill>/prompt.md`. The worktree, commits,
-debug, and docs skills are **programmatic**: `run_judges.sh` runs
+LLM judge text stays in `../judges/<skill>/prompt.md`. The original coding
+request is preserved in `tests/task.md` and appended during judge sync.
+Original failure logs are in `tests/task-logs/`. Commits judges inspect Git
+history; debug judges execute reported behavior in a temporary copy. Neither
+may modify the submission. Semantic verdicts require live Harbor calibration.
+The worktree and docs skills remain **programmatic**: `run_judges.sh` runs
 `check_<skill>.py` against `/Projects/app`.
+The worktree checker requires a project-prefixed leaf such as
+`/Projects/.worktrees/app/app_feat-calc` and matching branch `feat/app_calc`.
 
 Prove the checkers without a Harbor trial:
 
 ```bash
 python3 check_worktree.py --self-test
-python3 check_commits.py --self-test
-python3 check_debug.py --self-test
 python3 check_docs.py --self-test
 python3 run_llm_judge.py --self-test
 python3 judge_pool.py --self-test

@@ -1,14 +1,4 @@
-"""Validate the Harbor coding-task prompts, their markers, and their oracles.
-
-Each ``programming_prompt_rewritten_with_evals/evals/coding-prompts/<name>.md``
-declares a Feature count that ``sync_tasks.sh`` writes to
-``tests/feature_count.txt`` and that ``verifier/check_commits.py`` scores. The
-sibling ``<name>.markers`` file pins one ``has:``/``lacks:`` token set per
-Feature commit, so a drifted marker (wrong index, token the reference solution
-never prints) would silently make the multi-step commits check unscoreable.
-These tests keep prompt, markers, and oracle in sync, and smoke-test the
-harder multi-step oracles end to end.
-"""
+"""Existing coding-task metadata and reference-solution checks."""
 
 from __future__ import annotations
 
@@ -20,9 +10,6 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-# Tokens shorter than this (``f=``, ``c=``, ``k=``) match unrelated code such as
-# ``self=`` or ``task=``, so leak coverage is not required for them.
-MIN_DISTINCTIVE_TOKEN = 4
 EVALS = ROOT / "programming_prompt_rewritten_with_evals" / "evals"
 PROMPTS_DIR = EVALS / "coding-prompts"
 ORACLES_DIR = EVALS / "oracles"
@@ -61,26 +48,6 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
     return fields
 
 
-def parse_markers(path: Path) -> list[tuple[int, list[str], list[str]]]:
-    """Parse one ``<name>.markers`` file into per-Feature token sets.
-
-    Parameters: path - markers file (``N has:token lacks:token`` per line).
-
-    Returns: list of ``(index, has_tokens, lacks_tokens)`` in file order.
-    """
-    parsed: list[tuple[int, list[str], list[str]]] = []
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#"):
-            continue
-        parts = line.split()
-        index = int(parts[0])
-        has = [token[4:] for token in parts[1:] if token.startswith("has:")]
-        lacks = [token[6:] for token in parts[1:] if token.startswith("lacks:")]
-        parsed.append((index, has, lacks))
-    return parsed
-
-
 def load_oracle(name: str) -> ModuleType:
     """Import one oracle reference solution by task name.
 
@@ -97,64 +64,13 @@ def load_oracle(name: str) -> ModuleType:
 
 
 @pytest.mark.parametrize("prompt", prompt_paths(), ids=lambda path: path.stem)
-def test_prompt_declares_artifact_features_and_oracle(prompt: Path) -> None:
-    """Every prompt names an artifact, a Feature count, and has an oracle."""
+def test_prompt_declares_artifact_and_oracle(prompt: Path) -> None:
+    """Every prompt names an artifact and has an oracle."""
     fields = parse_frontmatter(prompt)
     assert fields.get("artifact", "").startswith("/app/"), prompt.name
     assert fields.get("description"), f"{prompt.name}: missing description"
-    features = int(fields.get("features", "1"))
-    assert features >= 1, prompt.name
     oracle = ORACLES_DIR / f"{prompt.stem}.py"
     assert oracle.is_file(), f"{prompt.name}: missing oracle {oracle}"
-
-
-@pytest.mark.parametrize("prompt", prompt_paths(), ids=lambda path: path.stem)
-def test_markers_cover_every_feature_and_match_the_oracle(prompt: Path) -> None:
-    """Markers index Features 1..N and only pin tokens the oracle really prints."""
-    features = int(parse_frontmatter(prompt).get("features", "1"))
-    markers_path = prompt.with_suffix(".markers")
-    if features < 2:
-        return
-    assert markers_path.is_file(), f"{prompt.name}: multi-Feature prompt needs markers"
-    markers = parse_markers(markers_path)
-    assert [index for index, _has, _lacks in markers] == list(range(1, features + 1)), (
-        f"{markers_path.name}: markers must index Features 1..{features} in order"
-    )
-    oracle_source = (ORACLES_DIR / f"{prompt.stem}.py").read_text(encoding="utf-8")
-    for index, has, lacks in markers:
-        assert has, f"{markers_path.name}: Feature {index} pins no has: token"
-        for token in has + lacks:
-            assert token in oracle_source, (
-                f"{markers_path.name}: Feature {index} pins {token!r}, which never "
-                f"appears in oracles/{prompt.stem}.py"
-            )
-        for token in lacks:
-            assert token not in has, (
-                f"{markers_path.name}: Feature {index} both has and lacks {token}"
-            )
-
-
-@pytest.mark.parametrize("prompt", prompt_paths(), ids=lambda path: path.stem)
-def test_every_earlier_feature_rejects_later_feature_tokens(prompt: Path) -> None:
-    """Each Feature's commit must be checked against *every* later prefix.
-
-    Listing only the next Feature's prefix lets an agent dump Features 1 and 3
-    into the first commit unnoticed, which is exactly the multi-step failure the
-    ``commits`` skill forbids.
-    """
-    features = int(parse_frontmatter(prompt).get("features", "1"))
-    if features < 2:
-        return
-    markers = parse_markers(prompt.with_suffix(".markers"))
-    for position, (index, _has, lacks) in enumerate(markers):
-        for later_index, later_has, _later_lacks in markers[position + 1 :]:
-            for token in later_has:
-                if len(token) < MIN_DISTINCTIVE_TOKEN:
-                    continue
-                assert token in lacks, (
-                    f"{prompt.stem}.markers: Feature {index} must carry "
-                    f"lacks:{token} from Feature {later_index}"
-                )
 
 
 def test_bank_oracle_runs_the_full_multi_step_flow() -> None:

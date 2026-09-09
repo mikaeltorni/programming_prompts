@@ -1,6 +1,5 @@
 ---
 artifact: /app/greeter.py
-features: 3
 description: Write a tiny greeter; hello, then hour-based greetings, then farewell.
 ---
 Follow every provided programming skill. Write `/app/greeter.py` with `run_greeter(command: str) -> str`.

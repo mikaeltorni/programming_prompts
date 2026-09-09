@@ -6,7 +6,7 @@ source of truth for those rules. This module pins the parts that agents get
 wrong most often — above all the worktree store layout, which must group each
 task directory under its own project name:
 
-    <project-parent>/.worktrees/<project>/<instance>_<type-feature>
+    <project-parent>/.worktrees/<project>/<project>_<type-feature>
 
 A store that drops the `<project>` component collapses every repository's
 worktrees into one flat directory, where task names from different projects
@@ -37,14 +37,14 @@ def test_worktree_store_groups_task_directories_by_project_name():
     """The store path must carry the project name between `.worktrees` and the task."""
     content = flat(WORKTREE_PATH)
 
-    assert "`<project-parent>/.worktrees/<project>/<instance>_<type-feature>`" in content
+    assert "`<project-parent>/.worktrees/<project>/<project>_<type-feature>`" in content
     assert "`<project>` is the physical live checkout's basename" in content
     # The worked example must show the project directory, not a flat store.
-    assert ".worktrees/ widget/ codex-account-2_fix-parser/" in content
+    assert ".worktrees/ widget/ widget_fix-parser/" in content
     # The copyable recipe must build the path from the resolved project basename.
     assert 'PROJECT="$(basename "$REPO")"' in content
-    assert 'WT="$PARENT/.worktrees/$PROJECT/${INSTANCE}_${TYPE}-${FEATURE}"' in content
-    assert 'BRANCH="$TYPE/${INSTANCE}_${FEATURE}"' in content
+    assert 'WT="$PARENT/.worktrees/$PROJECT/${PROJECT}_${TYPE}-${FEATURE}"' in content
+    assert 'BRANCH="$TYPE/${PROJECT}_${FEATURE}"' in content
     assert 'git -C "$REPO" worktree add -b "$BRANCH" "$WT"' in content
 
 
@@ -63,17 +63,16 @@ def test_worktree_store_rejects_flat_and_nested_stores():
     assert "Never use `worktrees/` without the dot, or put the store inside a repository" in content
 
 
-def test_worktree_instance_component_identifies_the_agent_home():
-    """`<instance>` comes from the runtime home basename and stays branch-safe."""
+def test_worktree_leaf_uses_project_prefix():
+    """The worktree leaf and branch use the project, never the model/account."""
     content = flat(WORKTREE_PATH)
 
-    assert "`<instance>` identifies the agent home in use" in content
-    assert "CODEX_HOME or CLAUDE_CONFIG_DIR" in content
-    assert "Do not guess an account number" in content
-    # Sanitizing keeps the instance valid as a Git branch component.
-    assert "Strip leading dots and replace characters outside letters, digits, hyphens, and underscores" in content
-    assert "use `agent` if empty" in content
-    assert "Never use the full home path" in content
+    assert "The worktree leaf repeats the project name" in content
+    assert "depending on the model, account, or agent home" in content
+    assert "`<type>/<project>_<feature>`" in content
+    assert "${PROJECT}_${TYPE}-${FEATURE}" in content
+    assert "${PROJECT}_${FEATURE}" in content
+    assert "INSTANCE" not in content
 
 
 def test_worktree_owns_per_feature_merge_and_reapply():

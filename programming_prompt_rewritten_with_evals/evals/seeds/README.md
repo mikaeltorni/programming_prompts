@@ -1,17 +1,13 @@
-# Task seeds
+# Planted task files
 
-Optional planted files for a coding prompt, copied into the Harbor image as a
-second git commit after the empty initial commit (`Seed task files`).
+Optional `seeds/<task>/` content initializes that task's workspace. A `log/`
+directory becomes `.log/` in the task image; source logs use the non-hidden
+name so this repository's `.log/` ignore rule does not hide the fixture.
 
-```text
-seeds/<task>/
-  greeter.py          # becomes /Projects/app/greeter.py
-  log/greeter.log     # becomes /Projects/app/.log/greeter.log
-  debug_tokens.txt    # copied to tests/ only — not into the agent workspace
-```
+`sync_tasks.sh` commits the planted files as `Seed task files` before the
+coding agent starts. Judges must distinguish that supplied state from the
+agent's own implementation commits.
 
-A `log/` folder is renamed to `.log/` in the image so this repository can
-track the files (repo-root `.gitignore` ignores `.log/`). `debug_tokens.txt`
-is the hidden diagnosis list for the debug checker (`twilight`, `hi=`); it
-must not land in the seed commit. The commits checker skips the seed subject,
-so Feature-commit counts start after it.
+The same original logs are copied to verifier-only `tests/task-logs/` for the
+debug judge. It reads their expected behavior directly; no hidden diagnosis
+word list is maintained. The original coding request is in `tests/task.md`.

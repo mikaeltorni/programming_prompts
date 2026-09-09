@@ -81,9 +81,8 @@ def install_seed(seed_src: Path, env_dir: Path, dockerfile: Path) -> bool:
 
     Returns: true when a seed commit was added. A ``log/`` folder is copied to
         ``.log/`` in the image so the gitignored ``.log/`` path is not stored
-        in this repository. ``debug_tokens.txt`` stays out of the image (it is
-        copied to ``tests/`` for the checker only). The commit subject must
-        stay ``Seed task files``.
+        in this repository. The commit subject stays ``Seed task files`` so
+        judges can distinguish the supplied starting state from agent work.
     """
     if not seed_src.is_dir():
         return False
@@ -91,8 +90,6 @@ def install_seed(seed_src: Path, env_dir: Path, dockerfile: Path) -> bool:
     dest.mkdir(parents=True, exist_ok=True)
     copied = False
     for item in sorted(seed_src.iterdir()):
-        if item.name == "debug_tokens.txt":
-            continue
         if item.name == "log" and item.is_dir():
             shutil.copytree(item, dest / ".log", dirs_exist_ok=True)
             copied = True
@@ -219,13 +216,6 @@ for prompt_path in prompt_files:
     meta, body = parse_prompt(prompt_path)
     artifact = meta["artifact"]
     description = meta["description"].replace('"', '\\"')
-    features_text = meta.get("features", "1").strip()
-    try:
-        feature_count = int(features_text)
-    except ValueError as exc:
-        raise SystemExit(f"{prompt_path}: features must be an integer, got {features_text!r}") from exc
-    if feature_count < 1:
-        raise SystemExit(f"{prompt_path}: features must be >= 1, got {feature_count}")
     oracle_src = oracles_dir / f"{name}.py"
     if not oracle_src.is_file():
         raise SystemExit(f"Missing oracle for '{name}': {oracle_src}")
@@ -248,19 +238,14 @@ for prompt_path in prompt_files:
     shutil.copy2(compose_src, task_dir / "environment" / "docker-compose.yaml")
     shutil.copy2(template_dir / "tests" / "test.sh", task_dir / "tests" / "test.sh")
     (task_dir / "tests" / "test.sh").chmod(0o755)
-    count_lines = [str(feature_count)]
-    markers_path = prompt_path.with_suffix(".markers")
-    if markers_path.is_file():
-        for raw in markers_path.read_text(encoding="utf-8").splitlines():
-            line = raw.strip()
-            if line and not line.startswith("#"):
-                count_lines.append(line)
-    (task_dir / "tests" / "feature_count.txt").write_text(
-        "\n".join(count_lines) + "\n", encoding="utf-8"
-    )
-    tokens_src = template_dir.parent / "seeds" / name / "debug_tokens.txt"
-    if tokens_src.is_file():
-        shutil.copy2(tokens_src, task_dir / "tests" / "debug_tokens.txt")
+    # Preserve the original request and failure evidence for semantic judges.
+    # They remain outside the coding agent's workspace and are never inferred
+    # from the submitted source or a hand-maintained token catalog.
+    (task_dir / "tests" / "task.md").write_text(body, encoding="utf-8")
+    logs_src = template_dir.parent / "seeds" / name / "log"
+    if logs_src.is_dir():
+        shutil.copytree(logs_src, task_dir / "tests" / "task-logs")
+    log(f"prepared original task context for {name}")
     shutil.copy2(oracle_src, task_dir / "solution" / "oracle.py")
     write_solve_sh(task_dir / "solution" / "solve.sh", artifact, name)
     print(f"materialized task {name} -> {task_dir}", flush=True)
