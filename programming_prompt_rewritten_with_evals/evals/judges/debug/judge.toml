@@ -1,12 +1,15 @@
-# Programmatic judge — no LLM. The verifier runs check_debug.py.
+# Semantic judge — the shared LLM runner inspects the task and implementation.
 
 [judge]
-judge = "programmatic"
-timeout = 60
+judge = "codex"
+model = "gpt-5.6-luna"
+cwd = "."
+timeout = 240
+prompt_template = "prompt.md"
 
 [[criterion]]
 name = "read_logs_first"
-description = "when .log/ exists, workspace Python matches the expected output in the logs"
+description = "when the original request reports a failure, verify its log-guided fix; otherwise pass as not applicable"
 type = "binary"
 
 [scoring]

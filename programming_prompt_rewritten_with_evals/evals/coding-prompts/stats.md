@@ -1,6 +1,5 @@
 ---
 artifact: /app/stats.py
-features: 4
 description: Write a tiny stats collector; add, then mean, then low/high, then median.
 ---
 Follow every provided programming skill. Write `/app/stats.py` with `run_stats(command: str) -> str`.

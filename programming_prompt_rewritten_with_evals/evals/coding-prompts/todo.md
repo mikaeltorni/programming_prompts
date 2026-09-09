@@ -1,6 +1,5 @@
 ---
 artifact: /app/todo.py
-features: 3
 description: Write a tiny todo CLI; add, then list, then done.
 ---
 Follow every provided programming skill. Write `/app/todo.py` with `run_todo(command: str) -> str`.

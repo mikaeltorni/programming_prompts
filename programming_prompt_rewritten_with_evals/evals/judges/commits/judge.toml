@@ -1,12 +1,15 @@
-# Programmatic judge — no LLM. The verifier runs check_commits.py.
+# Semantic judge — the shared LLM runner inspects the task and implementation.
 
 [judge]
-judge = "programmatic"
-timeout = 60
+judge = "codex"
+model = "gpt-5.6-luna"
+cwd = "."
+timeout = 240
+prompt_template = "prompt.md"
 
 [[criterion]]
 name = "feature_commits"
-description = "one Python commit per Feature; later Features must not already be in earlier commits"
+description = "each requested capability is implemented in its own working commit before later capabilities"
 type = "binary"
 
 [scoring]

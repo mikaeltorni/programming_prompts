@@ -1,20 +1,22 @@
 # Harbor evaluation
 
-Write-from-scratch tasks (each a 3 Feature-group "should have" list) and a
-log-driven greeter fix measure whether Codex, Claude Code, and/or
-Grok follow selected programming skills while implementing tiny Python programs:
+Write-from-scratch tasks and a log-driven greeter fix measure whether Codex,
+Claude Code, and/or Grok follow selected programming skills while implementing
+tiny Python programs. Each original request defines its own capabilities; the
+commits judge derives Features from that request rather than from a separate
+marker or count file:
 
 | Prompt | Entrypoint |
 | --- | --- |
-| [`coding-prompts/calculator.md`](coding-prompts/calculator.md) | `/app/calculator.py` → `run_calculator` (`add`, then `sub`, then `mul`/`div`; `features: 3`) |
-| [`coding-prompts/todo.md`](coding-prompts/todo.md) | `/app/todo.py` → `run_todo` (`add`, then `list`, then `done`; `features: 3`) |
-| [`coding-prompts/counter.md`](coding-prompts/counter.md) | `/app/counter.py` → `run_counter` (`inc`, then `dec`, then `get`/`set`; `features: 3`) |
-| [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` (`hello`, then hour-based, then `bye`; `features: 3`) |
-| [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` (`c2f`, then `f2c`, then Kelvin; `features: 3`) |
-| [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (`add`, then `total`, then `remove`; `features: 3`) |
-| [`coding-prompts/greeter-fix.md`](coding-prompts/greeter-fix.md) | `/app/greeter.py` → `run_greeter` (fix from `.log/`, then `bye`, then `period`; `features: 3`) |
-| [`coding-prompts/bank.md`](coding-prompts/bank.md) | `/app/bank.py` → `run_bank` (`open`, then `deposit`/`withdraw`, then `transfer`, then `history`; `features: 4`) |
-| [`coding-prompts/stats.md`](coding-prompts/stats.md) | `/app/stats.py` → `run_stats` (`add`, then `mean`, then `low`/`high`, then `median`; `features: 4`) |
+| [`coding-prompts/calculator.md`](coding-prompts/calculator.md) | `/app/calculator.py` → `run_calculator` (`add`, `sub`, `mul`, `div`) |
+| [`coding-prompts/todo.md`](coding-prompts/todo.md) | `/app/todo.py` → `run_todo` (`add`, `list`, `done`) |
+| [`coding-prompts/counter.md`](coding-prompts/counter.md) | `/app/counter.py` → `run_counter` (`inc`, `dec`, `get`, `set`) |
+| [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` (`hello`, hour-based greeting, `bye`) |
+| [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` (`c2f`, `f2c`, Kelvin conversion) |
+| [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (`add`, `total`, `remove`) |
+| [`coding-prompts/greeter-fix.md`](coding-prompts/greeter-fix.md) | `/app/greeter.py` → `run_greeter` (fix from `.log/`, `bye`, `period`) |
+| [`coding-prompts/bank.md`](coding-prompts/bank.md) | `/app/bank.py` → `run_bank` (`open`, `deposit`/`withdraw`, `transfer`, `history`) |
+| [`coding-prompts/stats.md`](coding-prompts/stats.md) | `/app/stats.py` → `run_stats` (`add`, `mean`, `low`/`high`, `median`) |
 
 Each coding prompt is the product instruction (what to build) plus “Follow the
 provided programming skill.” Skills under
@@ -39,10 +41,12 @@ Skills and judges:
 - [`judges/logging/prompt.md`](judges/logging/prompt.md)
 - [`judges/worktree/judge.toml`](judges/worktree/judge.toml)
   (programmatic git-layout checker; no LLM prompt)
-- [`judges/commits/judge.toml`](judges/commits/judge.toml)
-  (programmatic Feature-commit checker; no LLM prompt)
-- [`judges/debug/judge.toml`](judges/debug/judge.toml)
-  (programmatic read-logs checker; no LLM prompt)
+- [`judges/commits/prompt.md`](judges/commits/prompt.md) and
+  [`judges/commits/judge.toml`](judges/commits/judge.toml)
+  (semantic capability-to-history assessment)
+- [`judges/debug/prompt.md`](judges/debug/prompt.md) and
+  [`judges/debug/judge.toml`](judges/debug/judge.toml)
+  (semantic log-guided behavior assessment)
 - [`judges/docs/judge.toml`](judges/docs/judge.toml)
   (programmatic README checker; no LLM prompt)
 
@@ -56,18 +60,18 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 
 | Flag | Meaning |
 | --- | --- |
-| `harness=codex` / `--harness cc` / `harness=grok` | Agent harness: `codex`, `cc` (Claude Code), `grok`, `both`, `all`, or a comma list |
+| `--harness codex` / `--harness cc` / `--harness grok` | Agent harness: `codex`, `cc` (Claude Code), `grok`, `both`, `all`, or a comma list |
 | *(omit harness)* | Runs **Codex and Claude Code** (not Grok) |
-| `evalAgent=cc,codex,grok` / `--evalAgent cc` / `--eval-agent=all` | LLM **judge** harness(es). Same aliases/groups as `harness=`. Omit to use the **same** harness as the coding agent |
-| `evalAgentModel=claude-opus-5` / `--evalAgentModel …` / `--eval-agent-model=…` | Judge model id (same idea as `-m` / `--model`). One value for every eval agent, or one per agent |
-| `evalAgentReasoningEffort=low` / `--evalAgentReasoningEffort high` | Judge effort: `low`, `medium`, or `high` (same idea as `--ak reasoning_effort=`). One value or one per agent |
+| `--eval-agent cc,codex,grok` / `--eval-agent all` | LLM **judge** harness(es). Same aliases/groups as `--harness`. Omit to use the **same** harness as the coding agent |
+| `--eval-agent-model claude-opus-5` | Judge model id (same idea as `-m` / `--model`). One value for every eval agent, or one per agent |
+| `--eval-agent-reasoning-effort low` | Judge effort: `low`, `medium`, or `high` (same idea as `--ak reasoning_effort=`). One value or one per agent |
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
 | `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine. **Unset = no LLM cap**. Overlapping jobs run at full `-k`; Harbor retries `ApiRateLimitError`. `20` serializes to one proven job. `2` is the old quota-safe cap. Harbor `-n` always follows `-k`. |
 | `--skills srp,commenting` | Which skills to inject (default: all non-`*-vague`) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
 | `--tasks todo,calculator` | Which coding prompts to run (default: all) |
-| `--tasks=greeter` / `task=todo,counter` | Same, equals / bare forms |
+| `--tasks greeter` | Same, space-separated form |
 | `--run-separately` / `--runSeparately` | One Harbor job (same trial count); skill Pass is **not AND** |
 | `--baseline` | No skills injected; selected judges still score |
 | `--install-only` | Reinstall/verify newest stable CLI(s) in the task image (no LLM) |
@@ -77,9 +81,10 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 Harness aliases: `cc`, `claude`, `claude-code`, `claudecode` → Claude Code;
 `codex`, `openai`, `gpt` → Codex; `grok`, `xai`, `grok-build`, `grok-code` →
 Grok CLI; `both` / empty → Codex + Claude Code; `all` → Codex + Claude Code +
-Grok. `evalAgent` uses the same aliases (`evalAgent=both`, `evalAgent=all`,
-`evalAgent=cc,codex`). Empty `evalAgent` is **not** `both`: each job’s judge
-matches that job’s coding harness (`harness=cc` → Claude Code judge).
+Grok. `--eval-agent` uses the same aliases (`--eval-agent both`,
+`--eval-agent all`, `--eval-agent cc,codex`). Empty `--eval-agent` is **not**
+`both`: each job’s judge matches that job’s coding harness (`--harness cc` →
+Claude Code judge).
 
 Without `--run-separately`, all selected skills are installed in **one** agent
 session and **each** matching judge scores the same written code. **Pass is
@@ -95,7 +100,7 @@ a concurrent benchmark sharing `evals/.generated/tasks/`.
 Trial math: default `-k 5` is **5 attempts per selected coding task**. With all
 5 tasks that is **25 trials per Harbor job per harness**. `--run-separately`
 does **not** multiply that. Omit harness (both) ≈ **2×** again — e.g.
-`harness` omitted + 5 tasks + `-k 5` ≈ **50 trials**. `evalAgent=cc,codex` does **not** multiply trials; it reruns
+`harness` omitted + 5 tasks + `-k 5` ≈ **50 trials**. `--eval-agent cc,codex` does **not** multiply trials; it reruns
 the LLM judge on each trial (2× verifier *cost*). Judge subprocesses default
 to **four at a time** (`EVAL_JUDGE_WORKERS=4`) so the four skills overlap
 after the coding agent. Set `EVAL_JUDGE_WORKERS=1` to serialize them. Live
@@ -109,10 +114,11 @@ cap. `EVAL_LLM_MAX_CONCURRENT=20` serializes overlapping jobs to one proven
 wave. `EVAL_LLM_MAX_CONCURRENT=2`
 restores the old quota-safe cap. Extra wrappers wait when an explicit
 cap is already in use.
-Programmatic judges (worktree, commits, debug, docs) still run once. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
+Programmatic judges (worktree, docs) still run once. Semantic commits and debug
+judges use the selected LLM eval agent. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
 Code `claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
 (`--reasoning-effort`). Judge defaults match those models at **low** effort
-unless `evalAgentModel` / `evalAgentReasoningEffort` override them.
+unless `--eval-agent-model` / `--eval-agent-reasoning-effort` override them.
 
 After each job the wrapper prints trials, then reprints the interesting
 ones **above the recap** (with source): **failed** trials on a positive run,
@@ -155,9 +161,11 @@ evals/
 │   ├── worktree/
 │   │   └── judge.toml          # programmatic
 │   ├── commits/
-│   │   └── judge.toml          # programmatic
+│   │   ├── prompt.md          # capability-to-commit assessment
+│   │   └── judge.toml
 │   ├── debug/
-│   │   └── judge.toml          # programmatic
+│   │   ├── prompt.md          # observed log-guided fix
+│   │   └── judge.toml
 │   └── docs/
 │       └── judge.toml          # programmatic
 ├── verifier/
@@ -167,10 +175,6 @@ evals/
 │   ├── judge_pool.py           # concurrent LLM + programmatic judges
 │   ├── check_worktree.py       # thin CLI for the worktree layout judge
 │   ├── worktree_check/         # git I/O, rules, reward, fixtures
-│   ├── check_commits.py        # thin CLI for the Feature-commit judge
-│   ├── commits_check/          # Feature-count rules and fixtures
-│   ├── check_debug.py          # thin CLI for the read-logs-first judge
-│   ├── debug_check/            # log-token rules and fixtures
 │   ├── check_docs.py           # thin CLI for the README-after-code judge
 │   ├── docs_check/             # README rules and fixtures
 │   ├── run_llm_judge.py        # thin CLI; Codex / Claude Code / Grok eval agent
@@ -185,8 +189,8 @@ evals/
 ├── sync_tasks.sh           # coding-prompts → .generated/tasks/
 ├── sync_judges.sh          # judges + verifier → .generated/tasks/*/tests/
 ├── run_benchmark.sh        # Codex + Claude Code + Grok runner
-├── run_codex_benchmark.sh  # thin shim → run_benchmark.sh harness=codex
-├── run_grok_benchmark.sh   # thin shim → run_benchmark.sh harness=grok
+├── run_codex_benchmark.sh  # thin shim → run_benchmark.sh --harness codex
+├── run_grok_benchmark.sh   # thin shim → run_benchmark.sh --harness grok
 ├── archive_benchmark_run.py  # thin CLI shim → archive_run
 ├── docker_networks.py      # thin CLI shim → docker_ipam
 ├── launch_benchmarks.sh    # interactive preset menu; normal windows on this monitor
@@ -212,7 +216,8 @@ harness, **evalagent** (`inherit` or `cc+codex`), mode, skills,
 `--run-separately`, tasks, and `-k`/`-n`. Harbor job
 dirs live in that same archive (`<run>/harbor/`, not `/tmp`) and use the same
 stamp (`codex-skills__YYYY-MM-DD_HHMMSS_<pid>`). Each trial’s simulated host
-layout is copied to `<run>/Projects/<trial>/` (`app/` clone + `.worktrees/`).
+layout is copied to `<run>/Projects/<trial>/` (`app/` clone +
+`.worktrees/app/app_<type>-<feature>/` worktree).
 
 `sync_tasks.sh` builds each Harbor task directory from
 `coding-prompts/<name>.md` + `oracles/<name>.py` + `task-template/`.
@@ -270,7 +275,7 @@ LLM.
 
 Skill trials must not reuse host skill trees.
 
-### Codex (`harness=codex`)
+### Codex (`--harness codex`)
 
 Every Harbor Codex trial already gets a fresh `CODEX_HOME=/tmp/codex-home`. This
 suite goes further:
@@ -280,13 +285,13 @@ suite goes further:
 - [`harbor_agents/benchmark_codex.py`](harbor_agents/benchmark_codex.py) wipes
   `$HOME/.agents/skills`, `/etc/codex/skills`, and `$CODEX_HOME/skills`, then
   installs only the skills configured for that job.
-- Auth: the ChatGPT login selected by Agent Command Center (`cat2` / `ca2`,
+- Auth: the ChatGPT login selected by Agent Command Center (`ca2`,
   persisted in `codex-instances.json`) is passed as `CODEX_AUTH_JSON_PATH`
   so Harbor uploads that home's `auth.json`. A Docker bind-mount of the same
   file is not enough: Harbor's Codex agent copies host `~/.codex/auth.json`
   whenever only `CODEX_FORCE_AUTH_JSON` is set. Default home is `~/.codex`.
 
-### Claude Code (`harness=cc`)
+### Claude Code (`--harness cc`)
 
 - Pin fallback: [`claude-version.txt`](claude-version.txt) (`2.1.241`).
   Instance start prefers npm `@anthropic-ai/claude-code` `latest`.
@@ -296,8 +301,8 @@ suite goes further:
 - Auth (agent): reads `~/.claude/.credentials.json` → `CLAUDE_CODE_OAUTH_TOKEN`
   with `CLAUDE_FORCE_OAUTH=true` (token never printed). Also bind-mounts the
   credentials file into the trial.
-- Auth (verifier): **default `evalAgent` inherits the coding harness**, so
-  `harness=cc` grades with Claude Code and needs Claude OAuth — not Codex.
+- Auth (verifier): **default `--eval-agent` inherits the coding harness**, so
+  `--harness cc` grades with Claude Code and needs Claude OAuth — not Codex.
   Codex `auth.json` is still mounted so `evalAgent=codex` (or a mix) can run.
   The verifier copies credentials into a writable `CLAUDE_CONFIG_DIR` (the
   trial mount is read-only), exports that dir plus `CLAUDE_CODE_OAUTH_TOKEN`
@@ -319,7 +324,7 @@ suite goes further:
   `--ae`: Harbor scrubs those values from trial outputs, and the literal `1`
   rewrites every `reward: 1.0` into broken `[REDACTED].0` JSON.
 
-### Grok CLI (`harness=grok`)
+### Grok CLI (`--harness grok`)
 
 - Pin fallback: [`grok-version.txt`](grok-version.txt) (`1.0.5`).
   Instance start prefers the Grok `https://x.ai/cli/stable` channel pointer.
@@ -333,7 +338,7 @@ suite goes further:
   forwarded as `XAI_API_KEY` and the file is bind-mounted at
   `/root/.grok/auth.json`. Or export `XAI_API_KEY` yourself (xAI API key).
   The runner never prints the key.
-- Auth (verifier): **default `evalAgent` inherits Grok**, so SuperGrok /
+- Auth (verifier): **default `--eval-agent` inherits Grok**, so SuperGrok /
   `XAI_API_KEY` must reach the verifier. Codex `auth.json` is still mounted
   for `evalAgent=codex`. [`verifier/run_llm_judge.py`](verifier/run_llm_judge.py)
   runs every eval agent. Grok shells out to the CLI (`--json-schema`); Codex
@@ -353,9 +358,9 @@ Reinstall or verify pinned CLIs inside the task environment:
 ```bash
 cd ~/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 ./run_benchmark.sh --install-only                  # Codex + Claude Code (newest CLIs)
-./run_benchmark.sh --install-only harness=codex
-./run_benchmark.sh --install-only harness=cc
-./run_benchmark.sh --install-only harness=grok
+./run_benchmark.sh --install-only --harness codex
+./run_benchmark.sh --install-only --harness cc
+./run_benchmark.sh --install-only --harness grok
 ./run_benchmark.sh --no-pin-refresh --install-only # committed pins only
 ```
 
@@ -665,14 +670,6 @@ Harbor run:
 
 ```bash
 python3 verifier/check_worktree.py --self-test
-```
-
-```bash
-python3 verifier/check_commits.py --self-test
-```
-
-```bash
-python3 verifier/check_debug.py --self-test
 ```
 
 ```bash
@@ -1024,3 +1021,16 @@ Harbor YAML.
 Harbor records complete jobs under `evals/runs/<stamp>/` (`harbor/` for raw
 output, `jobs/` for the pretty copy, `Projects/` for the simulated clone +
 worktrees). Nothing is written to `/tmp` for the job tree.
+
+## Semantic commit and debug evaluation
+
+Commits and debug are LLM judges. Commit scoring derives capabilities from the
+original task and inspects their first implementation in actual Git history;
+debug scoring reads the original failure logs and executes the reported case.
+The shared judge pipeline supplies `tests/task.md` and `tests/task-logs/`.
+There is no separate Feature count or source-token scoring contract.
+
+Use Codex as the eval agent for the required baseline and positive smoke jobs
+on each coding harness. Read archived judge reasoning, commit mappings, and
+observed outputs. Historical programmatic scores are a different measurement;
+do not combine them with the semantic scores as if only the coding model changed.

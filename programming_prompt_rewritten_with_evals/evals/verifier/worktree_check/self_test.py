@@ -23,8 +23,8 @@ def _feature(
     project: str = "app",
     store_project: str | None = None,
     store_name: str = ".worktrees",
-    branch: str = "feat/agent_calc",
-    leaf: str = "agent_feat-calc",
+    branch: str = "feat/app_calc",
+    leaf: str = "app_feat-calc",
 ) -> tuple[Path, Path]:
     """Create an empty repo and a feature worktree.
 
@@ -56,23 +56,17 @@ def _commit_file(
     run_command(wt, "git", "commit", "-m", message)
 
 
-_HOME_ENV = {"CLAUDE_CONFIG_DIR": "/home/mk/.claude-account-2"}
-
-# name, expected conformance, worktree leaf, branch, environment mapping.
-_NAME_CASES: list[tuple[str, bool, str, str, dict[str, str]]] = [
-    ("name_pass_env_instance", True, "claude-account-2_fix-parser",
-     "fix/claude-account-2_parser", _HOME_ENV),
-    ("name_pass_env_fallback_agent", True, "agent_fix-parser",
-     "fix/agent_parser", _HOME_ENV),
-    ("name_fail_foreign_instance", False, "someone_fix-parser",
-     "fix/someone_parser", _HOME_ENV),
-    ("name_pass_any_instance_without_env", True, "someone_fix-parser",
-     "fix/someone_parser", {}),
-    ("name_fail_full_home_path_instance", False, "-home-mk--claude_fix-parser",
-     "fix/-home-mk--claude_parser", _HOME_ENV),
-    ("name_fail_nested_branch", False, "agent_fix-parser",
-     "fix/agent/parser", {}),
-    ("name_fail_empty_feature", False, "agent_fix-", "fix/agent_", {}),
+# name, expected conformance, worktree leaf, branch, project basename.
+_NAME_CASES: list[tuple[str, bool, str, str, str]] = [
+    ("name_pass_project_prefix", True, "app_fix-parser", "fix/app_parser", "app"),
+    ("name_pass_project_with_underscore", True, "programming_prompts_fix-parser",
+     "fix/programming_prompts_parser", "programming_prompts"),
+    ("name_fail_model_prefix", False, "codex-account-2_fix-parser",
+     "fix/codex-account-2_parser", "app"),
+    ("name_fail_foreign_project", False, "someone_fix-parser",
+     "fix/someone_parser", "app"),
+    ("name_fail_nested_branch", False, "app_fix-parser", "fix/app/parser", "app"),
+    ("name_fail_empty_feature", False, "app_fix-", "fix/app_", "app"),
 ]
 
 
@@ -89,17 +83,15 @@ def run_self_test() -> int:
         name: str,
         expect_ok: bool,
         repo: Path,
-        env: dict[str, str] | None = None,
     ) -> None:
         """Record one checker result.
 
         Parameters: name - case name; expect_ok - expected state; repo - fixture
-        checkout; env - environment mapping for instance resolution, empty by
-        default so fixtures never depend on the ambient agent home.
+        checkout.
 
         Returns: None.
         """
-        got = check_repo(repo, {} if env is None else env)
+        got = check_repo(repo)
         ok = got.ok == expect_ok
         detail = (
             got.reasoning
@@ -113,7 +105,7 @@ def run_self_test() -> int:
 
         repo, wt = _feature(root / "pass-sibling")
         _commit_file(wt)
-        merge_branch(repo, "feat/agent_calc")
+        merge_branch(repo, "feat/app_calc")
         record("pass_sibling_store", True, repo)
 
         repo, wt = _feature(
@@ -123,18 +115,18 @@ def run_self_test() -> int:
         record("fail_unmerged", False, repo)
 
         repo, wt = _feature(
-            root / "pass-merge", branch="feat/agent_todo", leaf="agent_feat-todo"
+            root / "pass-merge", branch="feat/app_todo", leaf="app_feat-todo"
         )
         _commit_file(wt, "todo.py", "feat(todo): add todo")
         run_command(
-            repo, "git", "merge", "--no-ff", "feat/agent_todo", "-m", "Merge feat/agent_todo"
+            repo, "git", "merge", "--no-ff", "feat/app_todo", "-m", "Merge feat/app_todo"
         )
         record("pass_after_merge", True, repo)
 
         repo, wt = _feature(
             root / "pass-incremental",
-            branch="feat/agent_counter",
-            leaf="agent_feat-counter",
+            branch="feat/app_counter",
+            leaf="app_feat-counter",
         )
         _commit_file(
             wt, "parse.py", "feat(counter): parse helper", "def parse(x):\n    return x\n"
@@ -145,7 +137,7 @@ def run_self_test() -> int:
             "feat(counter): entrypoint",
             "def run_counter(c):\n    return c\n",
         )
-        merge_branch(repo, "feat/agent_counter")
+        merge_branch(repo, "feat/app_counter")
         record("pass_incremental_commits", True, repo)
 
         repo = root / "fail-norepo" / "app"
@@ -161,16 +153,16 @@ def run_self_test() -> int:
         parent = root / "fail-inside"
         repo = parent / "app"
         init_empty_repo(repo)
-        wt = repo / ".worktrees" / "app" / "agent_feat-inside"
-        add_worktree(repo, wt, "-b", "feat/agent_inside")
+        wt = repo / ".worktrees" / "app" / "app_feat-inside"
+        add_worktree(repo, wt, "-b", "feat/app_inside")
         _commit_file(wt, message="inside repo")
         record("fail_worktree_inside_repo", False, repo)
 
         repo, wt = _feature(
             root / "fail-nodot",
             store_name="worktrees",
-            branch="feat/agent_nodot",
-            leaf="agent_feat-nodot",
+            branch="feat/app_nodot",
+            leaf="app_feat-nodot",
         )
         _commit_file(wt, message="wrong store name")
         record("fail_worktrees_no_dot", False, repo)
@@ -178,8 +170,8 @@ def run_self_test() -> int:
         repo, wt = _feature(
             root / "fail-wrongname",
             store_project="other",
-            branch="feat/agent_wrongname",
-            leaf="agent_feat-wrongname",
+            branch="feat/app_wrongname",
+            leaf="app_feat-wrongname",
         )
         _commit_file(wt, message="wrong project folder")
         record("fail_wrong_project_name", False, repo)
@@ -192,12 +184,12 @@ def run_self_test() -> int:
         record("fail_worktree_on_master", False, repo)
 
         repo, _ = _feature(
-            root / "fail-empty-wt", branch="feat/agent_empty", leaf="agent_feat-empty"
+            root / "fail-empty-wt", branch="feat/app_empty", leaf="app_feat-empty"
         )
         record("fail_no_extra_commit", False, repo)
 
         repo, wt = _feature(
-            root / "fail-remote", branch="feat/agent_push", leaf="agent_feat-push"
+            root / "fail-remote", branch="feat/app_push", leaf="app_feat-push"
         )
         _commit_file(wt, message="feat")
         run_command(
@@ -213,8 +205,8 @@ def run_self_test() -> int:
         parent = root / "fail-home"
         repo = parent / "app"
         init_empty_repo(repo)
-        wt = root / "fake-home" / ".worktrees" / "app" / "agent_feat-home"
-        add_worktree(repo, wt, "-b", "feat/agent_home")
+        wt = root / "fake-home" / ".worktrees" / "app" / "app_feat-home"
+        add_worktree(repo, wt, "-b", "feat/app_home")
         _commit_file(wt, message="home store")
         record("fail_home_worktrees", False, repo)
 
@@ -225,8 +217,8 @@ def run_self_test() -> int:
         run_command(repo, "git", "init", "-b", "master")
         run_command(repo, "git", "add", "seed.py")
         run_command(repo, "git", "commit", "-m", INITIAL_SUBJECT)
-        wt = parent / ".worktrees" / "app" / "agent_feat-seed"
-        add_worktree(repo, wt, "-b", "feat/agent_seed")
+        wt = parent / ".worktrees" / "app" / "app_feat-seed"
+        add_worktree(repo, wt, "-b", "feat/app_seed")
         _commit_file(wt, message="later")
         record("fail_nonempty_initial_commit", False, repo)
 
@@ -234,8 +226,8 @@ def run_self_test() -> int:
             root / "fail-basename",
             project="calculator",
             store_project="app",
-            branch="feat/agent_basename",
-            leaf="agent_feat-basename",
+            branch="feat/app_basename",
+            leaf="app_feat-basename",
         )
         _commit_file(wt, message="basename mismatch")
         record("fail_store_not_matching_basename", False, repo)
@@ -243,35 +235,35 @@ def run_self_test() -> int:
         repo, wt = _feature(
             root / "pass-named",
             project="calculator",
-            branch="feat/agent_named",
-            leaf="agent_feat-named",
+            branch="feat/calculator_named",
+            leaf="calculator_feat-named",
         )
         _commit_file(wt, message="named project")
-        merge_branch(repo, "feat/agent_named")
+        merge_branch(repo, "feat/calculator_named")
         record("pass_matching_project_name", True, repo)
 
         repo, wt = _feature(root / "Projects")
         _commit_file(wt)
-        merge_branch(repo, "feat/agent_calc")
+        merge_branch(repo, "feat/app_calc")
         record("pass_projects_parent", True, repo)
 
         repo, wt = _feature(
             root / "pass-multiword",
-            branch="fix/codex-home_parse-args",
-            leaf="codex-home_fix-parse-args",
+            branch="fix/app_parse-args",
+            leaf="app_fix-parse-args",
         )
         _commit_file(wt, "parser.py", "fix(parser): parse args")
-        merge_branch(repo, "fix/codex-home_parse-args")
+        merge_branch(repo, "fix/app_parse-args")
         record("pass_multiword_feature_slug", True, repo)
 
         repo, wt = _feature(
-            root / "fail-leaf-noinstance",
+            root / "fail-leaf-noproject",
             branch="feat/agent_calc",
             leaf="feat-calc",
         )
         _commit_file(wt)
         merge_branch(repo, "feat/agent_calc")
-        record("fail_leaf_without_instance", False, repo)
+        record("fail_leaf_without_project", False, repo)
 
         repo, wt = _feature(
             root / "fail-leaf-notype",
@@ -310,17 +302,17 @@ def run_self_test() -> int:
         record("fail_feature_mismatch", False, repo)
 
         repo, wt = _feature(
-            root / "fail-instance-mismatch",
+            root / "fail-project-mismatch",
             branch="feat/agent_calc",
             leaf="other_feat-calc",
         )
         _commit_file(wt)
         merge_branch(repo, "feat/agent_calc")
-        record("fail_instance_mismatch", False, repo)
+        record("fail_project_mismatch", False, repo)
 
         repo, wt = _feature(root / "fail-stray-dir")
         _commit_file(wt)
-        merge_branch(repo, "feat/agent_calc")
+        merge_branch(repo, "feat/app_calc")
         write_python(
             root / "fail-stray-dir" / ".worktrees" / "app" / "scratch" / "calc.py"
         )
@@ -328,7 +320,7 @@ def run_self_test() -> int:
 
         repo, wt = _feature(root / "fail-stray-file")
         _commit_file(wt)
-        merge_branch(repo, "feat/agent_calc")
+        merge_branch(repo, "feat/app_calc")
         (root / "fail-stray-file" / ".worktrees" / "app" / "notes.txt").write_text(
             "scratch\n", encoding="utf-8"
         )
@@ -339,29 +331,29 @@ def run_self_test() -> int:
             leaf="nested/agent_feat-calc",
         )
         _commit_file(wt)
-        merge_branch(repo, "feat/agent_calc")
+        merge_branch(repo, "feat/app_calc")
         record("fail_worktree_nested_below_store", False, repo)
 
         repo, wt = _feature(
-            root / "pass-env-instance",
-            branch="feat/claude-account-2_calc",
-            leaf="claude-account-2_feat-calc",
+            root / "pass-project-prefix",
+            branch="feat/app_calc",
+            leaf="app_feat-calc",
         )
         _commit_file(wt)
-        merge_branch(repo, "feat/claude-account-2_calc")
-        record("pass_instance_matches_agent_home", True, repo, _HOME_ENV)
+        merge_branch(repo, "feat/app_calc")
+        record("pass_project_prefix", True, repo)
 
         repo, wt = _feature(
-            root / "fail-env-instance",
+            root / "fail-model-prefix",
             branch="feat/someone_calc",
             leaf="someone_feat-calc",
         )
         _commit_file(wt)
         merge_branch(repo, "feat/someone_calc")
-        record("fail_instance_not_agent_home", False, repo, _HOME_ENV)
+        record("fail_model_prefix", False, repo)
 
-    for name, expect_ok, leaf, branch, env in _NAME_CASES:
-        problems = check_names(leaf, branch, env)
+    for name, expect_ok, leaf, branch, project in _NAME_CASES:
+        problems = check_names(leaf, branch, project)
         ok = (not problems) == expect_ok
         detail = (
             "; ".join(problems) or "conforms"

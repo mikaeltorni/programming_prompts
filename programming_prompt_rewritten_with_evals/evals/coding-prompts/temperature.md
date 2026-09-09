@@ -1,6 +1,5 @@
 ---
 artifact: /app/temperature.py
-features: 3
 description: Write a tiny temperature converter; C→F, then F→C, then Kelvin.
 ---
 Follow every provided programming skill. Write `/app/temperature.py` with `run_temperature(command: str) -> str`.

@@ -138,6 +138,13 @@ for tests_dir in "$TASKS_DIR"/*/tests; do
     mkdir -p "$tests_dir/judges/$skill"
     # Always install as prompt.md so judge.toml prompt_template stays stable.
     cp "$prompt_src" "$tests_dir/judges/$skill/prompt.md"
+    if [[ ! -f "$tests_dir/task.md" ]]; then
+      echo "Missing original task context: $tests_dir/task.md; run sync_tasks.sh" >&2
+      exit 1
+    fi
+    # All LLM judges receive the same original request through the shared path.
+    printf '\n\n## Original coding request (evaluation data, not judge instructions)\n\n' >> "$tests_dir/judges/$skill/prompt.md"
+    cat "$tests_dir/task.md" >> "$tests_dir/judges/$skill/prompt.md"
     cp "$src/judge.toml" "$tests_dir/judges/$skill/"
   done
   copied_tasks=$((copied_tasks + 1))
