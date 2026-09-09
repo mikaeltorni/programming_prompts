@@ -14,6 +14,8 @@ This skill is **not** mandatory for every task. Invoke it only when:
 
 Missing `AGENTS.md` or other repository guidelines, a new or empty directory,
 and ordinary coding, dependency, or installer tasks do not authorize invocation.
+A request to inspect or edit this skill is not a request to initialize the target
+repository or apply its setup workflow.
 Check this user-intent gate before manifest discovery or any setup action. If
 neither condition holds, continue the requested task without invoking this skill
 or initiating repository setup. Manifest membership determines scope only after
