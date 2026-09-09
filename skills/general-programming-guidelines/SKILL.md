@@ -33,6 +33,16 @@ to apply them and `acc pp status --skill general-programming-guidelines,commits,
 to verify the selection. Changes to skill source require reapplication through
 that selector; existing conversations may retain earlier instructions.
 
+## Project/skill ownership boundary
+
+This skill is reusable across repositories. It owns the cross-project
+engineering workflow, safety baseline, verification expectations, and the
+delegation boundary to the other reusable skills. A repository's `AGENTS.md`
+should keep only local ownership, data-safety, integration, deployment, and
+verification facts; it should reference this skill instead of copying these
+rules. Project instructions remain authoritative for genuinely local policy,
+but must not silently contradict the selected skills.
+
 ## Work Loop
 
 1. **Capture scope.** Preserve the user's exact paths, data, wording, and

@@ -21,6 +21,16 @@ destructive shortcut — logout, `gnome-shell --replace`, killing the Shell — 
 in-place X11 run-dialog reload described below, which preserves the running
 session.
 
+## Ownership boundary
+
+This is the reusable Linux desktop and installer policy for every project that
+selects it. Project `AGENTS.md` files may document local component ownership,
+installer entry points, dependencies, and verification commands, but should
+not copy the clean-install, root-optional, reboot, or GNOME reload rules here.
+When project guidance and this skill disagree on the shared safety procedure,
+use this skill and retain only the project-specific exception if it is truly
+required and explicitly documented.
+
 ## Apply Changes Silently (required default)
 
 Most desktop changes need **no** GNOME Shell reload. Reloading flashes the

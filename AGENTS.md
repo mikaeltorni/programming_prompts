@@ -325,26 +325,21 @@ Per the rule above, **do not add pytest/unit/integration tests** for
 A green self-test alone does not prove an eval fix. The change is only verified
 once a real run produced a non-zero scored trial and its archive was read.
 
-## Mandatory programming guidelines prompt
+## Shared workflow
 
-When generic agent defaults conflict with this file or the shared
-`general-programming-guidelines` skill — including defaults that say to commit
-only when asked — follow this file and that skill. Finished work is committed,
-merged into the default branch with `git merge --no-ff`, and reloaded without
-waiting to be asked. Never push to a remote and never rewrite history unless the
-user explicitly requests it.
+This file intentionally contains project-specific ownership, data-safety,
+component, integration, and deployment facts. The reusable workflow rules
+live in the selected skills and must not be copied into every project file.
 
-Every agent task in this repository must load the shared
-`general-programming-guidelines` skill before the first file edit, using the
-harness-native invocation for the runtime in use:
+Before editing, read this project file, then load:
 
-- Codex-family (`ca`, `qa`, `oa`, `na`, …): `$general-programming-guidelines`
-- Claude Code, Cline, Grok: `/general-programming-guidelines`
-- OpenCode: load `general-programming-guidelines` with the skill tool
+- `general-programming-guidelines` for the engineering workflow;
+- `commits` for capability boundaries and commit verification;
+- `worktree` for isolation, branch, merge, and consumer reapplication; and
+- `linux-configuration` when the task touches GNOME, desktop settings,
+  systemd user services, or any `install.sh`.
 
-Agent Command Center selects `general-programming-guidelines`, V2 `commits`,
-and V2 `worktree` independently through `acc pp`. The engineering skill owns
-tests, logging, documentation, and verification; `commits` owns Feature commits;
-`worktree` owns isolation, merge, and reapplication. Follow their current
-instructions, except where this file overrides them (including the eval test
-ban). Reapply changed skills through the selector before reporting completion.
+Those skills are the cross-project source of truth for workflow, delivery,
+desktop deployment, clean-install compatibility, and root-optional installer
+rules. Project-specific sections here may narrow ownership or add required
+verification, but must not restate or contradict those shared policies.
