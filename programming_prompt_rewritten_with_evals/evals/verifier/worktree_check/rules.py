@@ -219,6 +219,20 @@ def check_repo(repo: Path, env: dict[str, str] | None = None) -> CheckResult:
         if not changed.strip():
             problems.append(f"{path} commits after init do not add files")
             continue
+        # Registration and ancestry alone also pass an unused worktree created
+        # after coding in the live checkout. HEAD reflogs are worktree-local.
+        events = git_ok(path, "reflog", "show", "--format=%H%x09%gs", "HEAD")
+        authored_here = []
+        for event in events.splitlines():
+            commit, separator, action = event.partition("\t")
+            if separator and action.startswith("commit") and is_ancestor(repo, commit, head):
+                authored_here.append(commit)
+        if not authored_here:
+            problems.append(
+                f"{path} has no reachable commit recorded in its own HEAD reflog; "
+                "creating an unused worktree after coding is not isolation"
+            )
+            continue
         valid.append((path, entry))
 
     if valid:
