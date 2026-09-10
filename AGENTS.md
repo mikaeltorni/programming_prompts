@@ -94,13 +94,21 @@ cd programming_prompt_rewritten_with_evals/evals
 `grok`, or any second LLM judge to a run, and do not "just also check with the
 other judge" — a multi-judge run doubles cost and runtime, splits Pass across
 per-judge reward files, and makes results incomparable to the Codex-only
-baselines already in `evals/runs/`. The programmatic judges (`commits`,
-`worktree`, `docs`, `debug`) run regardless of this flag.
+baselines already in `evals/runs/`. The programmatic judges (`worktree`,
+`docs`) run regardless of this flag.
 
 **Current eval policy:** Do not use marker files, feature-count/debug-token
 catalogs, or the retired commit/debug checkers. Commits and debug are scored by
 semantic LLM judges using the original task and logs; worktree and docs remain
 programmatic.
+
+Deterministic helpers may inspect worktree registration, physical paths, Git
+history and commit contents, or Python syntax and expose that evidence to LLM
+judges. They must not encode task-specific markers or expected Feature counts.
+Judge semantic compliance from the original request and actual evidence;
+report infrastructure or missing-evidence failures separately from code defects.
+Standalone helper self-tests and temporary replay fixtures are permitted for
+these checks; the prohibition on pytest suites for this tree still applies.
 
 Only use a different or additional eval agent when the user explicitly asks for
 it in that request, and drop back to `--eval-agent codex` on the next run.
@@ -318,14 +326,12 @@ Per the rule above, **do not add pytest/unit/integration tests** for
 - `bash -n` on every edited shell file;
 - a real short run of `./run_benchmark.sh` when the change touches job
   execution, and then **read the archived job**, not just the score line;
-- for a change to the *skill prompts*, a fixture repository built by hand in
-  the exact shape the edited prompt prescribes, scored with the real
-  programmatic verifier — e.g. `PYTHONPATH=. python3 check_commits.py --repo
-  <fixture> --output /tmp/reward.json --feature-count-file
-  ../.generated/tasks/<task>/tests/feature_count.txt`. This needs no credits
-  and no Docker, and it proves the guidance is actually satisfiable by the
-  checker that scores it. Use it when an eval run is impossible; it does not
-  replace a real run for the LLM-scored skills.
+- for worktree changes, temporary fixture repositories checked with
+  `python3 verifier/check_worktree.py --repo <fixture> --output <reward.json>`;
+  for semantic judges, inspect archived source/history and replay focused
+  cases through the real judge. A fixture check does not replace a live Harbor
+  run for LLM-scored skills. References to retired marker checkers in the
+  historical mistakes above describe old implementations, not current commands.
 
 A green self-test alone does not prove an eval fix. The change is only verified
 once a real run produced a non-zero scored trial and its archive was read.
