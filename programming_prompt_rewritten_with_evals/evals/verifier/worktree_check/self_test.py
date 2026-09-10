@@ -108,6 +108,13 @@ def run_self_test() -> int:
         merge_branch(repo, "feat/app_calc")
         record("pass_sibling_store", True, repo)
 
+        repo = root / "fail-unused-worktree" / "app"
+        init_empty_repo(repo)
+        _commit_file(repo, message="code written on live checkout")
+        wt = repo.parent / ".worktrees" / "app" / "app_feat-calc"
+        add_worktree(repo, wt, "-b", "feat/app_calc")
+        record("fail_unused_worktree_created_after_coding", False, repo)
+
         repo, wt = _feature(
             root / "fail-unmerged", branch="feat/agent_nomerge", leaf="agent_feat-nomerge"
         )
