@@ -8,6 +8,9 @@ starts another Feature. Setup text that only names an artifact, signature, or
 skill is not a Feature. Do not assume a fixed number of Features.
 
 Inspect the actual Git history and source before scoring:
+- Run the supplied Git evidence helper to enumerate commits and parents, then
+  use its --commit and --path modes (or equivalent Git commands) to inspect
+  each candidate boundary. Never score from the current source alone.
 - Work in the supplied repository. Read the commit graph and non-merge commits
   reachable from HEAD in parent-before-child order. Inspect diffs AND the full
   relevant source trees with Git tools; commit subjects alone prove nothing.

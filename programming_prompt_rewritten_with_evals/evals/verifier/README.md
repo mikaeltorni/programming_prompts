@@ -52,3 +52,11 @@ python3 check_docs.py --self-test
 python3 run_llm_judge.py --self-test
 python3 judge_pool.py --self-test
 ```
+# Judge evidence tools
+
+`llm_judge/evidence.py --repo PATH` reports reachable commits, parents, changed
+paths and registered worktrees as JSON. Add `--commit HASH` to read a diff or
+`--commit HASH --path FILE` to read historical source. It never checks out a
+branch, edits the submission, or awards a score. Git errors exit 2 rather than
+becoming empty evidence. The shared judge prompt advertises this helper and
+`check_worktree.py`; runtime task sync copies both into each task.
