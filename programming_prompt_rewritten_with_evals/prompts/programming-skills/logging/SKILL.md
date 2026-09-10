@@ -44,6 +44,9 @@ parameters. Only `lambda` expressions are exempt.
    **everything** the `return` hands back: for `return result, []` the value
    is the whole tuple, so write `print(result, [])`. Every `return` gets its
    own exit print, including an early or empty-input branch.
+   This includes constructors (`__init__`) and validation helpers: if they
+   finish normally without a return statement, end with `print(None)`.
+   A path ending in an explicit return has no additional implicit exit.
 
 An exit print never substitutes for the entry print: `print(result); return
 result` alone leaves the function missing its entry print. Before finishing a

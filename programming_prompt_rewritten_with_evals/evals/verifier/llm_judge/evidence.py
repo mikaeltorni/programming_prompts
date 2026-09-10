@@ -8,6 +8,7 @@ Commit mode returns the actual diff or a source blob, without checking out refs.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import subprocess
 import sys
@@ -53,11 +54,32 @@ def main() -> int:
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--commit")
     parser.add_argument("--path", help="source path at --commit; omit for its diff")
+    parser.add_argument("--python-path", help="inspect function boundaries in a current Python file")
     args = parser.parse_args()
+    if args.python_path and (args.commit or args.path):
+        parser.error("--python-path cannot be combined with --commit or --path")
     if args.path and not args.commit:
         parser.error("--path requires --commit")
     try:
-        if args.commit:
+        if args.python_path:
+            path = (args.repo / args.python_path).resolve()
+            path.relative_to(args.repo.resolve())
+            source = path.read_text()
+            tree = ast.parse(source)
+            functions = []
+            for node in ast.walk(tree):
+                if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    continue
+                last = node.body[-1]
+                functions.append({
+                    "name": node.name, "line": node.lineno, "end_line": node.end_lineno,
+                    "last_statement": type(last).__name__,
+                    "last_statement_source": ast.get_source_segment(source, last),
+                })
+            log(f"collected Python boundaries functions={len(functions)}")
+            print(json.dumps({"file": str(path), "functions": functions,
+                              "note": "Syntax evidence only; inspect reachable control flow and prints."}, indent=2))
+        elif args.commit:
             commit = git(args.repo, "rev-parse", "--verify", "--end-of-options",
                          args.commit + "^{commit}").strip()
             log(f"reading commit evidence commit={commit}")
@@ -68,7 +90,7 @@ def main() -> int:
                           "--no-textconv", commit, "--"), end="")
         else:
             print(json.dumps(history(args.repo), indent=2))
-    except (ValueError, OSError, subprocess.TimeoutExpired) as exc:
+    except (ValueError, SyntaxError, OSError, subprocess.TimeoutExpired) as exc:
         log(f"evidence unavailable: {exc}")
         return 2
     return 0

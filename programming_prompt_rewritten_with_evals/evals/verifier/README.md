@@ -60,3 +60,7 @@ paths and registered worktrees as JSON. Add `--commit HASH` to read a diff or
 branch, edits the submission, or awards a score. Git errors exit 2 rather than
 becoming empty evidence. The shared judge prompt advertises this helper and
 `check_worktree.py`; runtime task sync copies both into each task.
+
+`--python-path FILE` instead reports AST function boundaries and final statements
+to support logging judgments. It does not infer missing execution paths or score
+logging automatically; judges inspect control flow and cite any uncovered exit.
