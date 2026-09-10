@@ -9,6 +9,14 @@ does both:
   (`print(result)` is a yes; a `return=` label is not required). When
   falling off the end with no meaningful return, print `None`.
 
+Before claiming a missing exit print, identify the exact function, line and
+reachable normal exit. Use the supplied evidence helper's --python-path mode
+to check function boundaries when uncertain. A final unconditional `return`
+does not fall through; do not invent an implicit None path after it. A branch
+ending in `raise` is exempt. Initializers and validation helpers that really
+reach the end normally do return None and need that exit print. Cite the
+specific uncovered path in a failing verdict.
+
 Judge every `return` in the function, not just the last one. The value
 about to be returned is the **whole** returned expression: for
 `return result, []` the value is the tuple, so a bare `print(result)`
