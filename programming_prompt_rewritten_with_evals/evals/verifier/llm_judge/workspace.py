@@ -8,6 +8,7 @@ eval agent from scoring a hallucinated ``app.py``.
 from __future__ import annotations
 
 import json
+import shlex
 import tomllib
 from pathlib import Path
 
@@ -207,6 +208,11 @@ def pin_workspace_python(
     """
     return (
         template.rstrip()
+        + "\n\nRead-only evidence tools (run with your shell tool):\n"
+        + f"- Git history and worktree registration: python3 {shlex.quote(str(Path(__file__).with_name('evidence.py')))} --repo {shlex.quote(str(workspace))}\n"
+        + "  Add --commit HASH for its diff, or --commit HASH --path FILE for the full source at that commit.\n"
+        + f"- Worktree layout and merge check: python3 {shlex.quote(str(Path(__file__).resolve().parents[1] / 'check_worktree.py'))} --repo {shlex.quote(str(workspace))} --output /tmp/judge-worktree-evidence.json\n"
+        + "These tools supply evidence, not semantic Feature scores. Inspect actual source; do not infer behavior from commit subjects.\n"
         + f"\n\nInspect the Python in the current working directory ({workspace}).\n"
         + INSPECT_BEFORE_SCORE
         + "\n\n"
