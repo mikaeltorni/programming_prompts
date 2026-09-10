@@ -34,6 +34,11 @@ conventional type and a descriptive task slug. The branch is
 `<type>/<project>_<feature>`. Add a unique suffix to both names on collision;
 never reuse or delete another task's branch or worktree.
 
+Choose TYPE and FEATURE once and reuse them for both names (for example, do not
+spell the same type `feature` in the directory and `feat` in the branch). Keep
+this task's branch and directory through all Feature commits; advancing the
+commit ledger does not rename the branch or change its task slug.
+
 For a live checkout `/home/mk/projects/widget`, a task can use:
 
 ```text
@@ -66,6 +71,11 @@ existing path or follow a misleading store symlink; resolve that conflict first.
 Before every edit and commit, confirm `pwd -P` is physically under the external
 project group and confirm the task branch.
 Target all edits at this same worktree, including later follow-up turns.
+The project group is only a container for worktrees, never an editing directory.
+Resolve each file under the full WT path, including README and scratch output.
+Shell `cd` affects only that tool call; pass the worktree as cwd on subsequent
+calls and use absolute worktree paths with patch tools. Before delivery, inspect
+the project group for misplaced files from this task and recover them into WT.
 Check its status after editing to confirm the intended files changed there.
 Never stage accidental live-checkout edits there; recover only your own changes
 into the worktree without overwriting the user's work.

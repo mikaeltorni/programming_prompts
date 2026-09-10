@@ -24,6 +24,11 @@ merge adjacent ledger entries or move a command to another entry. Keep the
 request's order when it already places dependencies first; otherwise resolve
 implementation dependencies without changing the Feature boundaries.
 
+Keep the ledger visible while implementing: mark only the current entry active,
+and record its verified commit before advancing. Finishing the first entry does
+not permit batching the remaining entries. A shared dispatcher must expose only
+capabilities implemented so far, even when adding all remaining cases seems easy.
+
 ## Complete and commit the current entry before starting the next
 
 Treat the ledger as a queue. Work on only its first uncommitted entry:
@@ -41,7 +46,9 @@ Treat the ledger as a queue. Work on only its first uncommitted entry:
 
 Close each entry with this gate:
 
-1. Verify its behavior and resolve failures before staging.
+1. Verify its behavior and rerun a representative public-entrypoint example for
+   every earlier Feature, especially after changing parsing or dispatch. Resolve
+   failures before staging.
 2. Stage only its changes in the worktree.
 3. Run `git commit` as its own command, not chained behind a search or check
    that could fail and silently skip the commit.
@@ -60,9 +67,12 @@ A later Feature must not already exist in an earlier Feature's Python tree.
 Do not batch missing entries into one final commit or split already-written
 Features into cosmetic commits after the fact.
 
-If a defect is discovered after a Feature was committed, make a focused fix
-without adding the next Feature. An extra repair commit does not replace a
-Feature commit or change the ledger. Never rewrite history to repair a commit.
+If a defect is discovered after a Feature was committed, commit a focused repair
+before adding the next Feature. Verify the repaired tree preserves all earlier
+Features. The original Feature commit plus its immediate repair is a valid
+completed entry; a repair cannot rescue bundled Features. Optional extras may
+land in a focused follow-up before advancing to the next entry. Never rewrite
+history to repair a commit.
 
 A single Feature or an undivided change is one commit. Commits happen in the
 worktree; worktree location and merge policy belong to the applicable project
