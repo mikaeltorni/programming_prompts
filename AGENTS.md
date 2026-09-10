@@ -97,6 +97,11 @@ per-judge reward files, and makes results incomparable to the Codex-only
 baselines already in `evals/runs/`. The programmatic judges (`commits`,
 `worktree`, `docs`, `debug`) run regardless of this flag.
 
+**Current eval policy:** Do not use marker files, feature-count/debug-token
+catalogs, or the retired commit/debug checkers. Commits and debug are scored by
+semantic LLM judges using the original task and logs; worktree and docs remain
+programmatic.
+
 Only use a different or additional eval agent when the user explicitly asks for
 it in that request, and drop back to `--eval-agent codex` on the next run.
 
