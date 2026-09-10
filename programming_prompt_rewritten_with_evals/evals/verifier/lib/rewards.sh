@@ -242,8 +242,8 @@ if ratelimited:
     overall = 0.0
 reward_payload = {"reward": overall}
 if ratelimited:
+    # Harbor accepts numeric rewards only; diagnostics belong in details.
     reward_payload["ratelimit"] = True
-    reward_payload["error"] = "ratelimit"
 (out_dir / "reward.json").write_text(
     json.dumps(reward_payload, indent=2) + "\n", encoding="utf-8"
 )
@@ -252,6 +252,7 @@ if ratelimited:
         "reward": {
             "aggregation": aggregation,
             "overall": overall,
+            "ratelimit": ratelimited,
             "criteria": criteria,
         }
     }, indent=2) + "\n",
