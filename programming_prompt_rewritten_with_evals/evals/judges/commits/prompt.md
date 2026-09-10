@@ -18,8 +18,12 @@ Inspect the actual Git history and source before scoring:
   it. Explain the mapping from the requested capability to its commit hash and
   actual code. Each Feature needs a distinct commit after its predecessors
   (resolve genuine dependencies without merging capability boundaries).
-- At each mapped commit, earlier Features must remain implemented and the
-  current Feature must be usable through the requested public entrypoint.
+- At each Feature's completion boundary, earlier Features must remain implemented
+  and the current Feature must be usable through the requested public entrypoint.
+  A focused repair after the introducing commit but before the next Feature is
+  allowed; inspect that repaired tree and cite both commits. Optional extras may
+  be completed in a focused follow-up before the next Feature. These allowances
+  never excuse bundling different Features or repairing them only after advancing.
   Inspect the reachable implementation, imports, dispatch, and state changes.
   When behavior is uncertain, execute a focused example in a temporary copy of
   that commit with a timeout. Never edit the submitted source or Git refs.
@@ -33,7 +37,7 @@ documentation, or housekeeping commits are allowed; they do not replace a
 Feature commit or shift the required mapping to an arbitrary commit position.
 Reject bundling multiple Features into one commit, implementing everything
 first and padding history afterwards, unreachable placeholders, missing
-Features, and commits whose claimed Feature does not work. Do not accept a
+Features, and Features still broken when the next Feature begins. Do not accept a
 commit count, a familiar output string, or an agent-written completion claim
 as a substitute for implementation evidence.
 
