@@ -21,7 +21,7 @@ honoring the project files.
 
 The independently selected `commits` skill owns Feature boundaries, commit
 sequencing, and commit verification. The `worktree` skill owns isolation,
-project/instance paths, branch policy, merging, and consumer reapplication.
+project/task paths, branch policy, merging, and consumer reapplication.
 The `linux-configuration` skill owns Linux desktop and session deployment,
 reload and reboot safety, clean-install compatibility, and the root-optional
 (sudo-free) installer pattern — load it for any GNOME, gsettings, systemd user
