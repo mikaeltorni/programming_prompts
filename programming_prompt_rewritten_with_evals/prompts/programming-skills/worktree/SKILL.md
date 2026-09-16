@@ -34,6 +34,15 @@ conventional type and a descriptive task slug. The branch is
 `<type>/<project>_<feature>`. Add a unique suffix to both names on collision;
 never reuse or delete another task's branch or worktree.
 
+Derive `PROJECT` only from the physical live repository basename. Agent names,
+model names, and account homes (`CODEX_HOME`, `CLAUDE_CONFIG_DIR`) must never
+replace that project component or add an instance directory to this layout.
+For project `widget` and task `fix-parser`, the leaf is `widget_fix-parser`
+and the branch is `fix/widget_parser`; `claude_fix-parser`,
+`codex-account-2_fix-parser`, and `fix/claude_parser` are invalid for that
+project. Before `git worktree add`, check both complete names against the
+resolved project basename; correct a mismatched project component first.
+
 Choose TYPE and FEATURE once and reuse them for both names (for example, do not
 spell the same type `feature` in the directory and `feat` in the branch). Keep
 this task's branch and directory through all Feature commits; advancing the

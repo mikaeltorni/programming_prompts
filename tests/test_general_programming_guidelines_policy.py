@@ -104,7 +104,7 @@ def test_general_guidelines_declare_commits_and_worktree_skill_ownership():
     assert "`commits` skill owns Feature boundaries" in content
     assert "commit sequencing, and commit verification" in content
     assert "`worktree` skill owns isolation" in content
-    assert "project/instance paths, branch policy, merging, and consumer reapplication" in content
+    assert "project/task paths, branch policy, merging, and consumer reapplication" in content
     # Delegation is an instruction to follow them, not an optional pointer.
     assert "Follow those selected skills alongside this engineering workflow" in content
     assert "this file does not duplicate their policies" in content
