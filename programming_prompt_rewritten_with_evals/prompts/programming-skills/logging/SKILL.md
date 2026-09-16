@@ -15,9 +15,9 @@ parameters. Only `lambda` expressions are exempt.
 
 1. **Entry print — the first statement in the body.** `print` **every**
    incoming parameter's **actual name** and value, including optional
-   parameters whose value is `None`; one print listing every real name is
-   enough. "First statement" is literal: no parse call, validation, `global`,
-   or dispatch runs before it. A docstring is not a statement — keep it and
+   parameters whose value is `None` and method receivers `self` / `cls`;
+   one print listing every real name is enough. "First statement" is literal:
+   no parse call, validation, `global`, or dispatch runs before it. A docstring is not a statement — keep it and
    put the print directly after it.
 
    ```python
@@ -38,6 +38,15 @@ parameters. Only `lambda` expressions are exempt.
    real names. A helper that prints `command=` does not cover the entrypoint —
    every function prints its own parameters. With **no parameters** you still
    write an entry print: `print("entry")` or `print("parameters=none")`.
+
+   Count parameters from the function signature, not only arguments a caller
+   writes explicitly. `def __init__(self)` and `def size(self)` each have a
+   parameter: start with `print(f"self={object.__repr__(self)}")`, not
+   `print("parameters=none")`. For `def update(self, value)`, print both
+   `self=` and `value=`; class methods likewise print `cls=`. The receiver's
+   object representation is sufficient; do not inspect attributes that a
+   constructor has not initialized. Use `object.__repr__(self)` when tracing
+   the receiver could call a traced `__repr__` / `__str__` recursively.
 2. **Exit print — just before each `return`** (or before falling off the end
    with an implicit `None`), `print` the value about to leave the function.
    `print(result)` is enough; a `return=` label is not required. Print
