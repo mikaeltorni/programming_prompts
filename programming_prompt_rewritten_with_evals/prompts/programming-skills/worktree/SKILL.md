@@ -20,7 +20,7 @@ Claude's EnterWorktree / ExitWorktree is not a substitute for this layout.
 
 ## Project and feature layout
 
-Use `<project-parent>/.worktrees/<project>/<project>_<type-feature>`.
+Use `<project-parent>/.worktrees/<project>/<project>_<type>-<feature>`.
 `<project>` is the physical live checkout's basename. Resolve symlinks first:
 for example, `/app` pointing at `/Projects/app` means the store is
 `/Projects/.worktrees/app/`, never `/.worktrees/` or `/app/.worktrees/`.
@@ -29,10 +29,21 @@ When already inside a linked worktree, recover the live checkout from
 worktree directory as a new project or nest another store below it.
 
 The worktree leaf repeats the project name so it is recognizable without
-depending on the model, account, or agent home. `<type-feature>` combines a
-conventional type and a descriptive task slug. The branch is
-`<type>/<project>_<feature>`. Add a unique suffix to both names on collision;
-never reuse or delete another task's branch or worktree.
+depending on the model, account, or agent home. Both names contain the same
+three components: PROJECT, TYPE (conventional commit type), and FEATURE
+(descriptive task slug):
+
+- Directory leaf: `${PROJECT}_${TYPE}-${FEATURE}`.
+- Branch: `${TYPE}/${PROJECT}_${FEATURE}`.
+
+TYPE is required in the directory as well as the branch. A hyphen inside
+FEATURE does not supply TYPE: for `TYPE=fix` and `FEATURE=parse-args`, the
+leaf is `widget_fix-parse-args`, never `widget_parse-args` or `widget_parser`.
+Compute both names from the same variables using the command template below;
+do not shorten the directory to `${PROJECT}_${FEATURE}`. Check the actual
+`git worktree add` destination and branch against these two formulas before
+running it. Add a unique suffix to FEATURE on collision and recompute both
+names; never reuse or delete another task's branch or worktree.
 
 Derive `PROJECT` only from the physical live repository basename. Agent names,
 model names, and account homes (`CODEX_HOME`, `CLAUDE_CONFIG_DIR`) must never
