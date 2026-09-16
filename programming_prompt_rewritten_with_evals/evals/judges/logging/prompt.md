@@ -25,9 +25,14 @@ before it omits the second element and is a **no**, while
 `return value` covered by `print(value)` is a **yes**.
 
 Each named parameter must appear **as that name** in the entry print,
-including optional parameters whose value is `None` — omitting
-`argument=` because it is unused or `None` is a **no**. One print that
-lists every real parameter name on the same line is a **yes**; combining
+including optional parameters whose value is `None` and the method receivers
+`self` / `cls` — omitting a receiver because the caller supplies it implicitly
+is a **no**, as is omitting `argument=` because it is unused or `None`.
+`def __init__(self)` and `def size(self)` have one parameter, not zero:
+`print("parameters=none")` alone fails. A named object representation such as
+`print(f"self={object.__repr__(self)}")` covers the receiver; do not require
+its fields or a custom representation, especially before initialization.
+One print that lists every real parameter name on the same line is a **yes**; combining
 real names in one message is neither a generic label nor an unlabeled
 tuple. Answer **no** when a function **has named parameters** and the
 entry print uses a generic label (`input=`, `args=`, `params=`) or packs
