@@ -1,7 +1,7 @@
 ---
 name: commenting
 description: >-
-  Use whenever writing or editing Python (or other) functions: every function
+  v1.0.0 — Use whenever writing or editing Python (or other) functions: every function
   must have a docstring with a description, Parameters, and Returns in exactly
   that format. Apply on every coding task, including new files from scratch.
 ---

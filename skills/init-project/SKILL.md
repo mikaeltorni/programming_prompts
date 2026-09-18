@@ -1,7 +1,7 @@
 ---
 name: init-project
 description: >-
-  Use when initializing a new project or adding Python support to existing projects.
+  v1.0.0 — Use when initializing a new project or adding Python support to existing projects.
   Implements anti supply-chain attack protection for Python dependencies and configures
   UV by Astral as the required package manager with rolling 24-hour publication delay.
 ---

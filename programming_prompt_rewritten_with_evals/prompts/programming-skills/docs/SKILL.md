@@ -1,7 +1,7 @@
 ---
 name: docs
 description: >-
-  Use whenever writing or editing a program: after the code works, write a
+  v1.0.0 — Use whenever writing or editing a program: after the code works, write a
   README.md that documents what it does, the public entrypoint, and the
   commands it accepts. Apply on every coding task, including small scripts
   and new files from scratch.

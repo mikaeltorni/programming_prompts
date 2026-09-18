@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >-
-  Use before editing a git repository: isolate work in a sibling
+  v1.0.0 — Use before editing a git repository: isolate work in a sibling
   .worktrees project group with a project/task directory, commit there,
   merge into the live default branch, and reapply consumers. Applies to
   coding, documentation, and follow-up edits. Never push unless requested.

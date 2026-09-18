@@ -1,7 +1,7 @@
 ---
 name: debug
 description: >-
-  Use whenever software is reported broken or misbehaving: read the logs
+  v1.0.0 — Use whenever software is reported broken or misbehaving: read the logs
   before forming a hypothesis. Look in repo .log/ first. Apply on every
   debugging task, including small scripts.
 ---

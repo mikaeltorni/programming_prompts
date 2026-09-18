@@ -354,3 +354,11 @@ Those skills are the cross-project source of truth for workflow, delivery,
 desktop deployment, clean-install compatibility, and root-optional installer
 rules. Project-specific sections here may narrow ownership or add required
 verification, but must not restate or contradict those shared policies.
+
+## Skill versions
+
+Every `SKILL.md` in this repository declares a `vMAJOR.MINOR.PATCH` version as
+the start of its YAML `description` (the `vX.Y.Z — …` form). Skill versions
+must be bumped whenever those skills are updated, so later edits cannot leave
+versions stale. Keep an already-versioned skill at its current number unless
+its text also changes.

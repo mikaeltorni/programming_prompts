@@ -1,7 +1,7 @@
 ---
 name: "commit"
 description: >-
-  Use when the user asks to commit work that already exists in a dirty
+  v1.0.0 — Use when the user asks to commit work that already exists in a dirty
   worktree: inspect the changes, split that diff into logical commits, stage
   hunks, and create the commits. Plan every requested repository and execute
   the complete commit run in the same response. Not for work this session is

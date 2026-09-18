@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  Use whenever the user prompt can be split into Features, including vague
+  v1.0.0 — Use whenever the user prompt can be split into Features, including vague
   "should have X" asks: break it into one Feature per capability the prompt
   names, implement one at a time, and commit each Feature in the worktree
   while the program still works. Apply on every coding task, including small

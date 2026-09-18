@@ -1,6 +1,6 @@
 ---
 name: setup-repository-guidelines
-description: Use only when the user requests repository initialization or explicitly invokes this skill by name or tag. Missing repository guidelines, a new directory, and ordinary coding or installer work do not authorize invocation. Detects membership from scripts/repository_manifest.sh and enforces owner routing, selectable installer integration, clean-install compatibility, safe deployment, and prompt-free keyring handling.
+description: v1.0.0 — Use only when the user requests repository initialization or explicitly invokes this skill by name or tag. Missing repository guidelines, a new directory, and ordinary coding or installer work do not authorize invocation. Detects membership from scripts/repository_manifest.sh and enforces owner routing, selectable installer integration, clean-install compatibility, safe deployment, and prompt-free keyring handling.
 ---
 
 # Setup Repository Guidelines
