@@ -117,6 +117,21 @@ def test_commits_skill_requires_one_verified_commit_per_ledger_entry():
     assert "Never rewrite history to repair a commit" in content
 
 
+# Same type family the salvage `commit` plugin already lists. Authoring and
+# judging must not invent a second list.
+CONVENTIONAL_TYPES = (
+    "`feat`, `fix`, `refactor`, `chore`, `docs`, `style`, `test`, `perf`"
+)
+
+COMMITS_JUDGE_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "programming_prompt_rewritten_with_evals"
+    / "evals"
+    / "judges"
+    / "commits"
+    / "prompt.md"
+)
+
 COMMIT_PLUGIN_PATH = (
     Path(__file__).resolve().parents[1]
     / "plugins"
@@ -125,6 +140,42 @@ COMMIT_PLUGIN_PATH = (
     / "commit"
     / "SKILL.md"
 )
+
+
+def test_commits_skill_requires_conventional_feat_fix_subjects():
+    """Feature commit subjects must use conventional `feat`/`fix`/etc types."""
+    content = flat(COMMITS_PATH)
+
+    assert "conventional-commit" in content
+    assert "`type:`" in content
+    assert "`type(scope):`" in content
+    assert CONVENTIONAL_TYPES in content
+    assert "Feature commit" in content
+    assert "omits" in content
+
+
+def test_commits_judge_requires_conventional_feat_fix_subjects():
+    """The Harbor commits judge fails a Feature commit that omits the type."""
+    content = flat(COMMITS_JUDGE_PATH)
+
+    assert "conventional-commit" in content
+    assert "`type:`" in content
+    assert "`type(scope):`" in content
+    assert CONVENTIONAL_TYPES in content
+    assert "Feature commit" in content
+    assert "omits" in content
+    # Format is required of agent-authored Feature commits, not a substitute
+    # for implementation evidence.
+    assert "commit subjects alone prove nothing" in content
+
+
+def test_commits_skill_and_salvage_plugin_share_the_same_type_list():
+    """Authoring must reuse the salvage plugin's allowed types, not a second set."""
+    salvage = flat(COMMIT_PLUGIN_PATH)
+    authoring = flat(COMMITS_PATH)
+
+    assert CONVENTIONAL_TYPES in salvage
+    assert CONVENTIONAL_TYPES in authoring
 
 
 def test_commit_plugin_declares_the_salvage_scope_that_separates_it_from_commits():
