@@ -1,7 +1,7 @@
 ---
 name: logging
 description: >-
-  Use whenever writing or editing Python (or other) functions: print each
+  v1.0.0 — Use whenever writing or editing Python (or other) functions: print each
   function's incoming parameters at entry and the return value just before
   returning. Keep it to plain print() — no logging modules or log files.
 ---

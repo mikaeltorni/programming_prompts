@@ -1,7 +1,7 @@
 ---
 name: linux-configuration
 description: >-
-  Mandatory rules for any task on this machine that touches Linux desktop
+  v1.0.0 — Mandatory rules for any task on this machine that touches Linux desktop
   configuration: GNOME Shell extensions, gsettings, themes, hotkeys, systemd
   user services, or a repository install.sh. Requires console-only, silent
   deployment; activates edited extension code via the sanctioned in-place X11
