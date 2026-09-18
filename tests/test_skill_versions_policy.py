@@ -17,20 +17,30 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 AGENTS_PATH = REPO_ROOT / "AGENTS.md"
 
+# Source skill trees only. Harbor trial archives under evals/runs/ copy SKILL.md
+# into agent sessions and must not join this inventory.
+SKILL_TREES = (
+    REPO_ROOT / "skills",
+    REPO_ROOT / "plugins",
+    REPO_ROOT / "dispatch-skills",
+    REPO_ROOT / "programming_prompt_rewritten_with_evals" / "prompts" / "programming-skills",
+)
+
 # Folded or single-line description must start with this once whitespace is collapsed.
 VERSION_PREFIX = re.compile(r"^v\d+\.\d+\.\d+ —")
 
 
 def skill_md_paths() -> list[Path]:
-    """Return every repository ``SKILL.md``, excluding Git internals.
+    """Return every source ``SKILL.md`` under the four owned skill trees.
 
     Parameters: none.
 
     Returns: sorted absolute paths to skill files.
     """
-    return sorted(
-        path for path in REPO_ROOT.rglob("SKILL.md") if ".git" not in path.parts
-    )
+    paths: list[Path] = []
+    for tree in SKILL_TREES:
+        paths.extend(path for path in tree.rglob("SKILL.md") if ".git" not in path.parts)
+    return sorted(paths)
 
 
 def skill_description(path: Path) -> str:
@@ -78,11 +88,14 @@ def test_skill_md_glob_lists_every_owned_tree():
     joined = "\n".join(SKILL_IDS)
     assert any(item.startswith("skills/") for item in SKILL_IDS), joined
     assert any(item.startswith("plugins/") for item in SKILL_IDS), joined
+    assert not any("evals/runs/" in item for item in SKILL_IDS), joined
     assert any(item.startswith("dispatch-skills/") for item in SKILL_IDS), joined
     assert any(
         item.startswith("programming_prompt_rewritten_with_evals/prompts/programming-skills/")
         for item in SKILL_IDS
     ), joined
+    for path in SKILL_PATHS:
+        assert any(path.is_relative_to(tree) for tree in SKILL_TREES), path
 
 
 @pytest.mark.parametrize("skill_path", SKILL_PATHS, ids=SKILL_IDS)
