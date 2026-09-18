@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.0.0 — Use whenever the user prompt can be split into Features, including vague
+  v1.1.0 — Use whenever the user prompt can be split into Features, including vague
   "should have X" asks: break it into one Feature per capability the prompt
   names, implement one at a time, and commit each Feature in the worktree
   while the program still works. Apply on every coding task, including small
@@ -64,7 +64,10 @@ Close each entry with this gate:
    before staging.
 2. Stage only its changes in the worktree.
 3. Run `git commit` as its own command, not chained behind a search or check
-   that could fail and silently skip the commit.
+   that could fail and silently skip the commit. The Feature commit subject
+   uses a conventional-commit type (`feat`, `fix`, `refactor`, `chore`,
+   `docs`, `style`, `test`, `perf`) in `type:` or `type(scope):` form. A
+   subject that omits that type is not a completed Feature commit.
 4. Read the new `HEAD`, confirm it advanced and contains this entry's Python
    implementation, and record that commit beside the ledger entry. If the
    commit failed, resolve it and commit before editing the next Feature.
@@ -76,6 +79,8 @@ entry with a verified commit may be removed from the queue.
 
 Each entry must map to a distinct commit in order; inspect what each mapped
 commit actually introduced, not just its subject or the total commit count.
+The mapped Feature commit subject must still use a conventional-commit type
+in `type:` / `type(scope):` form.
 A later Feature must not already exist in an earlier Feature's Python tree.
 Do not batch missing entries into one final commit or split already-written
 Features into cosmetic commits after the fact.

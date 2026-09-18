@@ -9,7 +9,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "feature_commits"
-description = "each requested capability is implemented in its own working commit before later capabilities"
+description = "each requested capability is implemented in its own working commit before later capabilities, and that Feature commit subject uses a conventional feat/fix/etc type"
 type = "binary"
 
 [scoring]

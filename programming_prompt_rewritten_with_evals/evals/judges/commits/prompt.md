@@ -14,6 +14,10 @@ Inspect the actual Git history and source before scoring:
 - Work in the supplied repository. Read the commit graph and non-merge commits
   reachable from HEAD in parent-before-child order. Inspect diffs AND the full
   relevant source trees with Git tools; commit subjects alone prove nothing.
+  Agent-authored Feature commits must still use a conventional-commit subject:
+  a type of `feat`, `fix`, `refactor`, `chore`, `docs`, `style`, `test`,
+  `perf` in `type:` or `type(scope):` form. A Feature commit that omits that
+  type fails this criterion even when the code mapping is otherwise correct.
 - Exclude the initial empty repository commit and any supplied task seed from
   agent-authored work. Confirm the starting state from the graph and contents;
   an agent commit does not become a seed just because its subject says so.
