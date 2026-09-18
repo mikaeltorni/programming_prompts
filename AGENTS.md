@@ -362,12 +362,3 @@ the start of its YAML `description` (the `vX.Y.Z — …` form). Skill versions
 must be bumped whenever those skills are updated, so later edits cannot leave
 versions stale. Keep an already-versioned skill at its current number unless
 its text also changes.
-
-## Never add community-process files
-
-This repository follows the owner-wide SEO policy for public repositories. Do
-not add or restore `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`,
-`.github/ISSUE_TEMPLATE/`, or `.github/PULL_REQUEST_TEMPLATE.md` (or equivalent
-pull-request templates). These community and contribution workflows are out of
-scope for this content-source repository; keep project-specific licensing and
-citation metadata instead.
