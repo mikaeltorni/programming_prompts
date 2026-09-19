@@ -1,7 +1,7 @@
 ---
 name: github-seo
 description: >-
-  v1.2.0 — Use when a GitHub project needs to be found: search-engine ranking, AI/LLM
+  v1.3.0 — Use when a GitHub project needs to be found: search-engine ranking, AI/LLM
   citability, GitHub-internal discovery, and registry presence. Runs a
   weighted 100-point audit, records a tracked scorecard, then closes the highest-value gap
   round after round until the score is a fully evidenced 100/100, and maintains it after.
@@ -22,6 +22,14 @@ Then follow `general-programming-guidelines` for isolation, branch naming,
 testing, logging, documentation, and the commit → merge → reapply delivery step.
 This skill does not restate that policy; it only adds what is specific to
 discoverability work.
+
+## Owner-wide SEO workflow
+
+For mikaeltorni's repositories, the private `seo_optimization` repository is
+the single source of truth for SEO audits, workflows, and scorecards. Target
+repositories may contain this reusable dispatch prompt, but they must not carry
+`docs/seo-scorecard.md` or a copied owner-wide SEO policy. Read and update the
+matching `scorecards/<repository>.md` in `seo_optimization` instead.
 
 ## Non-negotiables
 
@@ -62,11 +70,11 @@ discoverability work.
 
 ## Where the score lives
 
-One tracked file per repository: **`docs/seo-scorecard.md`** (create `docs/` if
-it does not exist). It is the memory that makes the loop continuous. Every run
-reads it first, then rewrites it with freshly verified numbers and appends one
-history row. Never delete history rows, and never copy a previous round's score
-forward without re-verifying it.
+For mikaeltorni's repositories, one tracked scorecard per repository lives in
+the private `seo_optimization/scorecards/` directory. It is the memory that
+makes the loop continuous. Every run reads the matching central scorecard
+first, then rewrites it with freshly verified numbers and appends one history
+row. Never create `docs/seo-scorecard.md` in a target repository. Never delete history rows, and never copy a previous round's score forward without re-verifying it.
 
 The file has exactly these sections:
 
@@ -119,8 +127,9 @@ nothing to have changed.
    package manifest, the CLI/API surface, and the existing README. You cannot
    write a truthful description of software you have not looked at, and every
    later claim must be traceable to something you read.
-3. **Read the existing scorecard** when `docs/seo-scorecard.md` exists. Use it
-   for history and for the keyword model, never as a substitute for measuring.
+3. **Read the existing central scorecard** for the repository when it exists.
+   Use it for history and for the keyword model, never as a substitute for
+   measuring.
 4. **Build or refresh the keyword model.** Derive the primary keyword from what
    the project *does* for *whom*, not from what sounds impressive. Check the
    terms against reality: search them, look at what the top results are, and
@@ -128,8 +137,8 @@ nothing to have changed.
    plausibly rank for is worse than a narrower one you own.
 5. **Audit and score every criterion** in the rubric below, from scratch,
    recording evidence per criterion. Use the commands in *Measuring*.
-6. **Write the scorecard** with the new numbers before changing anything else,
-   so the round's starting point is on record.
+6. **Write the central scorecard** with the new numbers before changing
+   anything else, so the round's starting point is on record.
 7. **Pick the work.** Order the open gaps by `weight × gap × confidence`, and
    take the top item that you can complete and verify now. Anything that needs
    the user goes to *Pending user actions* instead of blocking the round.
@@ -421,7 +430,8 @@ but it is still the user's repository:
 
 Beyond the checklist in `general-programming-guidelines`:
 
-- [ ] `docs/seo-scorecard.md` exists, is committed, and its numbers come from
+- [ ] The matching `seo_optimization/scorecards/<repository>.md` exists in the
+      central SEO repository, is committed, and its numbers come from
       measurements taken this round.
 - [ ] Every criterion is 0 / half / full with evidence, or N/A with a reason.
 - [ ] Penalties are listed with every instance, or explicitly none.

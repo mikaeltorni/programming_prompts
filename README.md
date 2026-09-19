@@ -198,12 +198,12 @@ AI/LLM citability (question-shaped FAQ, a quotable definitional
 sentence), community health signals, docs-site technical SEO, registry presence,
 cross-links, and freshness — minus penalties for keyword stuffing,
 unsupported claims, badge and topic spam, artificial engagement, and dead links.
-Scores land in a committed `docs/seo-scorecard.md` with per-criterion evidence
-and a round history, so successive agent runs compare against real numbers
-instead of opinions. The loop closes the highest-value gap, re-measures from
-scratch, and repeats until a re-audit independently reproduces 100/100, then
-switches to maintenance. Points are only awarded against recorded evidence, and
-nothing is published, renamed, or posted on the user's behalf.
+For mikaeltorni's repositories, per-criterion evidence and round history live
+in the private `seo_optimization` repository, not in this public content
+source. The loop closes the highest-value gap, re-measures from scratch, and
+repeats until a re-audit independently reproduces 100/100, then switches to
+maintenance. Points are only awarded against recorded evidence, and nothing is
+published, renamed, or posted on the user's behalf.
 
 ## Logging
 
