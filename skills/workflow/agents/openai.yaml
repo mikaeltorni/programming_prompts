@@ -1,0 +1,7 @@
+interface:
+  display_name: "Programming Workflow"
+  short_description: "Orchestrate an explicit programming workflow"
+  default_prompt: "Use $workflow to coordinate this programming task from start to finish."
+
+policy:
+  allow_implicit_invocation: false
