@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.3.0 — Coordinate an end-to-end programming task as an ordered workflow
+  v0.4.0 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -21,6 +21,18 @@ Own the end-to-end sequence for the current programming request. Break the
 work into ordered phases that fit the request, finish each phase before moving
 to the next, and keep the user's stated goal and constraints visible throughout
 the task.
+
+## Read the enabled skills
+
+Before building the phase sequence, inspect the current user prompt and the
+skill instructions actually supplied in the conversation. Make a short
+inventory containing only the companion skills explicitly invoked by the user
+or loaded as applicable by the host. Assign each inventoried skill to the phase
+where its instructions apply.
+
+Do not treat a skill as enabled merely because it is installed, discoverable,
+mentioned as an example, or known to exist in the repository. Do not load or
+apply an unselected companion on this skill's behalf.
 
 ## Phase order
 
