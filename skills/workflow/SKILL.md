@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.5.0 — Coordinate an end-to-end programming task as an ordered workflow
+  v0.6.0 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -38,9 +38,12 @@ apply an unselected companion on this skill's behalf.
 
 Follow this order:
 
-1. **Plan.** Before repository mutation, translate the user's goal into an
+1. **Plan.** Before tracked repository mutation, translate the user's goal into an
    actionable sequence that preserves their constraints and names the expected
-   deliverables.
+   deliverables. Store it as Markdown at
+   `<repository-root>/tmp/workflow-<task-slug>.md`, creating `tmp/` when needed.
+   Use a short stable task slug, update the same file as phases advance, and do
+   not stage or commit this temporary plan unless the user explicitly asks.
 2. **Establish the worktree.** Resolve the repository and create the task's
    isolated worktree before editing repository files.
 3. **Write the code.** Implement the plan inside that worktree while applying

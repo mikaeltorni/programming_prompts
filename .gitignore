@@ -3,6 +3,7 @@ project_paths.txt
 
 config.json
 .log/
+tmp/
 
 __pycache__/
 *.py[cod]
