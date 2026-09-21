@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.9.0 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.0 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -51,6 +51,15 @@ supplied skill context, mark it skipped in the plan and continue with the
 remaining phases and enabled skills. Do not install it, reconstruct its rules
 from memory, or fail the whole workflow merely because the companion is
 missing.
+
+### No-companion fallback
+
+When the inventory contains no available companion skills, create and maintain
+the Markdown plan, then implement the user's requested code directly under the
+repository and user instructions already in force. Do not synthesize or apply
+the conventions of `worktree`, `commits`, `debug`, `srp`, `logging`,
+`commenting`, `docs`, or any other unselected skill. In this fallback, code
+writing is the only execution phase after planning.
 
 ## Phase order
 

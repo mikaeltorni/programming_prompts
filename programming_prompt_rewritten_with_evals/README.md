@@ -25,7 +25,7 @@ Skills live under
 - [`docs`](prompts/programming-skills/docs/SKILL.md) — README.md after the
   code (programmatic judge)
 - [`workflow`](prompts/programming-skills/workflow/SKILL.md) — explicit-only
-  plan → optional worktree → code → docs orchestration (semantic LLM judge)
+  plan → optional worktree → code → optional docs orchestration (semantic LLM judge)
 
 Each real skill has a matching judge in
 [`evals/judges/<skill>/`](evals/judges/). Vague controls reuse the base judge.
