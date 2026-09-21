@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.7.0 — Coordinate an end-to-end programming task as an ordered workflow
+  v0.8.0 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -16,6 +16,18 @@ catalog does not activate it.
 This skill may coordinate other independently selected skills. No other skill
 depends on this one, and this skill must not require edits that add a
 `workflow` dependency or invocation to another skill.
+
+The dependency direction is one-way:
+
+```text
+workflow -> independently enabled companion skills
+companion skills -/> workflow
+```
+
+Keep every companion usable on its own. Dependency declarations, routing
+instructions, and orchestration references belong only in this workflow skill;
+never add them to `worktree`, `commits`, `srp`, `logging`, `commenting`,
+`debug`, `docs`, or another companion.
 
 Own the end-to-end sequence for the current programming request. Break the
 work into ordered phases that fit the request, finish each phase before moving
