@@ -17,7 +17,7 @@ Current skills:
 | [`commits`](commits/SKILL.md) | One working commit per capability sentence in the original request |
 | [`debug`](debug/SKILL.md) | Read repo `.log/` before hypothesizing a bug |
 | [`docs`](docs/SKILL.md) | README.md after the code: program, entrypoint, commands |
-| [`workflow`](workflow/SKILL.md) | Explicit-only plan → optional worktree → code → docs orchestration |
+| [`workflow`](workflow/SKILL.md) | Explicit-only plan → optional worktree → code → optional docs orchestration |
 
 **Logging eval note:** pair `logging` (or `logging-vague`) with `srp` so the
 agent writes several helpers — otherwise a one-function script may not give

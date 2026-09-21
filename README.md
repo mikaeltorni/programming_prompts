@@ -63,7 +63,7 @@ and carry manifests for both Codex and Claude Code; direct skills carry only
 `SKILL.md` content.
 
 - **General Programming Guidelines** — Shared coding, testing, and engineering workflow rules for all agent tasks.
-- **Workflow Skill** — Explicit-only orchestration that plans first, coordinates selected companion skills, writes code in an isolated worktree, and writes documentation last.
+- **Workflow Skill** — Explicit-only orchestration that plans first, coordinates only selected companion skills, always writes code, and conditionally uses worktree and documentation guidance.
 - **Docs Skill** — User-facing project documentation for completed programming changes.
 - **Commit Guidelines** — Cautious Git commit workflow (inspect → plan → stage hunks → verify → compose).
 - **Linux Desktop Configuration** — Shared GNOME/Ubuntu desktop rules: applying changes silently from the command line (gsettings/dconf live, `systemctl --user restart`, `gnome-extensions enable/disable`), activating edited extension code with the sanctioned in-place X11 run-dialog reload (`xdotool` `Alt+F2 r`) while still forbidding destructive session restarts, asking for manual logout to activate extension code on Wayland, preserving user sessions, maintaining clean-install compatibility, and using root-optional (sudo-free) installer patterns.
@@ -141,10 +141,11 @@ codex plugin list
 ### workflow
 
 An explicit-only orchestrator for programming tasks. Invoke `$workflow` to
-create a repository-local Markdown plan, establish the task worktree, apply
-only the companion skills enabled in the current prompt, write the code, and
-then write documentation. Installing or discovering the skill does not activate
-it, and other skills do not depend on it.
+create a repository-local Markdown plan, apply only the companion skills
+enabled in the current prompt, write the code, and conditionally use worktree
+or documentation guidance when those companions are enabled. With no companion
+skills it falls back to plan-then-code. Installing or discovering the skill
+does not activate it, and other skills do not depend on it.
 
 ### docs
 

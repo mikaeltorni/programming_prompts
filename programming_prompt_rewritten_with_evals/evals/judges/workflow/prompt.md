@@ -28,6 +28,9 @@ Require all applicable workflow outcomes:
   to the correct phase; its dedicated judge owns detailed compliance.
 - A selected but unavailable companion is recorded as skipped; the agent does
   not install it, invent replacement rules, or abandon otherwise possible work.
+- With no available companions, the agent still plans and writes the requested
+  code, without borrowing worktree, commit, debug, SRP, logging, commenting, or
+  documentation conventions from unselected skills.
 - When documentation is selected, it follows the implemented interface and
   does not precede the code it describes. Function comments/docstrings remain
   part of code writing when the commenting skill is selected.
