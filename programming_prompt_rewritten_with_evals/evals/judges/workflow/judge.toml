@@ -1,0 +1,16 @@
+# Semantic judge — the shared LLM runner inspects the workflow artifacts and history.
+
+[judge]
+judge = "codex"
+model = "gpt-5.6-luna"
+cwd = "."
+timeout = 240
+prompt_template = "prompt.md"
+
+[[criterion]]
+name = "workflow_sequence"
+description = "the explicit workflow records a Markdown plan under repository tmp, follows plan then worktree when selected then code then docs, and applies only selected companion skills"
+type = "binary"
+
+[scoring]
+aggregation = "all_pass"

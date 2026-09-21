@@ -67,7 +67,7 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `--eval-agent-reasoning-effort low` | Judge effort: `low`, `medium`, or `high` (same idea as `--ak reasoning_effort=`). One value or one per agent |
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
 | `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine. **Unset = no LLM cap**. Overlapping jobs run at full `-k`; Harbor retries `ApiRateLimitError`. `20` serializes to one proven job. `2` is the old quota-safe cap. Harbor `-n` always follows `-k`. |
-| `--skills srp,commenting` | Which skills to inject (default: all non-`*-vague`) |
+| `--skills srp,commenting` | Which skills to inject (default: all non-control, non-opt-in skills) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
 | `--tasks todo,calculator` | Which coding prompts to run (default: all) |
@@ -1009,7 +1009,8 @@ Keep each new coding task equally small:
 4. add new skills only as `../prompts/programming-skills/<skill>/SKILL.md` plus
    `judges/<skill>/prompt.md` (+ `judge.toml`); for a vague control, add only
    `../prompts/programming-skills/<skill>-vague/SKILL.md` and reuse
-   `judges/<skill>/`; for a programmatic git-layout skill, use
+   `judges/<skill>/`; add `<skill>/.opt-in` when the skill must be named in
+   `--skills` and must not join the legacy default set; for a programmatic git-layout skill, use
    `judge = "programmatic"` in `judge.toml` (no prompt.md) and a checker under
    `verifier/`; edit the shared verifier at `verifier/run_judges.sh`;
 5. run `./sync_judges.sh` (runtime), then oracle / `nop` / one real model trial.

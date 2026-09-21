@@ -24,9 +24,13 @@ Skills live under
   before hypothesizing; verify the log-guided fix (semantic LLM judge)
 - [`docs`](prompts/programming-skills/docs/SKILL.md) — README.md after the
   code (programmatic judge)
+- [`workflow`](prompts/programming-skills/workflow/SKILL.md) — explicit-only
+  plan → optional worktree → code → docs orchestration (semantic LLM judge)
 
 Each real skill has a matching judge in
 [`evals/judges/<skill>/`](evals/judges/). Vague controls reuse the base judge.
+The `workflow` skill carries a `.opt-in` marker, so omitted `--skills` arguments
+retain the legacy default set; select `workflow` by name to evaluate it.
 Pair `logging` / `logging-vague` with `srp` when benchmarking so there are
 enough functions to print. Pair `worktree` with `srp`. Pair `commits` with
 `worktree` and a multi-Feature task (`shop`, or the four-Feature `bank` / `stats`).
@@ -58,7 +62,8 @@ Committed fallbacks:
 ## Layout
 
 - `prompts/programming-skills/` — injectable skills (`srp`, `commenting`,
-  `logging`, `worktree`, `commits`, `debug`, `docs`, plus `*-vague` controls)
+  `logging`, `worktree`, `commits`, `debug`, `docs`, explicit-only `workflow`,
+  plus `*-vague` controls)
 - `evals/coding-prompts/` — one `.md` per write-from-scratch coding task
 - `evals/seeds/` — optional planted files for a task (`log/` → image `.log/`)
 - `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill
