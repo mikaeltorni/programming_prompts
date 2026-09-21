@@ -11,12 +11,14 @@ judge_for_skill() {
 }
 
 list_available_skills() {
-  # Default discovery skips *-vague controls; pass them explicitly via --skills.
+  # Default discovery skips controls and explicit-only skills; callers can
+  # still select either one by name with --skills.
   local skill_dir name
   for skill_dir in "$SKILLS_ROOT"/*; do
     [[ -d "$skill_dir" && -f "$skill_dir/SKILL.md" ]] || continue
     name="$(basename "$skill_dir")"
     [[ "$name" == *-vague ]] && continue
+    [[ -f "$skill_dir/.opt-in" ]] && continue
     printf '%s\n' "$name"
   done | sort
 }

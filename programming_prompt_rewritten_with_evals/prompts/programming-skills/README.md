@@ -17,6 +17,7 @@ Current skills:
 | [`commits`](commits/SKILL.md) | One working commit per capability sentence in the original request |
 | [`debug`](debug/SKILL.md) | Read repo `.log/` before hypothesizing a bug |
 | [`docs`](docs/SKILL.md) | README.md after the code: program, entrypoint, commands |
+| [`workflow`](workflow/SKILL.md) | Explicit-only plan → optional worktree → code → docs orchestration |
 
 **Logging eval note:** pair `logging` (or `logging-vague`) with `srp` so the
 agent writes several helpers — otherwise a one-function script may not give
@@ -44,11 +45,19 @@ chronological tool trace is available; otherwise the verdict covers the fix.
 `run_*` entrypoint and the commands. Function docstrings stay on the
 commenting skill.
 
+**Workflow eval note:** `workflow` is marked `.opt-in`, so default skill
+discovery and older benchmark commands do not inject or judge it. Select it
+explicitly with `--skills workflow` or include it in a comma-separated list.
+Its semantic judge checks the repository-local Markdown plan, phase order, and
+conditional companion routing.
+
 Add a new skill by creating `programming-skills/<name>/SKILL.md` and
 `evals/judges/<name>/prompt.md` (+ `judge.toml`). For a vague control only,
 add `programming-skills/<name>-vague/SKILL.md` and reuse `judges/<name>/`.
-The benchmark runner auto-discovers non-`*-vague` skill directories; pass
-`*-vague` skills explicitly via `--skills`.
+Add a `.opt-in` marker when default discovery must exclude a real skill while
+keeping explicit `--skills <name>` support. The benchmark runner auto-discovers
+the remaining non-`*-vague` skill directories; pass controls and opt-in skills
+explicitly via `--skills`.
 
 Judges emit a short `reasoning` string per criterion; the verifier stores it
 in `reward-<skill>-details.json` / `reward-details.json`, and the runner

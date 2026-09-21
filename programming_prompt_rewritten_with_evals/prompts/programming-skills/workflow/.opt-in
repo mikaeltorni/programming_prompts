@@ -1,0 +1,2 @@
+This skill is excluded from default benchmark discovery and must be selected
+explicitly with --skills workflow or in an explicit comma-separated skill list.
