@@ -21,6 +21,11 @@ Require all applicable workflow outcomes:
   documentation when a documentation companion is available. Do not require a
   worktree or documentation when its companion was not selected or supplied,
   and do not invent a standalone verification phase.
+- The plan has no workflow-added check, test, review, validation, or
+  verification entry under a different heading. Such work is allowed only when
+  an independently selected companion explicitly requires it, and then it
+  remains inside that companion's owning phase. With no such companion, any
+  plan item to run checks or tests fails this requirement.
 - Only companion skills explicitly selected in the prompt or supplied skill
   context shape the implementation. Do not require logging, commenting, SRP,
   debugging, commits, worktrees, or docs merely because those skills are known

@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.0 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.1 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -100,6 +100,10 @@ workflow. The workflow ends after the documentation phase and the normal task
 handoff. When an independently enabled companion skill requires checks, honor
 that requirement within the phase that skill owns; do not represent it as an
 extra phase supplied by this skill.
+
+This applies to plan entries as well as headings: do not add a check, test,
+review, validation, or verification task merely because it is customary. With
+no companion that explicitly requires checks, the plan contains no such task.
 
 At each phase boundary, record what was completed and what phase comes next so
 the task remains resumable. Do not broaden the user's scope merely to make the
