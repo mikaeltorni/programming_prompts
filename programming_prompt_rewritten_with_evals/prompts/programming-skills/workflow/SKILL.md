@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.8.0 — Coordinate an end-to-end programming task as an ordered workflow
+  v0.9.0 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -46,6 +46,12 @@ Do not treat a skill as enabled merely because it is installed, discoverable,
 mentioned as an example, or known to exist in the repository. Do not load or
 apply an unselected companion on this skill's behalf.
 
+If a requested companion is unavailable, unreadable, or absent from the
+supplied skill context, mark it skipped in the plan and continue with the
+remaining phases and enabled skills. Do not install it, reconstruct its rules
+from memory, or fail the whole workflow merely because the companion is
+missing.
+
 ## Phase order
 
 Follow this order:
@@ -56,13 +62,15 @@ Follow this order:
    `<repository-root>/tmp/workflow-<task-slug>.md`, creating `tmp/` when needed.
    Use a short stable task slug, update the same file as phases advance, and do
    not stage or commit this temporary plan unless the user explicitly asks.
-2. **Establish the worktree.** Resolve the repository and create the task's
-   isolated worktree before editing repository files.
+2. **Establish the worktree when enabled.** If the `worktree` companion is in
+   the enabled-skill inventory and available, follow it to create the task's
+   isolated worktree before editing repository files. Otherwise skip this
+   phase.
 3. **Write the code.** Implement the plan inside that worktree while applying
    the programming skills supplied for the task.
-4. **Write the documentation.** After the code-writing phase, apply the docs
-   guidance supplied for the task and update the documentation affected by the
-   implementation.
+4. **Write the documentation when enabled.** If a documentation companion is
+   in the enabled-skill inventory and available, apply its guidance after the
+   code-writing phase. Otherwise skip this phase.
 
 Do not reorder implementation ahead of planning or documentation ahead of the
 code it describes.
