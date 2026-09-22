@@ -19,7 +19,7 @@ default_eval_model() {
   case "$1" in
     cc) printf '%s' "claude-opus-5" ;;
     grok) printf '%s' "grok-4.6" ;;
-    *) printf '%s' "gpt-5.6-luna" ;;
+    *) printf '%s' "gpt-6-luna" ;;
   esac
 }
 

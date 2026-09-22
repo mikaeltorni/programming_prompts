@@ -76,7 +76,7 @@ def _self_test() -> int:
     models = resolve_eval_models(("cc", "codex"), "")
     check(
         "eval_model_defaults",
-        models == ("claude-opus-5", "gpt-5.6-luna"),
+        models == ("claude-opus-5", "gpt-6-luna"),
         f"defaults={models}",
     )
     models_one = resolve_eval_models(("cc", "codex"), "claude-opus-5")

@@ -51,7 +51,7 @@ CLI parameters, which all take the same `--flag value` form (`--harness`,
 `--skills`, `--tasks`). Omit `--eval-agent` and the LLM judge is the same
 harness as the coding agent; pass `--eval-agent cc,codex` to grade twice.
 
-Default models: Codex `openai/gpt-5.6-luna` @ low; Claude Code `claude-opus-5`
+Default models: Codex `openai/gpt-6-luna` @ low; Claude Code `claude-opus-5`
 @ low; Grok `grok-4.6` @ low. Each new Harbor instance looks up the newest
 stable CLI (npm `latest` for Codex and Claude Code, Grok `stable` channel).
 Committed fallbacks:

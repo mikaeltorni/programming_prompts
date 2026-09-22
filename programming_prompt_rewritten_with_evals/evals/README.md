@@ -115,7 +115,7 @@ wave. `EVAL_LLM_MAX_CONCURRENT=2`
 restores the old quota-safe cap. Extra wrappers wait when an explicit
 cap is already in use.
 Programmatic judges (worktree, docs) still run once. Semantic commits and debug
-judges use the selected LLM eval agent. Defaults: Codex `openai/gpt-5.6-luna` @ low; Claude
+judges use the selected LLM eval agent. Defaults: Codex `openai/gpt-6-luna` @ low; Claude
 Code `claude-opus-5` @ low (`--effort`); Grok `grok-4.6` @ low
 (`--reasoning-effort`). Judge defaults match those models at **low** effort
 unless `--eval-agent-model` / `--eval-agent-reasoning-effort` override them.
@@ -264,7 +264,7 @@ and judge files.
 
 The Harbor workflow was exercised on Ubuntu 24.04 with Docker Engine, Harbor
 `0.20.0`, Codex CLI `0.149.0`, Claude Code `2.1.241`, Grok CLI `1.0.5`,
-GPT-5.6 Luna at low reasoning effort, Claude Opus 5 at low effort, and
+GPT-6 Luna at low reasoning effort, Claude Opus 5 at low effort, and
 Grok 4.6 at low effort. Each `./run_benchmark.sh` invocation looks up those
 CLI versions again (npm `latest`, Grok `stable` channel) so a new instance
 installs whatever is newest at start time. Pass `--no-pin-refresh` to freeze
@@ -807,7 +807,7 @@ Same twice-check with explicit judge model/effort (format matches `-m` /
 
 ```bash
 ./run_benchmark.sh harness=codex evalAgent=cc,codex \
-  evalAgentModel=claude-opus-5,gpt-5.6-luna \
+  evalAgentModel=claude-opus-5,gpt-6-luna \
   evalAgentReasoningEffort=low,low \
   --skills srp --tasks calculator -k 1
 ```
@@ -828,7 +828,7 @@ disagree. Bump `-k`/`-n` once the smoke looks right.
 
 ## Test the real skill (Codex, Claude Code, and/or Grok)
 
-**Defaults:** Codex `openai/gpt-5.6-luna` @ **low**; Claude Code `claude-opus-5`
+**Defaults:** Codex `openai/gpt-6-luna` @ **low**; Claude Code `claude-opus-5`
 @ **low**; Grok `grok-4.6` @ **low**. The LLM judge uses the same low effort
 unless `evalAgentReasoningEffort` overrides it.
 

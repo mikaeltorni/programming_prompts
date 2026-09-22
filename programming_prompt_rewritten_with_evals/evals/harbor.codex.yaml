@@ -1,14 +1,14 @@
 # Reference Harbor job config (documentation / bare `harbor -c` use).
 # Prefer ./run_benchmark.sh harness=codex — it materializes tasks/ from coding-prompts/,
 # discovers selected skills under ../prompts/programming-skills/, syncs judges,
-# looks up the newest stable Codex CLI, and keeps gpt-5.6-luna at low reasoning effort.
+# looks up the newest stable Codex CLI, and keeps gpt-6-luna at low reasoning effort.
 #
 #   ./run_benchmark.sh harness=codex --skills srp,commenting -k 5
 #   ./sync_tasks.sh && harbor run -c harbor.codex.yaml …
 
 agents:
   - import_path: harbor_agents.benchmark_codex:BenchmarkCodex
-    model_name: openai/gpt-5.6-luna
+    model_name: openai/gpt-6-luna
     skills:
       - ../prompts/programming-skills/srp
       - ../prompts/programming-skills/commenting

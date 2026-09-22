@@ -587,7 +587,7 @@ def run_self_test() -> int:
             judge_dir=judge_src,
             workspace=root,
             files=listed,
-            model="gpt-5.6-luna",
+            model="gpt-6-luna",
             effort="low",
             timeout=180,
             criteria=commenting,
