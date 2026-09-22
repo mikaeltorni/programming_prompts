@@ -2,7 +2,7 @@
 
 [judge]
 judge = "codex"
-model = "gpt-5.6-luna"
+model = "gpt-6-luna"
 cwd = "."
 timeout = 240
 prompt_template = "prompt.md"

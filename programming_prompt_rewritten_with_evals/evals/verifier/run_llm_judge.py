@@ -117,7 +117,7 @@ def main(argv: list[str] | None = None) -> int:
     defaults = {
         "grok": "grok-4.6",
         "cc": "claude-opus-5",
-        "codex": "gpt-5.6-luna",
+        "codex": "gpt-6-luna",
     }
     run_eval_agent(
         agent=args.agent,

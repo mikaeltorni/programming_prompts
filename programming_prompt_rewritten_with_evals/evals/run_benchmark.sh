@@ -9,7 +9,7 @@
 #
 # Harnesses: Codex (`codex`), Claude Code (`cc`), and Grok CLI (`grok`).
 # Omit --harness to run Codex and Claude Code. Defaults:
-#   codex → openai/gpt-5.6-luna @ reasoning_effort=low
+#   codex → openai/gpt-6-luna @ reasoning_effort=low
 #   cc    → claude-opus-5       @ reasoning_effort=low (Claude CLI --effort)
 #   grok  → grok-4.6            @ reasoning_effort=low (Grok CLI --reasoning-effort)
 #

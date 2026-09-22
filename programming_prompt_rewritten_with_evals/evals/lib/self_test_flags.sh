@@ -53,13 +53,13 @@ check_rejects() { # $1 label, $2 canonical flag expected in the message, $@ argv
 # Case 1: canonical space-separated values (the documented format).
 reset_globals
 parse_benchmark_flags --harness codex --eval-agent codex --skills commits,srp \
-  --tasks bank,stats --eval-agent-model gpt-5.6-luna \
+  --tasks bank,stats --eval-agent-model gpt-6-luna \
   --eval-agent-reasoning-effort low -k 15
 check "space form: harness" "codex" "$HARNESS_ARG"
 check "space form: eval agent" "codex" "$EVAL_AGENT_ARG"
 check "space form: skills" "commits,srp" "$SKILLS_ARG"
 check "space form: tasks" "bank,stats" "$TASKS_ARG"
-check "space form: eval agent model" "gpt-5.6-luna" "$EVAL_AGENT_MODEL_ARG"
+check "space form: eval agent model" "gpt-6-luna" "$EVAL_AGENT_MODEL_ARG"
 check "space form: eval agent effort" "low" "$EVAL_AGENT_EFFORT_ARG"
 check "space form: harbor passthrough" "-k 15" "${HARBOR_ARGS[*]}"
 
