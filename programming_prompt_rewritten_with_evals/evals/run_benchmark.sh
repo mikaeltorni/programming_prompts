@@ -28,7 +28,7 @@
 # are rejected with the canonical flag (see lib/parse_flags.sh). Switches:
 # --install-only, --pin-refresh / --no-pin-refresh, --baseline,
 # --run-separately. Value flags: --harness, --eval-agent, --eval-agent-model,
-# --eval-agent-reasoning-effort, --skills, --tasks. Anything else (`-k 5`,
+# --eval-agent-reasoning-effort, --skills, --tasks, --concurrency. Anything else (`-k 5`,
 # `--ak …`, or whatever follows `--`) is passed through to Harbor.
 #
 # Usage (from this directory):
@@ -59,10 +59,10 @@
 # cache still fill the disk; docker_networks.py prunes leftover containers
 # and empty nets (keeps images and BuildKit cache).
 # Live coding trials have no LLM cap unless EVAL_LLM_MAX_CONCURRENT is set.
-# Overlapping wrappers run at full -k; Harbor retries ApiRateLimitError
+# Overlapping wrappers run at the selected concurrency; Harbor retries ApiRateLimitError
 # (too many requests) with backoff instead of dropping those trials.
-# Harbor -n is not a user flag: the wrapper always sets concurrency from -k
-# (-k 20 → 20 concurrent). Passing -n 100 with 5 tasks × -k 20 starts 100
+# Harbor -n is not a user flag: concurrency follows -k by default, or the
+# explicit --concurrency option. Passing -n 100 with 5 tasks × -k 20 starts 100
 # docker compose builds at once; Harbor's 300s environment-start budget then
 # drops roughly half the trials (EnvironmentStartTimeoutError).
 # EVAL_LLM_MAX_CONCURRENT=20 serializes overlapping jobs to one proven -k 20
@@ -148,6 +148,7 @@ BASELINE=0
 RUN_SEPARATELY=0
 SKILLS_ARG=""
 TASKS_ARG=""
+CONCURRENCY_ARG=""
 HARNESS_ARG=""
 EVAL_AGENT_ARG=""
 EVAL_AGENT_MODEL_ARG=""
@@ -158,7 +159,7 @@ HARBOR_ARGS=()
 BENCHMARK_HARNESS_CHOICES="$(python3 "$HARNESS_SPEC" choices)"
 parse_benchmark_flags "$@" || { rc=$?; [[ $rc -eq 10 ]] && exit 0; exit 1; }
 
-# User -n / --n-concurrent is ignored. Harbor concurrency always follows -k.
+# User -n / --n-concurrent is ignored; use --concurrency to override the default.
 strip_user_harbor_n_concurrent HARBOR_ARGS
 
 _norm_out="$(normalize_harness "$HARNESS_ARG")" || exit 1
@@ -234,7 +235,7 @@ echo "Selected skill(s): ${SELECTED_SKILLS[*]}" >&2
 mapfile -t SELECTED_TASKS < <(resolve_tasks "$TASKS_ARG")
 echo "Selected coding task(s): ${SELECTED_TASKS[*]}" >&2
 if [[ -z "${EVAL_LLM_MAX_CONCURRENT:-}" ]]; then
-  echo "LLM trial cap: unset (no LLM cap). Overlapping jobs run at full -k; Harbor retries ApiRateLimitError." >&2
+  echo "LLM trial cap: unset (no LLM cap). Overlapping jobs run at selected concurrency; Harbor retries ApiRateLimitError." >&2
 else
   echo "LLM trial cap: EVAL_LLM_MAX_CONCURRENT=$EVAL_LLM_MAX_CONCURRENT (coding trials live on this machine)" >&2
 fi

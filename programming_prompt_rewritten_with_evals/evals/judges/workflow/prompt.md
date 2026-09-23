@@ -14,8 +14,10 @@ Require all applicable workflow outcomes:
   a non-Markdown file, or a placeholder checklist fails.
 - Planning precedes implementation. Use a chronological tool trace when one is
   available. Otherwise use the plan, Git history, and filesystem artifacts as
-  the best local evidence; explain any timing limitation rather than inventing
-  unseen actions.
+  the best local evidence. A substantive plan that records implementation
+  progress and has no contradictory order evidence satisfies this requirement
+  when the trace is unavailable; explain the timing limitation without failing
+  solely because no trace or implementation commit was supplied.
 - The observable order is plan, worktree establishment when the independently
   selected worktree skill is available, code writing, and affected
   documentation when a documentation companion is available. Do not require a
@@ -29,8 +31,14 @@ Require all applicable workflow outcomes:
 - Only companion skills explicitly selected in the prompt or supplied skill
   context shape the implementation. Do not require logging, commenting, SRP,
   debugging, commits, worktrees, or docs merely because those skills are known
-  to exist. When one is selected, evaluate only whether the workflow assigns it
-  to the correct phase; its dedicated judge owns detailed compliance.
+  to exist. The delivered task prompt's "Enabled programming skills for this
+  task" line identifies the companions the eval harness supplied. An explicit
+  companion invocation in the coding request can also request that skill; if
+  it was not supplied, the workflow should record it as unavailable and skip
+  it. A companion merely named in workflow instructions, a host-installed
+  catalog, or a generic request to follow provided skills is not independently
+  selected. For a supplied companion, evaluate only whether the workflow
+  assigns it to the correct phase; its dedicated judge owns detailed compliance.
 - A selected but unavailable companion is recorded as skipped; the agent does
   not install it, invent replacement rules, or abandon otherwise possible work.
 - With no available companions, the agent still plans and writes the requested

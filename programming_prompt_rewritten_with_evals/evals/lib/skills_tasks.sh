@@ -131,10 +131,14 @@ inject_selected_workflow_invocation() {
   # Returns 0 after updating matching instruction.md files, or when unselected.
   local root="$1"
   shift
-  local skill instruction body
+  local skill instruction body selected_names=""
   local prompt='Use $workflow to coordinate this programming task from start to finish.'
   for skill in "$@"; do
+    selected_names+="${selected_names:+, }$skill"
+  done
+  for skill in "$@"; do
     [[ "$skill" == "workflow" ]] || continue
+    prompt+=$'\n'"Enabled programming skills for this task: $selected_names."
     for instruction in "$root"/*/instruction.md; do
       [[ -f "$instruction" ]] || continue
       body="$(<"$instruction")"

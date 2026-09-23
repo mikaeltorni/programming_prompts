@@ -66,7 +66,8 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `--eval-agent-model claude-opus-5` | Judge model id (same idea as `-m` / `--model`). One value for every eval agent, or one per agent |
 | `--eval-agent-reasoning-effort low` | Judge effort: `low`, `medium`, or `high` (same idea as `--ak reasoning_effort=`). One value or one per agent |
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
-| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine. **Unset = no LLM cap**. Overlapping jobs run at full `-k`; Harbor retries `ApiRateLimitError`. `20` serializes to one proven job. `2` is the old quota-safe cap. Harbor `-n` always follows `-k`. |
+| `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine. **Unset = no LLM cap**. Harbor retries `ApiRateLimitError`. `20` serializes to one proven job. `2` is the old quota-safe cap. |
+| `--concurrency 9` | Run up to nine trials at once without changing attempts per task (`-k`); capped by total trials and `EVAL_LLM_MAX_CONCURRENT` |
 | `--skills srp,commenting` | Which skills to inject (default: all non-control, non-opt-in skills) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
@@ -76,12 +77,14 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `--baseline` | No skills injected; selected judges still score |
 | `--install-only` | Reinstall/verify newest stable CLI(s) in the task image (no LLM) |
 | `--no-pin-refresh` | Skip registry lookup; use committed `*-version.txt` pins |
-| `-k` / `-n` / `-m` / `--ak` | Passed through to Harbor |
+| `-k` / `-m` / `--ak` | Passed through to Harbor; raw `-n` is ignored |
 
 When `--skills workflow` is selected, each isolated job task prompt explicitly
 invokes `$workflow`. The source coding prompts and runs without that selected
 skill remain unchanged. Baselines receive the same task instruction without
-the skill installed, so they still measure the effect of the skill itself.
+the skill installed, so they still measure the effect of the skill itself. The
+workflow judge receives that delivered task prompt, so its optional-companion
+decision uses the selection the agent saw.
 
 Harness aliases: `cc`, `claude`, `claude-code`, `claudecode` → Claude Code;
 `codex`, `openai`, `gpt` → Codex; `grok`, `xai`, `grok-build`, `grok-code` →
@@ -450,9 +453,10 @@ build cache when you need more disk.
 Concurrent `./run_benchmark.sh` processes **wait for a coding-trial slot**
 only when `EVAL_LLM_MAX_CONCURRENT` is set (or a job still uses per-trial
 networks). There is no default LLM cap. Harbor retries `ApiRateLimitError`
-so overlapping jobs can run at full `-k`. Harbor `-n` / `--n-concurrent` is
-**not a user flag**: the wrapper always sets concurrency from `-k` (`-k 20`
-runs 20 at once). Passing `-n 100` with 5 tasks × `-k 20` starts 100
+so overlapping jobs can run at the selected concurrency. Harbor `-n` / `--n-concurrent` is
+**not a user flag**: the wrapper sets concurrency from `-k` by default (`-k 20`
+runs 20 at once). Use `--concurrency N` to explicitly run distinct tasks in
+parallel without increasing `-k`. Passing raw `-n 100` with 5 tasks × `-k 20` starts 100
 `docker compose build`s at once; Harbor then aborts with
 `Environment start timed out after 300.0 seconds` and Scored drops well
 below Trials. `--run-separately` is a single Harbor job (independent skill Pass).
@@ -922,8 +926,9 @@ Manual examples:
 ./run_benchmark.sh --skills srp,commenting --run-separately -k 5
 ```
 
-`-k 5` schedules five attempts **per task** and that many concurrent
-trials. `-k 20` is the full-speed setting (20 at once). The wrapper
+`-k 5` schedules five attempts **per task** and, by default, that many concurrent
+trials. `-k 20` runs 20 at once by default. `--concurrency 9 -k 1` schedules
+one attempt per task and runs up to nine different tasks together. The wrapper
 strips user `-n` / `--n-concurrent` so a leftover `-n 100` cannot starve
 `docker compose build` past Harbor's 300s environment-start budget. Use a
 smaller `-k` for a cheaper smoke. The wrapper defaults to `-k 5` (and
@@ -954,8 +959,9 @@ the same Codex reference with `skills: []` for a hand-run baseline; prefer
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
 | `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials (unset = none) |
 | `--ak version=…` | CLI pin override |
-| `-k` / `--n-attempts` | Independent attempts per task **and** Harbor concurrency (default: `5`) |
-| `-n` / `--n-concurrent` | Ignored. The wrapper always sets Harbor `-n` from `-k` (`-n 100` with `-k 20` timed out ~half the trials at 300s on `docker compose build`) |
+| `-k` / `--n-attempts` | Independent attempts per task; also default Harbor concurrency (`5`) |
+| `--concurrency N` | Explicit Harbor concurrency, capped by total trials and `EVAL_LLM_MAX_CONCURRENT` |
+| `-n` / `--n-concurrent` | Ignored. Use `--concurrency N` (`-n 100` with `-k 20` timed out ~half the trials at 300s on `docker compose build`) |
 | `--skill` | Extra skill directory (job config already injects skills) |
 
 Examples:

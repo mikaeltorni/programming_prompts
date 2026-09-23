@@ -21,7 +21,7 @@
 
 # Canonical value-taking flags, for error messages and the self-test.
 BENCHMARK_VALUE_FLAGS=(--harness --eval-agent --eval-agent-model \
-  --eval-agent-reasoning-effort --skills --tasks)
+  --eval-agent-reasoning-effort --skills --tasks --concurrency)
 
 # Print the canonical usage on stdout.
 #
@@ -38,6 +38,7 @@ Every wrapper parameter is a long, kebab-case flag followed by its value:
   --eval-agent-reasoning-effort <low|medium|high>
   --skills <a,b,c>                     skills to evaluate (default: all)
   --tasks <a,b,c>                      tasks to run (default: all)
+  --concurrency <positive integer>    live trials at once (default: -k)
 
 Switches:
   --baseline           run without the skill prompt
@@ -82,11 +83,22 @@ benchmark_flag_value() {
   printf '%s' "$value"
 }
 
+# Validate a positive integer for a wrapper-owned count flag.
+# Parameters: $1 flag name; $2 raw value. Prints the value on stdout.
+benchmark_flag_positive_int() {
+  local flag="$1" value
+  value="$(benchmark_flag_value "$flag" "${2:-}" "a positive integer")" || return 1
+  if [[ ! "$value" =~ ^[1-9][0-9]*$ ]]; then
+    benchmark_flag_die "$flag requires a positive integer" || return 1
+  fi
+  printf '%s' "$value"
+}
+
 # Parse the wrapper's own flags, leaving everything else for Harbor.
 #
 # Parameters: $@ - the command line as given to run_benchmark.sh.
 # Sets: INSTALL_ONLY, PIN_REFRESH, BASELINE, RUN_SEPARATELY, SKILLS_ARG,
-# TASKS_ARG, HARNESS_ARG, EVAL_AGENT_ARG, EVAL_AGENT_MODEL_ARG,
+# TASKS_ARG, CONCURRENCY_ARG, HARNESS_ARG, EVAL_AGENT_ARG, EVAL_AGENT_MODEL_ARG,
 # EVAL_AGENT_EFFORT_ARG, HARBOR_ARGS.
 # Returns 1 on an unusable or legacy-format argument.
 parse_benchmark_flags() {
@@ -173,6 +185,14 @@ parse_benchmark_flags() {
         ;;
       --tasks=*)
         TASKS_ARG="$(benchmark_flag_value --tasks "${1#*=}" "a list like todo,calculator")" || return 1
+        shift
+        ;;
+      --concurrency)
+        CONCURRENCY_ARG="$(benchmark_flag_positive_int --concurrency "${2:-}")" || return 1
+        shift 2
+        ;;
+      --concurrency=*)
+        CONCURRENCY_ARG="$(benchmark_flag_positive_int --concurrency "${1#*=}")" || return 1
         shift
         ;;
       # Legacy spellings — same parameters, wrong format.

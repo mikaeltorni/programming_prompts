@@ -49,11 +49,11 @@ check "unselected workflow leaves task prompt intact" \
   "$(<"$task_root/calculator/instruction.md")"
 inject_selected_workflow_invocation "$task_root" standard workflow
 check "selected workflow receives an explicit invocation" \
-  $'Use $workflow to coordinate this programming task from start to finish.\n\nFollow every provided programming skill.' \
+  $'Use $workflow to coordinate this programming task from start to finish.\nEnabled programming skills for this task: standard, workflow.\n\nFollow every provided programming skill.' \
   "$(<"$task_root/calculator/instruction.md")"
-inject_selected_workflow_invocation "$task_root" workflow
+inject_selected_workflow_invocation "$task_root" standard workflow
 check "explicit invocation is idempotent" \
-  $'Use $workflow to coordinate this programming task from start to finish.\n\nFollow every provided programming skill.' \
+  $'Use $workflow to coordinate this programming task from start to finish.\nEnabled programming skills for this task: standard, workflow.\n\nFollow every provided programming skill.' \
   "$(<"$task_root/calculator/instruction.md")"
 
 if [[ $fails -eq 0 ]]; then
