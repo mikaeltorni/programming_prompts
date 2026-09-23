@@ -23,6 +23,12 @@ Require all applicable workflow outcomes:
   documentation when a documentation companion is available. Do not require a
   worktree or documentation when its companion was not selected or supplied,
   and do not invent a standalone verification phase.
+- A selected worktree companion may require commit, merge, and consumer
+  reapplication after code and documentation. Treat a plan item labeled
+  "Delivery" that records only this companion-owned closeout as normal task
+  handoff, even if the agent numbers it after documentation. It is not a new
+  workflow verification phase or a reason to fail the sequence. Still reject
+  any workflow-added tests, review, or validation hidden in that item.
 - The plan has no workflow-added check, test, review, validation, or
   verification entry under a different heading. Such work is allowed only when
   an independently selected companion explicitly requires it, and then it
