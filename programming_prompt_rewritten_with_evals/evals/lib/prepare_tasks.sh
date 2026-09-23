@@ -15,6 +15,7 @@ prepare_job_tasks() {
     name="$(basename "$task_dir")"
     cp -a "$task_dir" "$dest/$name"
   done < <(list_task_dirs)
+  inject_selected_workflow_invocation "$dest" "${skills[@]}"
   if [[ ${#skills[@]} -eq 0 ]]; then
     TASKS_DIR="$dest" "$SCRIPT_DIR/sync_judges.sh"
   else
