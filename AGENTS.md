@@ -45,6 +45,12 @@ Always pass `--eval-agent codex` — see *Judges: Codex only while testing* belo
 Prompt-only work still uses Harbor when a live check is needed; do not add
 pytest under `programming_prompt_rewritten_with_evals/`.
 
+Omit pin-related options from normal benchmark runs and from commands given to
+the user. Do not pass `--pin-refresh` or `--no-pin-refresh` by default: without
+either flag, the wrapper checks for the current stable CLI version. Use a pin
+option only when the user explicitly requests that behavior for a particular
+run.
+
 Example (each command in its own terminal):
 
 ```bash
@@ -52,27 +58,27 @@ cd programming_prompt_rewritten_with_evals/evals
 ```
 
 ```bash
-./run_benchmark.sh --harness codex --eval-agent codex --baseline --no-pin-refresh -k 1
+./run_benchmark.sh --harness codex --eval-agent codex --baseline -k 1
 ```
 
 ```bash
-./run_benchmark.sh --harness codex --eval-agent codex --no-pin-refresh -k 1
+./run_benchmark.sh --harness codex --eval-agent codex -k 1
 ```
 
 ```bash
-./run_benchmark.sh --harness grok --eval-agent codex --baseline --no-pin-refresh -k 1
+./run_benchmark.sh --harness grok --eval-agent codex --baseline -k 1
 ```
 
 ```bash
-./run_benchmark.sh --harness grok --eval-agent codex --no-pin-refresh -k 1
+./run_benchmark.sh --harness grok --eval-agent codex -k 1
 ```
 
 ```bash
-./run_benchmark.sh --harness cc --eval-agent codex --baseline --no-pin-refresh -k 1
+./run_benchmark.sh --harness cc --eval-agent codex --baseline -k 1
 ```
 
 ```bash
-./run_benchmark.sh --harness cc --eval-agent codex --no-pin-refresh -k 1
+./run_benchmark.sh --harness cc --eval-agent codex -k 1
 ```
 
 ## Judges: Codex only while testing
@@ -143,7 +149,10 @@ time on this machine**:
 
 ```bash
 cd programming_prompt_rewritten_with_evals/evals
-./run_benchmark.sh --harness codex --eval-agent codex --no-pin-refresh
+```
+
+```bash
+./run_benchmark.sh --harness codex --eval-agent codex
 ```
 
 ### One flag format: `--flag value`
