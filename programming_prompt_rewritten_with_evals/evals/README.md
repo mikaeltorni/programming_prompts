@@ -78,6 +78,11 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `--no-pin-refresh` | Skip registry lookup; use committed `*-version.txt` pins |
 | `-k` / `-n` / `-m` / `--ak` | Passed through to Harbor |
 
+When `--skills workflow` is selected, each isolated job task prompt explicitly
+invokes `$workflow`. The source coding prompts and runs without that selected
+skill remain unchanged. Baselines receive the same task instruction without
+the skill installed, so they still measure the effect of the skill itself.
+
 Harness aliases: `cc`, `claude`, `claude-code`, `claudecode` → Claude Code;
 `codex`, `openai`, `gpt` → Codex; `grok`, `xai`, `grok-build`, `grok-code` →
 Grok CLI; `both` / empty → Codex + Claude Code; `all` → Codex + Claude Code +

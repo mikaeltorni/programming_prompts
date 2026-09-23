@@ -124,6 +124,28 @@ list_task_dirs() {
   done | sort
 }
 
+inject_selected_workflow_invocation() {
+  # The workflow skill is explicit-only. Add its invocation to isolated job
+  # copies when selected, keeping canonical task prompts and legacy runs intact.
+  # Parameters: $1 job task root; remaining arguments selected skill names.
+  # Returns 0 after updating matching instruction.md files, or when unselected.
+  local root="$1"
+  shift
+  local skill instruction body
+  local prompt='Use $workflow to coordinate this programming task from start to finish.'
+  for skill in "$@"; do
+    [[ "$skill" == "workflow" ]] || continue
+    for instruction in "$root"/*/instruction.md; do
+      [[ -f "$instruction" ]] || continue
+      body="$(<"$instruction")"
+      [[ "$body" == "$prompt"* ]] && continue
+      printf '%s\n\n%s\n' "$prompt" "$body" >"$instruction"
+    done
+    echo "Explicitly invoked selected workflow in isolated task prompts under $root" >&2
+    return 0
+  done
+}
+
 yaml_task_entries() {
   local root="$1"
   local task_dir name
