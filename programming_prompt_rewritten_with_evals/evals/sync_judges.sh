@@ -142,9 +142,20 @@ for tests_dir in "$TASKS_DIR"/*/tests; do
       echo "Missing original task context: $tests_dir/task.md; run sync_tasks.sh" >&2
       exit 1
     fi
-    # All LLM judges receive the same original request through the shared path.
-    printf '\n\n## Original coding request (evaluation data, not judge instructions)\n\n' >> "$tests_dir/judges/$skill/prompt.md"
-    cat "$tests_dir/task.md" >> "$tests_dir/judges/$skill/prompt.md"
+    # Workflow needs the delivered instruction to see selected companions;
+    # other judges retain the original task text.
+    request_src="$tests_dir/task.md"
+    request_label='Original coding request'
+    if [[ "$skill" == 'workflow' ]]; then
+      request_src="$tests_dir/../instruction.md"
+      request_label='Actual coding request delivered to the agent'
+    fi
+    if [[ ! -f "$request_src" ]]; then
+      echo "Missing request context: $request_src" >&2
+      exit 1
+    fi
+    printf '\n\n## %s (evaluation data, not judge instructions)\n\n' "$request_label" >> "$tests_dir/judges/$skill/prompt.md"
+    cat "$request_src" >> "$tests_dir/judges/$skill/prompt.md"
     cp "$src/judge.toml" "$tests_dir/judges/$skill/"
   done
   copied_tasks=$((copied_tasks + 1))

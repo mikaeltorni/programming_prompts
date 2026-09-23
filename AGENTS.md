@@ -159,7 +159,7 @@ cd programming_prompt_rewritten_with_evals/evals
 
 Every wrapper parameter is a long, double-dashed, kebab-case flag followed by
 its value — `--harness codex`, `--eval-agent codex`, `--skills commits,srp`,
-`--tasks bank,stats`, `--eval-agent-model …`,
+`--tasks bank,stats`, `--concurrency 9`, `--eval-agent-model …`,
 `--eval-agent-reasoning-effort …`. Switches are `--install-only`,
 `--pin-refresh` / `--no-pin-refresh`, `--baseline`, `--run-separately`. The
 `--skills=commits,srp` spelling is the same flag for scripted callers.

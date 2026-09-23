@@ -56,11 +56,13 @@ run_one_job() {
       attempts_per_task="${harbor_args[$((i + 1))]:-$attempts_per_task}"
     fi
   done
-  # User -n is stripped in run_benchmark.sh. Harbor -n always follows -k so
-  # docker compose build stays inside the 300s environment-start budget.
-  local concurrent_for_job="$attempts_per_task"
   local task_count
   task_count="$(list_task_dirs | wc -l | tr -d ' ')"
+  # Raw Harbor -n is stripped in run_benchmark.sh. The wrapper can explicitly
+  # schedule distinct tasks together without multiplying attempts per task.
+  local concurrent_for_job
+  concurrent_for_job="$(resolve_job_concurrency "$attempts_per_task" \
+    "$((task_count * attempts_per_task))" "$CONCURRENCY_ARG")"
   echo "Job $job_name [$harness] schedules about $((task_count * attempts_per_task)) trials ($attempts_per_task attempts × $task_count tasks)." >&2
   echo "Job $job_name judges: ${SELECTED_SKILLS_FOR_JOB[*]:-(none)} (isolated under $tasks_root)" >&2
   echo "Model default: $(harness_model_name "$harness") @ reasoning_effort=low (CLI $(harness_cli_version "$harness"))" >&2
@@ -71,7 +73,7 @@ run_one_job() {
   local granted_slots=""
   if harbor_uses_per_trial_networks; then
     acquire_docker_slots "$docker_holder" "$concurrent_for_job" granted_slots
-    echo "Job $job_name concurrent trials follow -k $attempts_per_task → $granted_slots." >&2
+    echo "Job $job_name concurrent trials requested=$concurrent_for_job → $granted_slots." >&2
     if [[ "$granted_slots" != "$concurrent_for_job" ]]; then
       echo "Docker IPAM/LLM cap clamped job $job_name -n $concurrent_for_job → $granted_slots" >&2
     fi
@@ -79,14 +81,14 @@ run_one_job() {
   elif harbor_uses_docker_env; then
     echo "Job $job_name: Harbor trials use Docker's default bridge (no per-trial user-defined network)." >&2
     acquire_docker_slots "$docker_holder" "$concurrent_for_job" granted_slots ignore-ipam
-    echo "Job $job_name concurrent trials follow -k $attempts_per_task → $granted_slots." >&2
+    echo "Job $job_name concurrent trials requested=$concurrent_for_job → $granted_slots." >&2
     if [[ "$granted_slots" != "$concurrent_for_job" ]]; then
       echo "LLM cap clamped job $job_name -n $concurrent_for_job → $granted_slots" >&2
     fi
     set_harbor_n_concurrent harbor_args "$granted_slots"
   else
     echo "Skipping Docker IPAM for $job_name (Harbor --env is not docker)." >&2
-    echo "Job $job_name concurrent trials follow -k $attempts_per_task → $concurrent_for_job." >&2
+    echo "Job $job_name concurrent trials requested=$concurrent_for_job." >&2
     set_harbor_n_concurrent harbor_args "$concurrent_for_job"
   fi
 

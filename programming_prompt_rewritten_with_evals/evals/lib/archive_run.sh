@@ -60,9 +60,12 @@ init_run_archive() {
       ATTEMPTS_PER_TASK="${HARBOR_ARGS[$((i + 1))]:-$ATTEMPTS_PER_TASK}"
     fi
   done
-  # User -n is stripped before this runs. RESULTS n is the Harbor concurrency
-  # the wrapper will set (always follow -k).
-  CONCURRENT="$ATTEMPTS_PER_TASK"
+  # Install-only archives are initialized before task discovery. Use one task
+  # for that metadata path; normal jobs supply the discovered task count.
+  local task_count="${TASK_COUNT:-1}"
+  # Record the wrapper's effective requested concurrency, not raw Harbor -n.
+  CONCURRENT="$(resolve_job_concurrency "$ATTEMPTS_PER_TASK" \
+    "$((task_count * ATTEMPTS_PER_TASK))" "$CONCURRENCY_ARG")"
   mkdir -p "$RUNS_ROOT"
   local -a archive_init_args=(
     --runs-root "$RUNS_ROOT"

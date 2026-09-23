@@ -5,6 +5,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/parse_flags.sh"
+source "$SCRIPT_DIR/docker_slots.sh"
 
 fails=0
 
@@ -16,6 +17,7 @@ reset_globals() {
   RUN_SEPARATELY=0
   SKILLS_ARG=""
   TASKS_ARG=""
+  CONCURRENCY_ARG=""
   HARNESS_ARG=""
   EVAL_AGENT_ARG=""
   EVAL_AGENT_MODEL_ARG=""
@@ -53,12 +55,13 @@ check_rejects() { # $1 label, $2 canonical flag expected in the message, $@ argv
 # Case 1: canonical space-separated values (the documented format).
 reset_globals
 parse_benchmark_flags --harness codex --eval-agent codex --skills commits,srp \
-  --tasks bank,stats --eval-agent-model gpt-6-luna \
+  --tasks bank,stats --concurrency 9 --eval-agent-model gpt-6-luna \
   --eval-agent-reasoning-effort low -k 15
 check "space form: harness" "codex" "$HARNESS_ARG"
 check "space form: eval agent" "codex" "$EVAL_AGENT_ARG"
 check "space form: skills" "commits,srp" "$SKILLS_ARG"
 check "space form: tasks" "bank,stats" "$TASKS_ARG"
+check "space form: concurrency" "9" "$CONCURRENCY_ARG"
 check "space form: eval agent model" "gpt-6-luna" "$EVAL_AGENT_MODEL_ARG"
 check "space form: eval agent effort" "low" "$EVAL_AGENT_EFFORT_ARG"
 check "space form: harbor passthrough" "-k 15" "${HARBOR_ARGS[*]}"
@@ -66,11 +69,12 @@ check "space form: harbor passthrough" "-k 15" "${HARBOR_ARGS[*]}"
 # Case 2: the `=` spelling of the same flags.
 reset_globals
 parse_benchmark_flags --harness=cc --eval-agent=codex --skills=logging \
-  --tasks=todo --eval-agent-model=grok-4.6 --eval-agent-reasoning-effort=high
+  --tasks=todo --concurrency=4 --eval-agent-model=grok-4.6 --eval-agent-reasoning-effort=high
 check "equals form: harness" "cc" "$HARNESS_ARG"
 check "equals form: eval agent" "codex" "$EVAL_AGENT_ARG"
 check "equals form: skills" "logging" "$SKILLS_ARG"
 check "equals form: tasks" "todo" "$TASKS_ARG"
+check "equals form: concurrency" "4" "$CONCURRENCY_ARG"
 check "equals form: eval agent model" "grok-4.6" "$EVAL_AGENT_MODEL_ARG"
 check "equals form: eval agent effort" "high" "$EVAL_AGENT_EFFORT_ARG"
 
@@ -110,6 +114,13 @@ check_rejects "missing value: --skills at end" "--skills requires a value" --ski
 check_rejects "missing value: --tasks before a flag" "--tasks requires a value" \
   --tasks --harness codex
 check_rejects "missing value: --harness empty =" "--harness requires a value" --harness=
+check_rejects "missing value: --concurrency" "--concurrency requires a value" --concurrency
+check_rejects "invalid concurrency: zero" "--concurrency requires a positive integer" --concurrency 0
+check_rejects "invalid concurrency: text" "--concurrency requires a positive integer" --concurrency many
+
+check "default concurrency follows attempts" "1" "$(resolve_job_concurrency 1 9 '')"
+check "explicit concurrency spans distinct tasks" "9" "$(resolve_job_concurrency 1 9 9)"
+check "concurrency is capped by trial count" "9" "$(resolve_job_concurrency 1 9 20)"
 
 # Case 6: removed inverted-skill modes still explain themselves.
 check_rejects "removed: --negative" "--baseline" --negative
