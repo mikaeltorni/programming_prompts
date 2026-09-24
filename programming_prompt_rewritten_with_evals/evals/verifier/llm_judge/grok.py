@@ -121,6 +121,7 @@ def score_with_grok(
     criteria: list[dict[str, str]],
     workspace: Path,
     files: list[Path],
+    judge_name: str = "",
     model: str,
     effort: str,
     timeout: int,
@@ -134,6 +135,7 @@ def score_with_grok(
         criteria: Name/description pairs from ``judge.toml``.
         workspace: Coding-agent workspace.
         files: Paths from ``list_workspace_python``.
+        judge_name: Skill judge name for selecting extra evidence.
         model: Grok model id.
         effort: ``low``, ``medium``, or ``high``.
         timeout: Wall budget in seconds for both attempts.
@@ -144,7 +146,9 @@ def score_with_grok(
     Returns:
         Raw stdout and parsed rows from the last attempt used.
     """
-    prompt = inspect_prompt(template, criteria, workspace, python_files=files)
+    prompt = inspect_prompt(
+        template, criteria, workspace, python_files=files, judge_name=judge_name
+    )
     schema = response_schema(criteria)
     runner = invoke or run_grok
 

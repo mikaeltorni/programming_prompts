@@ -43,6 +43,7 @@ def run_eval_agent(
                 criteria=criteria,
                 workspace=workspace,
                 files=files,
+                judge_name=judge_dir.name,
                 model=model,
                 effort=effort,
                 timeout=budget,
