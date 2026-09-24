@@ -1,0 +1,27 @@
+{
+  "name": "ssh-vm",
+  "version": "0.1.0",
+  "description": "SSH connection guidance for a VM.",
+  "author": {
+    "name": "Mikael Torni"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "SSH VM",
+    "shortDescription": "Connect to a VM over SSH.",
+    "longDescription": "A reusable skill for SSH connections to a VM.",
+    "developerName": "Mikael Torni",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Instructions"
+    ],
+    "defaultPrompt": [
+      "Connect to my VM over SSH."
+    ]
+  },
+  "license": "MIT",
+  "keywords": [
+    "ssh",
+    "vm"
+  ]
+}
