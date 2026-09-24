@@ -22,7 +22,10 @@ table, not a second progress list. At normal handoff, no enabled phase is
 still pending or in progress. Fail a current run with another plan filename,
 missing or extra task rows, a malformed table, or stale completion statuses.
 The `## Enabled skills` section inventories companion skills, not the workflow
-skill itself; `none` is correct when workflow was the only selected skill.
+skill itself; `none` is the requested form when workflow was the only selected
+skill. Also accept an unambiguous statement that workflow was selected but no
+companion skills were enabled; mentioning workflow itself is not evidence that
+another companion was applied.
 With no worktree or commits companion, an absent worktree or implementation
 commit is not contradictory ordering evidence.
 
@@ -50,11 +53,14 @@ Require all applicable workflow outcomes:
   handoff, even if the agent numbers it after documentation. It is not a new
   workflow verification phase or a reason to fail the sequence. Still reject
   any workflow-added tests, review, or validation hidden in that item.
-- The plan has no workflow-added check, test, review, validation, or
-  verification entry under a different heading. Such work is allowed only when
-  an independently selected companion explicitly requires it, and then it
-  remains inside that companion's owning phase. With no such companion, any
-  plan item to run checks or tests fails this requirement.
+- The plan has no separate workflow-added check, test, review, validation, or
+  verification step under another heading, row, or checklist. A companion may
+  require checks within its own phase, but the workflow never requires an
+  additional step for them. Checks performed or planned within the four-row
+  `Write code` phase are allowed even with no companion; references to smoke
+  checks, direct command checks, or exercised behavior in that row's `Details`
+  are **not** evidence of an extra verification step and must not cause a
+  failure. Reject only an actual separate step or phase, not those details.
 - Only companion skills explicitly selected in the prompt or supplied skill
   context shape the implementation. Do not require logging, commenting, SRP,
   debugging, commits, worktrees, or docs merely because those skills are known

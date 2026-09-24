@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.4 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.5 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -99,7 +99,9 @@ Follow this order:
    in extra rows, phase sections, or a second checklist. Escape any `|` in a
    detail cell so the table remains parseable. Set each `Status` to exactly one
    of `pending`, `in_progress`, `complete`, or `skipped`. After the skill
-   inventory, mark optional phases `skipped` immediately when their companions
+   inventory, write `none` under `## Enabled skills` when there are no
+   independently selected companions; do not list `workflow` as its own
+   companion. Mark optional phases `skipped` immediately when their companions
    are not enabled or available. The initial file records `Plan` as `complete`.
    Before each later enabled phase starts, set its row to `in_progress`; after
    it finishes, set that same row to `complete` and update its details. Before
@@ -136,9 +138,12 @@ handoff. When an independently enabled companion skill requires checks, honor
 that requirement within the phase that skill owns; do not represent it as an
 extra phase supplied by this skill.
 
-This applies to plan entries as well as headings: do not add a check, test,
-review, validation, or verification task merely because it is customary. With
-no companion that explicitly requires checks, the plan contains no such task.
+This applies to plan entries as well as headings: do not add a separate check,
+test, review, validation, or verification task merely because it is customary.
+The four-row plan must not grow another step for that work. Checking code during
+`Write code` is allowed, and its `Details` may mention checks performed or
+planned within that row. Such a mention does not create a separate step, and
+this skill does not require checks when no companion does.
 
 At each phase boundary, record what was completed and what phase comes next so
 the task remains resumable. Do not broaden the user's scope merely to make the
