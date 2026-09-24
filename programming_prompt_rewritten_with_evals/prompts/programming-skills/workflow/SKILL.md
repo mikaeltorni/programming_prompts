@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.5 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.6 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -67,13 +67,17 @@ Follow this order:
 
 1. **Plan.** Before tracked repository mutation, translate the user's goal into an
    actionable sequence that preserves their constraints and names the expected
-   deliverables. Store it as Markdown at the fixed path
-   `<project-root>/tmp/workflow.md`, creating the target project's `tmp/`
-   directory when needed. Do not use a task-specific filename, the skill's
-   installation directory, an agent home, or the system `/tmp/`. Keep all
-   workflow progress in this one file; update it in place as phases advance,
-   and do not stage or commit it unless the user explicitly asks. The UI reads
-   this exact Markdown structure throughout the run:
+   deliverables. If `ACC_WORKFLOW_FILE` is set to an absolute Markdown path
+   inside the launch project's `tmp/workflow/` directory, use that exact path;
+   ACC gives each wrapped agent its own file so simultaneous agents in one
+   repository never overwrite each other's plan. Read the variable from the
+   current shell before writing the plan. Otherwise use the fixed fallback
+   `<project-root>/tmp/workflow.md`. Create the needed directory. Do not place
+   the plan in the skill directory, an agent home, or the system `/tmp/`. Keep
+   all progress in that one file; update it as phases advance, and do not stage
+   or commit it unless the user explicitly asks. The terminal overlay reads
+   the table below and renders `complete` as `[x]`, `in_progress` as `[>]`,
+   `pending` as `[ ]`, and `skipped` as `[-]`:
 
    ```markdown
    # Workflow
