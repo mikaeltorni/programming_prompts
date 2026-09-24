@@ -91,6 +91,8 @@ The workflow skill keeps the UI-readable progress list in the target project's
 rows `Plan`, `Establish worktree`, `Write code`, and `Write documentation`,
 updated in place with `pending`, `in_progress`, `complete`, or `skipped`
 statuses. No workflow plan is required when that skill is not selected.
+The workflow judge receives this temporary plan as inline evidence even when
+its agent has no workspace shell access; other judges remain source-only.
 
 Harness aliases: `cc`, `claude`, `claude-code`, `claudecode` → Claude Code;
 `codex`, `openai`, `gpt` → Codex; `grok`, `xai`, `grok-build`, `grok-code` →

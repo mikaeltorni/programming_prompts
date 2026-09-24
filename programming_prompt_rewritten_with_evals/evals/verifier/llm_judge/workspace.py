@@ -1,8 +1,9 @@
-"""Discover workspace Python and pin it in the judge prompt.
+"""Discover workspace source and pin relevant evidence in the judge prompt.
 
 Harbor trials keep the agent program at ``/Projects/app`` (often one file
 such as ``temperature.py``). Listing and inlining those paths stops every
-eval agent from scoring a hallucinated ``app.py``.
+eval agent from scoring a hallucinated ``app.py``. The workflow judge also
+receives its temporary progress plan, which source-only listings omit.
 """
 
 from __future__ import annotations
@@ -40,6 +41,7 @@ _SKIP_DIR_NAMES = frozenset(
 _MAX_LISTED_FILES = 40
 _MAX_FILE_BYTES = 80_000
 _MAX_TOTAL_BYTES = 200_000
+_MAX_WORKFLOW_PLAN_BYTES = 32_000
 
 
 def _is_skipped_python(path: Path, workspace: Path) -> bool:
@@ -190,10 +192,44 @@ def workspace_python_context(workspace: Path, files: list[Path]) -> str:
     return "\n".join(lines)
 
 
+def workspace_workflow_plan_context(workspace: Path) -> str:
+    """Inline the target project's workflow plan without leaving the workspace.
+
+    Args:
+        workspace: Coding-agent project root.
+
+    Returns:
+        Plan contents or explicit missing/unreadable evidence for the judge.
+    """
+    plan = workspace / "tmp" / "workflow.md"
+    try:
+        plan.resolve().relative_to(workspace.resolve())
+    except (OSError, RuntimeError, ValueError):
+        log(f"workflow plan resolves outside workspace: {plan}")
+        return f"\nWorkflow plan evidence: {plan} resolves outside the workspace."
+    if not plan.is_file():
+        log(f"workflow plan missing: {plan}")
+        return f"\nWorkflow plan evidence: {plan} is missing."
+    try:
+        data = plan.read_bytes()
+    except OSError as exc:
+        log(f"workflow plan unreadable: {plan}: {exc}")
+        return f"\nWorkflow plan evidence: {plan} is unreadable ({exc})."
+    truncated = len(data) > _MAX_WORKFLOW_PLAN_BYTES
+    if truncated:
+        data = data[:_MAX_WORKFLOW_PLAN_BYTES]
+    log(f"inlined workflow plan path={plan} bytes={len(data)} truncated={truncated}")
+    note = " (truncated)" if truncated else ""
+    return (
+        f"\n\nWorkflow plan evidence from {plan}{note}:\n"
+        f"```markdown\n{data.decode('utf-8', errors='replace')}\n```"
+    )
+
+
 def pin_workspace_python(
-    template: str, workspace: Path, files: list[Path]
+    template: str, workspace: Path, files: list[Path], judge_name: str = ""
 ) -> str:
-    """Append inspect instructions and inlined sources.
+    """Append inspect instructions and judge-specific workspace evidence.
 
     Leaves a ``{criteria}`` placeholder intact so rewardkit can still
     substitute it. Grok fills criteria first, then calls this.
@@ -202,10 +238,14 @@ def pin_workspace_python(
         template: Judge prompt text (may still contain ``{criteria}``).
         workspace: Path shown in the inspect instruction.
         files: Paths from :func:`list_workspace_python`.
+        judge_name: Skill judge name; only workflow receives the temporary plan.
 
     Returns:
         Prompt text with the workspace listing appended.
     """
+    plan_context = (
+        workspace_workflow_plan_context(workspace) if judge_name == "workflow" else ""
+    )
     return (
         template.rstrip()
         + "\n\nRead-only evidence tools (run with your shell tool):\n"
@@ -218,6 +258,7 @@ def pin_workspace_python(
         + INSPECT_BEFORE_SCORE
         + "\n\n"
         + workspace_python_context(workspace, files)
+        + plan_context
     )
 
 
@@ -249,6 +290,7 @@ def inspect_prompt(
     criteria: list[dict[str, str]],
     workspace: Path,
     python_files: list[Path] | None = None,
+    judge_name: str = "",
 ) -> str:
     """Fill ``{criteria}`` and pin scoring to real workspace Python files.
 
@@ -257,6 +299,7 @@ def inspect_prompt(
         criteria: Name/description pairs from ``judge.toml``.
         workspace: Path shown in the inspect instruction.
         python_files: Optional precomputed listing; ``None`` walks *workspace*.
+        judge_name: Skill judge name for selecting extra evidence.
 
     Returns:
         The full prompt passed to a headless agent CLI.
@@ -265,7 +308,7 @@ def inspect_prompt(
         python_files if python_files is not None else list_workspace_python(workspace)
     )
     filled = template.replace("{criteria}", criteria_block(criteria))
-    return pin_workspace_python(filled, workspace, files)
+    return pin_workspace_python(filled, workspace, files, judge_name=judge_name)
 
 
 def load_judge_dir(judge_dir: Path) -> tuple[str, list[dict[str, str]], int]:

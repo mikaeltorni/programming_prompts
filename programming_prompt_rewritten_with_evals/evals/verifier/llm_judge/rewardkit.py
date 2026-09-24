@@ -137,7 +137,7 @@ def write_pinned_judge_dir(
     files: list[Path],
     retry_reason: str | None = None,
 ) -> Path:
-    """Copy a skill judge dir and append the workspace Python listing.
+    """Copy a skill judge dir and append relevant workspace evidence.
 
     Leaves ``{criteria}`` in ``prompt.md`` so rewardkit can substitute it.
 
@@ -151,7 +151,9 @@ def write_pinned_judge_dir(
         Temporary directory with ``prompt.md`` and ``judge.toml``.
     """
     template, _, _ = load_judge_dir(judge_dir)
-    pinned = pin_workspace_python(template, workspace, files)
+    pinned = pin_workspace_python(
+        template, workspace, files, judge_name=judge_dir.name
+    )
     if retry_reason:
         pinned = retry_prompt(pinned, retry_reason)
     work = Path(tempfile.mkdtemp(prefix="llm-judge-rk-"))

@@ -9,7 +9,9 @@ this rubric.
 Inspect the target project's `tmp/workflow.md` directly before scoring plan
 presence or progress. Temporary files may be ignored by Git and omitted by
 source-only listings; neither `git status` nor a Python source listing proves
-the plan is absent. Read its actual contents and assess whether the task
+the plan is absent. Its contents or an explicit missing-file result are also
+supplied below as workflow-plan evidence, so use that evidence when shell
+access is unavailable. Read its actual contents and assess whether the task
 statuses reflect completed work. For a current workflow run, the UI contract
 is exact: `# Workflow`, then `## Goal`, `## Enabled skills`, and one `## Tasks`
 section with a Markdown table headed `Order | Task | Status | Details`. It has
@@ -19,6 +21,10 @@ exactly four data rows, numbered 1–4 and named `Plan`, `Establish worktree`,
 table, not a second progress list. At normal handoff, no enabled phase is
 still pending or in progress. Fail a current run with another plan filename,
 missing or extra task rows, a malformed table, or stale completion statuses.
+The `## Enabled skills` section inventories companion skills, not the workflow
+skill itself; `none` is correct when workflow was the only selected skill.
+With no worktree or commits companion, an absent worktree or implementation
+commit is not contradictory ordering evidence.
 
 Require all applicable workflow outcomes:
 
