@@ -66,6 +66,7 @@ and carry manifests for both Codex and Claude Code; direct skills carry only
 - **Workflow Skill** — Explicit-only orchestration that plans first, coordinates only selected companion skills, always writes code, and conditionally uses worktree and documentation guidance.
 - **Docs Skill** — User-facing project documentation for completed programming changes.
 - **Commit Guidelines** — Cautious Git commit workflow (inspect → plan → stage hunks → verify → compose).
+- **SSH VM** — Connect to a VM for remote software deployment or verification, with Ubuntu live USB setup guidance.
 - **Linux Desktop Configuration** — Shared GNOME/Ubuntu desktop rules: applying changes silently from the command line (gsettings/dconf live, `systemctl --user restart`, `gnome-extensions enable/disable`), activating edited extension code with the sanctioned in-place X11 run-dialog reload (`xdotool` `Alt+F2 r`) while still forbidding destructive session restarts, asking for manual logout to activate extension code on Wayland, preserving user sessions, maintaining clean-install compatibility, and using root-optional (sudo-free) installer patterns.
 - **Refactoring Skill** — Test-driven refactoring methodology for restructuring monolithic codebases into clean modules.
 - **Init Project Skill** — Auto-triggered secure project initialization with UV + supply-chain protection.
@@ -80,7 +81,8 @@ programming_prompts/
 │   │                                       #   .codex-plugin/ + .claude-plugin/ manifests
 │   │                                       #   and exactly one skills/<name>/SKILL.md
 │   ├── commit-guidelines/                  # Cautious Git commit workflow
-│   └── linux-desktop-configuration/        # Console-only desktop deployment + sudo-free installers
+│   ├── linux-desktop-configuration/        # Console-only desktop deployment + sudo-free installers
+│   └── ssh-vm/                             # SSH deployment and testing on a VM
 ├── skills/                                 # Direct skills, not plugins
 │   ├── general-programming-guidelines/     # Engineering workflow & coding standards
 │   ├── workflow/                            # Explicit-only programming orchestrator

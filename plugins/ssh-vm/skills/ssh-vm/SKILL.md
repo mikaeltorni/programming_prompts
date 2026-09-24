@@ -1,10 +1,14 @@
 ---
 name: ssh-vm
 description: >-
-  v1.0.3 — Connect to a VM over SSH when the user needs remote access to that VM.
+  v1.0.4 — Use when a task requires SSH access to a VM to deploy software or test it on that VM. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM connection
+
+Apply this skill when the task needs an actual SSH connection to a VM for
+remote deployment or verification. Do not activate it just because SSH or a VM
+is mentioned in passing.
 
 Use the SSH client to connect to the VM address supplied by the user. Check that
 the target is reachable and report the connection result. Keep the target
