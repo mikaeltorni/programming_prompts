@@ -10,14 +10,20 @@ Inspect the target project's `tmp/workflow.md` directly before scoring plan
 presence or progress. Temporary files may be ignored by Git and omitted by
 source-only listings; neither `git status` nor a Python source listing proves
 the plan is absent. Read its actual contents and assess whether the task
-statuses reflect completed work. For an older submission that used a different
-Markdown filename under project-root `tmp/`, inspect that plan as evidence too.
+statuses reflect completed work. For a current workflow run, the UI contract
+is exact: `# Workflow`, then `## Goal`, `## Enabled skills`, and one `## Tasks`
+section with a Markdown table headed `Order | Task | Status | Details`. It has
+exactly four data rows, numbered 1–4 and named `Plan`, `Establish worktree`,
+`Write code`, and `Write documentation` in that order. Status values are only
+`pending`, `in_progress`, `complete`, or `skipped`. Task details belong in the
+table, not a second progress list. At normal handoff, no enabled phase is
+still pending or in progress. Fail a current run with another plan filename,
+missing or extra task rows, a malformed table, or stale completion statuses.
 
 Require all applicable workflow outcomes:
 
 - A substantive Markdown plan exists at the target project's
-  `tmp/workflow.md` for submissions using the current workflow skill. For older
-  submissions, another Markdown plan under project-root `tmp/` also qualifies.
+  `tmp/workflow.md` for submissions using the current workflow skill.
   It reflects the original request, names concrete deliverables or ordered work,
   and is updated enough to show meaningful progress. A plan written elsewhere,
   a non-Markdown file, or a placeholder checklist fails.
