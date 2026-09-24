@@ -1,22 +1,22 @@
 {
   "name": "ssh-vm",
   "version": "0.1.0",
-  "description": "SSH connection guidance for a VM.",
+  "description": "Use for software deployment or testing on a VM over SSH.",
   "author": {
     "name": "Mikael Torni"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "SSH VM",
-    "shortDescription": "Connect to a VM over SSH.",
-    "longDescription": "A reusable skill for SSH connections to a VM.",
+    "shortDescription": "Deploy and test software on a VM over SSH.",
+    "longDescription": "Connect to a VM over SSH for a requested deployment or remote verification, including Ubuntu live USB setup guidance when SSH is unavailable.",
     "developerName": "Mikael Torni",
     "category": "Developer Tools",
     "capabilities": [
       "Instructions"
     ],
     "defaultPrompt": [
-      "Connect to my VM over SSH."
+      "Deploy and test my software on a VM over SSH."
     ]
   },
   "license": "MIT",

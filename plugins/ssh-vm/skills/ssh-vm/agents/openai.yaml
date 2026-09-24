@@ -1,0 +1,7 @@
+interface:
+  display_name: "SSH VM"
+  short_description: "Deploy and test software on a VM over SSH"
+  default_prompt: "Use $ssh-vm to deploy and test software on my VM over SSH."
+
+policy:
+  allow_implicit_invocation: true

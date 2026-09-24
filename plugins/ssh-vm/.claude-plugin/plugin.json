@@ -1,6 +1,8 @@
 {
   "name": "ssh-vm",
   "version": "0.1.0",
-  "description": "SSH connection guidance for a VM.",
-  "author": {"name": "Mikael Torni"}
+  "description": "Use for software deployment or testing on a VM over SSH.",
+  "author": {
+    "name": "Mikael Torni"
+  }
 }
