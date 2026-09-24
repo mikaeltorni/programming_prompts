@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.3 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.4 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -71,10 +71,9 @@ Follow this order:
    `<project-root>/tmp/workflow.md`, creating the target project's `tmp/`
    directory when needed. Do not use a task-specific filename, the skill's
    installation directory, an agent home, or the system `/tmp/`. Keep all
-   workflow progress in this one file;
-   update it in place as phases advance, and do not stage or commit it unless
-   the user explicitly asks. Use this Markdown structure so a progress UI can
-   read the same task list throughout the run:
+   workflow progress in this one file; update it in place as phases advance,
+   and do not stage or commit it unless the user explicitly asks. The UI reads
+   this exact Markdown structure throughout the run:
 
    ```markdown
    # Workflow
@@ -94,13 +93,19 @@ Follow this order:
    | 4 | Write documentation | pending | Use the docs companion if enabled. |
    ```
 
-   Keep these four task names and their order. Set each status to exactly one
-   of `pending`, `in_progress`, `complete`, or `skipped`; mark optional phases
-   `skipped` immediately when their companions are not enabled or available.
-   Put task-specific deliverables and unavailable-skill reasons in `Details`.
-   Update the status and details in these same rows at each phase boundary,
-   including after code writing; do not add a second progress checklist or
-   a workflow-owned verification row.
+   Keep the headings, table columns, four task names, row numbers, and order
+   exactly as shown. The `## Tasks` table has exactly four data rows: put
+   task-specific deliverables and unavailable-skill reasons in `Details`, not
+   in extra rows, phase sections, or a second checklist. Escape any `|` in a
+   detail cell so the table remains parseable. Set each `Status` to exactly one
+   of `pending`, `in_progress`, `complete`, or `skipped`. After the skill
+   inventory, mark optional phases `skipped` immediately when their companions
+   are not enabled or available. The initial file records `Plan` as `complete`.
+   Before each later enabled phase starts, set its row to `in_progress`; after
+   it finishes, set that same row to `complete` and update its details. Before
+   normal handoff, no enabled phase remains `pending` or
+   `in_progress`. Never create a workflow-owned verification row or another
+   progress file.
 2. **Establish the worktree when enabled.** If the `worktree` companion is in
    the enabled-skill inventory and available, follow it to create the task's
    isolated worktree before editing repository files. Otherwise skip this

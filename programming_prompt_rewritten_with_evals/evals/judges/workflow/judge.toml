@@ -9,7 +9,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "workflow_sequence"
-description = "the explicit workflow records a Markdown plan under repository tmp, conditionally follows enabled worktree and docs phases around code writing, skips unavailable or unselected companions, and adds no workflow-owned verification step"
+description = "the explicit workflow records one current, four-row task table at project-root tmp/workflow.md, conditionally follows enabled worktree and docs phases around code writing, skips unavailable or unselected companions, and adds no workflow-owned verification step"
 type = "binary"
 
 [scoring]

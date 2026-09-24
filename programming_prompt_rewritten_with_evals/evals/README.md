@@ -87,9 +87,10 @@ workflow judge receives that delivered task prompt, so its optional-companion
 decision uses the selection the agent saw.
 
 The workflow skill keeps the UI-readable progress list in the target project's
-`tmp/workflow.md`. It updates the same four-row task table in place with
-`pending`, `in_progress`, `complete`, or `skipped` statuses; no workflow plan is
-required when that skill is not selected.
+`tmp/workflow.md`. The UI contract is one `## Tasks` table with the exact four
+rows `Plan`, `Establish worktree`, `Write code`, and `Write documentation`,
+updated in place with `pending`, `in_progress`, `complete`, or `skipped`
+statuses. No workflow plan is required when that skill is not selected.
 
 Harness aliases: `cc`, `claude`, `claude-code`, `claudecode` → Claude Code;
 `codex`, `openai`, `gpt` → Codex; `grok`, `xai`, `grok-build`, `grok-code` →
