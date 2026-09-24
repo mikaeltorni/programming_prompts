@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.1 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.2 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -69,8 +69,36 @@ Follow this order:
    actionable sequence that preserves their constraints and names the expected
    deliverables. Store it as Markdown at
    `<repository-root>/tmp/workflow-<task-slug>.md`, creating `tmp/` when needed.
-   Use a short stable task slug, update the same file as phases advance, and do
-   not stage or commit this temporary plan unless the user explicitly asks.
+   Use a short stable task slug. Keep all workflow progress in this one file;
+   update it in place as phases advance, and do not stage or commit it unless
+   the user explicitly asks. Use this Markdown structure so a progress UI can
+   read the same task list throughout the run:
+
+   ```markdown
+   # Workflow
+
+   ## Goal
+   The requested outcome and concrete deliverables.
+
+   ## Enabled skills
+   The independently selected companions, or `none`.
+
+   ## Tasks
+   | Order | Task | Status | Details |
+   | --- | --- | --- | --- |
+   | 1 | Plan | complete | Scope and deliverables recorded. |
+   | 2 | Establish worktree | pending | Use the worktree companion if enabled. |
+   | 3 | Write code | pending | Implement the requested behavior. |
+   | 4 | Write documentation | pending | Use the docs companion if enabled. |
+   ```
+
+   Keep these four task names and their order. Set each status to exactly one
+   of `pending`, `in_progress`, `complete`, or `skipped`; mark optional phases
+   `skipped` immediately when their companions are not enabled or available.
+   Put task-specific deliverables and unavailable-skill reasons in `Details`.
+   Update the status and details in these same rows at each phase boundary,
+   including after code writing; do not add a second progress checklist or
+   a workflow-owned verification row.
 2. **Establish the worktree when enabled.** If the `worktree` companion is in
    the enabled-skill inventory and available, follow it to create the task's
    isolated worktree before editing repository files. Otherwise skip this
