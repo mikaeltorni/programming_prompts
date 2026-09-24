@@ -1,7 +1,7 @@
 ---
 name: ssh-vm
 description: >-
-  v1.0.2 — Connect to a VM over SSH when the user needs remote access to that VM.
+  v1.0.3 — Connect to a VM over SSH when the user needs remote access to that VM.
 ---
 
 # SSH VM connection
@@ -54,3 +54,25 @@ firewall trouble. On a changed host-key warning, stop and verify the new key
 fingerprint on the VM before updating local known hosts. Report the exact
 failure and the next console action rather than claiming the VM was tested.
 The live USB setup may disappear after a reboot unless the medium is persistent.
+
+## Deploy and verify on the VM
+
+After SSH login succeeds, confirm the remote identity and environment before
+copying or changing files: run `id -un`, `hostname`, and the checks relevant to
+the task. Use the user-supplied address, username, port, and identity when
+provided; keep any chosen SSH options consistent across `ssh`, `scp`, and
+`rsync`. Run a bounded connection probe such as
+`ssh -o BatchMode=yes -o ConnectTimeout=5 user@host 'id -un; hostname'` so an
+automated attempt cannot hang at a password prompt. If password login is the
+only option, use an interactive terminal when available and never capture or
+repeat the secret. Verify a new host key with the VM owner or its console
+before trusting it.
+
+For a deployment task, inspect the target path and its existing data first.
+Copy only the files needed for the task with `scp` or `rsync` (without a delete
+option), then run the project's documented installation or activation command
+on the VM. Respect the target repository's safety and service rules. Run its
+relevant tests or live checks **on the VM**, inspect the service status and
+logs when applicable, and confirm the installed files or behavior there. A
+local test does not establish VM success. Report the remote commands, their
+results, and any work that could not be verified because SSH was unavailable.
