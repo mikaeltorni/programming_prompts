@@ -1,6 +1,6 @@
 {
   "name": "ssh-vm",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260924223059",
   "description": "Use for software deployment or testing on a VM over SSH.",
   "author": {
     "name": "Mikael Torni"

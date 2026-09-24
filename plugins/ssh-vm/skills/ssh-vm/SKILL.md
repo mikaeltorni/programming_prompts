@@ -1,7 +1,7 @@
 ---
 name: ssh-vm
 description: >-
-  v1.0.4 — Use when a task requires SSH access to a VM to deploy software or test it on that VM. Skip local-only tests and SSH discussion without a remote VM action.
+  v1.0.5 — Use when a task requires SSH access to a VM to deploy software or test it on that VM. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM connection
@@ -36,17 +36,18 @@ whoami
 sudo apt update
 sudo apt install -y openssh-server
 sudo systemctl start ssh
+sudo passwd ubuntu
 sudo systemctl status ssh --no-pager
 hostname -I
 ```
 
 The first command confirms the account name, and `hostname -I` confirms the
-current VM address. If no SSH key is already authorized, explain that the live
-session's blank local password cannot be used for ordinary SSH login. Offer
-`sudo passwd ubuntu` on the VM console to set a temporary password, replacing
-`ubuntu` with the confirmed account when different. The user enters the new
-password locally and must not send it to the agent. As an alternative, have the
-user add the client's public key to that account's `~/.ssh/authorized_keys`
+current VM address. Replace `ubuntu` in the password command with the account
+shown by `whoami` when different; skip that command if an authorized SSH key is
+already available. Explain that the live session's blank local password cannot
+be used for ordinary SSH login. The user enters the new password locally and
+must not send it to the agent. As an alternative, have the user add the client's
+public key to that account's `~/.ssh/authorized_keys`
 with `.ssh` mode `700` and `authorized_keys` mode `600`. Never ask for a private
 key or suggest enabling empty SSH passwords.
 
