@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.2 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.3 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -67,9 +67,11 @@ Follow this order:
 
 1. **Plan.** Before tracked repository mutation, translate the user's goal into an
    actionable sequence that preserves their constraints and names the expected
-   deliverables. Store it as Markdown at
-   `<repository-root>/tmp/workflow-<task-slug>.md`, creating `tmp/` when needed.
-   Use a short stable task slug. Keep all workflow progress in this one file;
+   deliverables. Store it as Markdown at the fixed path
+   `<project-root>/tmp/workflow.md`, creating the target project's `tmp/`
+   directory when needed. Do not use a task-specific filename, the skill's
+   installation directory, an agent home, or the system `/tmp/`. Keep all
+   workflow progress in this one file;
    update it in place as phases advance, and do not stage or commit it unless
    the user explicitly asks. Use this Markdown structure so a progress UI can
    read the same task list throughout the run:
