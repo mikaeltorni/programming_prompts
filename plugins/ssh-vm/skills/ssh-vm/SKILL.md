@@ -1,7 +1,7 @@
 ---
 name: ssh-vm
 description: >-
-  v1.0.5 — Use when a task requires SSH access to a VM to deploy software or test it on that VM. Skip local-only tests and SSH discussion without a remote VM action.
+  v1.0.6 — Use when a task requires SSH access to a VM to deploy software or test it on that VM. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM connection
@@ -50,6 +50,21 @@ must not send it to the agent. As an alternative, have the user add the client's
 public key to that account's `~/.ssh/authorized_keys`
 with `.ssh` mode `700` and `authorized_keys` mode `600`. Never ask for a private
 key or suggest enabling empty SSH passwords.
+
+For `Permission denied` after a password attempt, the SSH server is reachable;
+do not repeat server installation steps. Ask the user to run these checks on
+the VM console, substituting the account shown by `whoami` when needed:
+
+```bash
+whoami
+sudo passwd ubuntu
+sudo passwd -S ubuntu
+sudo journalctl -u ssh -n 20 --no-pager
+```
+
+Have the user enter the intended password twice at the `passwd` prompts. If
+the entries do not match, have them retry locally. Ask them to report the
+account status and relevant SSH log errors without including any password.
 
 If the server is active but still unreachable, check `sudo ss -lntp` for a
 listener on port 22, compare the VM address with the requested target, and
