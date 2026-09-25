@@ -1,7 +1,7 @@
 ---
 name: logging
 description: >-
-  v1.0.0 — Use whenever writing or editing Python (or other) functions: print each
+  v1.0.1 — Use whenever writing or editing Python (or other) functions: print each
   function's incoming parameters at entry and the return value just before
   returning. Keep it to plain print() — no logging modules or log files.
 ---
@@ -41,7 +41,9 @@ representation.
    incoming parameter's **actual name** and value, including optional
    parameters whose value is `None` and method receivers `self` / `cls`;
    one print listing every real name is enough. "First statement" is literal:
-   no parse call, validation, `global`, or dispatch runs before it. Keep a
+   no parse call, validation, `global`, or dispatch runs before it. Python
+   permits a `global` declaration after a parameter-only entry print; put
+   the declaration there, before reading or assigning that global. Keep a
    docstring first when present, with the print directly after it.
 
    ```python

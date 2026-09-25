@@ -948,10 +948,14 @@ strips user `-n` / `--n-concurrent` so a leftover `-n 100` cannot starve
 smaller `-k` for a cheaper smoke. The wrapper defaults to `-k 5` (and
 therefore 5 concurrent) when you pass no Harbor flags. After the job
 finishes it prints a categorized console summary.
-Several terminals may start at once. Trials use Docker's default bridge, so
-stock IPAM is not the cap (see
+Run one benchmark wrapper at a time on this machine. Trials use Docker's
+default bridge, so stock IPAM is not the cap (see
 [Install Docker](#install-docker-on-ubuntu-2404)). Harbor retries Codex
-`ApiRateLimitError` so overlapping jobs are not serialized.
+`ApiRateLimitError` within a run. Generated tasks allow the coding agent
+600 seconds; environment startup and the verifier each retain their separate
+300-second budgets. An `AgentTimeoutError` is an incomplete trial, not evidence
+that its skill implementation failed: inspect the archived agent transcript
+and artifacts before comparing pass rates.
 
 Do not use bare `-a codex` / `-a claude-code` / `-a grok-build` for these skill
 benchmarks: those paths can leave host/user skill directories untouched and do

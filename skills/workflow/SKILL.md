@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.8 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.9 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -124,10 +124,16 @@ Follow this order:
    `skipped` immediately when their companions
    are not enabled or available. The initial file records `Plan` as `complete`.
    Before each later enabled phase starts, set its row to `in_progress`; after
-   it finishes, set that same row to `complete` and update its details. Before
-   normal handoff, update the original absolute file again so no enabled
-   phase remains `pending` or `in_progress`. Never create a workflow-owned
-   verification row or another progress file.
+   it finishes, replace that same row with `complete` and updated details.
+   Never append a second row for a phase. In particular, finish the `Write
+   code` row and any selected `commits` ledger references before moving to
+   `Write documentation`; a completed documentation row cannot coexist with
+   an in-progress code row or pending Feature commit. After any required
+   commits, merge, and consumer reapplication, reread this original absolute
+   file and reconcile its existing four rows and ledger with what finished.
+   Before normal handoff, no enabled phase may remain `pending` or
+   `in_progress`. Never create a workflow-owned verification row or another
+   progress file.
 2. **Establish the worktree when enabled.** If the `worktree` companion is in
    the enabled-skill inventory and available, follow it to create the task's
    isolated worktree before editing repository files. Otherwise skip this
