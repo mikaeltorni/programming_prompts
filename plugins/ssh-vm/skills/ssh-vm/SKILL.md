@@ -1,7 +1,7 @@
 ---
 name: ssh-vm
 description: >-
-  v1.0.6 — Use when a task requires SSH access to a VM to deploy software or test it on that VM. Skip local-only tests and SSH discussion without a remote VM action.
+  v1.0.7 — Use when a task requires SSH access to a VM to deploy software or test it on that VM. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM connection
@@ -96,3 +96,10 @@ relevant tests or live checks **on the VM**, inspect the service status and
 logs when applicable, and confirm the installed files or behavior there. A
 local test does not establish VM success. Report the remote commands, their
 results, and any work that could not be verified because SSH was unavailable.
+
+While working on a project that the user asked to deploy or test on the VM,
+update that project's copy **on the VM itself** after every relevant local
+change. Re-run its required installation or activation and verify the changed
+behavior on the VM before calling the change delivered. If the VM is
+unavailable, state that remote deployment remains incomplete and give the
+specific step needed to resume it.
