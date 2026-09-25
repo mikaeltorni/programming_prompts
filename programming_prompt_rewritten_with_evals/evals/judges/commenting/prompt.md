@@ -23,6 +23,9 @@ style where `Parameters:` or `Returns:` sits on its own line with the text
 on the following line.
 
 Do not fail for unrelated code behavior. If unsure, answer no.
+Before a no verdict, name a concrete function and the missing or malformed
+docstring element. If inspection finds every function compliant, answer yes;
+a reason concluding that the score is yes cannot accompany a no score.
 
 Criteria to score:
 {criteria}

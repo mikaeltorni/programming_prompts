@@ -21,8 +21,10 @@ concurrently in [`judge_pool.py`](judge_pool.py) (override the thread cap with
 the other agents and skills so Harbor still gets a reward file. Grok CLI envelopes
 that fail constrained decode still score when the yes/no JSON is in ``text``.
 [`run_llm_judge.py`](run_llm_judge.py) pins the real workspace
-`*.py` files into the prompt for every agent and retries once on skip-inspect
-or invented paths. Codex and Claude Code still use pinned harbor-rewardkit
+`*.py` files into the prompt for every agent and retries once on skip-inspect,
+invented paths, or an explicit no verdict contradicting its own reasoning.
+It also inlines the launch-project workflow plan for the workflow judge and
+bounded original failure logs for the debug judge. Codex and Claude Code still use pinned harbor-rewardkit
 (with a writable `CLAUDE_CONFIG_DIR` / `CODEX_HOME` overlay passed into the
 `rewardkit` child, not only `os.environ`). The task image installs
 `rewardkit` onto `PATH`; the wrapper uses that binary and only falls back

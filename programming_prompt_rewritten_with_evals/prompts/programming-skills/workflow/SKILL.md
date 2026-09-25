@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.6 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.8 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -41,6 +41,9 @@ skill instructions actually supplied in the conversation. Make a short
 inventory containing only the companion skills explicitly invoked by the user
 or loaded as applicable by the host. Assign each inventoried skill to the phase
 where its instructions apply.
+An enabled skill may have no work for this request: for example, `debug` is
+selected but not applicable when no failure was reported. Record that as
+`debug (not applicable)`, not as an unavailable skill requiring replacement.
 
 Do not treat a skill as enabled merely because it is installed, discoverable,
 mentioned as an example, or known to exist in the repository. Do not load or
@@ -97,21 +100,34 @@ Follow this order:
    | 4 | Write documentation | pending | Use the docs companion if enabled. |
    ```
 
+   Resolve the chosen plan path to an absolute path in the launch project
+   before entering a linked worktree. Keep using that exact absolute path for
+   every update, even when the current directory changes; never create a
+   second `tmp/workflow.md` inside the linked worktree. A relative
+   `tmp/workflow.md` after changing directories updates the wrong plan.
+
    Keep the headings, table columns, four task names, row numbers, and order
    exactly as shown. The `## Tasks` table has exactly four data rows: put
-   task-specific deliverables and unavailable-skill reasons in `Details`, not
-   in extra rows, phase sections, or a second checklist. Escape any `|` in a
+   workflow phase progress and task-specific deliverables in `Details`, not
+   in extra task rows or a second progress checklist. A selected `commits`
+   companion may keep its verbatim capability ledger in a `## Feature ledger`
+   section after the task table in this same file; that section is supporting
+   detail, not another workflow phase or progress file. When a ledger is present,
+   update each entry's commit reference before marking `Write code` complete;
+   a `pending` ledger entry and a `complete` code row contradict each other.
+   Escape any `|` in a
    detail cell so the table remains parseable. Set each `Status` to exactly one
    of `pending`, `in_progress`, `complete`, or `skipped`. After the skill
    inventory, write `none` under `## Enabled skills` when there are no
-   independently selected companions; do not list `workflow` as its own
-   companion. Mark optional phases `skipped` immediately when their companions
+   independently selected companions; naming `workflow` itself is harmless,
+   but it does not make another companion selected. Mark optional phases
+   `skipped` immediately when their companions
    are not enabled or available. The initial file records `Plan` as `complete`.
    Before each later enabled phase starts, set its row to `in_progress`; after
    it finishes, set that same row to `complete` and update its details. Before
-   normal handoff, no enabled phase remains `pending` or
-   `in_progress`. Never create a workflow-owned verification row or another
-   progress file.
+   normal handoff, update the original absolute file again so no enabled
+   phase remains `pending` or `in_progress`. Never create a workflow-owned
+   verification row or another progress file.
 2. **Establish the worktree when enabled.** If the `worktree` companion is in
    the enabled-skill inventory and available, follow it to create the task's
    isolated worktree before editing repository files. Otherwise skip this
