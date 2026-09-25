@@ -147,7 +147,8 @@ description = "{description}"
 timeout_sec = 300.0
 
 [agent]
-timeout_sec = 300.0
+# Eight selected skills and ordered Feature commits can exceed five minutes.
+timeout_sec = 600.0
 
 [environment]
 network_mode = "public"

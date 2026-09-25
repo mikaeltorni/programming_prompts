@@ -16,6 +16,10 @@ does not fall through; do not invent an implicit None path after it. A branch
 ending in `raise` is exempt. Initializers and validation helpers that really
 reach the end normally do return None and need that exit print. Cite the
 specific uncovered path in a failing verdict.
+When branches converge on a common print immediately before their shared
+return, that print covers every branch reaching the return. The supplied
+workspace Python-file list is exhaustive for this trial; do not fail over
+speculation about files absent from that list.
 
 Judge every `return` in the function, not just the last one. The value
 about to be returned is the **whole** returned expression: for
