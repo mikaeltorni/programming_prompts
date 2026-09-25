@@ -4,7 +4,7 @@ title: "Programming Prompts"
 type: software
 abstract: "Programming Prompts is a prompt library that provides reusable AI coding-agent prompts and engineering guidance for Codex and Claude Code users."
 authors:
-  - family-names: Torni
+  - family-names: Törni
     given-names: Mikael
 repository-code: "https://github.com/mikaeltorni/programming_prompts"
 license: MIT

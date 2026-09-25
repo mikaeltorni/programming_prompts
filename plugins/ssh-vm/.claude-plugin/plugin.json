@@ -3,6 +3,6 @@
   "version": "0.1.2",
   "description": "Use for software deployment or testing on a VM over SSH.",
   "author": {
-    "name": "Mikael Torni"
+    "name": "Mikael Törni"
   }
 }
