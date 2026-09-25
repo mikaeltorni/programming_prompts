@@ -1,7 +1,7 @@
 ---
 name: ssh-vm
 description: >-
-  v1.0.7 — Use when a task requires SSH access to a VM to deploy software or test it on that VM. Skip local-only tests and SSH discussion without a remote VM action.
+  v1.0.8 — Use when a task requires SSH access to a VM to deploy software or test it on that VM. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM connection
@@ -10,9 +10,13 @@ Apply this skill when the task needs an actual SSH connection to a VM for
 remote deployment or verification. Do not activate it just because SSH or a VM
 is mentioned in passing.
 
-Use the SSH client to connect to the VM address supplied by the user. Check that
-the target is reachable and report the connection result. Keep the target
-address and authentication choice specific to the current request.
+If the user has not supplied a VM IP address or hostname, ask for it before
+connecting. Use the SSH client to connect to that target, check that it is
+reachable, and report the connection result. Keep the address and
+authentication choice specific to the current request. If password login is
+required and neither a password nor an authorized key is available, ask the
+user for the VM login password; use it only at an interactive SSH prompt.
+Never print, log, save, or place a password in a shell command.
 
 ## Ubuntu live USB login
 
@@ -45,8 +49,9 @@ The first command confirms the account name, and `hostname -I` confirms the
 current VM address. Replace `ubuntu` in the password command with the account
 shown by `whoami` when different; skip that command if an authorized SSH key is
 already available. Explain that the live session's blank local password cannot
-be used for ordinary SSH login. The user enters the new password locally and
-must not send it to the agent. As an alternative, have the user add the client's
+be used for ordinary SSH login. The user enters the new password locally; if
+password login is required, request it for the interactive SSH attempt. As an
+alternative, have the user add the client's
 public key to that account's `~/.ssh/authorized_keys`
 with `.ssh` mode `700` and `authorized_keys` mode `600`. Never ask for a private
 key or suggest enabling empty SSH passwords.
