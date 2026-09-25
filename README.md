@@ -82,14 +82,14 @@ programming_prompts/
 │   │                                       #   and exactly one skills/<name>/SKILL.md
 │   ├── commit-guidelines/                  # Cautious Git commit workflow
 │   ├── linux-desktop-configuration/        # Console-only desktop deployment + sudo-free installers
-│   └── ssh-vm/                             # SSH deployment and testing on a VM
 ├── skills/                                 # Direct skills, not plugins
 │   ├── general-programming-guidelines/     # Engineering workflow & coding standards
 │   ├── workflow/                            # Explicit-only programming orchestrator
 │   ├── docs/                                # Post-code project documentation
 │   ├── init-project/                       # Secure init with UV + supply-chain protection
 │   ├── refactoring/                        # Test-driven refactoring workflow
-│   └── setup-repository-guidelines/        # On-request setup-family routing & install policy
+│   ├── setup-repository-guidelines/        # On-request setup-family routing & install policy
+│   └── ssh-vm/                             # SSH deployment and testing on a VM
 ├── dispatch-skills/                        # Menu-selectable task skills: repo in, score out
 │   └── github-seo/                        # GitHub discoverability audit, scored 0–100, looped
 ├── global-instructions/                    # Bootstrap tags merged into runtime instructions
@@ -139,6 +139,14 @@ codex plugin list
 ```
 
 ## Direct Skills
+
+### ssh-vm
+
+Automatically applies when a task requires deploying or testing software on a
+VM over SSH. It verifies the remote login, updates the project copy on the VM
+after relevant local changes, runs the project's installation and checks there,
+and explains Ubuntu live USB SSH setup when the connection is unavailable.
+Installed as a native skill under each harness's skill directory.
 
 ### workflow
 
