@@ -1,4 +1,4 @@
-"""Detect skip-inspect / invented-path scores and retry once.
+"""Detect unsupported or self-contradictory scores and retry once.
 
 Shared by every eval agent so Codex, Claude Code, and Grok apply the same
 reliability gate. The retry token never includes secrets or file contents.
@@ -24,6 +24,10 @@ _NOT_INSPECTED = re.compile(
 )
 _PY_MENTION = re.compile(
     r"(?:(?:\.{0,2}/)?[\w.-]+(?:/[\w.-]+)*)\.py",
+    re.IGNORECASE,
+)
+_CONTRADICTORY_NO = re.compile(
+    r"\b(?:the )?score (?:should be|is) yes\b|\bevidence supports a pass\b",
     re.IGNORECASE,
 )
 
@@ -60,15 +64,17 @@ def unreliable_score_reason(
 ) -> str | None:
     """Return why a failing score looks untrustworthy, or None.
 
-    Triggers on skip-inspect wording or ``.py`` citations that are not in
-    the workspace listing. Passing criteria are ignored.
+    Triggers on skip-inspect wording, a no verdict whose reasoning explicitly
+    says the score should be yes, or ``.py`` citations outside the workspace
+    listing. Passing criteria are ignored.
 
     Args:
         rows: Parsed criterion scores.
         listed_keys: Lowercased names from ``listed_python_keys``.
 
     Returns:
-        ``not_inspected:<criterion>`` or ``wrong_path:<criterion>:<file>``.
+        ``not_inspected:<criterion>``, ``contradictory_no:<criterion>``, or
+        ``wrong_path:<criterion>:<file>``.
     """
     for row in rows:
         if float(row["reward"]) >= 1.0:
@@ -77,6 +83,8 @@ def unreliable_score_reason(
         name = str(row["name"])
         if _NOT_INSPECTED.search(reasoning):
             return f"not_inspected:{name}"
+        if _CONTRADICTORY_NO.search(reasoning):
+            return f"contradictory_no:{name}"
         mentioned = mentioned_python_paths(reasoning)
         if not mentioned:
             continue
@@ -96,6 +104,14 @@ def retry_prompt(prompt: str, reason: str) -> str:
     Returns:
         Prompt text for the retry attempt.
     """
+    if reason.startswith("contradictory_no:"):
+        return (
+            prompt
+            + "\n\nRETRY: the previous JSON score was unusable because its no "
+            + "verdict contradicted its own reasoning. Re-evaluate the supplied "
+            + "evidence and make the score agree with the concrete reason. "
+            + "Do not change a genuine no merely to match prior wording.\n"
+        )
     return (
         prompt
         + "\n\nRETRY: the previous JSON score was unusable "

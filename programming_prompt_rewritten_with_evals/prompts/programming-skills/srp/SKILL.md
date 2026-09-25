@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.0 — Use whenever writing or editing Python (or other) code: enforce
+  v1.0.1 — Use whenever writing or editing Python (or other) code: enforce
   single-responsibility functions and methods. Apply on every coding task,
   including small scripts and new files from scratch.
 ---
@@ -25,8 +25,9 @@ Write code as single-responsibility functions/methods.
   never builds a computed result literal (`f"hello={name}"`) — that string
   belongs to the helper that owns the value.
 - **A converted token is passed on, never worked on.** `helper(int(token))` is
-  thin because the conversion goes straight into the call. The moment anything
-  else happens to that value in the entrypoint it is core logic and belongs in
+  thin; so is `value = int(token); helper(value)` when the local value is passed
+  unchanged. Arithmetic or state-dependent work on that value in the entrypoint
+  is core logic and belongs in
   the helper: no offset or other arithmetic on it
   (`index = int(token) - 1`), no comparison against current state to validate
   it, and above all no assignment into state

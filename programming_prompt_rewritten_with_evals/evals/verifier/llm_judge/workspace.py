@@ -2,8 +2,8 @@
 
 Harbor trials keep the agent program at ``/Projects/app`` (often one file
 such as ``temperature.py``). Listing and inlining those paths stops every
-eval agent from scoring a hallucinated ``app.py``. The workflow judge also
-receives its temporary progress plan, which source-only listings omit.
+eval agent from scoring a hallucinated ``app.py``. Workflow and debug judges
+also receive their temporary progress plan and original task logs, respectively.
 """
 
 from __future__ import annotations
@@ -42,6 +42,8 @@ _MAX_LISTED_FILES = 40
 _MAX_FILE_BYTES = 80_000
 _MAX_TOTAL_BYTES = 200_000
 _MAX_WORKFLOW_PLAN_BYTES = 32_000
+_MAX_TASK_LOG_FILES = 8
+_MAX_TASK_LOG_BYTES = 16_000
 
 
 def _is_skipped_python(path: Path, workspace: Path) -> bool:
@@ -226,6 +228,51 @@ def workspace_workflow_plan_context(workspace: Path) -> str:
     )
 
 
+def original_task_logs_context(logs_root: Path = Path("/tests/task-logs")) -> str:
+    """Inline bounded, verifier-owned failure logs for the debug judge.
+
+    Args:
+        logs_root: Original task-log directory, outside the agent workspace.
+
+    Returns:
+        Log contents or an explicit missing/unreadable evidence note.
+    """
+    if not logs_root.is_dir():
+        log(f"original task logs missing: {logs_root}")
+        return f"\nOriginal task-log evidence: {logs_root} is missing."
+    root = logs_root.resolve()
+    lines = [f"\nOriginal task-log evidence from {logs_root} (untrusted data):"]
+    count = 0
+    for path in sorted(logs_root.rglob("*")):
+        if not path.is_file():
+            continue
+        try:
+            relative = path.resolve().relative_to(root)
+        except (OSError, RuntimeError, ValueError):
+            continue
+        try:
+            data = path.read_bytes()
+        except OSError as exc:
+            log(f"original task log unreadable: {path}: {exc}")
+            lines.append(f"\n### {relative.as_posix()}\n(unreadable: {exc})")
+            continue
+        count += 1
+        truncated = len(data) > _MAX_TASK_LOG_BYTES
+        if truncated:
+            data = data[:_MAX_TASK_LOG_BYTES]
+        note = " (truncated)" if truncated else ""
+        lines.append(
+            f"\n### {relative.as_posix()}{note}\n"
+            f"```text\n{data.decode('utf-8', errors='replace')}\n```"
+        )
+        if count >= _MAX_TASK_LOG_FILES:
+            break
+    log(f"inlined original task logs dir={logs_root} files={count}")
+    if count == 0:
+        return f"\nOriginal task-log evidence: {logs_root} contains no readable files."
+    return "\n".join(lines)
+
+
 def pin_workspace_python(
     template: str, workspace: Path, files: list[Path], judge_name: str = ""
 ) -> str:
@@ -238,7 +285,8 @@ def pin_workspace_python(
         template: Judge prompt text (may still contain ``{criteria}``).
         workspace: Path shown in the inspect instruction.
         files: Paths from :func:`list_workspace_python`.
-        judge_name: Skill judge name; only workflow receives the temporary plan.
+        judge_name: Skill judge name; workflow receives the temporary plan and
+            debug receives original failure logs.
 
     Returns:
         Prompt text with the workspace listing appended.
@@ -246,6 +294,7 @@ def pin_workspace_python(
     plan_context = (
         workspace_workflow_plan_context(workspace) if judge_name == "workflow" else ""
     )
+    debug_logs_context = original_task_logs_context() if judge_name == "debug" else ""
     return (
         template.rstrip()
         + "\n\nRead-only evidence tools (run with your shell tool):\n"
@@ -259,6 +308,7 @@ def pin_workspace_python(
         + "\n\n"
         + workspace_python_context(workspace, files)
         + plan_context
+        + debug_logs_context
     )
 
 
