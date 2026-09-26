@@ -953,9 +953,11 @@ default bridge, so stock IPAM is not the cap (see
 [Install Docker](#install-docker-on-ubuntu-2404)). Harbor retries Codex
 `ApiRateLimitError` within a run. Generated tasks allow the coding agent
 600 seconds; environment startup and the verifier each retain their separate
-300-second budgets. An `AgentTimeoutError` is an incomplete trial, not evidence
-that its skill implementation failed: inspect the archived agent transcript
-and artifacts before comparing pass rates.
+300-second budgets. An `AgentTimeoutError` or expired agent OAuth token leaves
+an incomplete trial, not evidence that its skill implementation failed: the
+console labels it `INFRA`, and the `RESULTS.txt` `Infra` column counts it
+separately from scored and rate-limited trials. Inspect the archived agent
+transcript and artifacts before comparing pass rates.
 
 Do not use bare `-a codex` / `-a claude-code` / `-a grok-build` for these skill
 benchmarks: those paths can leave host/user skill directories untouched and do

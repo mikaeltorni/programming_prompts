@@ -6,13 +6,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .fsutil import load_json_lenient, log
+from .infrastructure import trial_infrastructure_failure
 from .ratelimit import trial_is_ratelimited
 
 RESULTS_INDEX_NAME = "RESULTS.txt"
 RESULTS_COL_SEP = " | "
 RESULTS_FIXED_COLUMNS = (
     "Run", "Pass", "Runtime", "Mode", "Harness", "Judge", "Skills",
-    "Tasks", "k", "n", "Sep", "Trials", "Scored", "RateLimit",
+    "Tasks", "k", "n", "Sep", "Trials", "Scored", "RateLimit", "Infra",
 )
 RESULTS_SKILL_ORDER = ("srp", "commenting", "logging", "worktree", "commits", "debug", "docs", "logging-vague")
 RESULTS_TASK_ORDER = ("bank", "calculator", "counter", "greeter", "greeter-fix", "shop", "stats", "temperature", "todo")
@@ -208,7 +209,7 @@ def collect_run_scores(run_dir: Path) -> dict[str, object]:
 
     Returns: aggregate trial, skill, and task scores.
     """
-    trials = scored = passed = ratelimited = 0
+    trials = scored = passed = ratelimited = infrastructure = 0
     skills: dict[str, list[int]] = {}
     tasks: dict[str, list[int]] = {}
     for trial in sorted(run_dir.glob("jobs/*/trials/*")):
@@ -218,6 +219,9 @@ def collect_run_scores(run_dir: Path) -> dict[str, object]:
         task = _trial_task_name(trial)
         if trial_is_ratelimited(trial):
             ratelimited += 1
+            continue
+        if trial_infrastructure_failure(trial):
+            infrastructure += 1
             continue
         tasks.setdefault(task, [0, 0])
         value = _reward_float(trial / "01-reward.json")
@@ -236,6 +240,7 @@ def collect_run_scores(run_dir: Path) -> dict[str, object]:
         "scored": scored,
         "passed": passed,
         "ratelimited": ratelimited,
+        "infrastructure": infrastructure,
         "skills": {name: tuple(bits) for name, bits in skills.items()},
         "tasks": {name: tuple(bits) for name, bits in tasks.items()},
     }
@@ -312,6 +317,7 @@ def format_results_row(run_dir: Path) -> dict[str, str]:
         "Trials": str(int(scores["trials"])),
         "Scored": str(scored),
         "RateLimit": str(int(scores["ratelimited"])),
+        "Infra": str(int(scores["infrastructure"])),
     }
     _add_rate_columns(row, skills, scores["skills"])
     _add_rate_columns(row, tasks, scores["tasks"], exclude="all")
@@ -494,5 +500,5 @@ def prepend_results_line(runs_root: Path, run_dir: Path) -> Path:
     path = runs_root / RESULTS_INDEX_NAME
     kept = [item for item in _read_existing_rows(path) if item.get("Run") != row["Run"]]
     write_results_table(path, [row, *kept])
-    log(f"prepended {path} stamp={row['Run']} runtime={row['Runtime']} pass={row['Pass']} ratelimit={row['RateLimit']}")
+    log(f"prepended {path} stamp={row['Run']} runtime={row['Runtime']} pass={row['Pass']} ratelimit={row['RateLimit']} infra={row['Infra']}")
     return path
