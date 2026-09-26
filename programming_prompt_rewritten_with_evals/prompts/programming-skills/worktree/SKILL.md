@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >-
-  v1.0.0 — Use before editing a git repository: isolate work in a sibling
+  v1.0.1 — Use before editing a git repository: isolate work in a sibling
   .worktrees project group with a project/task directory, commit there,
   merge into the live default branch, and reapply consumers. Applies to
   coding, documentation, and follow-up edits. Never push unless requested.
@@ -58,6 +58,9 @@ Choose TYPE and FEATURE once and reuse them for both names (for example, do not
 spell the same type `feature` in the directory and `feat` in the branch). Keep
 this task's branch and directory through all Feature commits; advancing the
 commit ledger does not rename the branch or change its task slug.
+Use the exact same FEATURE bytes in both names: a leaf ending
+`_feat-parse-args` pairs with branch `feat/widget_parse-args`, not
+`feat/widget_parse_args`.
 
 For a live checkout `/home/mk/projects/widget`, a task can use:
 
@@ -84,6 +87,11 @@ cd "$WT"
 pwd
 git branch --show-current
 ```
+
+Immediately compare the printed physical path and branch with the computed
+`WT` and `BRANCH`. If either differs, stop before editing and correct the
+checkout or names. A linked worktree under `<REPO>/.worktrees/` is inside the
+live repository and is invalid even when its branch name looks plausible.
 
 Before creating the worktree, resolve the proposed store physically and ensure
 no existing symlink redirects it into the live repository. Do not overwrite an

@@ -10,6 +10,7 @@ from pathlib import Path
 from llm_judge.grok import DEFAULT_MAX_TURNS, score_with_grok
 from llm_judge.log import log
 from llm_judge.ratelimit import JUDGE_CLI_FAILURES
+from llm_judge.reliability import UnreliableJudgeScore
 from llm_judge.rewardkit import score_with_rewardkit
 from llm_judge.scores import write_reward
 from llm_judge.self_test import run_self_test
@@ -64,6 +65,12 @@ def run_eval_agent(
             raise ValueError(
                 f"unknown eval agent {agent!r} (expected grok, cc, or codex)"
             )
+    except UnreliableJudgeScore as exc:
+        log(f"evalAgent {agent} produced no reliable score: {exc}")
+        write_reward(
+            output, [], str(exc), agent=agent, error="judge_inconsistent"
+        )
+        return
     except JUDGE_CLI_FAILURES as exc:
         err = ""
         if isinstance(exc, subprocess.CalledProcessError):

@@ -32,6 +32,9 @@ about to be returned is the **whole** returned expression: for
 before it omits the second element and is a **no**, while
 `print(result, [])` or `print((result, []))` is a **yes**. A single
 `return value` covered by `print(value)` is a **yes**.
+The exit print need not include a label: `print((left, right))` directly
+before `return left, right` is a **yes** because it prints the complete
+returned tuple. Do not apply the entry parameter-name rule to exit prints.
 
 Each named parameter must appear **as that name** in the entry print,
 including optional parameters whose value is `None` and the method receivers

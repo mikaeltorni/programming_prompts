@@ -34,6 +34,10 @@ def is_ratelimit(path: Path) -> bool:
         return True
     return str(payload.get("error") or "").lower() in {"ratelimit", "rate_limit"}
 
+def judge_error(path: Path) -> str:
+    error = str(load(path).get("error") or "")
+    return error if error == "judge_inconsistent" else ""
+
 def bits(details: dict) -> tuple[str, str]:
     reward = details.get("reward")
     if not isinstance(reward, dict):
@@ -54,16 +58,22 @@ def bits(details: dict) -> tuple[str, str]:
 per_agent = []
 rewards = []
 ratelimited = False
+inconsistent = False
 for agent in agents:
     path = verifier / f"reward-{skill}-{agent}.json"
     limited = is_ratelimit(path)
+    error = judge_error(path)
     ratelimited = ratelimited or limited
+    inconsistent = inconsistent or bool(error)
     reward = 0.0 if limited else reward_of(path)
     details = load(verifier / f"reward-{skill}-{agent}-details.json")
     raw, reasoning = bits(details)
     if limited:
         raw = "ratelimit"
         reasoning = reasoning or "failed due to ratelimit"
+    elif error:
+        raw = "unreliable"
+        reasoning = reasoning or "judge score contradicted its evidence"
     if not raw:
         raw = "yes" if reward >= 1.0 else "no"
     per_agent.append({
@@ -72,6 +82,7 @@ for agent in agents:
         "raw": raw,
         "reasoning": reasoning,
         "ratelimit": limited,
+        "error": error,
         "details": details,
     })
     rewards.append(reward)
@@ -88,6 +99,8 @@ skill_payload = {"reward": overall}
 if ratelimited:
     skill_payload["ratelimit"] = True
     skill_payload["error"] = "ratelimit"
+elif inconsistent:
+    skill_payload["error"] = "judge_inconsistent"
 dest.write_text(json.dumps(skill_payload, indent=2) + "\n", encoding="utf-8")
 details_dest = dest.parent / f"reward-{skill}-details.json"
 payload = {
@@ -98,7 +111,9 @@ payload = {
         "criteria": [{
             "name": skill,
             "reward": overall,
-            "raw": "ratelimit" if ratelimited else ("yes" if overall >= 1.0 else "no"),
+            "raw": "ratelimit" if ratelimited else (
+                "unreliable" if inconsistent else ("yes" if overall >= 1.0 else "no")
+            ),
             "reasoning": "; ".join(
                 f"{item['agent']}={item['raw']}" for item in per_agent
             ),
@@ -229,6 +244,7 @@ if independent:
     # stay the scores. Overall 1.0 means judges ran (unless rate-limited).
     overall = 1.0 if rewards else 0.0
 ratelimited = False
+inconsistent = False
 for name in names:
     skill_path = out_dir / f"reward-{name}.json"
     if skill_path.is_file():
@@ -238,12 +254,16 @@ for name in names:
             skill_payload = {}
         if isinstance(skill_payload, dict) and skill_payload.get("ratelimit") is True:
             ratelimited = True
-if ratelimited:
+        if isinstance(skill_payload, dict) and skill_payload.get("error") == "judge_inconsistent":
+            inconsistent = True
+if ratelimited or inconsistent:
     overall = 0.0
 reward_payload = {"reward": overall}
 if ratelimited:
     # Harbor accepts numeric rewards only; diagnostics belong in details.
     reward_payload["ratelimit"] = True
+elif inconsistent:
+    reward_payload["error"] = "judge_inconsistent"
 (out_dir / "reward.json").write_text(
     json.dumps(reward_payload, indent=2) + "\n", encoding="utf-8"
 )
@@ -253,6 +273,9 @@ if ratelimited:
             "aggregation": aggregation,
             "overall": overall,
             "ratelimit": ratelimited,
+            "error": "ratelimit" if ratelimited else (
+                "judge_inconsistent" if inconsistent else None
+            ),
             "criteria": criteria,
         }
     }, indent=2) + "\n",
