@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.10 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.11 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -75,7 +75,11 @@ Follow this order:
    ACC gives each wrapped agent its own file so simultaneous agents in one
    repository never overwrite each other's plan. Read the variable from the
    current shell before writing the plan. Otherwise use the fixed fallback
-   `<project-root>/tmp/workflow.md`. Create the needed directory. Do not place
+   `<project-root>/tmp/workflow.md`. For a Git launch project, resolve
+   `<project-root>` from that project's `git rev-parse --show-toplevel` before
+   entering a linked worktree: a launch checkout at `/Projects/app` uses
+   `/Projects/app/tmp/workflow.md`, never `/Projects/tmp/workflow.md`.
+   Create the needed directory. Do not place
    the plan in the skill directory, an agent home, or the system `/tmp/`. Keep
    all progress in that one file; update it as phases advance, and do not stage
    or commit it unless the user explicitly asks. The terminal overlay reads
