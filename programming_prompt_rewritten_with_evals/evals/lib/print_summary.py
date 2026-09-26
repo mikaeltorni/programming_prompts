@@ -16,6 +16,7 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from archive_run.infrastructure import trial_infrastructure_failure
 from archive_run.ratelimit import trial_is_ratelimited
 from archive_run.results_index import format_runtime, run_elapsed_seconds
 from harbor_agents.harness_spec import HARNESSES, identify_harness
@@ -386,8 +387,8 @@ class TrialReport:
 
     Parameters: index - 1-based trial number; total - trial count; harness -
         inferred harness id; name - Harbor trial directory name; verdict -
-        PASS/FAIL/RATELIMIT; reward_text - printable reward; limited - rate
-        limit skip; per_skill - skill rewards; per_eval - skill/agent
+        PASS/FAIL/RATELIMIT/INFRA; reward_text - printable reward; limited - rate
+        limit skip; infrastructure - incomplete-trial reason; per_skill - skill rewards; per_eval - skill/agent
         rewards; judge_rows - answer/reason pairs; sources - artifact paths
         and file text.
     """
@@ -399,6 +400,7 @@ class TrialReport:
     verdict: str
     reward_text: str
     limited: bool
+    infrastructure: str | None
     per_skill: dict[str, float]
     per_eval: dict[tuple[str, str], float]
     judge_rows: list[tuple[str, str | None, str | None]]
@@ -440,6 +442,13 @@ def _print_trial(report: TrialReport) -> None:
     )
     if report.limited:
         print("  failed due to ratelimit (excluded from pass_rate)", file=sys.stderr)
+    if report.infrastructure:
+        print(
+            f"  {report.infrastructure} (excluded from pass_rate)",
+            file=sys.stderr,
+        )
+    if report.limited or report.infrastructure:
+        return
     if report.per_skill:
         bits = ", ".join(
             f"{name}={value:g}" for name, value in sorted(report.per_skill.items())
@@ -553,6 +562,23 @@ def _run_self_test() -> int:
         _write_trial_fixture(
             jobs, name="calculator__fail", reward=0.0, source_marker="FAIL_SRC"
         )
+        _write_trial_fixture(
+            jobs, name="calculator__timeout", reward=0.0,
+            source_marker="TIMEOUT_SRC",
+        )
+        (jobs / "codex-skills" / "calculator__timeout" / "exception.txt").write_text(
+            "harbor.trial.errors.AgentTimeoutError: agent timed out\n",
+            encoding="utf-8",
+        )
+        _write_trial_fixture(
+            jobs, name="calculator__auth", reward=0.0,
+            source_marker="AUTH_SRC",
+        )
+        (jobs / "codex-skills" / "calculator__auth" / "exception.txt").write_text(
+            "harbor.agents.installed.base.UnknownApiError: "
+            "API Error: 401 OAuth access token has expired.\n",
+            encoding="utf-8",
+        )
         buf = StringIO()
         with redirect_stderr(buf):
             _print_summary(jobs, "positive", "commenting")
@@ -573,6 +599,18 @@ def _run_self_test() -> int:
             "positive_fail_omits_pass_source",
             "PASS_SRC" not in tail,
             "passing trial source is not in the failed reprint",
+        )
+        check(
+            "positive_timeout_is_infrastructure",
+            "calculator__timeout  INFRA" in positive
+            and "calculator__auth  INFRA  reward=n/a" in positive
+            and "agent timeout (excluded from pass_rate)" in positive
+            and "agent authentication expired (excluded from pass_rate)" in positive
+            and "TIMEOUT_SRC" not in tail
+            and "AUTH_SRC" not in tail
+            and "GRAND TOTAL pass_rate=1/2" in positive
+            and "infra=2" in positive,
+            "incomplete trials omit meaningless judge results and scored rates",
         )
         grand_at = positive.rfind("GRAND TOTAL")
         recap_at = positive.find("By harness")
@@ -666,11 +704,13 @@ def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
     by_task: dict[str, list[float | None]] = defaultdict(list)
     rewards: list[float] = []
     ratelimited_n = 0
+    infrastructure_n = 0
     reports: list[TrialReport] = []
 
     for index, trial_dir in enumerate(trial_dirs, start=1):
         reward = _reward_value(trial_dir)
         limited = trial_is_ratelimited(trial_dir)
+        infrastructure = None if limited else trial_infrastructure_failure(trial_dir)
         judge_rows = _judge_criteria(trial_dir)
         sources = _python_sources(trial_dir)
         task = _task_name(trial_dir)
@@ -679,6 +719,8 @@ def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
         per_eval = _per_eval_agent_rewards(trial_dir)
         if limited:
             ratelimited_n += 1
+        elif infrastructure:
+            infrastructure_n += 1
         else:
             by_task[task].append(reward)
             if reward is not None:
@@ -696,6 +738,8 @@ def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
 
         if limited:
             verdict = "RATELIMIT"
+        elif infrastructure:
+            verdict = "INFRA"
         elif reward is not None and reward >= 1.0:
             verdict = "PASS"
         else:
@@ -706,8 +750,9 @@ def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
             harness=harness,
             name=trial_dir.name,
             verdict=verdict,
-            reward_text="n/a" if reward is None else f"{reward:g}",
+            reward_text="n/a" if limited or infrastructure or reward is None else f"{reward:g}",
             limited=limited,
+            infrastructure=infrastructure,
             per_skill=per_skill,
             per_eval=per_eval,
             judge_rows=judge_rows,
@@ -790,18 +835,23 @@ def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
         if ratelimited_n
         else ""
     )
+    infrastructure_suffix = (
+        f"  infra={infrastructure_n} (excluded from pass_rate)"
+        if infrastructure_n
+        else ""
+    )
     if rewards:
         passed = sum(1 for value in rewards if value >= 1.0)
         total = len(rewards)
         print(
             f"GRAND TOTAL pass_rate={_fmt_rate(passed, total)}"
-            f"{runtime_suffix}{rate_suffix}",
+            f"{runtime_suffix}{rate_suffix}{infrastructure_suffix}",
             file=sys.stderr,
         )
     else:
         print(
             f"GRAND TOTAL pass_rate=n/a (no numeric rewards)"
-            f"{runtime_suffix}{rate_suffix}",
+            f"{runtime_suffix}{rate_suffix}{infrastructure_suffix}",
             file=sys.stderr,
         )
     print("-" * 78, file=sys.stderr)

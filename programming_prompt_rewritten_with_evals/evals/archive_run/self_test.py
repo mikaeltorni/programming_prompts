@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from .harbor_copy import archive_jobs_root, write_meta
+from .infrastructure import trial_infrastructure_failure
 from .ratelimit import trial_is_ratelimited
 from .results_index import (
     format_runtime,
@@ -261,6 +262,14 @@ def _check_results(record) -> None:
             rows[0].get("RateLimit", "") if rows else "missing",
         )
         record(
+            "results_infra_column",
+            "Infra" in headers
+            and headers.index("Infra") == headers.index("RateLimit") + 1
+            and bool(rows)
+            and rows[0].get("Infra") == "0",
+            str(headers),
+        )
+        record(
             "results_runtime_hms",
             bool(rows)
             and rows[0]["Runtime"] == "1h 02m 03s"
@@ -349,16 +358,47 @@ def _check_results(record) -> None:
             "'rewardkit', '--judge', 'codex']' returned non-zero exit status 1.\n",
             encoding="utf-8",
         )
+        timeout = rl_run / "jobs" / "codex-skills" / "trials" / "shop__timeout"
+        timeout.mkdir(parents=True)
+        (timeout / "01-reward.json").write_text(
+            '{"reward": 0.0}\n', encoding="utf-8"
+        )
+        (timeout / "20-exception.txt").write_text(
+            "Traceback (most recent call last):\n"
+            "harbor.trial.errors.AgentTimeoutError: agent timed out\n",
+            encoding="utf-8",
+        )
+        record(
+            "results_timeout_reads_archived_exception",
+            trial_infrastructure_failure(timeout) == "agent timeout",
+            "final archived exception identifies an incomplete trial",
+        )
+        expired = rl_run / "jobs" / "codex-skills" / "trials" / "bank__auth"
+        expired.mkdir(parents=True)
+        (expired / "01-reward.json").write_text(
+            '{"reward": 0.0}\n', encoding="utf-8"
+        )
+        (expired / "20-exception.txt").write_text(
+            "harbor.agents.installed.base.UnknownApiError: "
+            "API Error: 401 OAuth access token has expired.\n",
+            encoding="utf-8",
+        )
+        record(
+            "results_expired_auth_is_infrastructure",
+            trial_infrastructure_failure(expired) == "agent authentication expired",
+            "expired agent OAuth is not a scored trial",
+        )
         rl_rows = parse_results_table(
             rebuild_results_index(rl_root).read_text(encoding="utf-8")
         )
         record(
             "results_ratelimit_excludes_from_pass",
             bool(rl_rows)
-            and rl_rows[0]["Trials"] == "3"
+            and rl_rows[0]["Trials"] == "5"
             and rl_rows[0]["Scored"] == "1"
             and rl_rows[0]["Pass"] == "1/1"
-            and rl_rows[0]["RateLimit"] == "2",
+            and rl_rows[0]["RateLimit"] == "2"
+            and rl_rows[0]["Infra"] == "2",
             str(rl_rows[0]) if rl_rows else "missing",
         )
 
