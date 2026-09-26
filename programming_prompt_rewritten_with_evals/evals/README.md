@@ -256,6 +256,10 @@ rewardkit 0.1.7 has no grok backend. Every agent gets the same workspace
 `*.py` listing and one retry on skip-inspect / invented paths. It keeps
 `reward-<skill>-<evalAgent>-details.json` plus an aggregate
 `reward-<skill>.json` that passes only if every eval agent passed.
+The retry also covers a `no` whose reasoning explicitly concludes `yes`.
+If the retry still cannot yield a trustworthy verdict, the reward is marked
+`judge_inconsistent` and the trial appears under **Infra**, excluded from
+scored pass rates rather than counted as an agent failure.
 `run_benchmark.sh` prints those lines in the post-run console summary.
 Rate-limited judge CLI failures print as `RATELIMIT` / `failed due to
 ratelimit` and are excluded from pass_rate (RESULTS `RateLimit` column).

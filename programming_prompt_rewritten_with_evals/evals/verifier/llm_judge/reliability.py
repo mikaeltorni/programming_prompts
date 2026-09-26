@@ -27,11 +27,21 @@ _PY_MENTION = re.compile(
     re.IGNORECASE,
 )
 _CONTRADICTORY_NO = re.compile(
-    r"\b(?:the )?score (?:should be|is) yes\b|\bevidence supports a pass\b",
+    r"\b(?:the )?(?:score|verdict|criterion|check|result)\s*"
+    r"(?:should\s+be|is|:)\s*yes\b"
+    r"|\b(?:so |the )?(?:criterion|check) passes[.!;,]?\s*$"
+    r"|\b(?:all|every) functions? pass(?:[.!]|,?\s+so\b)"
+    r"|\bevidence supports a pass\b"
+    r"|\b(?:a|the) no (?:is|was) not supported\b"
+    r"|\bno verdict (?:is|was) unsupported\b",
     re.IGNORECASE,
 )
 
 AttemptFn = Callable[[str | None, int], tuple[str, list[dict[str, Any]]]]
+
+
+class UnreliableJudgeScore(RuntimeError):
+    """The judge did not produce a defensible score within the retry budget."""
 
 
 def mentioned_python_paths(reasoning: str) -> list[str]:
@@ -127,7 +137,7 @@ def run_until_reliable(
     timeout: int,
     attempt: AttemptFn,
 ) -> tuple[str, list[dict[str, Any]]]:
-    """Run one judge attempt, then retry once on skip-inspect or invented paths.
+    """Run one judge attempt, then retry once on unreliable evidence.
 
     Args:
         listed_keys: Allowed ``.py`` citations from ``listed_python_keys``.
@@ -137,7 +147,10 @@ def run_until_reliable(
             call receives the reason token and remaining seconds.
 
     Returns:
-        Raw stdout and parsed rows from the last attempt used.
+        Raw stdout and parsed rows from a reliable attempt.
+
+    Raises:
+        UnreliableJudgeScore: No trustworthy score was produced.
     """
     started = time.monotonic()
     raw, rows = attempt(None, timeout)
@@ -150,12 +163,12 @@ def run_until_reliable(
             f"skip retry reason={reason} remaining_s={remaining:.0f} "
             f"min_s={MIN_RETRY_SECONDS}"
         )
-        return raw, rows
+        raise UnreliableJudgeScore(reason)
     log(f"retrying judge once reason={reason} remaining_s={remaining:.0f}")
     raw_retry, rows_retry = attempt(reason, int(remaining))
     second = unreliable_score_reason(rows_retry, listed_keys)
     if second:
         log(f"retry still unreliable reason={second}")
-    else:
-        log("retry produced a usable score")
+        raise UnreliableJudgeScore(second)
+    log("retry produced a usable score")
     return raw_retry, rows_retry

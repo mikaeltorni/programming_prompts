@@ -6,6 +6,11 @@ one Feature from each capability sentence, keeping that sentence's commands,
 cases, and optional extras together. A following "It should also" sentence
 starts another Feature. Setup text that only names an artifact, signature, or
 skill is not a Feature. Do not assume a fixed number of Features.
+Before mapping commits, enumerate the complete capability sentences from the
+original request in your reasoning and compare that list with any agent plan.
+The original request wins when the plan merged or omitted a sentence. Two
+separate capability sentences implemented by one commit fail even if an agent
+called them one Feature; multiple commands in a single sentence stay together.
 
 Inspect the actual Git history and source before scoring:
 - Run the supplied Git evidence helper to enumerate commits and parents, then
@@ -54,6 +59,9 @@ Before a no verdict, cite the first concrete Feature that lacks its own
 working conventional commit or has later behavior implemented early. If the
 history supports every Feature, answer yes; reasoning that concludes the
 evidence supports a pass cannot accompany a no score.
+Do not reject a working Feature for an unstated state representation or edge
+case. Inspect the requested observable behavior; do not require an exact
+internal record format unless the task specifies it.
 
 The separate worktree judge owns checkout layout, merge mechanics, and remotes.
 Do not impose a source-language, filename, docstring, or logging convention

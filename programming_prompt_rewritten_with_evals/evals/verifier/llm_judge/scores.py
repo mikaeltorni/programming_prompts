@@ -296,6 +296,7 @@ def write_reward(
     *,
     agent: str = "grok",
     ratelimit: bool = False,
+    error: str | None = None,
 ) -> None:
     """Write ``reward-*.json`` plus sibling details JSON.
 
@@ -305,6 +306,7 @@ def write_reward(
         raw_output: Unparsed judge stdout kept for audits.
         agent: Eval-agent id stored in details (``grok``, ``cc``, ``codex``).
         ratelimit: When true, mark the score as a rate-limit skip, not a no.
+        error: Infrastructure error token when no score was produced.
     """
     overall = 0.0 if ratelimit else (
         1.0 if rows and all(float(row["reward"]) >= 1.0 for row in rows) else 0.0
@@ -314,15 +316,17 @@ def write_reward(
     if ratelimit:
         payload["ratelimit"] = True
         payload["error"] = "ratelimit"
+    elif error:
+        payload["error"] = error
     output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     criteria_rows = rows
-    if ratelimit and not criteria_rows:
+    if (ratelimit or error) and not criteria_rows:
         criteria_rows = [{
             "name": "judge",
             "reward": 0.0,
-            "raw": "ratelimit",
-            "description": "eval agent rate-limited",
-            "reasoning": "failed due to ratelimit",
+            "raw": "ratelimit" if ratelimit else "unreliable",
+            "description": "eval agent did not produce a score",
+            "reasoning": "failed due to ratelimit" if ratelimit else raw_output,
         }]
     details = {
         "reward": {
@@ -331,6 +335,7 @@ def write_reward(
             "kind": "agent",
             "agent": agent,
             "ratelimit": ratelimit,
+            "error": "ratelimit" if ratelimit else error,
             "criteria": [
                 {
                     "name": row["name"],

@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.1.1 — Use whenever the user prompt can be split into Features, including vague
+  v1.1.2 — Use whenever the user prompt can be split into Features, including vague
   "should have X" asks: break it into one Feature per capability the prompt
   names, implement one at a time, and commit each Feature in the worktree
   while the program still works. Apply on every coding task, including small
@@ -20,6 +20,9 @@ until the visible ledger contains those complete sentences: abbreviated quotes,
 ellipses, and topic summaries cannot establish the boundaries. Audit it in both
 directions: each source sentence maps to one row, and each row maps to only
 one source sentence. Fix a mismatch before writing code.
+Do not use the agent's own plan or preferred Feature count as the source of
+truth: re-read the original request sentence by sentence, including a final
+"It should also" sentence that may look like an extension of the prior one.
 
 A following "It should also …" sentence starts a new Feature even when it
 shares state, helpers, or a topic with the preceding sentence. Within one
@@ -70,14 +73,18 @@ Close each entry with this gate:
    Feature, especially after changing parsing or dispatch. Resolve failures
    before staging.
 2. Stage only its changes in the worktree.
-3. Run `git commit` as its own command, not chained behind a search or check
+3. Before running it, form the subject as `feat: <current capability>` or
+   another applicable conventional type; a plain `Add ...` subject is invalid.
+   Run `git commit` as its own command, not chained behind a search or check
    that could fail and silently skip the commit. The Feature commit subject
    uses a conventional-commit type (`feat`, `fix`, `refactor`, `chore`,
    `docs`, `style`, `test`, `perf`) in `type:` or `type(scope):` form. A
    subject that omits that type is not a completed Feature commit.
 4. Read the new `HEAD`, confirm it advanced and contains this entry's Python
    implementation, and record that commit beside the ledger entry. If the
-   commit failed, resolve it and commit before editing the next Feature.
+   commit failed, resolve it and commit before editing the next Feature. If
+   the first file was written outside the intended worktree, move that work
+   into the worktree and complete the first Feature commit before advancing.
 
 A statement that a Feature is tested or complete is not a commit. Only an
 entry with a verified commit may be removed from the queue.

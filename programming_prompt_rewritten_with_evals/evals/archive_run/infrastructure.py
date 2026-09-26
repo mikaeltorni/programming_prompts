@@ -20,6 +20,14 @@ def trial_infrastructure_failure(trial_dir: Path) -> str | None:
     Returns: short failure reason. The final traceback line is preferred because
         Harbor may redact unrelated JSON fields into invalid literals.
     """
+    for path in (trial_dir / "verifier" / "reward.json", trial_dir / "03-reward.json"):
+        payload = load_json_lenient(path) or {}
+        if payload.get("error") == "judge_inconsistent":
+            return "judge verdict inconsistent"
+    for path in trial_dir.glob("03-reward-*.json"):
+        payload = load_json_lenient(path) or {}
+        if payload.get("error") == "judge_inconsistent":
+            return "judge verdict inconsistent"
     for name in ("exception.txt", "20-exception.txt"):
         try:
             exception_text = (trial_dir / name).read_text(
