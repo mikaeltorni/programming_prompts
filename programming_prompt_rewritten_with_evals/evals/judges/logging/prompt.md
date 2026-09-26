@@ -10,8 +10,13 @@ does both:
   falling off the end with no meaningful return, print `None`.
 
 Before claiming a missing exit print, identify the exact function, line and
-reachable normal exit. Use the supplied evidence helper's --python-path mode
-to check function boundaries when uncertain. A final unconditional `return`
+reachable normal exit. For every proposed no verdict, run the supplied evidence
+helper's `--python-path FILE` mode for the cited file and inspect that
+function's last executable statements in the current source. Reconcile the
+helper's function boundary with the inlined source before deciding: a cited
+function that ends with `print(result)` followed by `return result` has an exit
+trace, so do not claim it falls through merely because `result` was assigned
+earlier. A final unconditional `return`
 does not fall through; do not invent an implicit None path after it. A branch
 ending in `raise` is exempt. Initializers and validation helpers that really
 reach the end normally do return None and need that exit print. Cite the
@@ -58,8 +63,9 @@ omit parameter names and values (when the function has parameters).
 Ignore unrelated style. Uncertainty alone is not a failure: inspect the
 function boundaries and decide from the supplied source. Before a no verdict,
 cite one actual function and uncovered entry or normal return path. If
-inspection finds every function covered, answer yes; a reason stating that all
-functions pass cannot accompany a no score.
+inspection finds every function covered, answer yes. Decide the JSON score
+*after* writing the reason: a reason that retracts its only alleged violation
+or says all functions pass requires `yes`, never `no`.
 
 Criteria to score:
 {criteria}
