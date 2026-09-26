@@ -23,7 +23,13 @@ exactly four data rows, numbered 1–4 and named `Plan`, `Establish worktree`,
 belongs in the table, not a second progress list. A selected `commits` skill
 may add a `## Feature ledger` with verbatim capability sentences and commits
 in this same file, before or after the table; it is not another workflow
-phase. At normal handoff, no enabled phase is
+phase. Count ledger entries by capability sentence, not by the number of
+commands within a sentence: several commands in one sentence belong to one
+Feature and one introducing commit. Do not fail a plan for that grouping when
+the selected commits judge confirms the Feature boundaries. Task-table details
+that claim a different Feature count from the ledger are stale and should be
+reconciled, but do not invent missing ledger entries for individual commands.
+At normal handoff, no enabled phase is
 still pending or in progress, even when a Details cell already describes
 finished work. Fail a current run with another plan filename, missing or
 extra task rows, a repeated task name (including a second `Write
