@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.11 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.12 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -79,7 +79,9 @@ Follow this order:
    `<project-root>` from that project's `git rev-parse --show-toplevel` before
    entering a linked worktree: a launch checkout at `/Projects/app` uses
    `/Projects/app/tmp/workflow.md`, never `/Projects/tmp/workflow.md`.
-   Create the needed directory. Do not place
+   Create the needed `tmp/` directory and write the file literally named
+   `workflow.md` inside it; a sibling such as `<project-root>/tmp_workflow.md`
+   is not the plan. Do not place
    the plan in the skill directory, an agent home, or the system `/tmp/`. Keep
    all progress in that one file; update it as phases advance, and do not stage
    or commit it unless the user explicitly asks. The terminal overlay reads
@@ -139,6 +141,13 @@ Follow this order:
    existing four rows and ledger with what finished. Before normal handoff,
    no enabled phase may remain `pending` or `in_progress`. Never create a
    workflow-owned verification row or another progress file.
+
+   Treat plan updates as edits that can fail: if replacing an old row or ledger
+   reference finds no exact match, rewrite the existing plan section instead of
+   silently leaving it unchanged. The committed Feature's ledger entry must
+   contain its actual commit hash before the next Feature begins. A ledger row
+   combining separate capability sentences or sharing one introducing commit
+   with another row is not complete merely because the code works.
 2. **Establish the worktree when enabled.** If the `worktree` companion is in
    the enabled-skill inventory and available, follow it to create the task's
    isolated worktree before editing repository files. Otherwise skip this
@@ -175,7 +184,9 @@ check fails, edit that same file now and do not hand off:
 3. Every enabled row is `complete` or `skipped`. None is `pending` or
    `in_progress`, even when the Details cell already describes finished work.
 4. If `Write documentation` is `complete`, `Write code` is also `complete`
-   and every Feature-ledger entry has its commit.
+   and every Feature-ledger entry has its own introducing commit. Inspect the
+   whole `## Feature ledger` section for any leftover `pending` reference;
+   fix it in this same file even when the task table says `complete`.
 5. Skipped companions stay `skipped`; do not invent extra rows for them.
 
 ## No workflow verification phase

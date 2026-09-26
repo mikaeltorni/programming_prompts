@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.1.0 — Use whenever the user prompt can be split into Features, including vague
+  v1.1.1 — Use whenever the user prompt can be split into Features, including vague
   "should have X" asks: break it into one Feature per capability the prompt
   names, implement one at a time, and commit each Feature in the worktree
   while the program still works. Apply on every coding task, including small
@@ -38,6 +38,13 @@ commit beside that row before advancing. After a merge or verification step,
 resume the first uncommitted original row; do not replace the remaining rows
 with a new combined summary. A shared dispatcher must expose only capabilities
 implemented so far, even when adding all remaining cases seems easy.
+
+The first source file you write is already an implementation edit: it may
+implement only ledger row 1. Do not draft the complete multi-Feature program in
+one file write and plan to separate it with later commits. Before each new
+Feature commit, inspect the full source tree you are about to commit, not just
+the diff: if the public entrypoint can already execute a later row's capability,
+remove that capability from this edit and implement it after this commit.
 
 ## Complete and commit the current entry before starting the next
 
