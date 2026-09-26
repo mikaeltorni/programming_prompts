@@ -55,10 +55,11 @@ Do **not** require prints before `raise` / exception exits.
 Answer no if prints are missing on a normal return path, only some
 functions print, a logging framework / log files are used, or the prints
 omit parameter names and values (when the function has parameters).
-Ignore unrelated style. If unsure, answer no.
-Before a no verdict, cite one actual function and uncovered entry or normal
-return path. If inspection finds every function covered, answer yes; a reason
-stating that all functions pass cannot accompany a no score.
+Ignore unrelated style. Uncertainty alone is not a failure: inspect the
+function boundaries and decide from the supplied source. Before a no verdict,
+cite one actual function and uncovered entry or normal return path. If
+inspection finds every function covered, answer yes; a reason stating that all
+functions pass cannot accompany a no score.
 
 Criteria to score:
 {criteria}
