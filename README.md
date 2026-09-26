@@ -91,7 +91,9 @@ programming_prompts/
 │   ├── setup-repository-guidelines/        # On-request setup-family routing & install policy
 │   └── ssh-vm/                             # SSH deployment and testing on a VM
 ├── dispatch-skills/                        # Menu-selectable task skills: repo in, score out
-│   └── github-seo/                        # GitHub discoverability audit, scored 0–100, looped
+│   ├── github-seo/                        # GitHub discoverability audit, scored 0–100, looped
+│   ├── github-portfolio-scan/             # Directory-wide resume/portfolio release-readiness audit
+│   └── worktree-cleanup/                  # Finished-worktree reclaim, scored, never stored
 ├── global-instructions/                    # Bootstrap tags merged into runtime instructions
 │   └── general-programming-guidelines.md   # Starts the full-guidelines delivery path
 ├── tests/                                  # pytest policy tests for the plugin prompts
@@ -221,6 +223,17 @@ in a tracked scorecard file, or reported in the run output when storing the
 audit would commit private detail — and an improvement loop with an explicit
 stop condition; see [`dispatch-skills/README.md`](dispatch-skills/README.md).
 
+### github-portfolio-scan
+
+Audits **any directory** of git checkouts for GitHub resume / portfolio
+release-readiness. It inventories live original repositories, scores each one
+on product story, docs, tests, license, secrets, personal-machine coupling, and
+authorship, then reports a tier list with evidenced positives and flaws. The
+run is read-only: it does not edit, push, or change visibility, and it does not
+apply SEO extras — those wait for a later [`github-seo`](dispatch-skills/github-seo/SKILL.md)
+dispatch after a repository is chosen for public release. The audit lives in
+the run report, not in the scanned trees.
+
 ### github-seo
 
 Audits a GitHub project's discoverability against a weighted 100-point rubric —
@@ -288,6 +301,13 @@ catalog is committed here.
 
 Use the [github-seo dispatch skill](dispatch-skills/github-seo/SKILL.md). It
 audits a repository, records a scorecard, and loops over verified gaps.
+
+### Which prompt ranks a folder of repos for a GitHub resume portfolio?
+
+Use the [github-portfolio-scan dispatch skill](dispatch-skills/github-portfolio-scan/SKILL.md).
+Point it at any directory of git checkouts. It inventories live originals,
+scores release-readiness, and reports positives and flaws without editing those
+trees. Run `github-seo` only after you pick a repository to make public.
 
 ### How do I validate a plugin?
 

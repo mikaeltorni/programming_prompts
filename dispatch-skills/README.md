@@ -35,4 +35,5 @@ A `dispatch-skills/<name>/SKILL.md` must:
 | Skill | Goal | Where the score goes |
 | --- | --- | --- |
 | [`github-seo`](github-seo/SKILL.md) | Make a GitHub project findable by search engines, by AI assistants, and by the humans it is for | `docs/seo-scorecard.md` |
+| [`github-portfolio-scan`](github-portfolio-scan/SKILL.md) | Rank every live original git checkout in a directory for GitHub resume / portfolio release-readiness, with evidenced positives and flaws | Run report only — the audit is never written to a scanned tree |
 | [`worktree-cleanup`](worktree-cleanup/SKILL.md) | Reclaim the disk space held by finished task worktrees, without ever removing work that is still alive | Run report only — the audit is never written to a file |
