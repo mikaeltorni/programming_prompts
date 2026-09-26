@@ -90,7 +90,9 @@ The workflow skill keeps the UI-readable progress list in the target project's
 `tmp/workflow.md`. The UI contract is one `## Tasks` table with the exact four
 rows `Plan`, `Establish worktree`, `Write code`, and `Write documentation`,
 updated in place with `pending`, `in_progress`, `complete`, or `skipped`
-statuses. The skill resolves this path before creating a worktree and keeps
+statuses. Before handoff the agent rewrites that same four-row table as one
+block so no enabled row is still pending or in progress and no task name is
+duplicated. The skill resolves this path before creating a worktree and keeps
 updating that same launch-project file afterward. A selected `commits` skill
 may keep its capability ledger as another section in that file, not another
 progress file; its commit references must be current before code is marked

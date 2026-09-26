@@ -24,8 +24,11 @@ belongs in the table, not a second progress list. A selected `commits` skill
 may add a `## Feature ledger` with verbatim capability sentences and commits
 in this same file, before or after the table; it is not another workflow
 phase. At normal handoff, no enabled phase is
-still pending or in progress. Fail a current run with another plan filename,
-missing or extra task rows, a malformed table, or stale completion statuses.
+still pending or in progress, even when a Details cell already describes
+finished work. Fail a current run with another plan filename, missing or
+extra task rows, a repeated task name (including a second `Write
+documentation` row left `pending` after documentation is complete), a
+malformed table, or stale completion statuses.
 The `## Enabled skills` section identifies selected companions; `none` is the
 requested form when workflow was the only selected skill. Listing `workflow`
 itself as well is harmless and is not evidence of another companion. A
