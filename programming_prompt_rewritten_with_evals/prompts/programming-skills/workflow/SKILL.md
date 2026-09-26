@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.12 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.13 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -147,7 +147,10 @@ Follow this order:
    silently leaving it unchanged. The committed Feature's ledger entry must
    contain its actual commit hash before the next Feature begins. A ledger row
    combining separate capability sentences or sharing one introducing commit
-   with another row is not complete merely because the code works.
+   with another row is not complete merely because the code works. Conversely,
+   multiple commands in one capability sentence stay in one ledger row and may
+   share its one commit. Keep Feature counts in task-table Details consistent
+   with the ledger's sentence count, not the number of commands.
 2. **Establish the worktree when enabled.** If the `worktree` companion is in
    the enabled-skill inventory and available, follow it to create the task's
    isolated worktree before editing repository files. Otherwise skip this
@@ -184,7 +187,8 @@ check fails, edit that same file now and do not hand off:
 3. Every enabled row is `complete` or `skipped`. None is `pending` or
    `in_progress`, even when the Details cell already describes finished work.
 4. If `Write documentation` is `complete`, `Write code` is also `complete`
-   and every Feature-ledger entry has its own introducing commit. Inspect the
+   and every Feature-ledger entry has an introducing commit distinct from the
+   other entries. Inspect the
    whole `## Feature ledger` section for any leftover `pending` reference;
    fix it in this same file even when the task table says `complete`.
 5. Skipped companions stay `skipped`; do not invent extra rows for them.
