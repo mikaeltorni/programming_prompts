@@ -16,9 +16,10 @@ operation, extra or missing required arguments, or an already-parsed value
 out of range — those raises are not mixed parsing.
 
 `int()` / `float()` of an already-split token is never core logic: it is
-thin in the entrypoint when the converted value is passed unchanged to a
-helper (`helper(int(token))` or `value = int(token); helper(value)`), and still
-core logic, not mixed parsing, inside a state helper. Dispatching to distinct
+allowed in the parse helper, or thin in the entrypoint when the converted
+value is passed unchanged to a helper (`helper(int(token))` or
+`value = int(token); helper(value)`). Handling a failed numeric conversion in
+the parse helper does not mix parsing with business logic. Dispatching to distinct
 arithmetic helpers with if/elif is thin even after those local conversions.
 Arithmetic on that converted value (`int(token) - 1`),
 validating it against current state, or assigning it into state
