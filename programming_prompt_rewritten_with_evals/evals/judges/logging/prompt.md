@@ -25,6 +25,8 @@ For an implicit-None failure, quote the cited function's actual final
 executable statement from the current source and check the helper's
 `last_statement_source`. If that statement is `return ...`, the function has
 no implicit-None exit; inspect another concrete path or score yes.
+Do not claim fallthrough unless the quoted source reaches the function's
+closing indentation without a `return` or `raise`.
 When branches converge on a common print immediately before their shared
 return, that print covers every branch reaching the return. The supplied
 workspace Python-file list is exhaustive for this trial; do not fail over

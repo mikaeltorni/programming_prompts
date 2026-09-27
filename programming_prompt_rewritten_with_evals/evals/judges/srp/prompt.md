@@ -21,6 +21,8 @@ value is passed unchanged to a helper (`helper(int(token))` or
 `value = int(token); helper(value)`). Handling a failed numeric conversion in
 the parse helper does not mix parsing with business logic. Dispatching to distinct
 arithmetic helpers with if/elif is thin even after those local conversions.
+Choosing `_deposit(...)` versus `_withdraw(...)` by parsed operation is
+ordinary dispatch, not choosing a business operand or label.
 Arithmetic on that converted value (`int(token) - 1`),
 validating it against current state, or assigning it into state
 (`_total = int(token)`) in the entrypoint is core logic, not a conversion.
@@ -45,7 +47,7 @@ Answer no when any of these hold:
 - there is no parse helper,
 - there is no core-logic helper.
 
-If unsure, answer no.
+For a no verdict, identify the exact function and core work left in it.
 
 Criteria to score:
 {criteria}

@@ -1,7 +1,7 @@
 ---
 name: logging
 description: >-
-  v1.0.2 — Use whenever writing or editing Python (or other) functions: print each
+  v1.0.3 — Use whenever writing or editing Python (or other) functions: print each
   function's incoming parameters at entry and the return value just before
   returning. Keep it to plain print() — no logging modules or log files.
 ---
@@ -82,16 +82,9 @@ representation.
    assign the helper result, print that result in the caller, and return it.
    Check every dispatch branch, including branches with direct helper returns.
 
-An exit print never substitutes for the entry print: `print(result); return
-result` alone leaves the function missing its entry print.
-
-Before committing, audit every function and method, including `__init__`:
-compare the parameter names in its signature with the names and values in its
-first print. Merely finding a `print` is insufficient: `parameters=none` does
-not cover `self`. Then check the print before each explicit return and each
-implicit normal exit. When running a smoke check, capture output from object
-construction as well as ordinary calls; confirm the constructor emits `self=`
-and its final `None`, rather than inspecting only the command's result.
+Before committing, compare each signature with its first print and inspect
+every normal exit, including early returns. Check object construction in a
+smoke run so the constructor's `self=` and final `None` are observed.
 
 Nothing is required before a `raise` / exception exit — only normal return
 paths. Use the built-in `print(...)` only: no log files, no `logging` import,

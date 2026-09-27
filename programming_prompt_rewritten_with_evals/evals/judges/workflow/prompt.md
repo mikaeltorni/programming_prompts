@@ -29,6 +29,9 @@ Feature and one introducing commit. Do not fail a plan for that grouping when
 the selected commits judge confirms the Feature boundaries. Task-table details
 that claim a different Feature count from the ledger are stale and should be
 reconciled, but do not invent missing ledger entries for individual commands.
+When checking a count against the source request, quote its complete
+capability sentences first. Exclude setup text naming only a file or
+signature, and keep an "and may" clause in its containing sentence.
 At normal handoff, no enabled phase is
 still pending or in progress, even when a Details cell already describes
 finished work. Fail a current run with another plan filename, missing or

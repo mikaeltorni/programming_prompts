@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.1 — Use whenever writing or editing Python (or other) code: enforce
+  v1.0.2 — Use whenever writing or editing Python (or other) code: enforce
   single-responsibility functions and methods. Apply on every coding task,
   including small scripts and new files from scratch.
 ---
@@ -43,7 +43,9 @@ Write code as single-responsibility functions/methods.
   helper(...)`). Do not require `get` to go through a helper.
 - **Each command owns its own helper, amount, and label.** Do not collapse two
   commands into one parameterized helper by computing the difference in the
-  entrypoint:
+  entrypoint. Branching on the parsed command to call `_deposit(...)` or
+  `_withdraw(...)` is ordinary dispatch; choosing `+1`/`-1` or `up`/`down`
+  in the entrypoint as arguments to one shared helper is core work:
 
   ```python
   amount = 1 if operation == "inc" else -1          # arithmetic mapping, and

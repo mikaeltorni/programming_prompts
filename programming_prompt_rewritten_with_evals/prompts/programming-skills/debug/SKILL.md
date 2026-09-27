@@ -1,17 +1,15 @@
 ---
 name: debug
 description: >-
-  v1.0.0 — Use whenever software is reported broken or misbehaving: read the logs
-  before forming a hypothesis. Look in repo .log/ first. Apply on every
-  debugging task, including small scripts.
+  v1.0.1 — When software is reported broken, read its logs before diagnosing
+  it. Start with the repository .log/ directory.
 ---
 
-# Read logs first
+# Debug from the logs
 
-When software is reported broken, read the logs before forming a hypothesis.
-Look in the repository `.log/` directory first. Do not guess the bug from
-the instruction alone when logs are present.
+When a task reports broken behavior, read the available logs before forming
+a hypothesis or editing code. Check the repository `.log/` directory first.
+Do not guess from the request when logs contain the failure.
 
-When a log shows the output the program should produce (`want:`, `expected`,
-or `exactly`), make the program produce that exact string, including prefixes
-and labels. Do not keep the broken format if the log shows a different one.
+If a log gives the required output with `want:`, `expected`, or `exactly`,
+produce that exact string, including its prefix and labels.

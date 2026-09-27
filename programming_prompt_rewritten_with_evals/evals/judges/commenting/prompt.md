@@ -5,6 +5,8 @@ Score whether every function or method docstring uses this format:
    (`Parameters: none` or `Parameters: None` when there are no parameters),
 3. a `Returns:` label with the return meaning starting on that same line
    (`Returns: None` when there is no meaningful return).
+`Parameters: none.` with a trailing period is valid. The description
+explains the function's purpose; it need not enumerate its commands.
 
 Answer yes only if every `def` / `async def` / method has that docstring.
 The labels must start on the same line as their content; a long parameter
