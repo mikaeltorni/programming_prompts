@@ -139,19 +139,14 @@ burn a whole run on the wrong account. Vary only the axis the user asked to vary
 fixed. If the request does not name a model, ask before emitting commands.
 
 After an agent changes benchmark prompts, skills, judges, or runtime, include
-the following full-suite cx1 comparison commands in the final handoff, even
-when a shorter smoke run was used during development. Keep each benchmark
-invocation in its own fenced `bash` block and tell the user to run them one at
-a time. Both select all eight programming skills, the Codex harness and judge,
-three attempts per task, and concurrency 15. Omit pin options and `--tasks` so
-the runner selects every coding task.
+the following full-suite cx1 positive command in the final handoff, even when
+a shorter smoke run was used during development. Keep the benchmark invocation
+in its own fenced `bash` block. It selects all eight programming skills, the
+Codex harness and judge, three attempts per task, and concurrency 15. Omit pin
+options and `--tasks` so the runner selects every coding task.
 
 ```bash
 cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-```
-
-```bash
-ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,commits,worktree,docs,srp,commenting,logging,debug --concurrency 15 --baseline -k 3
 ```
 
 ```bash
