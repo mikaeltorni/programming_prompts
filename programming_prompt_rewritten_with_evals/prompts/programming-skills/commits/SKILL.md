@@ -1,11 +1,9 @@
 ---
 name: commits
 description: >-
-  v1.1.4 — Use whenever the user prompt can be split into Features, including vague
-  "should have X" asks: break it into one Feature per capability the prompt
-  names, implement one at a time, and commit each Feature in the worktree
-  while the program still works. Apply on every coding task, including small
-  scripts and new files from scratch.
+  v1.1.5 — Give each complete capability sentence its own Feature and working
+  commit. Every separate "It should also" sentence gets a new ledger row;
+  an optional "and may" clause inside one sentence stays in that row.
 ---
 
 # Feature commits
@@ -24,6 +22,10 @@ the same sentence's final period remain in that row; do not split them into
 another Feature. When capability sentences occupy separate request lines,
 use separate ledger rows for those lines. Keep dependency order where
 possible, without changing these boundaries.
+Before the first source edit, scan the ledger for a row that contains a
+second complete capability sentence, especially another "It should also".
+If one exists, stop and split that row. Do not call the whole paragraph or
+the whole program one Feature.
 
 Keep the original ledger visible and preserve its boundaries through the whole
 task. Before each implementation edit, identify the active row's exact sentence
@@ -39,6 +41,9 @@ one file write and plan to separate it with later commits. Before each new
 Feature commit, inspect the full source tree you are about to commit, not just
 the diff: if the public entrypoint can already execute a later row's capability,
 remove that capability from this edit and implement it after this commit.
+Recount the original capability sentences against ledger rows before this
+first write and before each commit; a count mismatch means the current
+Feature is not ready to implement or commit.
 If the first source draft already dispatches every command, reduce it to row 1
 before committing; later commits that add duplicate handlers do not repair an
 early bundle. At handoff, compare the number of distinct introducing Feature
