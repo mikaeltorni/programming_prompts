@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.13 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.14 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -151,6 +151,9 @@ Follow this order:
    multiple commands in one capability sentence stay in one ledger row and may
    share its one commit. Keep Feature counts in task-table Details consistent
    with the ledger's sentence count, not the number of commands.
+   At handoff, count the ledger entries and reread every Details cell for a
+   stale numeric Feature claim. Rewrite any old count before marking the plan
+   complete; a correct ledger does not excuse a contradictory Plan row.
 2. **Establish the worktree when enabled.** If the `worktree` companion is in
    the enabled-skill inventory and available, follow it to create the task's
    isolated worktree before editing repository files. Otherwise skip this

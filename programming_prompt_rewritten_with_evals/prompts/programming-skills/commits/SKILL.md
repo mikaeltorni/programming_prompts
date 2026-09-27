@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.1.2 — Use whenever the user prompt can be split into Features, including vague
+  v1.1.3 — Use whenever the user prompt can be split into Features, including vague
   "should have X" asks: break it into one Feature per capability the prompt
   names, implement one at a time, and commit each Feature in the worktree
   while the program still works. Apply on every coding task, including small
@@ -27,6 +27,8 @@ truth: re-read the original request sentence by sentence, including a final
 A following "It should also …" sentence starts a new Feature even when it
 shares state, helpers, or a topic with the preceding sentence. Within one
 capability sentence, commands, cases, and optional extras stay together. Do not
+split a sentence at "and may" or another optional clause. Do not count commands
+as Features when several commands are named in one sentence. Do not
 merge adjacent ledger entries or move a command to another entry. Keep the
 request's order when it already places dependencies first; otherwise resolve
 implementation dependencies without changing the Feature boundaries. Related
@@ -48,6 +50,10 @@ one file write and plan to separate it with later commits. Before each new
 Feature commit, inspect the full source tree you are about to commit, not just
 the diff: if the public entrypoint can already execute a later row's capability,
 remove that capability from this edit and implement it after this commit.
+If the first source draft already dispatches every command, reduce it to row 1
+before committing; later commits that add duplicate handlers do not repair an
+early bundle. At handoff, compare the number of distinct introducing Feature
+commits with the ledger entries and inspect the first Feature's committed tree.
 
 ## Complete and commit the current entry before starting the next
 

@@ -6,6 +6,9 @@ one Feature from each capability sentence, keeping that sentence's commands,
 cases, and optional extras together. A following "It should also" sentence
 starts another Feature. Setup text that only names an artifact, signature, or
 skill is not a Feature. Do not assume a fixed number of Features.
+An "and may" optional command inside the same sentence is part of that
+Feature, even when the optional command has a different verb. Check the actual
+sentence boundary before claiming a separate capability.
 Before mapping commits, enumerate the complete capability sentences from the
 original request in your reasoning and compare that list with any agent plan.
 The original request wins when the plan merged or omitted a sentence. Two
@@ -59,6 +62,14 @@ Before a no verdict, cite the first concrete Feature that lacks its own
 working conventional commit or has later behavior implemented early. If the
 history supports every Feature, answer yes; reasoning that concludes the
 evidence supports a pass cannot accompany a no score.
+After writing the Feature-to-commit mapping, state the first actual violation
+if the score is no. If there is no such violation and every requested
+sentence has a distinct working conventional commit, emit yes. Do not add a
+hesitant no after a complete passing mapping.
+The supplied Python-file list and inlined source are evidence. Do not add a
+requirement to run a separate shell listing of every Python file: if you have
+mapped every request sentence to a distinct working commit and found no
+contradictory source, score yes.
 Do not reject a working Feature for an unstated state representation or edge
 case. Inspect the requested observable behavior; do not require an exact
 internal record format unless the task specifies it.
