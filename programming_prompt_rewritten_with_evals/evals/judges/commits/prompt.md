@@ -67,6 +67,12 @@ After writing the Feature-to-commit mapping, state the first actual violation
 if the score is no. If there is no such violation and every requested
 sentence has a distinct working conventional commit, emit yes. Do not add a
 hesitant no after a complete passing mapping.
+Before calling two commands a bundled pair of Features, point to the
+period separating their **two complete source sentences**. If both commands
+are before the same sentence's final period, including an "and may" clause,
+they belong to one Feature and may first work in the same commit. A reason
+that identifies one sentence and then demands two commits for its commands
+is contradictory; score yes unless another concrete violation exists.
 The supplied Python-file list and inlined source are evidence. Do not add a
 requirement to run a separate shell listing of every Python file: if you have
 mapped every request sentence to a distinct working commit and found no
