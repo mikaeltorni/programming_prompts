@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.1.5 — Give each complete capability sentence its own Feature and working
+  v1.1.6 — Give each complete capability sentence its own Feature and working
   commit. Every separate "It should also" sentence gets a new ledger row;
   an optional "and may" clause inside one sentence stays in that row.
 ---
@@ -14,12 +14,14 @@ list that row's commands and required behavior. Setup text naming only an
 artifact, signature, or skill is not a Feature. Count the source sentences,
 not commands or a preferred number of commits. Match every capability
 sentence to exactly one row and every row to exactly one sentence before
-editing; abbreviated quotes and merged sentences are invalid.
+editing; abbreviated quotes, merged sentences, and duplicate rows quoting
+the same sentence are invalid.
 
 Each later "It should also …" sentence starts a new row, even when related
 to the preceding sentence. Commands and optional "and may" clauses before
 the same sentence's final period remain in that row; do not split them into
-another Feature. When capability sentences occupy separate request lines,
+another Feature. A comma does not end a sentence or create a new Feature.
+When capability sentences occupy separate request lines,
 use separate ledger rows for those lines. Keep dependency order where
 possible, without changing these boundaries.
 Before the first source edit, scan the ledger for a row that contains a
