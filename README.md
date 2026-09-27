@@ -285,8 +285,8 @@ It runs coding tasks with `--harness`, selects the Codex judge with
 Run one benchmark invocation at a time. See the
 [evals README](programming_prompt_rewritten_with_evals/evals/README.md) for
 the command surface and the [54-trial audit](programming_prompt_rewritten_with_evals/evals/reports/2026-09-27-54-trial-audit.md)
-for the failure diagnosis and comparison runs. The full-suite cx1 comparison
-commands required after benchmark edits are in [AGENTS.md](AGENTS.md).
+for the failure diagnosis and comparison runs. The full-suite cx1 positive
+command required after benchmark edits is in [AGENTS.md](AGENTS.md).
 
 ## Configuration
 
