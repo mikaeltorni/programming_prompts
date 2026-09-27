@@ -41,6 +41,8 @@ Inspect the actual Git history and source before scoring:
   remains part of the original sentence, not a new Feature. These allowances
   never excuse bundling different Features or repairing them only after advancing.
   Inspect the reachable implementation, imports, dispatch, and state changes.
+  An earlier Feature need not maintain state for a later Feature before that
+  later Feature exists; judge the later Feature's behavior in its own commit.
   When behavior is uncertain, execute a focused example in a temporary copy of
   that commit with a timeout. Never edit the submitted source or Git refs.
 - Later Features must not already be implemented in an earlier Feature's
