@@ -277,6 +277,17 @@ codex plugin list
 claude plugin list --json
 ```
 
+The Harbor benchmark's public entrypoint is
+[`run_benchmark.sh`](programming_prompt_rewritten_with_evals/evals/run_benchmark.sh).
+It runs coding tasks with `--harness`, selects the Codex judge with
+`--eval-agent codex`, selects programming skills with `--skills`, and accepts
+`--tasks`, `--concurrency`, `--baseline`, and Harbor's `-k` attempt count.
+Run one benchmark invocation at a time. See the
+[evals README](programming_prompt_rewritten_with_evals/evals/README.md) for
+the command surface and the [54-trial audit](programming_prompt_rewritten_with_evals/evals/reports/2026-09-27-54-trial-audit.md)
+for the failure diagnosis and comparison runs. The full-suite cx1 comparison
+commands required after benchmark edits are in [AGENTS.md](AGENTS.md).
+
 ## Configuration
 
 This content repository has no runtime configuration. Plugin manifests,
