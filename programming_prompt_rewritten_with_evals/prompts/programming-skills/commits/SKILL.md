@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.1.3 — Use whenever the user prompt can be split into Features, including vague
+  v1.1.4 — Use whenever the user prompt can be split into Features, including vague
   "should have X" asks: break it into one Feature per capability the prompt
   names, implement one at a time, and commit each Feature in the worktree
   while the program still works. Apply on every coding task, including small
@@ -10,31 +10,20 @@ description: >-
 
 # Feature commits
 
-Before writing code, build a numbered ledger from the actual request. **Copy
-each capability sentence verbatim into its own entry**, then list that entry's
-commands and required behavior. Exclude setup instructions that only name
-an artifact, signature, or skill. Read the request again and account for every
-capability sentence exactly once; derive the Feature count from that ledger,
-never from a summary or a preferred number of commits. Do not start an edit
-until the visible ledger contains those complete sentences: abbreviated quotes,
-ellipses, and topic summaries cannot establish the boundaries. Audit it in both
-directions: each source sentence maps to one row, and each row maps to only
-one source sentence. Fix a mismatch before writing code.
-Do not use the agent's own plan or preferred Feature count as the source of
-truth: re-read the original request sentence by sentence, including a final
-"It should also" sentence that may look like an extension of the prior one.
+Before writing code, build a numbered ledger from the original request.
+**Copy each complete capability sentence verbatim into its own row**, then
+list that row's commands and required behavior. Setup text naming only an
+artifact, signature, or skill is not a Feature. Count the source sentences,
+not commands or a preferred number of commits. Match every capability
+sentence to exactly one row and every row to exactly one sentence before
+editing; abbreviated quotes and merged sentences are invalid.
 
-A following "It should also …" sentence starts a new Feature even when it
-shares state, helpers, or a topic with the preceding sentence. Within one
-capability sentence, commands, cases, and optional extras stay together. Do not
-split a sentence at "and may" or another optional clause. Do not count commands
-as Features when several commands are named in one sentence. Do not
-merge adjacent ledger entries or move a command to another entry. Keep the
-request's order when it already places dependencies first; otherwise resolve
-implementation dependencies without changing the Feature boundaries. Related
-operations in different sentences stay separate; multiple commands within one
-sentence stay together. Do not regroup them by topic, shared state, inverse
-operations, or convenience.
+Each later "It should also …" sentence starts a new row, even when related
+to the preceding sentence. Commands and optional "and may" clauses before
+the same sentence's final period remain in that row; do not split them into
+another Feature. When capability sentences occupy separate request lines,
+use separate ledger rows for those lines. Keep dependency order where
+possible, without changing these boundaries.
 
 Keep the original ledger visible and preserve its boundaries through the whole
 task. Before each implementation edit, identify the active row's exact sentence

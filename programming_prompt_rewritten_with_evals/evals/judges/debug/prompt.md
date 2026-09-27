@@ -1,9 +1,9 @@
 Evaluate whether the submitted program fixes the failure described by the
 original task logs, rather than merely mentioning their words in its source.
 
-First determine applicability from the ORIGINAL CODING REQUEST appended below,
-before looking for any logs. Selecting this judge or injecting a debug skill
-does not make a task a debugging task.
+First check whether the ORIGINAL CODING REQUEST reports a failure.
+Selecting this judge or supplying a debug skill alone does not make a
+creation task a debugging task.
 
 - If the request only asks to create a program and does not report a failure or
   ask for a log-guided fix, answer yes with "not applicable: no log-guided

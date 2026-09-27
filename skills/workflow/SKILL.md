@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.14 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.15 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -13,21 +13,9 @@ Run this workflow only when the user explicitly invokes `$workflow` (or the
 host's equivalent explicit skill command). Its presence in an installed skill
 catalog does not activate it.
 
-This skill may coordinate other independently selected skills. No other skill
-depends on this one, and this skill must not require edits that add a
+This skill coordinates independently selected companions; none depends
+on workflow. Keep dependency and routing instructions here. Do not add a
 `workflow` dependency or invocation to another skill.
-
-The dependency direction is one-way:
-
-```text
-workflow -> independently enabled companion skills
-companion skills -/> workflow
-```
-
-Keep every companion usable on its own. Dependency declarations, routing
-instructions, and orchestration references belong only in this workflow skill;
-never add them to `worktree`, `commits`, `srp`, `logging`, `commenting`,
-`debug`, `docs`, or another companion.
 
 Own the end-to-end sequence for the current programming request. Break the
 work into ordered phases that fit the request, finish each phase before moving
@@ -115,12 +103,17 @@ Follow this order:
    Keep the headings, table columns, four task names, row numbers, and order
    exactly as shown. The `## Tasks` table has exactly four data rows: put
    workflow phase progress and task-specific deliverables in `Details`, not
-   in extra task rows or a second progress checklist. A selected `commits`
+   in extra task rows or a second progress checklist. Prefer naming the
+   deliverables over repeating a numeric Feature count in `Details`; the
+   ledger owns that count. If a Details cell does state one, compare it
+   with the ledger before handoff. A selected `commits`
    companion may keep its verbatim capability ledger in a `## Feature ledger`
    section after the task table in this same file; that section is supporting
    detail, not another workflow phase or progress file. When a ledger is present,
    update each entry's commit reference before marking `Write code` complete;
    a `pending` ledger entry and a `complete` code row contradict each other.
+   Check every ledger entry for `pending` before completing `Write code`;
+   a claim in Details or a visible Git commit does not update that entry.
    Escape any `|` in a
    detail cell so the table remains parseable. Set each `Status` to exactly one
    of `pending`, `in_progress`, `complete`, or `skipped`. After the skill

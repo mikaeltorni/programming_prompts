@@ -1,20 +1,13 @@
 ---
 name: docs
 description: >-
-  v1.0.0 — Use whenever writing or editing a program: after the code works, write a
-  README.md that documents what it does, the public entrypoint, and the
-  commands it accepts. Apply on every coding task, including small scripts
-  and new files from scratch.
+  v1.0.1 — After writing or fixing a program, document its purpose, public
+  entrypoint, and accepted commands in the project-root README.md.
 ---
 
-# Docs after the code
+# Document the program
 
-After you implement or fix the program, write a `README.md` in the project
-root that documents it:
-
-- what the program does
-- the public entrypoint name
-- the commands it accepts
-
-Do not skip the README because the script is small. Function docstrings are
-a separate skill.
+After the code works, write or update the project-root `README.md`. State what
+the program does, name its public entrypoint, and list the commands it accepts.
+Do this even for a small script or a new file. Function docstrings belong to
+the separate commenting skill.

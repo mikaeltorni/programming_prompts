@@ -37,7 +37,8 @@ Inspect the actual Git history and source before scoring:
   and the current Feature must be usable through the requested public entrypoint.
   A focused repair after the introducing commit but before the next Feature is
   allowed; inspect that repaired tree and cite both commits. Optional extras may
-  be completed in a focused follow-up before the next Feature. These allowances
+  be completed in a focused follow-up before the next Feature; that follow-up
+  remains part of the original sentence, not a new Feature. These allowances
   never excuse bundling different Features or repairing them only after advancing.
   Inspect the reachable implementation, imports, dispatch, and state changes.
   When behavior is uncertain, execute a focused example in a temporary copy of

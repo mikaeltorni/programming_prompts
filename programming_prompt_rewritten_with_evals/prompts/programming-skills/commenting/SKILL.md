@@ -1,36 +1,33 @@
 ---
 name: commenting
 description: >-
-  v1.0.0 — Use whenever writing or editing Python (or other) functions: every function
-  must have a docstring with a description, Parameters, and Returns in exactly
-  that format. Apply on every coding task, including new files from scratch.
+  v1.0.1 — Use whenever writing or editing Python (or other) functions: every
+  function needs a description and same-line Parameters and Returns labels.
+  Apply on every coding task, including new files.
 ---
 
-# Function commenting
+# Function docstrings
 
-Document every `def` / `async def` / method with a docstring that always
-uses exactly this format:
+Give every `def`, `async def`, and method a docstring with:
 
-1. A short description of what the function does.
-2. One line starting with `Parameters:` listing each parameter and meaning
-   (`Parameters: none` or `Parameters: None` when there are no parameters).
-3. One line starting with `Returns:` describing the return value
-   (`Returns: None` when there is no meaningful return).
+1. A short description.
+2. `Parameters:` followed on that line by every parameter and its meaning.
+   For a function with no parameters, write `Parameters: none` or
+   `Parameters: None`. A trailing period is fine.
+3. `Returns:` followed on that line by the return meaning. Use
+   `Returns: None` when there is no meaningful return.
 
-Do not use `Args:` or other section names. Do not put `Parameters:` or
-`Returns:` on a line by themselves. A long parameter list may continue on
-the next line after the label already has content.
+A long parameter list may continue on later lines once the `Parameters:`
+line has content. Do not use `Args:` or leave either label on a line alone.
+`lambda` expressions do not need docstrings.
 
-`lambda` expressions do **not** need docstrings. Missing docs on a lambda
-is not a failure.
-
-Match this layout exactly:
+Example:
 
 ```text
-"""Describes the function.
+"""Return the updated count.
 
-Parameters: name - meaning of name; count - meaning of count.
+Parameters: value - amount to add; count - current count.
 
-Returns: meaning of the return value.
+Returns: the updated count.
 """
 ```
