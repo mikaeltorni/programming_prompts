@@ -311,7 +311,8 @@ def score_with_rewardkit(
             try:
                 with overlay_environ(overlay), claude_effort_on_path(effort):
                     return run_until_reliable(
-                        listed_keys=listed_keys, timeout=timeout, attempt=attempt
+                        listed_keys=listed_keys, timeout=timeout, attempt=attempt,
+                        judge_name=judge_dir.name, python_files=files,
                     )
             finally:
                 shutil.rmtree(home, ignore_errors=True)
@@ -320,13 +321,15 @@ def score_with_rewardkit(
         try:
             with overlay_environ(overlay):
                 return run_until_reliable(
-                    listed_keys=listed_keys, timeout=timeout, attempt=attempt
+                    listed_keys=listed_keys, timeout=timeout, attempt=attempt,
+                    judge_name=judge_dir.name, python_files=files,
                 )
         finally:
             shutil.rmtree(home, ignore_errors=True)
 
     if invoke is not None:
         return run_until_reliable(
-            listed_keys=listed_keys, timeout=timeout, attempt=attempt
+            listed_keys=listed_keys, timeout=timeout, attempt=attempt,
+            judge_name=judge_dir.name, python_files=files,
         )
     return with_homes()

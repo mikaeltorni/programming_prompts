@@ -470,8 +470,10 @@ def run_self_test() -> int:
     )
     check(
         "inspect_before_score",
-        "Read every `*.py` file" in filled and "inspect first" in filled,
-        "prompt forbids no-as-not-inspected",
+        "inlined source counts as reading the file" in filled
+        and "truncated or omitted" in filled
+        and "Do not answer no merely because" in filled,
+        "prompt accepts complete inlined source and requires tools for gaps",
     )
 
     with tempfile.TemporaryDirectory(prefix="llm-judge-") as raw:
@@ -523,6 +525,51 @@ def run_self_test() -> int:
             unreliable_score_reason(rk_rows, listed_keys)
             == "wrong_path:function_commenting:app.py",
             "hallucinated app.py is flagged for retry",
+        )
+        passing_mapping = [{
+            "name": "feature_commits", "reward": 0.0,
+            "reasoning": "All requested Features have distinct working commits; score yes.",
+        }]
+        check(
+            "retry_contradictory_feature_no",
+            unreliable_score_reason(passing_mapping, listed_keys)
+            == "contradictory_no:feature_commits",
+            "a no verdict with a passing mapping is retried",
+        )
+        history_helper = root / "bank.py"
+        history_helper.write_text(
+            "def _account_history(name):\n"
+            "    result = name\n"
+            "    print(result)\n"
+            "    return result\n",
+            encoding="utf-8",
+        )
+        alleged_fallthrough = [{
+            "name": "entry_exit_prints", "reward": 0.0,
+            "reasoning": "`_account_history` has a reachable normal fallthrough "
+            "with no return, so its implicit None exit is not printed.",
+        }]
+        check(
+            "retry_source_conflict_final_return",
+            unreliable_score_reason(
+                alleged_fallthrough, listed_keys, judge_name="logging",
+                python_files=[history_helper],
+            ) == "source_conflict:entry_exit_prints:_account_history",
+            "an implicit-exit claim contradicted by a final return is retried",
+        )
+        history_helper.write_text(
+            "def _account_history(name):\n"
+            "    result = name\n"
+            "    print(result)\n",
+            encoding="utf-8",
+        )
+        check(
+            "allow_real_fallthrough",
+            unreliable_score_reason(
+                alleged_fallthrough, listed_keys, judge_name="logging",
+                python_files=[history_helper],
+            ) is None,
+            "a real implicit exit remains a scored failure",
         )
         judge_src = root / "judge"
         judge_src.mkdir()

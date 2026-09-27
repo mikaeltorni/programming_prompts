@@ -169,4 +169,6 @@ def score_with_grok(
         listed_keys=listed_python_keys(files, workspace),
         timeout=timeout,
         attempt=attempt,
+        judge_name=judge_name,
+        python_files=files,
     )

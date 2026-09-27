@@ -21,6 +21,10 @@ does not fall through; do not invent an implicit None path after it. A branch
 ending in `raise` is exempt. Initializers and validation helpers that really
 reach the end normally do return None and need that exit print. Cite the
 specific uncovered path in a failing verdict.
+For an implicit-None failure, quote the cited function's actual final
+executable statement from the current source and check the helper's
+`last_statement_source`. If that statement is `return ...`, the function has
+no implicit-None exit; inspect another concrete path or score yes.
 When branches converge on a common print immediately before their shared
 return, that print covers every branch reaching the return. The supplied
 workspace Python-file list is exhaustive for this trial; do not fail over
@@ -32,6 +36,10 @@ about to be returned is the **whole** returned expression: for
 before it omits the second element and is a **no**, while
 `print(result, [])` or `print((result, []))` is a **yes**. A single
 `return value` covered by `print(value)` is a **yes**.
+An entrypoint's `return helper()` with no immediately preceding print is a
+**no**, even if `helper()` prints its own exit value. Check every dispatch
+branch in the caller before a yes verdict, and identify how its return is
+covered in the reasoning. Do not infer coverage from the called helper.
 The exit print need not include a label: `print((left, right))` directly
 before `return left, right` is a **yes** because it prints the complete
 returned tuple. Do not apply the entry parameter-name rule to exit prints.

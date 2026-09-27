@@ -67,6 +67,12 @@ Require all applicable workflow outcomes:
   documentation when a documentation companion is available. Do not require a
   worktree or documentation when its companion was not selected or supplied,
   and do not invent a standalone verification phase.
+- The supplied Python-file listing does not include README.md. A README missing
+  from that listing is not evidence that documentation is absent. Before calling
+  a completed documentation row stale, inspect README.md in the repository or
+  use an explicit missing-file result. The dedicated docs judge owns whether
+  its contents document the interface. Likewise, name the actual extra plan
+  row or heading before claiming the plan adds a verification phase.
 - A selected worktree or commits companion may require commits, merges, and
   consumer reapplication after implementation. Recording that closeout in
   `Write code` or `Write documentation` details, or in the selected companion's

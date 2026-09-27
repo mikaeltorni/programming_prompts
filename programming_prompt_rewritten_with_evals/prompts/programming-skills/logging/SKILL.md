@@ -1,7 +1,7 @@
 ---
 name: logging
 description: >-
-  v1.0.1 — Use whenever writing or editing Python (or other) functions: print each
+  v1.0.2 — Use whenever writing or editing Python (or other) functions: print each
   function's incoming parameters at entry and the return value just before
   returning. Keep it to plain print() — no logging modules or log files.
 ---
@@ -78,6 +78,9 @@ representation.
    This includes constructors (`__init__`) and validation helpers: if they
    finish normally without a return statement, end with `print(None)`.
    A path ending in an explicit return has no additional implicit exit.
+   A helper's exit print does not cover its caller: before `return helper()`,
+   assign the helper result, print that result in the caller, and return it.
+   Check every dispatch branch, including branches with direct helper returns.
 
 An exit print never substitutes for the entry print: `print(result); return
 result` alone leaves the function missing its entry print.

@@ -6,6 +6,7 @@ reliability gate. The retry token never includes secrets or file contents.
 
 from __future__ import annotations
 
+import ast
 import re
 import time
 from collections.abc import Callable
@@ -32,8 +33,17 @@ _CONTRADICTORY_NO = re.compile(
     r"|\b(?:so |the )?(?:criterion|check) passes[.!;,]?\s*$"
     r"|\b(?:all|every) functions? pass(?:[.!]|,?\s+so\b)"
     r"|\bevidence supports a pass\b"
+    r"|\bscore yes\b"
+    r"|\ball\b[^.!?\n]{0,100}\bfeatures?\b[^.!?\n]{0,100}"
+    r"\b(?:satisfy|pass)\b[^.!?\n]{0,40}\bcriterion\b"
     r"|\b(?:a|the) no (?:is|was) not supported\b"
     r"|\bno verdict (?:is|was) unsupported\b",
+    re.IGNORECASE,
+)
+_FALLTHROUGH_CLAIM = re.compile(
+    r"`(?P<name>[A-Za-z_]\w*)`[^.!?\n]{0,200}"
+    r"\b(?:fallthrough|implicit(?:ly)?\s+(?:returns?\s+)?None|"
+    r"no\s+(?:explicit\s+)?return)\b",
     re.IGNORECASE,
 )
 
@@ -69,8 +79,39 @@ def _path_is_listed(mentioned: str, keys: set[str]) -> bool:
     return Path(text).name.lower() in keys
 
 
+def _contradicted_fallthrough(
+    reasoning: str, python_files: list[Path]
+) -> str | None:
+    """Name a claimed implicit exit blocked by a function's final return.
+
+    A final top-level ``return`` prevents normal fallthrough for that function.
+    This is a bounded syntax check, not a semantic logging score.
+
+    Args:
+        reasoning: Failing logging judge explanation.
+        python_files: Exhaustive solution Python files.
+
+    Returns:
+        Function name when the claim contradicts source, otherwise None.
+    """
+    names = {match.group("name") for match in _FALLTHROUGH_CLAIM.finditer(reasoning)}
+    if not names:
+        return None
+    for path in python_files:
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (OSError, SyntaxError, UnicodeError):
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if node.name in names and isinstance(node.body[-1], ast.Return):
+                    return node.name
+    return None
+
+
 def unreliable_score_reason(
-    rows: list[dict[str, Any]], listed_keys: set[str]
+    rows: list[dict[str, Any]], listed_keys: set[str],
+    *, judge_name: str = "", python_files: list[Path] | None = None,
 ) -> str | None:
     """Return why a failing score looks untrustworthy, or None.
 
@@ -81,9 +122,12 @@ def unreliable_score_reason(
     Args:
         rows: Parsed criterion scores.
         listed_keys: Lowercased names from ``listed_python_keys``.
+        judge_name: Skill name; logging receives a syntax contradiction check.
+        python_files: Solution source paths for that bounded check.
 
     Returns:
-        ``not_inspected:<criterion>``, ``contradictory_no:<criterion>``, or
+        ``not_inspected:<criterion>``, ``contradictory_no:<criterion>``,
+        ``source_conflict:<criterion>:<function>``, or
         ``wrong_path:<criterion>:<file>``.
     """
     for row in rows:
@@ -95,6 +139,10 @@ def unreliable_score_reason(
             return f"not_inspected:{name}"
         if _CONTRADICTORY_NO.search(reasoning):
             return f"contradictory_no:{name}"
+        if judge_name == "logging" and python_files:
+            function = _contradicted_fallthrough(reasoning, python_files)
+            if function:
+                return f"source_conflict:{name}:{function}"
         mentioned = mentioned_python_paths(reasoning)
         if not mentioned:
             continue
@@ -122,6 +170,14 @@ def retry_prompt(prompt: str, reason: str) -> str:
             + "evidence and make the score agree with the concrete reason. "
             + "Do not change a genuine no merely to match prior wording.\n"
         )
+    if reason.startswith("source_conflict:"):
+        return (
+            prompt
+            + "\n\nRETRY: the previous no verdict claimed an implicit fallthrough "
+            + "for a function whose final top-level statement is an explicit "
+            + "return in the supplied source. Reinspect its function boundary "
+            + "and every actual exit path. Score the source, not the prior claim.\n"
+        )
     return (
         prompt
         + "\n\nRETRY: the previous JSON score was unusable "
@@ -136,6 +192,8 @@ def run_until_reliable(
     listed_keys: set[str],
     timeout: int,
     attempt: AttemptFn,
+    judge_name: str = "",
+    python_files: list[Path] | None = None,
 ) -> tuple[str, list[dict[str, Any]]]:
     """Run one judge attempt, then retry once on unreliable evidence.
 
@@ -145,6 +203,8 @@ def run_until_reliable(
         attempt: ``attempt(retry_reason_or_None, timeout_s) -> (raw, rows)``.
             First call uses ``reason=None`` and the full *timeout*. The retry
             call receives the reason token and remaining seconds.
+        judge_name: Skill name for bounded source-conflict detection.
+        python_files: Solution files for that detection.
 
     Returns:
         Raw stdout and parsed rows from a reliable attempt.
@@ -154,7 +214,9 @@ def run_until_reliable(
     """
     started = time.monotonic()
     raw, rows = attempt(None, timeout)
-    reason = unreliable_score_reason(rows, listed_keys)
+    reason = unreliable_score_reason(
+        rows, listed_keys, judge_name=judge_name, python_files=python_files
+    )
     if reason is None:
         return raw, rows
     remaining = timeout - (time.monotonic() - started) - 5
@@ -166,7 +228,9 @@ def run_until_reliable(
         raise UnreliableJudgeScore(reason)
     log(f"retrying judge once reason={reason} remaining_s={remaining:.0f}")
     raw_retry, rows_retry = attempt(reason, int(remaining))
-    second = unreliable_score_reason(rows_retry, listed_keys)
+    second = unreliable_score_reason(
+        rows_retry, listed_keys, judge_name=judge_name, python_files=python_files
+    )
     if second:
         log(f"retry still unreliable reason={second}")
         raise UnreliableJudgeScore(second)

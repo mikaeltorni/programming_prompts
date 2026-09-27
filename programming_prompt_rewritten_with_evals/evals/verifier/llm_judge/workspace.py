@@ -17,10 +17,11 @@ from llm_judge.log import log
 
 DEFAULT_WORKSPACE = Path("/Projects/app")
 INSPECT_BEFORE_SCORE = (
-    "Read every `*.py` file in the working directory before you score. "
-    "Use tools to open the files. Do not answer no because you have not "
-    "inspected the source yet — inspect first. 'If unsure, answer no' "
-    "applies only after you have read the Python."
+    "Read every Python file in the supplied list and inlined source below "
+    "before scoring. The inlined source counts as reading the file; a separate "
+    "shell open or directory listing is not required. If a listed file is "
+    "truncated or omitted, use tools to read its full content before scoring. "
+    "Do not answer no merely because you have not made an optional shell call."
 )
 _SKIP_DIR_NAMES = frozenset(
     {
