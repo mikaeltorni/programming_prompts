@@ -285,7 +285,8 @@ It runs coding tasks with `--harness`, selects the Codex judge with
 Run one benchmark invocation at a time. See the
 [evals README](programming_prompt_rewritten_with_evals/evals/README.md) for
 the command surface, the [54-trial audit](programming_prompt_rewritten_with_evals/evals/reports/2026-09-27-54-trial-audit.md),
-and the [prompt refactor comparison](programming_prompt_rewritten_with_evals/evals/reports/2026-09-27-prompt-refactor.md).
+the [prompt refactor comparison](programming_prompt_rewritten_with_evals/evals/reports/2026-09-27-prompt-refactor.md),
+and the [September 29 individual failure audit](programming_prompt_rewritten_with_evals/evals/reports/2026-09-29-45-trial-audit.md).
 The full-suite cx1 positive
 command required after benchmark edits is in [AGENTS.md](AGENTS.md).
 
