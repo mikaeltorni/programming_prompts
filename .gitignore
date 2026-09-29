@@ -3,6 +3,7 @@ project_paths.txt
 
 config.json
 .log/
+# Local scratch directories, including temporary eval reports.
 tmp/
 
 __pycache__/
