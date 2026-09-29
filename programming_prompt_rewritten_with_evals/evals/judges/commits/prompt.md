@@ -74,6 +74,11 @@ Inspect the actual Git history and source before scoring:
   remains part of the original sentence, not a new Feature. These allowances
   never excuse bundling different Features or repairing them only after advancing.
   Inspect the reachable implementation, imports, dispatch, and state changes.
+  Before alleging a SyntaxError, compile the exact historical source in a
+  temporary copy or identify an actual syntax violation. Repeated function
+  definitions alone are valid Python; the later definition binds the name.
+  Inspect that effective body and its reachable behavior rather than declaring
+  the entrypoint unusable from duplicate names alone.
   An earlier Feature need not maintain state for a later Feature before that
   later Feature exists; judge the later Feature's behavior in its own commit.
   When behavior is uncertain, execute a focused example in a temporary copy of
@@ -100,6 +105,10 @@ snapshot or obtain it with the supplied Git helper. A diff deletion or an
 older snapshot is not the source tree at the cited boundary. Verify the actual
 reachable body there; do not assert a later uncommitted repair when the cited
 commit already contains the same statements.
+Finish the sentence enumeration and commit mapping before choosing the JSON
+verdict. Write the reasoning field before the score field so the score reflects
+its final conclusion. If your reasoning retracts an alleged violation, identify
+a different concrete violation or emit yes; do not retain the earlier no.
 Before a no verdict, cite the first concrete Feature that lacks its own
 working conventional commit, has later behavior implemented early, or whose
 ledger does not match its complete original capability sentence. If the

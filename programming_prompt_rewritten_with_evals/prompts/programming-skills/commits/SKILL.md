@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.1.10 — Give each complete capability sentence its own Feature and working
+  v1.1.12 — Give each complete capability sentence its own Feature and working
   commit. Every separate "It should also" sentence gets a new ledger row;
   an optional "and may" clause inside one sentence stays in that row.
 ---
@@ -27,6 +27,12 @@ not commands or a preferred number of commits. Match every capability
 sentence to exactly one row and every row to exactly one sentence before
 editing; abbreviated quotes, merged sentences, and duplicate rows quoting
 the same sentence are invalid.
+An optional clause is not a complete sentence on its own. Before the first
+implementation edit, check that no row starts with an extracted "and may"
+clause and that no earlier row stops before that clause or its final period.
+If either occurs, restore the whole source sentence in one row now. A later
+optional-command commit belongs beside that same row; a new row for it fails
+the ledger even when its implementation is a valid focused follow-up.
 
 Cross-check each row's command list against its own quoted sentence. Commands
 named only in a later source sentence stay deferred to that later row; do not
@@ -129,6 +135,9 @@ Compare the saved ledger against the original request, including punctuation,
 rather than reconstructing sentences from command names. Never rewrite
 history to repair a commit.
 
-A single Feature or an undivided change is one commit. Commits happen in the
-worktree; worktree location and merge policy belong to the applicable project
-instructions.
+A request with only one complete capability sentence needs one Feature commit.
+"Undivided change" never overrides the source-sentence boundaries: a task with
+separate capability sentences is not one Feature because it describes a tiny
+program, one file, or one public entrypoint. Its ledger and separate introducing
+commits remain required. Commits happen in the worktree; worktree location and
+merge policy belong to the applicable project instructions.
