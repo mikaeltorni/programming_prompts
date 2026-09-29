@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.4 — Use whenever writing or editing Python (or other) code: enforce
+  v1.0.5 — Use whenever writing or editing Python (or other) code: enforce
   single-responsibility functions and methods. Apply on every coding task,
   including small scripts and new files from scratch.
 ---
@@ -45,10 +45,14 @@ Write code as single-responsibility functions/methods.
 - **These belong in the entrypoint or a core helper, not a new function:**
   if/elif dispatch, raises for an unknown operation or extra/missing
   arguments, and simple input-shape or format guards on an already-parsed
-  value (for example, an hour outside 0..23),
+  value (for example, a clock hour outside 0..23),
   `helper(int(token))`, and a one-line format or read of existing state
   (`str(state)`, `f"value={state}"`, `state if operation == "get" else
-  helper(...)`). Do not require `get` to go through a helper.
+  helper(...)`). Do not require `get` to go through a helper. A format guard
+  checks whether input is representable, not whether the operation accepts it:
+  a narrower business interval within a valid format range belongs in the
+  operation helper. Do not reject an operation's disallowed hours or other
+  domain values in the entrypoint under the format-guard allowance.
 - **Each command owns its own helper, amount, and label.** Do not collapse two
   commands into one parameterized helper by computing the difference in the
   entrypoint. Branching on the parsed command to call `_deposit(...)` or

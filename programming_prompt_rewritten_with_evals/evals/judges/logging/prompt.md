@@ -9,6 +9,12 @@ does both:
   (`print(result)` is a yes; a `return=` label is not required). When
   falling off the end with no meaningful return, print `None`.
 
+The entry position is a literal source-order rule, not merely the first runtime
+side effect. Ignore a leading docstring, but a `global` or `nonlocal` declaration
+before the entry print is a no even though the declaration is handled at compile
+time. Python permits a parameter-only print before that declaration. Do not
+invent receiver parameters: compare the trace against the actual signature.
+
 Before claiming a missing exit print, identify the exact function, line and
 reachable normal exit. Read the supplied Python boundary report or run the
 supplied evidence helper's `--python-path FILE` mode for the cited file and inspect that

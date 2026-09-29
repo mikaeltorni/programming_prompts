@@ -172,6 +172,7 @@ def score_with_grok(
         attempt=attempt,
         judge_name=judge_name,
         python_files=files,
+        request_text=template,
         workflow_issues=(workflow_plan_structure(workspace)["issues"]
                          if judge_name == "workflow" else None),
     )

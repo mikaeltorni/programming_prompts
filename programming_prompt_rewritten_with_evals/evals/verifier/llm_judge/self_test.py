@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .grok import DEFAULT_MAX_TURNS, build_grok_command, score_with_grok
-from .homes import claude_judge_env, claude_wrapper_script
+from .homes import claude_judge_env, claude_wrapper_script, codex_reasoning_on_path
 from .ratelimit import JUDGE_CLI_FAILURES, looks_like_judge_rate_limit
 from .reliability import unreliable_score_reason
 from .rewardkit import (
@@ -24,6 +24,7 @@ from .rewardkit import (
 from .scores import (
     parse_scores,
     response_schema,
+    reasoning_first_schema,
     rows_from_rewardkit_details,
 )
 from .workspace import (
@@ -62,7 +63,23 @@ def run_self_test() -> int:
         schema.get("required") == ["single_responsibility"],
         "named yes/no schema even for one criterion",
     )
+    check(
+        "reasoning_precedes_score",
+        list(schema["properties"]["single_responsibility"]["properties"])
+        == ["reasoning", "score"],
+        "constrained output presents the explanation before the verdict",
+    )
     block = criteria_block(criteria)
+    check(
+        "reasoning_first_example",
+        block.index('"reasoning"') < block.index('"score"'),
+        "the prompt example matches explanation-first schema order",
+    )
+    check(
+        "rewardkit_flat_example",
+        '"single_responsibility": {' not in criteria_block(criteria, flat_single=True),
+        "a single rewardkit criterion uses its existing flat response shape",
+    )
     check("criteria_token", '"yes" or "no"' in block, "prompt lists yes/no scores")
     check(
         "ratelimit_detects_claude_is_error",
@@ -125,6 +142,58 @@ def run_self_test() -> int:
                 cmd[:3] == ["uvx", "--from", "harbor-rewardkit@0.1.7"],
                 "uvx --from remains the fallback when rewardkit is absent",
             )
+        finally:
+            os.environ["PATH"] = saved_path
+
+    backend_schema = {
+        "type": "object",
+        "properties": {
+            "score": {"type": "string", "enum": ["yes", "no"]},
+            "reasoning": {"type": "string"},
+        },
+        "required": ["score", "reasoning"],
+        "additionalProperties": False,
+    }
+    reordered = reasoning_first_schema(backend_schema)
+    check(
+        "backend_schema_keeps_contract",
+        reordered == backend_schema
+        and list(reordered["properties"]) == ["reasoning", "score"]
+        and list(backend_schema["properties"]) == ["score", "reasoning"],
+        "the backend schema keeps types and required fields without mutating input",
+    )
+    with tempfile.TemporaryDirectory() as tmp:
+        temp_root = Path(tmp)
+        real_cli = temp_root / "codex"
+        real_cli.write_text(
+            "#!/usr/bin/env python3\nimport json, sys\nprint(json.dumps(sys.argv[1:]))\n",
+            encoding="utf-8",
+        )
+        real_cli.chmod(0o755)
+        schema_path = temp_root / "response schema.json"
+        saved_path = os.environ.get("PATH", "")
+        os.environ["PATH"] = f"{temp_root}{os.pathsep}{saved_path}"
+        try:
+            with codex_reasoning_on_path():
+                for flag in ["--output-schema", "--output-schema="]:
+                    schema_path.write_text(json.dumps(backend_schema), encoding="utf-8")
+                    argv = ["exec", "a quoted prompt with spaces", "-m", "test-model"]
+                    argv += ([flag, str(schema_path)] if flag == "--output-schema"
+                             else [flag + str(schema_path)])
+                    proc = subprocess.run(["codex", *argv], capture_output=True, text=True, check=True)
+                    rewritten = json.loads(schema_path.read_text(encoding="utf-8"))
+                    check(
+                        "codex_schema_wrapper_" + ("separate" if flag == "--output-schema" else "equals"),
+                        json.loads(proc.stdout) == argv
+                        and list(rewritten["properties"]) == ["reasoning", "score"]
+                        and rewritten == backend_schema,
+                        "schema order changes while multi-word argv and scoring semantics survive",
+                    )
+                proc = subprocess.run(["codex", "--version"], capture_output=True, text=True, check=True)
+                check("codex_wrapper_probe", json.loads(proc.stdout) == ["--version"],
+                      "calls without a schema pass through to the real CLI")
+            check("codex_wrapper_restores_path", os.environ["PATH"].split(os.pathsep)[0] == tmp,
+                  "the temporary CLI wrapper restores PATH after use")
         finally:
             os.environ["PATH"] = saved_path
 
@@ -539,6 +608,9 @@ def run_self_test() -> int:
         for case_name, reasoning, expected in [
             ("retry_final_no_violation", "I find no criterion violation: every Feature has its own working commit.", "contradictory_no:feature_commits"),
             ("retry_final_retraction", "The ledger might split a sentence. Thus this is not a violation; all rows match.", "contradictory_no:feature_commits"),
+            ("retry_terminal_no_violation_evidenced", "The capability maps to its own commit; no violation is evidenced.", "contradictory_no:feature_commits"),
+            ("keep_earlier_no_violation_evidenced", "No violation is evidenced. However, the later capability was bundled.", None),
+            ("keep_conditional_no_violation_evidenced", "If no violation is evidenced, this passes. The ledger actually omits a sentence.", None),
             ("keep_later_real_violation", "This is not a violation of the first Feature. The next Feature is bundled, so the criterion fails.", None),
             ("keep_conditional_reasoning", "If I find no criterion violation, I will pass it. The ledger actually splits a sentence.", None),
         ]:
@@ -548,6 +620,18 @@ def run_self_test() -> int:
                     {"name": "feature_commits", "reward": 0.0, "reasoning": reasoning}
                 ], listed_keys) == expected,
                 "final contradictions retry; later and conditional failures remain scored",
+            )
+        for case_name, source, reasoning, expected in [
+            ("retry_invented_request_period", "It should store a value) and may read it.", 'The source has a period after “value)” and starts another sentence.', "request_boundary_conflict:feature_commits"),
+            ("keep_actual_request_period", "It should store a value). It should read it.", 'The source has a period after “value)” and starts another sentence.', None),
+            ("keep_conditional_period_claim", "It should store a value) and may read it.", 'If the source has a period after “value)”, it is a separate sentence.', None),
+        ]:
+            check(
+                case_name,
+                unreliable_score_reason([
+                    {"name": "feature_commits", "reward": 0.0, "reasoning": reasoning}
+                ], listed_keys, request_text=source) == expected,
+                "literal request punctuation is checked without deriving Feature counts",
             )
         history_helper = root / "bank.py"
         history_helper.write_text(
@@ -601,9 +685,10 @@ def run_self_test() -> int:
         check(
             "pinned_judge_dir",
             "{criteria}" in prompt_text
+            and prompt_text.rindex('"reasoning"') < prompt_text.rindex('"score"')
             and "def convert():" in prompt_text
             and (work / "judge.toml").is_file(),
-            "temp rewardkit dir lists real python and keeps criteria token",
+            "temp rewardkit dir lists real Python and supplies the shared reasoning-first criteria example",
         )
         shutil.rmtree(work, ignore_errors=True)
         calls: list[str] = []

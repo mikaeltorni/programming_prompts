@@ -42,11 +42,17 @@ _CONTRADICTORY_NO = re.compile(
     r"[^.!?\n]*[.!?]?\s*$"
     r"|(?:^|[.!?]\s+)(?:Thus[,\s]+)?(?:this|that) is not a violation\b"
     r"[^.!?\n]*[.!?]?\s*$"
+    r"|(?:^|[.!?;]\s+)no (?:criterion )?violation (?:is|was) evidenced[.!?]?\s*$"
     r"|\bscore yes\b"
     r"|\ball\b[^.!?\n]{0,100}\bfeatures?\b[^.!?\n]{0,100}"
     r"\b(?:satisfy|pass)\b[^.!?\n]{0,40}\bcriterion\b"
     r"|\b(?:a|the) no (?:is|was) not supported\b"
     r"|\bno verdict (?:is|was) unsupported\b",
+    re.IGNORECASE,
+)
+_PERIOD_AFTER_CLAIM = re.compile(
+    r'(?:^|[.!?]\s+)(?:the )?(?:source|(?:original )?request) '
+    r'has a period after\s+[“"](?P<fragment>[^”"\n]{1,200})[”"]',
     re.IGNORECASE,
 )
 _CONTRADICTORY_YES = re.compile(
@@ -167,10 +173,25 @@ def _contradicted_exit_trace(reasoning: str, python_files: list[Path]) -> str | 
     return None
 
 
+def _contradicted_request_boundary(reasoning: str, request_text: str) -> bool:
+    """Check a literal punctuation claim without deriving Features or counts.
+
+    A fragment present in the request must actually be followed by the claimed
+    period. Unmatched fragments remain the semantic judge's responsibility.
+    """
+    source = re.sub(r"\s+", " ", re.sub(r"[*`]", "", request_text))
+    for match in _PERIOD_AFTER_CLAIM.finditer(reasoning):
+        fragment = re.sub(r"\s+", " ", match.group("fragment")).strip()
+        if fragment in source and not re.search(re.escape(fragment) + r"\s*\.", source):
+            return True
+    return False
+
+
 def unreliable_score_reason(
     rows: list[dict[str, Any]], listed_keys: set[str],
     *, judge_name: str = "", python_files: list[Path] | None = None,
     workflow_issues: list[str] | None = None,
+    request_text: str = "",
 ) -> str | None:
     """Return why a score contradicts supplied evidence, or None.
 
@@ -185,13 +206,14 @@ def unreliable_score_reason(
         listed_keys: Lowercased names from ``listed_python_keys``.
         judge_name: Skill name; logging receives a syntax contradiction check.
         python_files: Solution source paths for that bounded check.
+        request_text: Original task context for literal punctuation claims.
         workflow_issues: Concrete issues within the saved plan, not expected
             Feature counts derived from a task catalog.
 
     Returns:
         ``not_inspected:<criterion>``, ``contradictory_no:<criterion>``,
-        ``source_conflict:<criterion>:<function>``, ``plan_conflict:<criterion>``, or
-        ``wrong_path:<criterion>:<file>``.
+        ``source_conflict:<criterion>:<function>``, ``plan_conflict:<criterion>``,
+        ``request_boundary_conflict:<criterion>``, or ``wrong_path:<criterion>:<file>``.
     """
     for row in rows:
         reasoning = re.sub(r"[*`]", "", str(row.get("reasoning") or ""))
@@ -202,6 +224,8 @@ def unreliable_score_reason(
                 return f"plan_conflict:{row['name']}"
             continue
         name = str(row["name"])
+        if request_text and _contradicted_request_boundary(reasoning, request_text):
+            return f"request_boundary_conflict:{name}"
         if _NOT_INSPECTED.search(reasoning):
             return f"not_inspected:{name}"
         if _CONTRADICTORY_NO.search(reasoning):
@@ -256,6 +280,15 @@ def retry_prompt(prompt: str, reason: str) -> str:
             + "in the actual source. Reinspect all actual returns and entry prints. "
             + "Identify a different concrete uncovered path or score yes.\n"
         )
+    if reason.startswith("request_boundary_conflict:"):
+        return (
+            prompt
+            + "\n\nRETRY: the previous no claimed a period after a quoted request "
+            + "fragment, but that period is absent from the supplied original text. "
+            + "Copy the exact source characters around the alleged boundary. "
+            + "Re-enumerate complete sentences without inserting punctuation, "
+            + "then judge the actual ledger and history.\n"
+        )
     if reason.startswith("source_conflict:"):
         return (
             prompt
@@ -281,6 +314,7 @@ def run_until_reliable(
     judge_name: str = "",
     python_files: list[Path] | None = None,
     workflow_issues: list[str] | None = None,
+    request_text: str = "",
 ) -> tuple[str, list[dict[str, Any]]]:
     """Run one judge attempt, then retry once on unreliable evidence.
 
@@ -293,6 +327,7 @@ def run_until_reliable(
         judge_name: Skill name for bounded source-conflict detection.
         python_files: Solution files for that detection.
         workflow_issues: Plan structure/consistency evidence for a workflow yes.
+        request_text: Original task context for literal punctuation claims.
 
     Returns:
         Raw stdout and parsed rows from a reliable attempt. On retry, raw is a
@@ -305,7 +340,7 @@ def run_until_reliable(
     raw, rows = attempt(None, timeout)
     reason = unreliable_score_reason(
         rows, listed_keys, judge_name=judge_name, python_files=python_files,
-        workflow_issues=workflow_issues
+        workflow_issues=workflow_issues, request_text=request_text
     )
     if reason is None:
         return raw, rows
@@ -320,7 +355,7 @@ def run_until_reliable(
     raw_retry, rows_retry = attempt(reason, int(remaining))
     second = unreliable_score_reason(
         rows_retry, listed_keys, judge_name=judge_name, python_files=python_files,
-        workflow_issues=workflow_issues
+        workflow_issues=workflow_issues, request_text=request_text
     )
     if second:
         log(f"retry still unreliable reason={second}")
