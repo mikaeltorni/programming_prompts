@@ -106,6 +106,14 @@ these checks; the prohibition on pytest suites for this tree still applies.
 Only use a different or additional eval agent when the user explicitly asks for
 it in that request, and drop back to `--eval-agent codex` on the next run.
 
+## Temporary evaluation reports
+
+Markdown reports produced from Harbor or evaluation analysis belong under
+`programming_prompt_rewritten_with_evals/evals/tmp/reports/`, not in the tracked
+`programming_prompt_rewritten_with_evals/evals/reports/` directory. The root
+`.gitignore` ignores this nested `tmp/` directory through its general `tmp/` rule;
+create it when saving a report and do not force-add its contents.
+
 ## Never generate tests for rewritten-prompt evals
 
 Work under `programming_prompt_rewritten_with_evals/` is prompt-and-Harbor
