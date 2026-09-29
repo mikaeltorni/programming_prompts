@@ -31,6 +31,7 @@ from llm_judge.workspace import (
     listed_python_keys,
     load_judge_dir,
     pin_workspace_python,
+    workflow_plan_structure,
 )
 
 REWARDKIT_FROM = "harbor-rewardkit@0.1.7"
@@ -313,6 +314,8 @@ def score_with_rewardkit(
                     return run_until_reliable(
                         listed_keys=listed_keys, timeout=timeout, attempt=attempt,
                         judge_name=judge_dir.name, python_files=files,
+                        workflow_issues=(workflow_plan_structure(workspace)["issues"]
+                                         if judge_dir.name == "workflow" else None),
                     )
             finally:
                 shutil.rmtree(home, ignore_errors=True)
@@ -323,6 +326,8 @@ def score_with_rewardkit(
                 return run_until_reliable(
                     listed_keys=listed_keys, timeout=timeout, attempt=attempt,
                     judge_name=judge_dir.name, python_files=files,
+                    workflow_issues=(workflow_plan_structure(workspace)["issues"]
+                                     if judge_dir.name == "workflow" else None),
                 )
         finally:
             shutil.rmtree(home, ignore_errors=True)
@@ -331,5 +336,7 @@ def score_with_rewardkit(
         return run_until_reliable(
             listed_keys=listed_keys, timeout=timeout, attempt=attempt,
             judge_name=judge_dir.name, python_files=files,
+            workflow_issues=(workflow_plan_structure(workspace)["issues"]
+                             if judge_dir.name == "workflow" else None),
         )
     return with_homes()

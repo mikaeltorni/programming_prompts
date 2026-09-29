@@ -9,11 +9,14 @@ also receive their temporary progress plan and original task logs, respectively.
 from __future__ import annotations
 
 import json
+import os
+import re
 import shlex
 import tomllib
 from pathlib import Path
 
 from llm_judge.log import log
+from llm_judge.evidence import commit_source_context, python_boundaries
 
 DEFAULT_WORKSPACE = Path("/Projects/app")
 INSPECT_BEFORE_SCORE = (
@@ -195,6 +198,73 @@ def workspace_python_context(workspace: Path, files: list[Path]) -> str:
     return "\n".join(lines)
 
 
+def workflow_plan_path(workspace: Path) -> Path:
+    """Choose the workflow skill's configured launch-project plan or fallback."""
+    plan = workspace / "tmp" / "workflow.md"
+    configured = Path(os.environ.get("ACC_WORKFLOW_FILE", ""))
+    if configured.is_absolute() and configured.suffix == ".md":
+        try:
+            configured.relative_to(workspace / "tmp" / "workflow")
+        except ValueError:
+            pass
+        else:
+            plan = configured
+    return plan
+
+
+def workflow_plan_structure(workspace: Path) -> dict:
+    """Expose table syntax and contradictions within a saved plan.
+
+    Args:
+        workspace: Live launch-project directory.
+
+    Returns:
+        Parsed Tasks and ledger rows, plus concrete internal contradictions.
+
+    This never derives expected Features from task-specific commands. It counts
+    actual saved ledger rows only to compare the plan's own numeric claims.
+    Semantic source-sentence boundaries and implementation remain LLM judgments.
+    """
+    path = workflow_plan_path(workspace)
+    try:
+        path.resolve().relative_to(workspace.resolve())
+        text = path.read_text(encoding="utf-8")
+    except (OSError, RuntimeError, UnicodeError, ValueError):
+        return {"issues": ["required plan is missing or unreadable"], "ledger_rows": []}
+    section = ""
+    tasks, ledger = [], []
+    for line in text.splitlines():
+        if line.startswith("## "):
+            section = line.strip()
+        elif section == "## Feature ledger" and re.match(r"^\s*\d+[.)]\s+", line):
+            ledger.append([line.strip()])
+        elif re.match(r"^\s*\|\s*\d+\s*\|", line):
+            cells = [cell.strip() for cell in re.split(r"(?<!\\)\|", line.strip())[1:-1]]
+            if section == "## Tasks":
+                tasks.append(cells)
+            elif section == "## Feature ledger":
+                ledger.append(cells)
+    issues = []
+    names = ["Plan", "Establish worktree", "Write code", "Write documentation"]
+    if len(tasks) != len(names) or any(len(row) != 4 or row[0] != str(i + 1)
+            or row[1] != names[i] for i, row in enumerate(tasks[:len(names)])):
+        issues.append("Tasks table does not have exactly the four prescribed ordered rows")
+    for row in tasks:
+        if len(row) != 4:
+            continue
+        if row[2] not in {"complete", "skipped"}:
+            issues.append(f"handoff phase {row[1]} has status {row[2]}")
+        if ledger:
+            for match in re.finditer(r"\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:(?:distinct|original|requested|source|complete|sentence-level)\s+)*(?:capability sentences|features|feature commits|capability boundaries)\b", row[3], re.I):
+                token = match.group(1).lower()
+                words = "one two three four five six seven eight nine ten".split()
+                count = int(token) if token.isdigit() else words.index(token) + 1
+                if count != len(ledger):
+                    issues.append(f"{row[1]} Details claims {match.group(0)!r}, but its saved ledger has {len(ledger)} rows")
+    return {"tasks": tasks, "ledger_rows": ledger, "issues": issues,
+            "note": "Plan syntax and internal consistency only; no expected task Feature count or semantic score."}
+
+
 def workspace_workflow_plan_context(workspace: Path) -> str:
     """Inline the target project's workflow plan without leaving the workspace.
 
@@ -204,7 +274,7 @@ def workspace_workflow_plan_context(workspace: Path) -> str:
     Returns:
         Plan contents or explicit missing/unreadable evidence for the judge.
     """
-    plan = workspace / "tmp" / "workflow.md"
+    plan = workflow_plan_path(workspace)
     try:
         plan.resolve().relative_to(workspace.resolve())
     except (OSError, RuntimeError, ValueError):
@@ -223,9 +293,22 @@ def workspace_workflow_plan_context(workspace: Path) -> str:
         data = data[:_MAX_WORKFLOW_PLAN_BYTES]
     log(f"inlined workflow plan path={plan} bytes={len(data)} truncated={truncated}")
     note = " (truncated)" if truncated else ""
+    text = data.decode("utf-8", errors="replace")
+    references = []
+    for number, line in enumerate(text.splitlines(), 1):
+        hashes = re.findall(r"(?<![a-zA-Z0-9])[0-9a-f]{40}(?![a-zA-Z0-9])", line)
+        if hashes:
+            references.append({"line": number, "hashes": hashes})
+    reference_context = (
+        "\nPlain-text full Git hashes present in the plan (not a commit-validity score):\n"
+        + json.dumps(references, indent=2)
+    )
     return (
         f"\n\nWorkflow plan evidence from {plan}{note}:\n"
-        f"```markdown\n{data.decode('utf-8', errors='replace')}\n```"
+        f"```markdown\n{text}\n```"
+        + reference_context
+        + "\nPlan table structure and internal consistency evidence:\n"
+        + json.dumps(workflow_plan_structure(workspace), indent=2)
     )
 
 
@@ -286,16 +369,36 @@ def pin_workspace_python(
         template: Judge prompt text (may still contain ``{criteria}``).
         workspace: Path shown in the inspect instruction.
         files: Paths from :func:`list_workspace_python`.
-        judge_name: Skill judge name; workflow receives the temporary plan and
-            debug receives original failure logs.
+        judge_name: Skill judge name; workflow and commits receive the plan,
+            logging receives Python boundaries, debug receives original logs.
 
     Returns:
         Prompt text with the workspace listing appended.
     """
     plan_context = (
-        workspace_workflow_plan_context(workspace) if judge_name == "workflow" else ""
+        workspace_workflow_plan_context(workspace) if judge_name in {"workflow", "commits"} else ""
     )
     debug_logs_context = original_task_logs_context() if judge_name == "debug" else ""
+    boundaries = []
+    if judge_name in {"logging", "commenting"}:
+        for path in files:
+            try:
+                boundaries.append(python_boundaries(path))
+            except (OSError, SyntaxError, UnicodeError) as exc:
+                log(f"Python boundary evidence unavailable file={path.name}: {exc}")
+                boundaries.append({"file": str(path), "error": str(exc)})
+        log(f"pinned function boundaries files={len(boundaries)}")
+    boundary_context = (
+        "\n\nRead-only Python boundary evidence (syntax, not a score):\n"
+        + json.dumps(boundaries, indent=2) if boundaries else ""
+    )
+    git_context = ""
+    if judge_name == "commits":
+        try:
+            git_context = commit_source_context(workspace)
+        except (OSError, ValueError) as exc:
+            log(f"commit evidence unavailable: {exc}")
+            git_context = f"\nGit evidence unavailable: {exc}; inspect with the supplied helper."
     return (
         template.rstrip()
         + "\n\nRead-only evidence tools (run with your shell tool):\n"
@@ -309,6 +412,8 @@ def pin_workspace_python(
         + "\n\n"
         + workspace_python_context(workspace, files)
         + plan_context
+        + boundary_context
+        + git_context
         + debug_logs_context
     )
 

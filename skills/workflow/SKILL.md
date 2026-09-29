@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.15 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.18 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -62,7 +62,10 @@ Follow this order:
    inside the launch project's `tmp/workflow/` directory, use that exact path;
    ACC gives each wrapped agent its own file so simultaneous agents in one
    repository never overwrite each other's plan. Read the variable from the
-   current shell before writing the plan. Otherwise use the fixed fallback
+   current shell before writing the plan. Resolve and retain one absolute path
+   variable before the first write; do not type a fresh plan filename at each
+   update. Read back that exact file and its four-row table before implementing
+   anything. Otherwise use the fixed fallback
    `<project-root>/tmp/workflow.md`. For a Git launch project, resolve
    `<project-root>` from that project's `git rev-parse --show-toplevel` before
    entering a linked worktree: a launch checkout at `/Projects/app` uses
@@ -104,7 +107,7 @@ Follow this order:
    exactly as shown. The `## Tasks` table has exactly four data rows: put
    workflow phase progress and task-specific deliverables in `Details`, not
    in extra task rows or a second progress checklist. Prefer naming the
-   deliverables over repeating a numeric Feature count in `Details`; the
+   deliverables in `Details` and keep numeric Feature counts out of those cells; the
    ledger owns that count. If a Details cell does state one, compare it
    with the ledger before handoff. A selected `commits`
    companion may keep its verbatim capability ledger in a `## Feature ledger`
@@ -135,17 +138,31 @@ Follow this order:
    no enabled phase may remain `pending` or `in_progress`. Never create a
    workflow-owned verification row or another progress file.
 
+   Preserve the original plan through Git housekeeping and recovery. An
+   ignored or untracked progress file is still the authoritative plan; never
+   overwrite it by redirecting a recovery command that may fail. Recover into
+   a separate candidate first, require successful output with the expected
+   headings and four task rows, then replace the plan. After every update or
+   recovery, read back that exact path. If it is empty or loses its Tasks
+   table, reconstruct it from the original request and verified commits before
+   advancing; a successful shell exit alone does not prove the plan survived.
+
    Treat plan updates as edits that can fail: if replacing an old row or ledger
    reference finds no exact match, rewrite the existing plan section instead of
    silently leaving it unchanged. The committed Feature's ledger entry must
-   contain its actual commit hash before the next Feature begins. A ledger row
+   contain its actual commit hash before the next Feature begins. Prefer plain
+   commit hashes in ledger cells; formatting delimiters are unnecessary. If a
+   targeted replacement fails, rewrite the complete affected section rather
+   than repeatedly patching stale text. A ledger row
    combining separate capability sentences or sharing one introducing commit
    with another row is not complete merely because the code works. Conversely,
    multiple commands in one capability sentence stay in one ledger row and may
    share its one commit. Keep Feature counts in task-table Details consistent
    with the ledger's sentence count, not the number of commands.
    At handoff, count the ledger entries and reread every Details cell for a
-   stale numeric Feature claim. Rewrite any old count before marking the plan
+   stale numeric Feature claim or a Details cell that still says a completed
+   phase is next. Rewrite those details to describe the current state and any
+   old count before marking the plan
    complete; a correct ledger does not excuse a contradictory Plan row.
 2. **Establish the worktree when enabled.** If the `worktree` companion is in
    the enabled-skill inventory and available, follow it to create the task's
@@ -172,7 +189,13 @@ here.
 ## Handoff gate
 
 Immediately before you stop, reread the original absolute plan file and
-rewrite its `## Tasks` table in place as one complete four-row block. Do not
+rewrite its `## Tasks` table in place as one complete four-row block.
+Rewrite each Details cell from the completed deliverables, including the Plan
+row; do not carry forward an early sentence-count guess. If a cell mentions a
+numeric Feature/capability count, compare it with the actual saved ledger now.
+Remove that numeric claim when it is unnecessary or cannot be verified; name
+the completed deliverables instead. The ledger retains the exact boundaries
+and commit references, so removing redundant count prose loses no accounting. Do not
 append rows, do not add a second table, and do not leave an earlier copy of a
 row above or below the replacement. Then confirm all of the following; if any
 check fails, edit that same file now and do not hand off:

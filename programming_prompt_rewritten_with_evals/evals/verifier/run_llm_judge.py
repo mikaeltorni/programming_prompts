@@ -68,7 +68,7 @@ def run_eval_agent(
     except UnreliableJudgeScore as exc:
         log(f"evalAgent {agent} produced no reliable score: {exc}")
         write_reward(
-            output, [], str(exc), agent=agent, error="judge_inconsistent"
+            output, [], exc.raw, agent=agent, error="judge_inconsistent"
         )
         return
     except JUDGE_CLI_FAILURES as exc:

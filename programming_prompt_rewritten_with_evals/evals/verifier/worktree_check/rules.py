@@ -101,6 +101,53 @@ def _is_under(path: Path, parent: Path) -> bool:
     return True
 
 
+def delivery_problems(repo: Path, merged: list[Path]) -> list[str]:
+    """Check Python and README delivery in the live and merged checkouts.
+
+    Args:
+        repo: Physical live checkout.
+        merged: Valid worktrees whose HEAD is reachable from the live HEAD.
+
+    Returns:
+        Evidence of uncommitted deliverables or README commits authored outside
+        the task worktrees. Temporary plans, caches and ignored logs are not
+        deliverables. No task-specific names or Feature counts are used.
+    """
+    problems = []
+    for checkout in [repo, *merged]:
+        status = run_git(checkout, "status", "--porcelain=v1", "-z",
+                         "--untracked-files=all")
+        if status.returncode:
+            problems.append(f"cannot inspect delivery status in {checkout}")
+            continue
+        entries = iter(status.stdout.split("\0"))
+        for entry in entries:
+            if not entry:
+                continue
+            code, name = entry[:2], entry[3:]
+            if "R" in code or "C" in code:
+                next(entries, None)
+            path = Path(name)
+            if any(part in {"tmp", ".log", "__pycache__", ".venv", "venv"}
+                   for part in path.parts):
+                continue
+            if path.suffix == ".py" or path.name.lower() == "readme.md":
+                problems.append(f"uncommitted deliverable in {checkout}: {name}")
+    readme = repo / "README.md"
+    if readme.is_file():
+        commit = git_ok(repo, "log", "--no-merges", "-1", "--format=%H",
+                        "HEAD", "--", "README.md")
+        authors = set()
+        for checkout in merged:
+            for event in git_ok(checkout, "reflog", "show", "--format=%H%x09%gs", "HEAD").splitlines():
+                sha, separator, action = event.partition("\t")
+                if separator and action.startswith("commit"):
+                    authors.add(sha)
+        if not commit or commit not in authors:
+            problems.append("README.md has no introducing/update commit authored in a merged task worktree")
+    return problems
+
+
 def check_repo(repo: Path, env: dict[str, str] | None = None) -> CheckResult:
     """Inspect a checkout against the worktree eval contract.
 
@@ -256,6 +303,9 @@ def check_repo(repo: Path, env: dict[str, str] | None = None) -> CheckResult:
             )
         if strays:
             return CheckResult(False, "; ".join(strays))
+        delivery = delivery_problems(repo, merged)
+        if delivery:
+            return CheckResult(False, "; ".join(delivery))
         names = ", ".join(str(path) for path in merged)
         return CheckResult(
             True,

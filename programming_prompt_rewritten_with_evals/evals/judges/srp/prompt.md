@@ -12,8 +12,12 @@ produced, and format already-computed state in one line — including a get
 branch that only reads current state (`str(state)` or
 `state if operation == "get" else helper(...)`). Do not require get to go
 through a helper. A raise from a dispatch branch is still thin: unknown
-operation, extra or missing required arguments, or an already-parsed value
-out of range — those raises are not mixed parsing.
+operation, extra or missing required arguments, or an already-parsed input
+format value out of range (such as an hour outside 0..23) — those raises are
+not mixed parsing. Domain validation belongs to the operation helper: a bank
+amount being negative, an account being absent or duplicated, and an
+insufficient balance are business rules. Checking those in the entrypoint is
+core work even after int() conversion.
 
 `int()` / `float()` of an already-split token is never core logic: it is
 allowed in the parse helper, or thin in the entrypoint when the converted
@@ -24,7 +28,8 @@ arithmetic helpers with if/elif is thin even after those local conversions.
 Choosing `_deposit(...)` versus `_withdraw(...)` by parsed operation is
 ordinary dispatch, not choosing a business operand or label.
 Arithmetic on that converted value (`int(token) - 1`),
-validating it against current state, or assigning it into state
+validating it against current state or a domain constraint (such as a negative
+bank amount), or assigning it into state
 (`_total = int(token)`) in the entrypoint is core logic, not a conversion.
 
 A core helper may itself dispatch operations with if/elif, validate

@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.1.6 — Give each complete capability sentence its own Feature and working
+  v1.1.10 — Give each complete capability sentence its own Feature and working
   commit. Every separate "It should also" sentence gets a new ledger row;
   an optional "and may" clause inside one sentence stays in that row.
 ---
@@ -10,12 +10,30 @@ description: >-
 
 Before writing code, build a numbered ledger from the original request.
 **Copy each complete capability sentence verbatim into its own row**, then
-list that row's commands and required behavior. Setup text naming only an
-artifact, signature, or skill is not a Feature. Count the source sentences,
+read it back against the source request character by character before code:
+copy the complete capability sentence rather than retyping it from memory.
+If explanatory/setup sentences share its source line, leave them outside the
+quoted capability. A row that quotes context plus the repair sentence is not
+the requested verbatim capability sentence. Preserve
+inline backticks around terms such as `ValueError`, the closing parenthesis,
+any "and may" clause, and the final period; a nearly identical paraphrase is
+not a verbatim ledger sentence. Then list that row's commands and required
+behavior. Setup text naming only an artifact, signature, or skill is not a
+Feature. Never create a ledger row
+for a public function signature or duplicate an existing capability sentence
+to match a guessed count. A duplicate sentence cannot be a later Feature.
+Count the source sentences,
 not commands or a preferred number of commits. Match every capability
 sentence to exactly one row and every row to exactly one sentence before
 editing; abbreviated quotes, merged sentences, and duplicate rows quoting
 the same sentence are invalid.
+
+Cross-check each row's command list against its own quoted sentence. Commands
+named only in a later source sentence stay deferred to that later row; do not
+attach them to the current row merely because they are convenient to implement
+together. A missing row must be restored before writing its commands, not
+folded into an earlier Feature.
+
 
 Each later "It should also …" sentence starts a new row, even when related
 to the preceding sentence. Commands and optional "and may" clauses before
@@ -105,7 +123,10 @@ If a defect is discovered after a Feature was committed, commit a focused repair
 before adding the next Feature. Verify the repaired tree preserves all earlier
 Features. The original Feature commit plus its immediate repair is a valid
 completed entry; a repair cannot rescue bundled Features. Optional extras may
-land in a focused follow-up before advancing to the next entry. Never rewrite
+land in a focused follow-up before advancing to the next entry. Record that
+follow-up beside the same original sentence, never as an extra ledger row.
+Compare the saved ledger against the original request, including punctuation,
+rather than reconstructing sentences from command names. Never rewrite
 history to repair a commit.
 
 A single Feature or an undivided change is one commit. Commits happen in the
