@@ -536,6 +536,19 @@ def run_self_test() -> int:
             == "contradictory_no:feature_commits",
             "a no verdict with a passing mapping is retried",
         )
+        for case_name, reasoning, expected in [
+            ("retry_final_no_violation", "I find no criterion violation: every Feature has its own working commit.", "contradictory_no:feature_commits"),
+            ("retry_final_retraction", "The ledger might split a sentence. Thus this is not a violation; all rows match.", "contradictory_no:feature_commits"),
+            ("keep_later_real_violation", "This is not a violation of the first Feature. The next Feature is bundled, so the criterion fails.", None),
+            ("keep_conditional_reasoning", "If I find no criterion violation, I will pass it. The ledger actually splits a sentence.", None),
+        ]:
+            check(
+                case_name,
+                unreliable_score_reason([
+                    {"name": "feature_commits", "reward": 0.0, "reasoning": reasoning}
+                ], listed_keys) == expected,
+                "final contradictions retry; later and conditional failures remain scored",
+            )
         history_helper = root / "bank.py"
         history_helper.write_text(
             "def _account_history(name):\n"
