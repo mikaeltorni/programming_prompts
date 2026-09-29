@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >-
-  v1.0.5 — Edit Git projects in a sibling .worktrees project/task checkout,
+  v1.0.6 — Edit Git projects in a sibling .worktrees project/task checkout,
   commit there, merge each Feature into the live default branch, and reapply
   its consumers. Never push unless requested.
 ---
@@ -90,6 +90,11 @@ including a docs-only correction, gets its own merge and reapplication.
 Include README and other documentation edits in this same worktree's
 commits and merges. Inspect both checkouts for uncommitted source or
 documentation; a working live-only README does not complete delivery.
+Create documentation in the task worktree from the start. If a README was
+accidentally drafted as an untracked file in the live checkout, move that
+content into the task worktree and remove only that misplaced draft before
+merging. Do not commit the live copy merely to clear a merge obstruction:
+the README's introducing commit must originate on the task branch.
 
 Report completion only when the live default branch contains the work
 and consumers are current. Never push, publish, add remotes, or rewrite
