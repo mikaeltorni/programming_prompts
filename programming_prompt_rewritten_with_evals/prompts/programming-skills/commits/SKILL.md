@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.1.12 — Give each complete capability sentence its own Feature and working
+  v1.1.13 — Give each complete capability sentence its own Feature and working
   commit. Every separate "It should also" sentence gets a new ledger row;
   an optional "and may" clause inside one sentence stays in that row.
 ---
@@ -94,7 +94,10 @@ Close each entry with this gate:
 
 1. Compare the diff with the active row and every pending row: any later row's
    command handler or working capability means this change is not ready to
-   commit. Defer that implementation before staging. Verify the current behavior
+   commit. If the proposed commit subject or staged source names a capability
+   from the next source sentence, split the change before committing, even
+   when both capabilities live in one file. Defer that implementation before
+   staging. Verify the current behavior
    and rerun a representative public-entrypoint example for every earlier
    Feature, especially after changing parsing or dispatch. Resolve failures
    before staging.

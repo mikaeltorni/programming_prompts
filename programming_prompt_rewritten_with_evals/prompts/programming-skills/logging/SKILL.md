@@ -1,7 +1,7 @@
 ---
 name: logging
 description: >-
-  v1.0.4 — Use whenever writing or editing Python (or other) functions: print each
+  v1.0.5 — Use whenever writing or editing Python (or other) functions: print each
   function's incoming parameters at entry and the return value just before
   returning. Keep it to plain print() — no logging modules or log files.
 ---
@@ -85,9 +85,12 @@ representation.
    assign the helper result, print that result in the caller, and return it.
    Check every dispatch branch, including branches with direct helper returns.
 
-Before committing, compare each signature with its first print and inspect
-every normal exit, including early returns. Check object construction in a
-smoke run so the constructor's `self=` and final `None` are observed.
+Before committing, inspect source order in every function: the first
+non-docstring statement must be its parameter print. A successful runtime
+trace does not excuse a preceding `global` declaration. Compare each
+signature with that first print and inspect every normal exit, including
+early returns. Check object construction in a smoke run so the constructor's
+`self=` and final `None` are observed.
 
 Nothing is required before a `raise` / exception exit — only normal return
 paths. Use the built-in `print(...)` only: no log files, no `logging` import,
