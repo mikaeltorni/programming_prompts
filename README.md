@@ -287,7 +287,8 @@ Run one benchmark invocation at a time. See the
 the command surface, the [54-trial audit](programming_prompt_rewritten_with_evals/evals/reports/2026-09-27-54-trial-audit.md),
 the [prompt refactor comparison](programming_prompt_rewritten_with_evals/evals/reports/2026-09-27-prompt-refactor.md),
 the [September 29 individual failure audit](programming_prompt_rewritten_with_evals/evals/reports/2026-09-29-45-trial-audit.md),
-and the [22/26 repair and case-by-case verification](programming_prompt_rewritten_with_evals/evals/reports/2026-09-29-22-of-26-repair.md).
+the [22/26 repair and case-by-case verification](programming_prompt_rewritten_with_evals/evals/reports/2026-09-29-22-of-26-repair.md),
+and the [remaining commit and k5 case review](programming_prompt_rewritten_with_evals/evals/reports/2026-09-29-remaining-commits-repair.md).
 The full-suite cx1 positive
 command required after benchmark edits is in [AGENTS.md](AGENTS.md).
 
