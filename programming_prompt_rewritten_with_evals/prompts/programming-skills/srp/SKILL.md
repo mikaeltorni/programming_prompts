@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.5 — Use whenever writing or editing Python (or other) code: enforce
+  v1.0.6 — Use whenever writing or editing Python (or other) code: enforce
   single-responsibility functions and methods. Apply on every coding task,
   including small scripts and new files from scratch.
 ---
@@ -53,6 +53,10 @@ Write code as single-responsibility functions/methods.
   a narrower business interval within a valid format range belongs in the
   operation helper. Do not reject an operation's disallowed hours or other
   domain values in the entrypoint under the format-guard allowance.
+  Successful numeric conversion only establishes that the token can be
+  represented. Whether that value is acceptable to an operation, including
+  finite-only, sign, or magnitude rules, is domain validation in the
+  operation helper. Pass the converted value there unchanged.
 - **Each command owns its own helper, amount, and label.** Do not collapse two
   commands into one parameterized helper by computing the difference in the
   entrypoint. Branching on the parsed command to call `_deposit(...)` or

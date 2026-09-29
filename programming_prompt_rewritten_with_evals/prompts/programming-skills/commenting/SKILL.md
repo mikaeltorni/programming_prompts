@@ -1,7 +1,7 @@
 ---
 name: commenting
 description: >-
-  v1.0.1 — Use whenever writing or editing Python (or other) functions: every
+  v1.0.2 — Use whenever writing or editing Python (or other) functions: every
   function needs a description and same-line Parameters and Returns labels.
   Apply on every coding task, including new files.
 ---
@@ -20,6 +20,12 @@ Give every `def`, `async def`, and method a docstring with:
 A long parameter list may continue on later lines once the `Parameters:`
 line has content. Do not use `Args:` or leave either label on a line alone.
 `lambda` expressions do not need docstrings.
+
+Before each code commit, inspect every `def` and method in the changed source,
+including helpers added for the latest command. Add all three required
+docstring parts in that Feature's commit; recheck after later edits rather than
+relying on a previous Feature's docstring review. The README documentation
+phase does not replace this code-level check.
 
 Example:
 
