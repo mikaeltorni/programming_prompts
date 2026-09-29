@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.2 — Use whenever writing or editing Python (or other) code: enforce
+  v1.0.4 — Use whenever writing or editing Python (or other) code: enforce
   single-responsibility functions and methods. Apply on every coding task,
   including small scripts and new files from scratch.
 ---
@@ -15,9 +15,16 @@ Write code as single-responsibility functions/methods.
   there, and one parse helper covers **every** command variant — never parse
   most commands in the helper and one special case (`bye`, `period`) inline.
 - **Core logic lives in its own helper(s).** Arithmetic, state updates, and
-  business conversions belong to helpers, which may return a one-line
-  formatted result. `int()` / `float()` of an already-split token is not a
-  business conversion.
+  business conversions, and domain validation belong to helpers, which may
+  return a one-line formatted result. For a bank, checking whether an amount
+  is negative is part of the deposit/withdraw/transfer operation: do that in
+  its operation helper, after dispatch. `int()` / `float()` of an
+  already-split token is not a business conversion.
+- **State-dependent validation is operation logic.** Resource existence,
+  uniqueness, available balance, and other domain constraints belong inside
+  the helper that owns the operation. Do not check them in the entrypoint
+  before calling the helper; dispatch may check only command/argument shape
+  and the format guards below.
 - **The public entrypoint stays thin: parse → call helpers → return/format.**
   It hands the raw command to the parse helper in a single call before it
   branches on anything, then dispatches only on what the helper returned. It
@@ -32,12 +39,13 @@ Write code as single-responsibility functions/methods.
   (`index = int(token) - 1`), no comparison against current state to validate
   it, and above all no assignment into state
   (`_total = int(token)`). Hand the raw converted value over
-  (`helper(int(token))`) and let the helper apply the offset, check the range,
+  (`helper(int(token))`) and let the helper apply the offset, check its domain range,
   and store the result — a command that replaces state needs its own helper
   exactly like one that increments it.
 - **These belong in the entrypoint or a core helper, not a new function:**
   if/elif dispatch, raises for an unknown operation or extra/missing
-  arguments, empty or out-of-range guards on an already-parsed value,
+  arguments, and simple input-shape or format guards on an already-parsed
+  value (for example, an hour outside 0..23),
   `helper(int(token))`, and a one-line format or read of existing state
   (`str(state)`, `f"value={state}"`, `state if operation == "get" else
   helper(...)`). Do not require `get` to go through a helper.

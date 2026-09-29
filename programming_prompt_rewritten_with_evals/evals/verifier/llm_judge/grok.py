@@ -10,7 +10,7 @@ from typing import Any
 from llm_judge.log import log
 from llm_judge.reliability import retry_prompt, run_until_reliable
 from llm_judge.scores import parse_scores, response_schema
-from llm_judge.workspace import inspect_prompt, listed_python_keys
+from llm_judge.workspace import inspect_prompt, listed_python_keys, workflow_plan_structure
 
 DEFAULT_MAX_TURNS = 16
 
@@ -147,7 +147,8 @@ def score_with_grok(
         Raw stdout and parsed rows from the last attempt used.
     """
     prompt = inspect_prompt(
-        template, criteria, workspace, python_files=files, judge_name=judge_name
+        template, criteria, workspace, python_files=files,
+        judge_name=judge_name
     )
     schema = response_schema(criteria)
     runner = invoke or run_grok
@@ -171,4 +172,6 @@ def score_with_grok(
         attempt=attempt,
         judge_name=judge_name,
         python_files=files,
+        workflow_issues=(workflow_plan_structure(workspace)["issues"]
+                         if judge_name == "workflow" else None),
     )

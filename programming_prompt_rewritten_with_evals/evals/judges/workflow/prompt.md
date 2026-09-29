@@ -23,21 +23,42 @@ exactly four data rows, numbered 1–4 and named `Plan`, `Establish worktree`,
 belongs in the table, not a second progress list. A selected `commits` skill
 may add a `## Feature ledger` with verbatim capability sentences and commits
 in this same file, before or after the table; it is not another workflow
-phase. Count ledger entries by capability sentence, not by the number of
+phase. The exact sentence transcription and original Feature boundaries belong
+to the commits judge. Workflow owns completed references and consistency of
+progress claims. Do not fail workflow for punctuation in a ledger sentence or
+an unmatched inline-code backtick when the sentence, columns, and commit hash
+are readable. A cosmetic ledger typo is not a malformed Tasks table. Check the supplied
+plain-text hash evidence before claiming an incomplete commit identifier.
+An unmatched backtick does not truncate the following hexadecimal characters:
+read the actual full cell, not a shortened quote you composed in reasoning.
+Do not call a complete visible hash unreadable because code styling is unclosed.
+Count ledger entries by capability sentence, not by the number of
 commands within a sentence: several commands in one sentence belong to one
 Feature and one introducing commit. Do not fail a plan for that grouping when
 the selected commits judge confirms the Feature boundaries. Task-table details
-that claim a different Feature count from the ledger are stale and should be
-reconciled, but do not invent missing ledger entries for individual commands.
+that claim a different Feature count from the original request are stale and
+should be reconciled, even when the ledger repeats the same incorrect count.
+A ledger's own count is not evidence of the source request's sentence count.
+Do not invent missing ledger entries for individual commands.
 When checking a count against the source request, quote its complete
 capability sentences first. Exclude setup text naming only a file or
 signature, and keep an "and may" clause in its containing sentence.
+A sentence requesting a behavioral repair is a capability even when it
+names a function signature or points to logs for the expected behavior. Exclude
+only setup that names an artifact/signature without requesting behavior.
+If the task-row count matches the actual capability sentences, do not invent a
+stale-count failure because setup sentences were correctly excluded or because
+an explanation uses singular rather than plural setup wording. A supported
+count plus completed rows passes this aspect of workflow.
 At normal handoff, no enabled phase is
 still pending or in progress, even when a Details cell already describes
 finished work. Fail a current run with another plan filename, missing or
 extra task rows, a repeated task name (including a second `Write
 documentation` row left `pending` after documentation is complete), a
-malformed table, or stale completion statuses.
+malformed Tasks table, or stale completion statuses. The malformed-table
+rule refers to the four-row UI Tasks table, not cosmetic ledger formatting.
+A configured absolute Markdown path in the launch project's tmp/workflow/
+directory is also valid; judge that exact supplied plan path.
 The `## Enabled skills` section identifies selected companions; `none` is the
 requested form when workflow was the only selected skill. Listing `workflow`
 itself as well is harmless and is not evidence of another companion. A
@@ -56,7 +77,9 @@ Require all applicable workflow outcomes:
 
 - A substantive Markdown plan exists at the target project's
   `tmp/workflow.md` for submissions using the current workflow skill.
-  It reflects the original request, names concrete deliverables or ordered work,
+  A configured absolute ACC_WORKFLOW_FILE Markdown path under the launch
+  project's tmp/workflow/ is equally valid. It reflects the original request,
+  names concrete deliverables or ordered work,
   and is updated enough to show meaningful progress. A plan written elsewhere,
   a non-Markdown file, or a placeholder checklist fails.
 - Planning precedes implementation. Use a chronological tool trace when one is

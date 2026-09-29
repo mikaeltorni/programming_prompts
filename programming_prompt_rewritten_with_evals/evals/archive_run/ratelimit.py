@@ -34,6 +34,7 @@ _CODING_QUOTA_NEEDLES = (
     "out of credits",
     "workspace is out of credits",
     "ask your workspace owner to refill",
+    "grok build usage balance exhausted",
 )
 
 
@@ -67,11 +68,11 @@ def looks_like_judge_rate_limit(text: str) -> bool:
 
 
 def looks_like_coding_agent_quota(text: str) -> bool:
-    """Return whether the coding agent died on empty workspace credits.
+    """Return whether the coding agent died on empty provider credits.
 
     Parameters: text - Harbor exception.txt, trial.log, or archived copies.
 
-    Returns: true when Codex refused the trial because the workspace has no credits.
+    Returns: true when a provider refused the trial because its credit balance is empty.
     """
     if not text:
         return False

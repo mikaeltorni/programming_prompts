@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >-
-  v1.0.3 — Edit Git projects in a sibling .worktrees project/task checkout,
+  v1.0.5 — Edit Git projects in a sibling .worktrees project/task checkout,
   commit there, merge each Feature into the live default branch, and reapply
   its consumers. Never push unless requested.
 ---
@@ -30,7 +30,10 @@ branch: <type>/<project>_<feature>
 
 `TYPE` is a conventional commit type, and `FEATURE` is one descriptive
 task slug. Use the **same bytes** for PROJECT, TYPE, and FEATURE in both
-names. For `/home/mk/projects/widget`, `TYPE=fix` and `FEATURE=parser`
+names. Pick FEATURE once and use its literal value in the branch as well as
+the directory: a leaf ending `_feat-converter` requires branch
+`feat/app_converter` for project `app`; `feat/app_temperature-converter`
+does not match. Verify both expanded strings before `git worktree add`. For `/home/mk/projects/widget`, `TYPE=fix` and `FEATURE=parser`
 produce `/home/mk/projects/.worktrees/widget/widget_fix-parser` and
 `fix/widget_parser`. The store must not sit inside the live repository.
 Resolve the store physically before creating it; a symlink must not
@@ -84,6 +87,10 @@ or focused repair:
 
 Return to this same worktree for the next Feature. Every later commit,
 including a docs-only correction, gets its own merge and reapplication.
+Include README and other documentation edits in this same worktree's
+commits and merges. Inspect both checkouts for uncommitted source or
+documentation; a working live-only README does not complete delivery.
+
 Report completion only when the live default branch contains the work
 and consumers are current. Never push, publish, add remotes, or rewrite
 history without an explicit request.

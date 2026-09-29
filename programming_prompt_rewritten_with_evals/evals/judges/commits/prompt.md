@@ -6,22 +6,55 @@ one Feature from each capability sentence, keeping that sentence's commands,
 cases, and optional extras together. A following "It should also" sentence
 starts another Feature. Setup text that only names an artifact, signature, or
 skill is not a Feature. Do not assume a fixed number of Features.
+A sentence requesting a behavioral repair is a capability even when it
+names a function signature or points to logs for expected behavior. Exclude only
+setup that names an artifact/signature without requesting behavior.
 An "and may" optional command inside the same sentence is part of that
 Feature, even when the optional command has a different verb. Check the actual
 sentence boundary before claiming a separate capability.
 Before mapping commits, enumerate the complete capability sentences from the
 original request in your reasoning and compare that list with any agent plan.
-The original request wins when the plan merged or omitted a sentence. Two
-separate capability sentences implemented by one commit fail even if an agent
+Quote each entire sentence through its final period, rather than listing one
+command per paraphrase. An "and may" clause has no new sentence boundary and
+cannot become a separate numbered source sentence, even when its command lands
+in an allowed follow-up commit.
+The original request wins when the plan merged, omitted, or split a sentence.
+When a ledger is supplied, compare each saved complete sentence verbatim with
+its source sentence, including punctuation, and require one original sentence
+per row. Splitting an optional "and may" clause into another ledger Feature
+fails this ledger requirement even if the Git history is correctly split.
+A ledger sentence needs no added quotation marks or inline-code wrapper.
+Strip only surrounding Markdown quotation/backtick wrappers when comparing the
+sentence text. A backtick after a final period can close a wrapper; it is not
+an extra character of the requested sentence. Keep punctuation inside that
+wrapper, including the final period and any closing parenthesis. A missing
+parenthesis, period, clause, or source word inside the sentence still fails.
+The row number and commands/commit annotations are outside the saved sentence;
+compare the actual complete sentence within the row. Before alleging a missing
+word or final period, quote the actual complete saved sentence from the supplied
+ledger_rows evidence and point to the literal missing character. Never remove
+the character in your own shortened quote and then score that paraphrase.
+Ignore purely cosmetic Markdown delimiters when the sentence and commit
+reference remain readable. If no plan artifact is supplied, inspect other
+available ledger evidence; do not invent an artifact requirement from workflow
+when that companion was not selected. Two separate capability sentences
+implemented by one commit fail even if an agent
 called them one Feature; multiple commands in a single sentence stay together.
 
 Inspect the actual Git history and source before scoring:
-- Run the supplied Git evidence helper to enumerate commits and parents, then
+- The supplied inline Git graph, diffs, and full source snapshots are already
+  read-only inspection evidence. Use them directly when complete; a separate
+  tool call is not required. If omitted or incomplete, run the supplied Git
+  evidence helper to enumerate commits and parents, then
   use its --commit and --path modes (or equivalent Git commands) to inspect
   each candidate boundary. Never score from the current source alone.
 - Work in the supplied repository. Read the commit graph and non-merge commits
   reachable from HEAD in parent-before-child order. Inspect diffs AND the full
   relevant source trees with Git tools; commit subjects alone prove nothing.
+  A direct parent is always an ancestor. Ordinary Feature commits on one
+  task branch remain sequential when each is also merged to the live branch;
+  those merge commits do not erase the task branch's parent relationships.
+  Do not require a Feature to precede the merge of an earlier Feature.
   Agent-authored Feature commits must still use a conventional-commit subject:
   a type of `feat`, `fix`, `refactor`, `chore`, `docs`, `style`, `test`,
   `perf` in `type:` or `type(scope):` form. A Feature commit that omits that
@@ -61,8 +94,15 @@ first and padding history afterwards, unreachable placeholders, missing
 Features, and Features still broken when the next Feature begins. Do not accept a
 commit count, a familiar output string, or an agent-written completion claim
 as a substitute for implementation evidence.
+Before alleging that a historical commit lacks behavior present in current
+source, quote the relevant function body from that exact commit's full source
+snapshot or obtain it with the supplied Git helper. A diff deletion or an
+older snapshot is not the source tree at the cited boundary. Verify the actual
+reachable body there; do not assert a later uncommitted repair when the cited
+commit already contains the same statements.
 Before a no verdict, cite the first concrete Feature that lacks its own
-working conventional commit or has later behavior implemented early. If the
+working conventional commit, has later behavior implemented early, or whose
+ledger does not match its complete original capability sentence. If the
 history supports every Feature, answer yes; reasoning that concludes the
 evidence supports a pass cannot accompany a no score.
 After writing the Feature-to-commit mapping, state the first actual violation

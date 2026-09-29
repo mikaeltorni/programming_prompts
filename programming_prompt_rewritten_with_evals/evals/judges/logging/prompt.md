@@ -10,8 +10,8 @@ does both:
   falling off the end with no meaningful return, print `None`.
 
 Before claiming a missing exit print, identify the exact function, line and
-reachable normal exit. For every proposed no verdict, run the supplied evidence
-helper's `--python-path FILE` mode for the cited file and inspect that
+reachable normal exit. Read the supplied Python boundary report or run the
+supplied evidence helper's `--python-path FILE` mode for the cited file and inspect that
 function's last executable statements in the current source. Reconcile the
 helper's function boundary with the inlined source before deciding: a cited
 function that ends with `print(result)` followed by `return result` has an exit
@@ -23,7 +23,9 @@ reach the end normally do return None and need that exit print. Cite the
 specific uncovered path in a failing verdict.
 For an implicit-None failure, quote the cited function's actual final
 executable statement from the current source and check the helper's
-`last_statement_source`. If that statement is `return ...`, the function has
+`last_statement_source` in the inline report or helper output. The inline
+report is already inspected source evidence; an optional tool call is not a
+scoring requirement. If that statement is `return ...`, the function has
 no implicit-None exit; inspect another concrete path or score yes.
 Do not claim fallthrough unless the quoted source reaches the function's
 closing indentation without a `return` or `raise`.

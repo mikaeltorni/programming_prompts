@@ -31,3 +31,9 @@ a reason concluding that the score is yes cannot accompany a no score.
 
 Criteria to score:
 {criteria}
+
+Before alleging that label content begins on another line, quote the actual
+label line from the supplied source or docstring_lines boundary evidence.
+A blank line before or after a complete `Parameters: ...` or `Returns: ...`
+line does not separate the label from its content. The inline docstring lines
+are already read-only source evidence; use their actual text.
