@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.6 — Use whenever writing or editing Python (or other) code: enforce
+  v1.0.7 — Use whenever writing or editing Python (or other) code: enforce
   single-responsibility functions and methods. Apply on every coding task,
   including small scripts and new files from scratch.
 ---
@@ -74,6 +74,11 @@ Write code as single-responsibility functions/methods.
   `result = _increment() if operation == "inc" else _decrement()`. Two helpers
   sharing a private one-line updater are fine.
 - Do not leave parsing and core logic mixed in one monolithic function body.
+- Before committing, inspect each entrypoint comparison or raise involving a
+  parsed value. Command shape and universal format validity may stay there;
+  choosing a result category or rejecting a narrower operation-specific
+  range belongs in the operation helper. A helper that only formats a category
+  already chosen by the entrypoint has not extracted that core logic.
 - Logging prints are a separate skill; they never merge responsibilities.
   When a logging skill applies, the entry `print(...)` is still the first
   statement and the parse-helper call comes after it — printing is not

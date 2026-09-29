@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.18 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.19 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -75,7 +75,9 @@ Follow this order:
    is not the plan. Do not place
    the plan in the skill directory, an agent home, or the system `/tmp/`. Keep
    all progress in that one file; update it as phases advance, and do not stage
-   or commit it unless the user explicitly asks. The terminal overlay reads
+   or commit it unless the user explicitly asks. A `WORKFLOW.md` in the task
+   checkout does not replace the selected plan path in the launch project.
+   The terminal overlay reads
    the table below and renders `complete` as `[x]`, `in_progress` as `[>]`,
    `pending` as `[ ]`, and `skipped` as `[-]`:
 
@@ -106,10 +108,9 @@ Follow this order:
    Keep the headings, table columns, four task names, row numbers, and order
    exactly as shown. The `## Tasks` table has exactly four data rows: put
    workflow phase progress and task-specific deliverables in `Details`, not
-   in extra task rows or a second progress checklist. Prefer naming the
-   deliverables in `Details` and keep numeric Feature counts out of those cells; the
-   ledger owns that count. If a Details cell does state one, compare it
-   with the ledger before handoff. A selected `commits`
+   in extra task rows or a second progress checklist. Name deliverables in
+   `Details`; do not put a numeric Feature or capability-sentence count there.
+   The ledger owns that count. A selected `commits`
    companion may keep its verbatim capability ledger in a `## Feature ledger`
    section after the task table in this same file; that section is supporting
    detail, not another workflow phase or progress file. When a ledger is present,
@@ -157,12 +158,12 @@ Follow this order:
    combining separate capability sentences or sharing one introducing commit
    with another row is not complete merely because the code works. Conversely,
    multiple commands in one capability sentence stay in one ledger row and may
-   share its one commit. Keep Feature counts in task-table Details consistent
-   with the ledger's sentence count, not the number of commands.
+   share its one commit. Count ledger entries from source sentences, not from
+   the number of commands.
    At handoff, count the ledger entries and reread every Details cell for a
-   stale numeric Feature claim or a Details cell that still says a completed
-   phase is next. Rewrite those details to describe the current state and any
-   old count before marking the plan
+   numeric Feature claim or a Details cell that still says a completed
+   phase is next. Remove such counts and rewrite those details to describe
+   the current state before marking the plan
    complete; a correct ledger does not excuse a contradictory Plan row.
 2. **Establish the worktree when enabled.** If the `worktree` companion is in
    the enabled-skill inventory and available, follow it to create the task's
@@ -191,11 +192,9 @@ here.
 Immediately before you stop, reread the original absolute plan file and
 rewrite its `## Tasks` table in place as one complete four-row block.
 Rewrite each Details cell from the completed deliverables, including the Plan
-row; do not carry forward an early sentence-count guess. If a cell mentions a
-numeric Feature/capability count, compare it with the actual saved ledger now.
-Remove that numeric claim when it is unnecessary or cannot be verified; name
-the completed deliverables instead. The ledger retains the exact boundaries
-and commit references, so removing redundant count prose loses no accounting. Do not
+row; do not carry forward an early sentence-count guess. Remove any numeric
+Feature/capability count from Details and name the completed deliverables
+instead. The ledger retains the exact boundaries and commit references. Do not
 append rows, do not add a second table, and do not leave an earlier copy of a
 row above or below the replacement. Then confirm all of the following; if any
 check fails, edit that same file now and do not hand off:

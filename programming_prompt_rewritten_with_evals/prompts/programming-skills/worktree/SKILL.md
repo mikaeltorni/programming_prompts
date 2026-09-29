@@ -1,12 +1,16 @@
 ---
 name: worktree
 description: >-
-  v1.0.6 — Edit Git projects in a sibling .worktrees project/task checkout,
+  v1.0.7 — Edit Git projects in a sibling .worktrees project/task checkout,
   commit there, merge each Feature into the live default branch, and reapply
   its consumers. Never push unless requested.
 ---
 
 # Git worktree isolation and delivery
+
+When isolation applies, use one linked worktree and one matching branch per
+project for every Feature, repair, and documentation commit. Do not create a
+new worktree or branch for each capability sentence.
 
 ## Establish the task checkout
 
@@ -33,7 +37,10 @@ task slug. Use the **same bytes** for PROJECT, TYPE, and FEATURE in both
 names. Pick FEATURE once and use its literal value in the branch as well as
 the directory: a leaf ending `_feat-converter` requires branch
 `feat/app_converter` for project `app`; `feat/app_temperature-converter`
-does not match. Verify both expanded strings before `git worktree add`. For `/home/mk/projects/widget`, `TYPE=fix` and `FEATURE=parser`
+does not match. The leaf separator after TYPE is `-`, while the branch uses
+`/` before PROJECT and `_` before FEATURE. Construct both names from the
+same variables below; do not hand-type a different leaf or branch later.
+Verify both expanded strings before `git worktree add`. For `/home/mk/projects/widget`, `TYPE=fix` and `FEATURE=parser`
 produce `/home/mk/projects/.worktrees/widget/widget_fix-parser` and
 `fix/widget_parser`. The store must not sit inside the live repository.
 Resolve the store physically before creating it; a symlink must not
