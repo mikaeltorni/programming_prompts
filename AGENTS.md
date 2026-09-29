@@ -113,6 +113,8 @@ Markdown reports produced from Harbor or evaluation analysis belong under
 `programming_prompt_rewritten_with_evals/evals/reports/` directory. The root
 `.gitignore` ignores this nested `tmp/` directory through its general `tmp/` rule;
 create it when saving a report and do not force-add its contents.
+Only create a report when the requested task genuinely needs one;
+otherwise keep findings in the task output or existing logs.
 
 ## Never generate tests for rewritten-prompt evals
 
