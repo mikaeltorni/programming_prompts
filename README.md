@@ -286,9 +286,17 @@ Run one benchmark invocation at a time. See the
 [evals README](programming_prompt_rewritten_with_evals/evals/README.md) for
 the command surface, the [54-trial audit](programming_prompt_rewritten_with_evals/evals/reports/2026-09-27-54-trial-audit.md),
 the [prompt refactor comparison](programming_prompt_rewritten_with_evals/evals/reports/2026-09-27-prompt-refactor.md),
-and the [September 29 individual failure audit](programming_prompt_rewritten_with_evals/evals/reports/2026-09-29-45-trial-audit.md).
+the [September 29 individual failure audit](programming_prompt_rewritten_with_evals/evals/reports/2026-09-29-45-trial-audit.md),
+and the [22/26 repair and case-by-case verification](programming_prompt_rewritten_with_evals/evals/reports/2026-09-29-22-of-26-repair.md).
 The full-suite cx1 positive
 command required after benchmark edits is in [AGENTS.md](AGENTS.md).
+
+Semantic judges receive the actual source, function boundaries, workflow plan,
+and reachable commit history. A verdict that contradicts its own reason or
+bounded source/plan evidence is retried once; both raw attempts remain in the
+archived reward details. Unresolved inconsistent judgments and provider/auth
+failures are reported as infrastructure exclusions. Check the archive as well
+as the aggregate score: a reported pass can still miss a real artifact defect.
 
 ## Configuration
 
