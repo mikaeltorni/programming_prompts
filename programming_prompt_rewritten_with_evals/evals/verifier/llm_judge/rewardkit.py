@@ -19,6 +19,7 @@ from typing import Any
 
 from llm_judge.homes import (
     claude_effort_on_path,
+    codex_reasoning_on_path,
     claude_judge_env,
     overlay_environ,
     setup_claude_home,
@@ -28,6 +29,7 @@ from llm_judge.log import log
 from llm_judge.reliability import retry_prompt, run_until_reliable
 from llm_judge.scores import rows_from_rewardkit_details
 from llm_judge.workspace import (
+    criteria_block,
     listed_python_keys,
     load_judge_dir,
     pin_workspace_python,
@@ -140,7 +142,8 @@ def write_pinned_judge_dir(
 ) -> Path:
     """Copy a skill judge dir and append relevant workspace evidence.
 
-    Leaves ``{criteria}`` in ``prompt.md`` so rewardkit can substitute it.
+    Keep rewardkit's required ``{criteria}`` placeholder, then append the shared
+    reasoning-first response example after its backend-specific criteria block.
 
     Args:
         judge_dir: Canonical ``evals/judges/<skill>`` (or the Harbor copy).
@@ -151,9 +154,14 @@ def write_pinned_judge_dir(
     Returns:
         Temporary directory with ``prompt.md`` and ``judge.toml``.
     """
-    template, _, _ = load_judge_dir(judge_dir)
+    template, criteria, _ = load_judge_dir(judge_dir)
     pinned = pin_workspace_python(
         template, workspace, files, judge_name=judge_dir.name
+    )
+    pinned += (
+        "\n\nFinal response format: use reasoning before score as shown below, "
+        "even if the backend criteria block above lists score first.\n"
+        + criteria_block(criteria, flat_single=True)
     )
     if retry_reason:
         pinned = retry_prompt(pinned, retry_reason)
@@ -280,6 +288,7 @@ def score_with_rewardkit(
     Returns:
         Details JSON text and parsed rows from the last attempt used.
     """
+    template, _, _ = load_judge_dir(judge_dir)
     backend = rewardkit_backend(agent)
     runner = invoke or run_rewardkit
     listed_keys = listed_python_keys(files, workspace)
@@ -313,7 +322,7 @@ def score_with_rewardkit(
                 with overlay_environ(overlay), claude_effort_on_path(effort):
                     return run_until_reliable(
                         listed_keys=listed_keys, timeout=timeout, attempt=attempt,
-                        judge_name=judge_dir.name, python_files=files,
+                        judge_name=judge_dir.name, python_files=files, request_text=template,
                         workflow_issues=(workflow_plan_structure(workspace)["issues"]
                                          if judge_dir.name == "workflow" else None),
                     )
@@ -322,10 +331,10 @@ def score_with_rewardkit(
         home = setup_codex_home(effort)
         overlay["CODEX_HOME"] = str(home)
         try:
-            with overlay_environ(overlay):
+            with overlay_environ(overlay), codex_reasoning_on_path():
                 return run_until_reliable(
                     listed_keys=listed_keys, timeout=timeout, attempt=attempt,
-                    judge_name=judge_dir.name, python_files=files,
+                    judge_name=judge_dir.name, python_files=files, request_text=template,
                     workflow_issues=(workflow_plan_structure(workspace)["issues"]
                                      if judge_dir.name == "workflow" else None),
                 )
@@ -335,7 +344,7 @@ def score_with_rewardkit(
     if invoke is not None:
         return run_until_reliable(
             listed_keys=listed_keys, timeout=timeout, attempt=attempt,
-            judge_name=judge_dir.name, python_files=files,
+            judge_name=judge_dir.name, python_files=files, request_text=template,
             workflow_issues=(workflow_plan_structure(workspace)["issues"]
                              if judge_dir.name == "workflow" else None),
         )

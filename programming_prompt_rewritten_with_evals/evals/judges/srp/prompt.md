@@ -14,7 +14,16 @@ branch that only reads current state (`str(state)` or
 through a helper. A raise from a dispatch branch is still thin: unknown
 operation, extra or missing required arguments, or an already-parsed input
 format value out of range (such as an hour outside 0..23) — those raises are
-not mixed parsing. Domain validation belongs to the operation helper: a bank
+not mixed parsing. In particular, rejecting an hour outside 0..23 is an
+allowed format guard even when it follows int() conversion in the entrypoint;
+do not fail that guard as domain validation. A narrower business range or
+classification is operation logic and belongs in its helper. A format guard
+checks representability, not whether an operation accepts that value. The
+clock-hour allowance does not permit a business-specific subset of valid hours
+in the entrypoint, even when the helper repeats the same check. Before a yes,
+inspect each entrypoint comparison and distinguish format validity from the
+operation's acceptable values; cite any rejected domain value as core work.
+Domain validation belongs to the operation helper: a bank
 amount being negative, an account being absent or duplicated, and an
 insufficient balance are business rules. Checking those in the entrypoint is
 core work even after int() conversion.

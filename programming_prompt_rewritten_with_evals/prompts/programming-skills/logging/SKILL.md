@@ -1,7 +1,7 @@
 ---
 name: logging
 description: >-
-  v1.0.3 — Use whenever writing or editing Python (or other) functions: print each
+  v1.0.4 — Use whenever writing or editing Python (or other) functions: print each
   function's incoming parameters at entry and the return value just before
   returning. Keep it to plain print() — no logging modules or log files.
 ---
@@ -47,15 +47,18 @@ representation.
    docstring first when present, with the print directly after it.
 
    ```python
-   def run_todo(command):
-       """Execute a todo command.
+   def update(value):
+       """Replace stored state.
 
-       Parameters: command - raw command text.
+       Parameters: value - the new state.
 
-       Returns: the formatted result.
+       Returns: the stored state.
        """
-       print(f"command={command}")        # entry print comes first
-       operation, arguments = _parse_command(command)
+       print(f"value={value}")        # first statement after the docstring
+       global stored_state           # declaration comes after the print
+       stored_state = value
+       print(stored_state)
+       return stored_state
    ```
 
    Failures: printing only after `parsed = _parse_command(command)`; omitting

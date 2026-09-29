@@ -418,11 +418,15 @@ def pin_workspace_python(
     )
 
 
-def criteria_block(criteria: list[dict[str, str]]) -> str:
+def criteria_block(
+    criteria: list[dict[str, str]], *, flat_single: bool = False
+) -> str:
     """Build the ``{criteria}`` substitution used by skill judge prompts.
 
     Args:
         criteria: Name/description pairs from ``judge.toml``.
+        flat_single: Use rewardkit's flat object for a single criterion;
+            other callers retain a map keyed by criterion name.
 
     Returns:
         Markdown list plus a JSON example matching the response schema.
@@ -433,10 +437,13 @@ def criteria_block(criteria: list[dict[str, str]]) -> str:
             f"- '{item['name']}': {item['description']} (score: \"yes\" or \"no\")"
         )
     lines.append("")
-    lines.append("Respond with a JSON object. Example:")
+    lines.append("Respond with a JSON object. Write the evidence-based reasoning "
+                 "before choosing its matching score. Example:")
     example = {
-        item["name"]: {"score": "yes", "reasoning": "..."} for item in criteria
+        item["name"]: {"reasoning": "...", "score": "yes"} for item in criteria
     }
+    if flat_single and len(criteria) == 1:
+        example = next(iter(example.values()))
     lines.append(json.dumps(example, indent=2))
     return "\n".join(lines)
 

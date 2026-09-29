@@ -12,15 +12,39 @@ from llm_judge.log import log
 _JSON_FENCE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL)
 
 
+def reasoning_first_schema(schema: Any) -> Any:
+    """Copy a JSON schema while putting explanation fields before verdicts.
+
+    Args:
+        schema: Flat or nested backend schema. Required fields, types and
+            allowed score values stay unchanged; only property order changes.
+
+    Returns:
+        An independent schema with reasoning first at each score object.
+    """
+    if isinstance(schema, list):
+        return [reasoning_first_schema(value) for value in schema]
+    if not isinstance(schema, dict):
+        return schema
+    copied = {key: reasoning_first_schema(value) for key, value in schema.items()}
+    properties = copied.get("properties")
+    if isinstance(properties, dict) and {"reasoning", "score"} <= properties.keys():
+        copied["properties"] = {
+            "reasoning": properties["reasoning"],
+            **{key: value for key, value in properties.items() if key != "reasoning"},
+        }
+    return copied
+
+
 def _score_entry_schema() -> dict[str, Any]:
-    """JSON Schema for one yes/no criterion object."""
+    """Place the explanation before the verdict to discourage early scoring."""
     return {
         "type": "object",
         "properties": {
-            "score": {"type": "string", "enum": ["yes", "no"]},
             "reasoning": {"type": "string"},
+            "score": {"type": "string", "enum": ["yes", "no"]},
         },
-        "required": ["score", "reasoning"],
+        "required": ["reasoning", "score"],
         "additionalProperties": False,
     }
 

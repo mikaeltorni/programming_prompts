@@ -12,11 +12,12 @@ import shutil
 import stat
 import sys
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
 from llm_judge.log import log
+from llm_judge.scores import reasoning_first_schema
 
 
 def _copy_auth(source: Path, dest: Path) -> None:
@@ -219,31 +220,108 @@ def claude_wrapper_script(real: str, effort: str) -> str:
     )
 
 
-@contextmanager
-def claude_effort_on_path(effort: str) -> Iterator[Path]:
-    """Prepend a ``claude`` wrapper that adds ``--effort`` on ``-p`` calls.
+def rewrite_codex_output_schema(arguments: list[str]) -> None:
+    """Order the backend's temporary Codex schema before CLI execution.
 
     Args:
-        effort: ``low``, ``medium``, or ``high``.
+        arguments: Original CLI arguments, including either accepted spelling
+            of ``--output-schema``. Arguments and semantic constraints survive.
+
+    Returns:
+        None; only the supplied response-schema file is rewritten.
+    """
+    schema_path = None
+    for index, argument in enumerate(arguments):
+        if argument == "--output-schema" and index + 1 < len(arguments):
+            schema_path = arguments[index + 1]
+            break
+        if argument.startswith("--output-schema="):
+            schema_path = argument.split("=", 1)[1]
+            break
+    if schema_path is None:
+        return
+    try:
+        path = Path(schema_path)
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        path.write_text(json.dumps(reasoning_first_schema(schema)), encoding="utf-8")
+    except (OSError, ValueError) as exc:
+        log(f"codex judge schema ordering failed: {type(exc).__name__}")
+        raise
+    log("codex judge response schema ordered reasoning before score")
+
+
+def codex_wrapper_script(real: str) -> str:
+    """Return a schema-ordering shim that forwards argv to the real Codex CLI.
+
+    Args:
+        real: Absolute executable path resolved before installing the shim.
+
+    Returns:
+        Python source; probes and calls without schemas pass through unchanged.
+    """
+    module_root = str(Path(__file__).resolve().parent.parent)
+    return (
+        f"#!{sys.executable}\n"
+        "import os, sys\n"
+        f"sys.path.insert(0, {module_root!r})\n"
+        "from llm_judge.homes import rewrite_codex_output_schema\n"
+        "rewrite_codex_output_schema(sys.argv[1:])\n"
+        f"os.execv({real!r}, [{real!r}, *sys.argv[1:]])\n"
+    )
+
+
+@contextmanager
+def _judge_cli_on_path(command: str, script: Callable[[str], str]) -> Iterator[Path]:
+    """Install one temporary CLI shim and restore PATH and files on exit.
+
+    Args:
+        command: Existing CLI executable name to locate before wrapping.
+        script: Shared wrapper generator receiving the located executable.
 
     Yields:
-        Directory holding the wrapper (prepended to ``PATH``).
-
-    Raises:
-        FileNotFoundError: When ``claude`` is not on PATH.
+        Temporary wrapper directory; cleanup also runs after failed judgments.
     """
-    real = shutil.which("claude")
+    real = shutil.which(command)
     if not real:
-        raise FileNotFoundError("claude CLI not found on PATH for the Claude Code eval agent")
-    wrapper_dir = Path(tempfile.mkdtemp(prefix="claude-wrap-"))
-    wrapper = wrapper_dir / "claude"
-    wrapper.write_text(claude_wrapper_script(real, effort), encoding="utf-8")
+        raise FileNotFoundError(f"{command} CLI not found on PATH for the eval agent")
+    wrapper_dir = Path(tempfile.mkdtemp(prefix=f"{command}-wrap-"))
+    wrapper = wrapper_dir / command
+    wrapper.write_text(script(real), encoding="utf-8")
     wrapper.chmod(0o755)
     old_path = os.environ.get("PATH", "")
     os.environ["PATH"] = f"{wrapper_dir}{os.pathsep}{old_path}"
-    log(f"claude eval agent: PATH wrapper effort={effort} bypassPermissions")
+    log(f"{command} eval agent: temporary PATH wrapper enabled")
     try:
         yield wrapper_dir
     finally:
         os.environ["PATH"] = old_path
         shutil.rmtree(wrapper_dir, ignore_errors=True)
+
+
+@contextmanager
+def codex_reasoning_on_path() -> Iterator[Path]:
+    """Make backend-created Codex schemas explanation-first in a scoped PATH.
+
+    Args:
+        None.
+
+    Yields:
+        The temporary wrapper directory; installed CLIs remain unchanged.
+    """
+    with _judge_cli_on_path("codex", codex_wrapper_script) as directory:
+        yield directory
+
+
+@contextmanager
+def claude_effort_on_path(effort: str) -> Iterator[Path]:
+    """Prepend a ``claude`` wrapper that adds effort on ``-p`` calls.
+
+    Args:
+        effort: ``low``, ``medium``, or ``high``.
+
+    Yields:
+        The temporary wrapper directory; PATH is restored on exit.
+    """
+    log(f"claude eval agent: PATH wrapper effort={effort} bypassPermissions")
+    with _judge_cli_on_path("claude", lambda real: claude_wrapper_script(real, effort)) as directory:
+        yield directory
