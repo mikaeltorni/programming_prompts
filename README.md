@@ -283,15 +283,9 @@ It runs coding tasks with `--harness`, selects the Codex judge with
 `--eval-agent codex`, selects programming skills with `--skills`, and accepts
 `--tasks`, `--concurrency`, `--baseline`, and Harbor's `-k` attempt count.
 Run one benchmark invocation at a time. See the
-[evals README](programming_prompt_rewritten_with_evals/evals/README.md) for
-the command surface, the [54-trial audit](programming_prompt_rewritten_with_evals/evals/reports/2026-09-27-54-trial-audit.md),
-the [prompt refactor comparison](programming_prompt_rewritten_with_evals/evals/reports/2026-09-27-prompt-refactor.md),
-the [September 29 individual failure audit](programming_prompt_rewritten_with_evals/evals/reports/2026-09-29-45-trial-audit.md),
-the [22/26 repair and case-by-case verification](programming_prompt_rewritten_with_evals/evals/reports/2026-09-29-22-of-26-repair.md),
-the [remaining commit and k5 case review](programming_prompt_rewritten_with_evals/evals/reports/2026-09-29-remaining-commits-repair.md),
-and the [59/63 individual case audit](programming_prompt_rewritten_with_evals/evals/reports/2026-09-29-59-of-63-case-audit.md).
-The full-suite cx1 positive
-command required after benchmark edits is in [AGENTS.md](AGENTS.md).
+[evals README](programming_prompt_rewritten_with_evals/evals/README.md) for the
+command surface and [AGENTS.md](AGENTS.md) for the repository's run policy and
+required full-suite command.
 
 Semantic judges receive the actual source, function boundaries, workflow plan,
 and reachable commit history. A verdict that contradicts its own reason or
