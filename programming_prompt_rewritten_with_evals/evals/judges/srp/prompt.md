@@ -1,11 +1,15 @@
-Score whether the Python uses single-responsibility functions/methods.
+Score whether the Python uses single-responsibility functions/methods and keeps
+the code simple through focused changes at the requested revision boundaries.
 
 Answer yes when ALL of these hold:
 - input parsing of the raw command (split/tokenize/partition) lives in its
   own helper(s),
 - core logic (arithmetic, state updates, or business conversion) lives in its
   own helper(s), not in the public entrypoint,
-- the public entrypoint is thin: parse → call helpers → return/format.
+- the public entrypoint is thin: parse → call helpers → return/format,
+- requested revisions preserve those responsibilities and avoid unnecessary
+  churn, as detailed below; a final-file-only assessment is insufficient for
+  an incremental task.
 
 A thin entrypoint may dispatch with if/elif, return what the helpers
 produced, and format already-computed state in one line — including a get
@@ -68,7 +72,7 @@ Git diffs and before/after source, including the supplied seed when present,
 against the original request; do not infer preservation from the final file,
 commit subjects, or the agent's claim alone.
 
-A passing change extends the existing parse/dispatch path, keeps working names,
+A passing change extends the existing command routing path, keeps working names,
 interfaces and unrelated functions when they still fit, and confines edits to
 the behavior and necessary integrations, checks or documentation. Extracting a
 new responsibility or shared logic is justified even when it touches several
@@ -82,7 +86,13 @@ layer. Cite the changed function/block and explain why the original request
 did not require it. Verify that earlier public behavior remains supported
 except where intentionally changed; a failed operation must not corrupt state.
 Missing history or inaccessible source is missing evidence, not proof of bad
-code; report that limitation instead of inventing churn.
+code; report that limitation instead of inventing churn. The supplied Git graph,
+diffs and source snapshots are read-only inspection evidence. Use them directly
+when complete, or obtain omitted source with the supplied Git evidence helper.
+Do not claim history is absent just because it is not in the final-file listing.
+For a pass on an incremental task, cite an earlier and later source revision and
+the concrete edits that kept their responsibilities focused; final structure
+alone cannot establish low churn.
 
 For tasks that specify incremental growth, inspect the working source at the
 requested stage boundaries as well as the final source. The initial slice

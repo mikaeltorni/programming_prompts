@@ -370,7 +370,8 @@ def pin_workspace_python(
         workspace: Path shown in the inspect instruction.
         files: Paths from :func:`list_workspace_python`.
         judge_name: Skill judge name; workflow and commits receive the plan,
-            logging receives Python boundaries, debug receives original logs.
+            logging receives Python boundaries, debug receives original logs,
+            and srp receives the same historical source/diffs as commits.
 
     Returns:
         Prompt text with the workspace listing appended.
@@ -393,11 +394,12 @@ def pin_workspace_python(
         + json.dumps(boundaries, indent=2) if boundaries else ""
     )
     git_context = ""
-    if judge_name == "commits":
+    if judge_name in {"commits", "srp"}:
         try:
             git_context = commit_source_context(workspace)
+            log(f"pinned historical source evidence judge={judge_name}")
         except (OSError, ValueError) as exc:
-            log(f"commit evidence unavailable: {exc}")
+            log(f"Git evidence unavailable judge={judge_name}: {exc}")
             git_context = f"\nGit evidence unavailable: {exc}; inspect with the supplied helper."
     return (
         template.rstrip()
