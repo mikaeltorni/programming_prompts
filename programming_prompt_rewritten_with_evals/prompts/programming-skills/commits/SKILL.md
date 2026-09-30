@@ -1,12 +1,24 @@
 ---
 name: commits
 description: >-
-  v1.1.13 — Give each complete capability sentence its own Feature and working
+  v1.1.14 — Give each complete capability sentence its own Feature and working
   commit. Every separate "It should also" sentence gets a new ledger row;
   an optional "and may" clause inside one sentence stays in that row.
 ---
 
 # Feature commits
+
+Apply this skill at each source write, not only when reviewing finished history.
+When workflow is selected, its `Write code` phase contains the entire Feature
+queue; a small program, one module, or a focused repair does not combine
+separate sentences.
+
+Before each implementation edit, read the first uncommitted ledger row from
+the original request and state its exact sentence, planned conventional commit
+subject, commands allowed now, and commands deferred to later rows. Compare
+that allowed set with the original sentence, not a previous summary of the
+program. Write only the current row's implementation, then verify and commit
+it before writing the next row. This also applies to the first file creation.
 
 Before writing code, build a numbered ledger from the original request.
 **Copy each complete capability sentence verbatim into its own row**, then
@@ -17,9 +29,9 @@ quoted capability. A row that quotes context plus the repair sentence is not
 the requested verbatim capability sentence. Preserve
 inline backticks around terms such as `ValueError`, the closing parenthesis,
 any "and may" clause, and the final period; a nearly identical paraphrase is
-not a verbatim ledger sentence. Then list that row's commands and required
-behavior. Setup text naming only an artifact, signature, or skill is not a
-Feature. Never create a ledger row
+not a verbatim ledger sentence. Then list that row's commands, required
+behavior, and planned conventional commit subject. Setup text naming only an
+artifact, signature, or skill is not a Feature. Never create a ledger row
 for a public function signature or duplicate an existing capability sentence
 to match a guessed count. A duplicate sentence cannot be a later Feature.
 Count the source sentences,
@@ -45,20 +57,19 @@ Each later "It should also …" sentence starts a new row, even when related
 to the preceding sentence. Commands and optional "and may" clauses before
 the same sentence's final period remain in that row; do not split them into
 another Feature. A comma does not end a sentence or create a new Feature.
-When capability sentences occupy separate request lines,
-use separate ledger rows for those lines. Keep dependency order where
-possible, without changing these boundaries.
+Sentence boundaries apply whether capabilities occupy separate lines or share
+one paragraph or line. Related commands in separate sentences still need
+separate rows; commands within one sentence stay together. Keep dependency
+order where possible, without changing these boundaries.
 Before the first source edit, scan the ledger for a row that contains a
 second complete capability sentence, especially another "It should also".
 If one exists, stop and split that row. Do not call the whole paragraph or
 the whole program one Feature.
 
 Keep the original ledger visible and preserve its boundaries through the whole
-task. Before each implementation edit, identify the active row's exact sentence
-and commands, and the commands still deferred to later rows. Record the verified
-commit beside that row before advancing. After a merge or verification step,
-resume the first uncommitted original row; do not replace the remaining rows
-with a new combined summary. A shared dispatcher must expose only capabilities
+task. Record the verified commit beside the active row before advancing. After
+a merge or verification step, resume the first uncommitted original row; do not
+replace the remaining rows with a new combined summary. A shared dispatcher must expose only capabilities
 implemented so far, even when adding all remaining cases seems easy.
 
 The first source file you write is already an implementation edit: it may
@@ -102,15 +113,20 @@ Close each entry with this gate:
    Feature, especially after changing parsing or dispatch. Resolve failures
    before staging.
 2. Stage only its changes in the worktree.
-3. Before running it, form the subject as `feat: <current capability>` or
-   another applicable conventional type; a plain `Add ...` subject is invalid.
+3. Use the current row's planned subject: `feat: <current capability>` or
+   another applicable conventional type; a plain `Add ...` or `Fix ...`
+   subject is invalid.
    Run `git commit` as its own command, not chained behind a search or check
    that could fail and silently skip the commit. The Feature commit subject
    uses a conventional-commit type (`feat`, `fix`, `refactor`, `chore`,
    `docs`, `style`, `test`, `perf`) in `type:` or `type(scope):` form. A
    subject that omits that type is not a completed Feature commit.
 4. Read the new `HEAD`, confirm it advanced and contains this entry's Python
-   implementation, and record that commit beside the ledger entry. If the
+   implementation, and record that commit beside the ledger entry. Its
+   introducing hash must differ from every earlier row's introducing hash;
+   assigning one hash to several rows exposes bundled implementation, not
+   completed entries. Inspect that commit's full source to confirm no later
+   row already works, even if a later commit claims to add it. If the
    commit failed, resolve it and commit before editing the next Feature. If
    the first file was written outside the intended worktree, move that work
    into the worktree and complete the first Feature commit before advancing.
