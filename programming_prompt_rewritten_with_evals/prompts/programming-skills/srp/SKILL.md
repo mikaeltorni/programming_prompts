@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.8 — Use whenever writing or editing Python (or other) code: enforce
+  v1.0.9 — Use whenever writing or editing Python (or other) code: enforce
   single-responsibility functions and methods. Apply on every coding task,
   including small scripts and new files from scratch.
 ---
@@ -111,3 +111,32 @@ integration points; preserve working behavior outside the request.
   Remove unrelated edits and explain any broader refactor that is necessary.
   Diff size alone is not proof of churn: judge whether the edits were needed
   and whether the resulting responsibilities remain clear.
+
+### Start simple, then grow through edits
+
+For a new program, implement only the current requested capability as a small
+working slice: one parsing path, the operation helpers it needs, and a thin
+public entrypoint. Avoid scaffolding later capabilities. Follow the selected
+commits skill or the request's stage order when either defines the next slice;
+this section does not create a separate commit policy.
+
+At each subsequent change:
+
+1. Run the current slice through its public entrypoint and identify the helper
+   that owns the behavior being extended or revised.
+2. Edit that helper or add a focused operation helper through the existing
+   parsing/dispatch path. Keep each function's purpose clear; split a newly
+   mixed responsibility locally instead of rebuilding the program around it.
+3. Exercise the new behavior and retained earlier behavior before advancing.
+   If a requirement changes an earlier rule, replace only the affected
+   expectations and keep the remaining regression examples.
+4. Inspect the working code and diff now, rather than deferring simplicity to
+   a final rewrite. Remove dead branches and obsolete helpers created by this
+   change; keep helpers that still serve earlier capabilities. Avoid needless
+   one-line wrappers and abstractions whose only purpose is a possible later
+   stage.
+
+Repeat this cycle as the program grows. Prefer a clear, cohesive helper over
+arbitrary function-size limits, and preserve existing interfaces unless the
+request changes them. A simple final file does not justify building every
+capability up front or repeatedly replacing earlier working implementations.

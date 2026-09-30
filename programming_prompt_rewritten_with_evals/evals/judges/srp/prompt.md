@@ -84,5 +84,22 @@ except where intentionally changed; a failed operation must not corrupt state.
 Missing history or inaccessible source is missing evidence, not proof of bad
 code; report that limitation instead of inventing churn.
 
+For tasks that specify incremental growth, inspect the working source at the
+requested stage boundaries as well as the final source. The initial slice
+should implement the current capability simply, with a parsing path, focused
+core helpers and a thin entrypoint; later changes should evolve that working
+code. Each slice must retain earlier contracts unless the next requirement
+explicitly revises them. Use executed public-entrypoint examples when available
+to check preservation; a claimed check alone is not behavioral evidence.
+
+Fail concrete cases of building later capabilities ahead of the requested
+stage, repeatedly replacing unrelated working helpers, accumulating dead
+branches or speculative layers, or leaving mixed responsibilities until a
+final cleanup. A local extraction, a new focused helper, or removing logic
+made obsolete by a requested revision is appropriate. Judge responsibility
+and necessary changes, not a fixed function length or helper count. Apply
+stage-order requirements only when the original request or selected skills
+specify them; this rubric does not mandate extra commits for other tasks.
+
 Criteria to score:
 {criteria}
