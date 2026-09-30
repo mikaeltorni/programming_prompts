@@ -38,12 +38,12 @@ harbor_uses_per_trial_networks() {
 }
 
 resolve_job_concurrency() {
-  # Default to attempts per task; a wrapper override may run distinct tasks
-  # together, but never reserve more slots than the job has trials.
+  # Default to all trials; an explicit override may reduce parallelism,
+  # but never reserve more slots than the job has trials.
   # Parameters: $1 attempts per task, $2 total trials, $3 optional override.
-  local attempts="$1" total="$2" requested="${3:-}"
+  local total="$2" requested="${3:-}"
   if [[ -z "$requested" ]]; then
-    printf '%s' "$attempts"
+    printf '%s' "$total"
   elif (( requested > total )); then
     printf '%s' "$total"
   else
@@ -99,7 +99,7 @@ acquire_docker_slots() {
 
 strip_user_harbor_n_concurrent() {
   # Drop user -n / --n-concurrent from the nameref array. Harbor concurrency
-  # follows -k by default or an explicit --concurrency wrapper value. Raw
+  # defaults to all trials or an explicit --concurrency wrapper value. Raw
   # -n 100 with 5 tasks × -k 20 starts 100 simultaneous
   # `docker compose build`s and Harbor aborts them with Environment start
   # timed out after 300s. The same -k 20 with n=k scored every trial.
@@ -122,7 +122,7 @@ strip_user_harbor_n_concurrent() {
   done
   _n_args=("${kept[@]}")
   if [[ ${#ignored[@]} -gt 0 ]]; then
-    echo "Ignoring Harbor -n/--n-concurrent ${ignored[*]}: use --concurrency to override the default from -k (large values can starve docker compose build)." >&2
+    echo "Ignoring Harbor -n/--n-concurrent ${ignored[*]}: use --concurrency to limit the default of all trials (large values can starve docker compose build)." >&2
   fi
 }
 

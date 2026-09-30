@@ -61,8 +61,8 @@
 # Live coding trials have no LLM cap unless EVAL_LLM_MAX_CONCURRENT is set.
 # Overlapping wrappers run at the selected concurrency; Harbor retries ApiRateLimitError
 # (too many requests) with backoff instead of dropping those trials.
-# Harbor -n is not a user flag: concurrency follows -k by default, or the
-# explicit --concurrency option. Passing -n 100 with 5 tasks × -k 20 starts 100
+# Harbor -n is not a user flag: concurrency defaults to all selected trials,
+# or the explicit --concurrency limit. With 5 tasks × -k 20 this requests 100
 # docker compose builds at once; Harbor's 300s environment-start budget then
 # drops roughly half the trials (EnvironmentStartTimeoutError).
 # EVAL_LLM_MAX_CONCURRENT=20 serializes overlapping jobs to one proven -k 20
