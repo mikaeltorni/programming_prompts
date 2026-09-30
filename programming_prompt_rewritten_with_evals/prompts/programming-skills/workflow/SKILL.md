@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.19 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.0.20 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -180,10 +180,10 @@ code it describes.
 
 ### Code-writing companions
 
-When present in the enabled-skill inventory, apply `logging`, `commenting`, and
-`srp` during **Write the code**. Their requirements shape the implementation in
-that phase; do not defer their logging, code comments/docstrings, or
-single-responsibility structure to the documentation phase. Preserve each
+When present in the enabled-skill inventory, apply `logging`, `commenting`,
+`srp`, and `testing` during **Write the code**. Their requirements shape the
+implementation in that phase; do not defer logging, code comments/docstrings,
+single-responsibility structure, or testing to the documentation phase. Preserve each
 companion's own scope and exact rules instead of restating weaker substitutes
 here.
 

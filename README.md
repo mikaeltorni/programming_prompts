@@ -62,6 +62,7 @@ development projects in this workspace. Plugin prompts package exactly one skill
 and carry manifests for both Codex and Claude Code; direct skills carry only
 `SKILL.md` content.
 
+- **Testing Skill** — Focused regression checks, public-interface coverage, existing project tooling, and isolated execution; source: [testing](programming_prompt_rewritten_with_evals/prompts/programming-skills/testing/SKILL.md).
 - **General Programming Guidelines** — Shared coding, testing, and engineering workflow rules for all agent tasks.
 - **Workflow Skill** — Explicit-only orchestration that plans first, coordinates only selected companion skills, always writes code, and conditionally uses worktree and documentation guidance.
 - **Docs Skill** — User-facing project documentation for completed programming changes.
@@ -170,8 +171,9 @@ function docstrings from a separately selected commenting skill.
 
 Engineering workflow, tests, logging, documentation, and supply-chain rules.
 Feature commits and worktree isolation/delivery are owned by the separately
-selected V2 `commits` and `worktree` skills. ACC's clean-install baseline enables
-all three; `acc pp enable --both --skill general-programming-guidelines,v2:commits,v2:worktree`
+selected V2 `commits` and `worktree` skills. The generic guidelines are being retired from the default baseline;
+independent skills now provide the selected capabilities. Testing is available
+as `v2:testing`. For the transitional guidelines selection, `acc pp enable --both --skill general-programming-guidelines,v2:commits,v2:worktree`
 reapplies them across harnesses. Verify with
 `acc pp status --skill general-programming-guidelines,commits,worktree --check`.
 

@@ -1,0 +1,15 @@
+# Semantic verification judge; the shared runner supplies original task/source.
+[judge]
+judge = "codex"
+model = "gpt-6-luna"
+cwd = "."
+timeout = 240
+prompt_template = "prompt.md"
+
+[[criterion]]
+name = "meaningful_verification"
+description = "verification checks the original requested behavior through the public interface, with appropriate isolation and honest evidence"
+type = "binary"
+
+[scoring]
+aggregation = "all_pass"

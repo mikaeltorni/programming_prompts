@@ -20,6 +20,9 @@ Skills live under
   (programmatic judge)
 - [`commits`](prompts/programming-skills/commits/SKILL.md) — scan for
   Features; one working worktree commit per Feature (semantic LLM judge)
+- [`testing`](prompts/programming-skills/testing/SKILL.md) — meaningful regression
+  and public-interface checks, existing tooling, and isolated execution
+  (semantic LLM judge)
 - [`debug`](prompts/programming-skills/debug/SKILL.md) — read repo `.log/`
   before hypothesizing; verify the log-guided fix (semantic LLM judge)
 - [`docs`](prompts/programming-skills/docs/SKILL.md) — README.md after the
@@ -62,7 +65,7 @@ Committed fallbacks:
 ## Layout
 
 - `prompts/programming-skills/` — injectable skills (`srp`, `commenting`,
-  `logging`, `worktree`, `commits`, `debug`, `docs`, explicit-only `workflow`,
+  `logging`, `worktree`, `commits`, `debug`, `testing`, `docs`, explicit-only `workflow`,
   plus `*-vague` controls)
 - `evals/coding-prompts/` — one `.md` per write-from-scratch coding task
 - `evals/seeds/` — optional planted files for a task (`log/` → image `.log/`)
