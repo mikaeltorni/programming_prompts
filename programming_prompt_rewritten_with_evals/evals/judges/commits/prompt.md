@@ -6,6 +6,9 @@ one Feature from each capability sentence, keeping that sentence's commands,
 cases, and optional extras together. A following "It should also" sentence
 starts another Feature. Setup text that only names an artifact, signature, or
 skill is not a Feature. Do not assume a fixed number of Features.
+Stage-order instructions and check/example sequences describe delivery or
+verification, not additional capabilities. Use the behavior sentences as the
+Feature boundaries; examples clarify those sentences without multiplying them.
 A sentence requesting a behavioral repair is a capability even when it
 names a function signature or points to logs for expected behavior. Exclude only
 setup that names an artifact/signature without requesting behavior.
@@ -68,6 +71,11 @@ Inspect the actual Git history and source before scoring:
   (resolve genuine dependencies without merging capability boundaries).
 - At each Feature's completion boundary, earlier Features must remain implemented
   and the current Feature must be usable through the requested public entrypoint.
+  When a later sentence explicitly revises or replaces an earlier rule, inspect
+  the earlier rule in its own completed source revision and the new rule in the
+  later revision. Intentional replacement is not lost functionality. Preserve
+  every other earlier contract; do not require incompatible old and new rules
+  to coexist or accept the final rule implemented before its requested stage.
   A focused repair after the introducing commit but before the next Feature is
   allowed; inspect that repaired tree and cite both commits. Optional extras may
   be completed in a focused follow-up before the next Feature; that follow-up
