@@ -67,7 +67,7 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `--eval-agent-reasoning-effort low` | Judge effort: `low`, `medium`, or `high` (same idea as `--ak reasoning_effort=`). One value or one per agent |
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
 | `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials on this machine. **Unset = no LLM cap**. Harbor retries `ApiRateLimitError`. `20` serializes to one proven job. `2` is the old quota-safe cap. |
-| `--concurrency 9` | Run up to nine trials at once without changing attempts per task (`-k`); capped by total trials and `EVAL_LLM_MAX_CONCURRENT` |
+| `--concurrency 9` | Optional limit of nine live trials without changing attempts per task (`-k`); omitted = all trials, subject to `EVAL_LLM_MAX_CONCURRENT` and available Docker network slots |
 | `--skills srp,commenting` | Which skills to inject (default: all non-control, non-opt-in skills) |
 | `--skills=srp` / `-skills=srp` | Same, equals form |
 | `--skills srp,logging-vague` | Vague control skill; scored by `judges/logging/` |
@@ -474,9 +474,10 @@ Concurrent `./run_benchmark.sh` processes **wait for a coding-trial slot**
 only when `EVAL_LLM_MAX_CONCURRENT` is set (or a job still uses per-trial
 networks). There is no default LLM cap. Harbor retries `ApiRateLimitError`
 so overlapping jobs can run at the selected concurrency. Harbor `-n` / `--n-concurrent` is
-**not a user flag**: the wrapper sets concurrency from `-k` by default (`-k 20`
-runs 20 at once). Use `--concurrency N` to explicitly run distinct tasks in
-parallel without increasing `-k`. Passing raw `-n 100` with 5 tasks × `-k 20` starts 100
+**not a user flag**: the wrapper defaults to all selected tasks × attempts
+running together, subject to an explicit LLM cap and available Docker network
+slots when per-trial networks are used. Use `--concurrency N` to reduce
+parallelism without changing `-k`. With 5 tasks × `-k 20`, the default requests 100
 `docker compose build`s at once; Harbor then aborts with
 `Environment start timed out after 300.0 seconds` and Scored drops well
 below Trials. `--run-separately` is a single Harbor job (independent skill Pass).
@@ -946,13 +947,14 @@ Manual examples:
 ./run_benchmark.sh --skills srp,commenting --run-separately -k 5
 ```
 
-`-k 5` schedules five attempts **per task** and, by default, that many concurrent
-trials. `-k 20` runs 20 at once by default. `--concurrency 9 -k 1` schedules
+`-k 5` schedules five attempts **per task**. By default, all selected tasks ×
+attempts run together, subject to the configured LLM cap and available Docker
+network slots when per-trial networks are used. `--concurrency 9 -k 1` schedules
 one attempt per task and runs up to nine different tasks together. The wrapper
-strips user `-n` / `--n-concurrent` so a leftover `-n 100` cannot starve
-`docker compose build` past Harbor's 300s environment-start budget. Use a
-smaller `-k` for a cheaper smoke. The wrapper defaults to `-k 5` (and
-therefore 5 concurrent) when you pass no Harbor flags. After the job
+strips user `-n` / `--n-concurrent`; use `--concurrency N` to limit parallelism
+if concurrent builds exceed Harbor's 300s environment-start budget. Use a
+smaller `-k` for a cheaper smoke. The wrapper defaults to `-k 5` when you
+pass no Harbor flags; concurrency then requests five times the task count. After the job
 finishes it prints a categorized console summary.
 Run one benchmark wrapper at a time on this machine. Trials use Docker's
 default bridge, so stock IPAM is not the cap (see
@@ -985,8 +987,8 @@ the same Codex reference with `skills: []` for a hand-run baseline; prefer
 | `EVAL_JUDGE_WORKERS=N` | Cap concurrent judge subprocesses (default: **4**) |
 | `EVAL_LLM_MAX_CONCURRENT=N` | Cap live coding trials (unset = none) |
 | `--ak version=…` | CLI pin override |
-| `-k` / `--n-attempts` | Independent attempts per task; also default Harbor concurrency (`5`) |
-| `--concurrency N` | Explicit Harbor concurrency, capped by total trials and `EVAL_LLM_MAX_CONCURRENT` |
+| `-k` / `--n-attempts` | Independent attempts per task (default: `5`); omitted concurrency requests all tasks × attempts |
+| `--concurrency N` | Optional Harbor concurrency limit, capped by total trials, `EVAL_LLM_MAX_CONCURRENT`, and available per-trial Docker network slots |
 | `-n` / `--n-concurrent` | Ignored. Use `--concurrency N` (`-n 100` with `-k 20` timed out ~half the trials at 300s on `docker compose build`) |
 | `--skill` | Extra skill directory (job config already injects skills) |
 

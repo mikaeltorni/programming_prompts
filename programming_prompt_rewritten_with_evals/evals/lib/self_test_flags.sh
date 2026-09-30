@@ -118,7 +118,10 @@ check_rejects "missing value: --concurrency" "--concurrency requires a value" --
 check_rejects "invalid concurrency: zero" "--concurrency requires a positive integer" --concurrency 0
 check_rejects "invalid concurrency: text" "--concurrency requires a positive integer" --concurrency many
 
-check "default concurrency follows attempts" "1" "$(resolve_job_concurrency 1 9 '')"
+check "default concurrency spans all tasks" "9" "$(resolve_job_concurrency 1 9 '')"
+check "default concurrency spans all attempts" "45" "$(resolve_job_concurrency 5 45 '')"
+check "default concurrency for a single trial" "1" "$(resolve_job_concurrency 1 1 '')"
+check "explicit concurrency limits parallelism" "2" "$(resolve_job_concurrency 5 45 2)"
 check "explicit concurrency spans distinct tasks" "9" "$(resolve_job_concurrency 1 9 9)"
 check "concurrency is capped by trial count" "9" "$(resolve_job_concurrency 1 9 20)"
 
