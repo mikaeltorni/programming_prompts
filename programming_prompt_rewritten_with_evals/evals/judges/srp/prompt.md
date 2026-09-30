@@ -63,5 +63,26 @@ Answer no when any of these hold:
 
 For a no verdict, identify the exact function and core work left in it.
 
+Also assess churn when the task modifies existing behavior. Inspect the actual
+Git diffs and before/after source, including the supplied seed when present,
+against the original request; do not infer preservation from the final file,
+commit subjects, or the agent's claim alone.
+
+A passing change extends the existing parse/dispatch path, keeps working names,
+interfaces and unrelated functions when they still fit, and confines edits to
+the behavior and necessary integrations, checks or documentation. Extracting a
+new responsibility or shared logic is justified even when it touches several
+files. Do not reward a small diff that leaves mixed responsibilities or copied
+logic, and do not require identical text, a line-count budget, or an arbitrary
+number of functions/files.
+
+Answer no for a concrete unnecessary rewrite, unrelated renaming/reformatting,
+parallel parser, duplicated operation, speculative framework or pass-through
+layer. Cite the changed function/block and explain why the original request
+did not require it. Verify that earlier public behavior remains supported
+except where intentionally changed; a failed operation must not corrupt state.
+Missing history or inaccessible source is missing evidence, not proof of bad
+code; report that limitation instead of inventing churn.
+
 Criteria to score:
 {criteria}
