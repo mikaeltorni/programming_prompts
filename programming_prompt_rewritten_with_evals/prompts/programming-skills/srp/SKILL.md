@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.7 — Use whenever writing or editing Python (or other) code: enforce
+  v1.0.8 — Use whenever writing or editing Python (or other) code: enforce
   single-responsibility functions and methods. Apply on every coding task,
   including small scripts and new files from scratch.
 ---
@@ -83,3 +83,31 @@ Write code as single-responsibility functions/methods.
   When a logging skill applies, the entry `print(...)` is still the first
   statement and the parse-helper call comes after it — printing is not
   parsing, so both rules hold.
+
+## Reduce churn while modifying code
+
+Before editing, identify the requested behavior, its current owner, and the
+callers and checks that depend on it. Change that owner and its necessary
+integration points; preserve working behavior outside the request.
+
+- Keep existing names, signatures, file locations, and conventions when they
+  still fit. Avoid unrelated renaming, reordering, formatting, or rewriting
+  working functions merely to make the new code look uniform.
+- Extend the existing parsing and dispatch path for a new command variant.
+  Do not add a parallel parser or copy a working operation into a second
+  implementation that will drift from the original.
+- When a function acquires a second responsibility, extract that responsibility
+  and update its callers. A local extraction may touch several files; prefer
+  that justified change over a tiny patch that leaves mixed responsibilities,
+  duplicated logic, or another special case.
+- Add helpers for a clear responsibility or actual reuse. Avoid speculative
+  frameworks, pass-through layers, and broad reorganizations for hypothetical
+  future requirements. Simple functions may share a small private helper.
+- Check changed behavior and representative earlier behavior through the public
+  entrypoint. Update expectations only for behavior the request intentionally
+  changes; preserve the remaining contracts and state on failed operations.
+- Review the diff before committing. Each changed block should serve the
+  requested behavior, its necessary extraction, or its checks/documentation.
+  Remove unrelated edits and explain any broader refactor that is necessary.
+  Diff size alone is not proof of churn: judge whether the edits were needed
+  and whether the resulting responsibilities remain clear.
