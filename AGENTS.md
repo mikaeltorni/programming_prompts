@@ -51,6 +51,11 @@ either flag, the wrapper checks for the current stable CLI version. Use a pin
 option only when the user explicitly requests that behavior for a particular
 run.
 
+Omit `--concurrency` from benchmark commands given to the user unless they
+explicitly request a concurrency limit. Without the flag, the wrapper requests
+all selected trials at once, subject to configured LLM and Docker network
+capacity limits; agents do not need to supply a value.
+
 Example (each command in its own terminal):
 
 ```bash
@@ -152,7 +157,7 @@ After an agent changes benchmark prompts, skills, judges, or runtime, include
 the following full-suite cx1 positive command in the final handoff, even when
 a shorter smoke run was used during development. Keep the benchmark invocation
 in its own fenced `bash` block. It selects all eight programming skills, the
-Codex harness and judge, three attempts per task, and concurrency 15. Omit pin
+Codex harness and judge, three attempts per task, and automatic concurrency. Omit pin
 options and `--tasks` so the runner selects every coding task.
 
 ```bash
@@ -160,7 +165,7 @@ cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals
 ```
 
 ```bash
-ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,commits,worktree,docs,srp,commenting,logging,debug --concurrency 15 -k 3
+ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,commits,worktree,docs,srp,commenting,logging,debug -k 3
 ```
 
 ## The benchmark testing framework (read before running an eval)
