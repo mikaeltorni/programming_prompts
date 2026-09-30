@@ -15,6 +15,7 @@ Current skills:
 | [`logging-vague`](logging-vague/SKILL.md) | Control: one vague “Use logging.” line; scored by the logging judge |
 | [`worktree`](worktree/SKILL.md) | Project-prefixed sibling `.worktrees/<project>/<project>_<type-feature>` worktree, merge back, never push |
 | [`commits`](commits/SKILL.md) | One working commit per capability sentence in the original request |
+| [`testing`](testing/SKILL.md) | Contract-based regression checks, existing tooling, isolated execution, and honest verification evidence |
 | [`debug`](debug/SKILL.md) | Read repo `.log/` before hypothesizing a bug |
 | [`docs`](docs/SKILL.md) | README.md after the code: program, entrypoint, commands |
 | [`workflow`](workflow/SKILL.md) | Explicit-only plan → optional worktree → code → optional docs orchestration |
@@ -40,6 +41,13 @@ original logs in `tests/task-logs/` and executes the reported failing example
 and documented boundaries against the submitted program. With no log-guided
 failure it reports not applicable. Reading order is verified only if a
 chronological tool trace is available; otherwise the verdict covers the fix.
+
+**Testing eval note:** the semantic judge inspects agent-authored checks against
+the original request and runs them in isolation when execution tools are
+available. It does not require a framework, file name, or fixed test count.
+Without an agent trace it reports execution order as unverified. Default
+discovery includes `testing`; select it alone with `--skills testing` or add it
+to the full suite.
 
 **Docs eval note:** after the code, write `README.md` naming the public
 `run_*` entrypoint and the commands. Function docstrings stay on the
