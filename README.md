@@ -282,6 +282,10 @@ The Harbor benchmark's public entrypoint is
 It runs coding tasks with `--harness`, selects the Codex judge with
 `--eval-agent codex`, selects programming skills with `--skills`, and accepts
 `--tasks`, `--concurrency`, `--baseline`, and Harbor's `-k` attempt count.
+Without `--concurrency`, it requests all selected tasks × attempts in parallel,
+subject to configured LLM caps and available per-trial Docker network slots.
+Use `--concurrency N` only when you want an explicit limit; `-k` controls
+attempts per task independently.
 Run one benchmark invocation at a time. See the
 [evals README](programming_prompt_rewritten_with_evals/evals/README.md) for the
 command surface and [AGENTS.md](AGENTS.md) for the repository's run policy and
