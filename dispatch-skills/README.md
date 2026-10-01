@@ -7,9 +7,9 @@ is reached.
 
 They are the only prompts in this repository that the Agent Command Center /
 notes-app skill menu offers. Everything under `plugins/` and `skills/` stays out
-of that menu, because those prompts are either always-on policy
-(`general-programming-guidelines`, which the menu offers as an explicit extra) or
-they need a conversation to be useful.
+of that menu because they supply selectable engineering guidance or need a
+conversation to be useful. The retired generic programming prompt is no longer
+shipped.
 
 ## What makes a prompt dispatchable
 
@@ -28,7 +28,7 @@ A `dispatch-skills/<name>/SKILL.md` must:
 4. Define an explicit **improvement loop** with a stop condition, so the agent
    keeps working until the goal is met instead of stopping at "good enough".
 5. Defer isolation, commit, merge, and reload policy to
-   `general-programming-guidelines` rather than restating it.
+   the selected `worktree` and `commits` skills rather than restating it.
 
 ## Current dispatch skills
 

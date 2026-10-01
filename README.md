@@ -26,7 +26,7 @@ generation and deployment.
 The install catalog intentionally distinguishes plugins from direct skills:
 
 - Plugins: Commit Guidelines and Linux Desktop Configuration.
-- Direct skills: Docs, General Programming Guidelines, Init Project,
+- Direct skills: Docs, Init Project,
   Refactoring, Setup Repository Guidelines, and Workflow.
 - Python Logging is retired and has been removed from this repository.
 
@@ -49,11 +49,12 @@ Clone the content source and inspect a skill directly:
 ```bash
 git clone https://github.com/mikaeltorni/programming_prompts.git
 cd programming_prompts
-sed -n '1,120p' skills/general-programming-guidelines/SKILL.md
+sed -n '1,120p' programming_prompt_rewritten_with_evals/prompts/programming-skills/testing/SKILL.md
 ```
 
-The command prints the reusable engineering workflow that agents load for
-software tasks.
+The command prints the independent testing skill. The programming suite
+contains workflow, commits, worktree, docs, srp, commenting, logging, debug,
+and testing; see its [skill catalog](programming_prompt_rewritten_with_evals/prompts/programming-skills/README.md).
 
 ## AI coding-agent prompt features
 
@@ -63,7 +64,6 @@ and carry manifests for both Codex and Claude Code; direct skills carry only
 `SKILL.md` content.
 
 - **Testing Skill** — Focused regression checks, public-interface coverage, existing project tooling, and isolated execution; source: [testing](programming_prompt_rewritten_with_evals/prompts/programming-skills/testing/SKILL.md).
-- **General Programming Guidelines** — Shared coding, testing, and engineering workflow rules for all agent tasks.
 - **Workflow Skill** — Explicit-only orchestration that plans first, coordinates only selected companion skills, always writes code, and conditionally uses worktree and documentation guidance.
 - **Docs Skill** — User-facing project documentation for completed programming changes.
 - **Commit Guidelines** — Cautious Git commit workflow (inspect → plan → stage hunks → verify → compose).
@@ -84,7 +84,6 @@ programming_prompts/
 │   ├── commit-guidelines/                  # Cautious Git commit workflow
 │   ├── linux-desktop-configuration/        # Console-only desktop deployment + sudo-free installers
 ├── skills/                                 # Direct skills, not plugins
-│   ├── general-programming-guidelines/     # Engineering workflow & coding standards
 │   ├── workflow/                            # Explicit-only programming orchestrator
 │   ├── docs/                                # Post-code project documentation
 │   ├── init-project/                       # Secure init with UV + supply-chain protection
@@ -95,8 +94,6 @@ programming_prompts/
 │   ├── github-seo/                        # GitHub discoverability audit, scored 0–100, looped
 │   ├── github-portfolio-scan/             # Directory-wide resume/portfolio release-readiness audit
 │   └── worktree-cleanup/                  # Finished-worktree reclaim, scored, never stored
-├── global-instructions/                    # Bootstrap tags merged into runtime instructions
-│   └── general-programming-guidelines.md   # Starts the full-guidelines delivery path
 ├── tests/                                  # pytest policy tests for the plugin prompts
 ├── .log/                                  # Runtime logs (gitignored)
 ├── LICENSE.md                             # MIT License
@@ -167,20 +164,46 @@ change. It covers the public entrypoint, commands or API, supported inputs,
 configuration, and important usage constraints without taking ownership of
 function docstrings from a separately selected commenting skill.
 
-### general-programming-guidelines
+### testing and the programming suite
 
-Engineering workflow, tests, logging, documentation, and supply-chain rules.
-Feature commits and worktree isolation/delivery are owned by the separately
-selected V2 `commits` and `worktree` skills. The generic guidelines are being retired from the default baseline;
-independent skills now provide the selected capabilities. Testing is available
-as `v2:testing`. For the transitional guidelines selection, `acc pp enable --both --skill general-programming-guidelines,v2:commits,v2:worktree`
-reapplies them across harnesses. Verify with
-`acc pp status --skill general-programming-guidelines,commits,worktree --check`.
+The independent [testing skill](programming_prompt_rewritten_with_evals/prompts/programming-skills/testing/SKILL.md)
+requires reusable behavior checks, bug regressions, meaningful public-interface
+coverage, isolated execution, and existing project tooling. Static content uses
+direct checks or the project's prescribed evaluation method. It does not create
+CI or install a new test framework by default.
 
-Worktrees use `.worktrees/<project>/<project>_<type-feature>` beside the live
-project. The worktree leaf repeats the physical project basename, so it does
-not depend on the model or account running the task. Reapply after source
-edits; ongoing conversations can retain their previously loaded instructions.
+Agent Command Center's default installation enables V2 `commits`, `worktree`,
+`workflow`, `docs`, and `testing`. Other skills remain independently selectable;
+manual selections are preserved. Apply this baseline across every harness with:
+
+```bash
+acc pp enable --both --skill v2:commits,v2:worktree,v2:workflow,v2:docs,v2:testing
+```
+
+```bash
+acc pp status --both --skill commits,worktree,workflow,docs,testing --check
+```
+
+The generic programming guidelines and their global bootstrap are retired and
+removed. Installer postflight disables their previous managed blocks and native
+skill paths, including registered Codex accounts. Existing conversations may
+retain previously supplied instructions; new sessions receive the current
+selection. Python setup remains owned by `init-project`, and desktop deployment
+remains owned by `linux-configuration`.
+
+The testing skill has a semantic Harbor judge under `evals/judges/testing/`.
+Default benchmark skill discovery includes it. To evaluate the full suite:
+
+```bash
+cd programming_prompt_rewritten_with_evals/evals
+```
+
+```bash
+ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,commits,worktree,docs,srp,commenting,logging,debug,testing -k 3
+```
+
+Run one benchmark wrapper at a time. Judge verdicts inspect saved checks against
+the original request; without an agent trace, execution order remains unverified.
 
 ### init-project
 
@@ -328,9 +351,10 @@ installer reads them when it deploys prompts to an agent environment.
 
 ### Where should I start with Programming Prompts?
 
-Start with [general-programming-guidelines](skills/general-programming-guidelines/SKILL.md)
-for the shared workflow, or browse the [plugin directories](plugins/) when you
-need a packaged Codex and Claude Code integration.
+Start with the [programming skill catalog](programming_prompt_rewritten_with_evals/prompts/programming-skills/README.md)
+and select the capabilities your task needs. Use `workflow` for explicit
+coordination and `testing` for verification. Browse the [plugin directories](plugins/)
+for packaged Codex and Claude Code integrations.
 
 ### Is this repository a plugin marketplace?
 

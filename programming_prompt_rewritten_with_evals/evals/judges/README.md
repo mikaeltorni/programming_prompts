@@ -10,6 +10,7 @@ All LLM judges receive the original coding request through the shared sync path.
 | `commenting` | LLM `prompt.md` | the selected docstring contract |
 | `logging` | LLM `prompt.md` | the selected entry/exit tracing contract |
 | `commits` | LLM `prompt.md` | capability sentences mapped to distinct working commits, using diffs and source trees |
+| `workflow` | LLM `prompt.md` | one current four-row plan and routing of independently selected companions |
 | `testing` | LLM `prompt.md` | agent-authored checks against the original contract, isolated execution when available, and explicit evidence limits |
 | `debug` | LLM `prompt.md` | original failure logs and observed program behavior; reading order only when a trace is available |
 | `worktree` | programmatic | project-prefixed `<project>_<type>-<feature>` worktree layout, merge, and remote policy |

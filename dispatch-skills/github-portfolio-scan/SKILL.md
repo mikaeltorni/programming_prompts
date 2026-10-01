@@ -1,7 +1,7 @@
 ---
 name: github-portfolio-scan
 description: >-
-  v1.0.0 — Use when a directory of git checkouts needs a resume-facing GitHub
+  v1.0.1 — Use when a directory of git checkouts needs a resume-facing GitHub
   portfolio audit: inventory every live original repository, score each one for
   release-readiness (product story, docs, tests, license, secrets, coupling,
   authorship), report positives and flaws with evidence, and rank a tier list.
@@ -23,9 +23,9 @@ resolve the path, inventory, inspect one by one, score, rank, report.
 ## Project instructions first
 
 Read the target directory's own `AGENTS.md` and `CLAUDE.md` when present; they
-outrank this skill for ownership, routing, and local policy. Then follow
-`general-programming-guidelines` for isolation, testing, logging, documentation,
-and delivery. This skill does not restate that policy. **This run does not
+outrank this skill for ownership, routing, and local policy. The selected
+`worktree`, `commits`, `testing`, `logging`, and `docs` skills own applicable
+engineering and delivery policy. This skill does not restate their rules. **This run does not
 edit the scanned trees**, so a worktree is not required unless some later,
 explicit task starts closing gaps.
 
