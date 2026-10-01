@@ -56,6 +56,18 @@ check "explicit invocation is idempotent" \
   $'Use $workflow to coordinate this programming task from start to finish.\nEnabled programming skills for this task: standard, workflow.\n\nFollow every provided programming skill.' \
   "$(<"$task_root/calculator/instruction.md")"
 
+SKILLS_ROOT="$(cd "$SCRIPT_DIR/../../prompts/programming-skills" && pwd)"
+JUDGES_ROOT="$(cd "$SCRIPT_DIR/../judges" && pwd)"
+eight=$'commenting\ncommits\ndebug\ndocs\nlogging\nsrp\ntesting\nworktree'
+check "real default discovery is the eight companions" "$eight" \
+  "$(list_available_skills)"
+check "omitting --skills resolves the eight companions" "$eight" \
+  "$(resolve_skills '')"
+check "explicit workflow still resolves" "workflow" \
+  "$(resolve_skills workflow)"
+check "explicit logging-vague still resolves" "logging-vague" \
+  "$(resolve_skills logging-vague)"
+
 if [[ $fails -eq 0 ]]; then
   echo "ALL SKILL DISCOVERY SELF-TESTS PASSED"
 else

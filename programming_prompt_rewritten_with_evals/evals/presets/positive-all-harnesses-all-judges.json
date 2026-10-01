@@ -9,7 +9,7 @@
         "harness=codex",
         "evalAgent=codex,cc,grok",
         "--skills",
-        "srp,commenting,logging,worktree",
+        "commenting,commits,debug,docs,logging,srp,testing,worktree",
         "-k",
         "5"
       ]
@@ -21,7 +21,7 @@
         "harness=cc",
         "evalAgent=codex,cc,grok",
         "--skills",
-        "srp,commenting,logging,worktree",
+        "commenting,commits,debug,docs,logging,srp,testing,worktree",
         "-k",
         "5"
       ]
@@ -33,7 +33,7 @@
         "harness=grok",
         "evalAgent=codex,cc,grok",
         "--skills",
-        "srp,commenting,logging,worktree",
+        "commenting,commits,debug,docs,logging,srp,testing,worktree",
         "-k",
         "5"
       ]

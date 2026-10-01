@@ -53,8 +53,11 @@ solutions cover the final API; they are not staged-history examples.
 
 The suite contains `workflow`, `commits`, `worktree`, `docs`, `srp`,
 `commenting`, `logging`, `debug`, and `testing`. Default discovery includes
-the eight companions; `workflow` requires explicit selection. `logging-vague`
-is an opt-in control. Sources live in [../prompts/programming-skills/](../prompts/programming-skills/README.md);
+the eight companions (`commenting`, `commits`, `debug`, `docs`, `logging`,
+`srp`, `testing`, `worktree`); `workflow` requires explicit selection.
+`logging-vague` is an opt-in control. Shipped launcher presets pass that same
+eight-skill `--skills` list on every `codex`, `cc`, and `grok` job, positive
+and baseline. Sources live in [../prompts/programming-skills/](../prompts/programming-skills/README.md);
 [judges/README.md](judges/README.md) describes their evaluators.
 
 [Testing](../prompts/programming-skills/testing/SKILL.md) requires meaningful

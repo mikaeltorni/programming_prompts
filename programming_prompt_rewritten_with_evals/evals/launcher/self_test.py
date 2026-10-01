@@ -20,6 +20,7 @@ from .presets import (
     HARNESS_ORDER,
     PRESETS_DIR,
     RUN_SCRIPT,
+    Job,
     Preset,
     format_preset_listing,
     _job_eval_agents,
@@ -36,6 +37,44 @@ from .presets import (
     write_shipped_presets,
 )
 from .terminal_script import WINDOW_TITLE_PREFIX
+
+REQUIRED_DEFAULT_SKILLS: tuple[str, ...] = (
+    "commenting",
+    "commits",
+    "debug",
+    "docs",
+    "logging",
+    "srp",
+    "testing",
+    "worktree",
+)
+FORBIDDEN_DEFAULT_SKILLS: tuple[str, ...] = ("workflow", "logging-vague")
+
+
+def _job_skills_csv(job: Job) -> str:
+    """Read the ``--skills`` value from a job.
+
+    Parameters: job - one launcher job.
+
+    Returns: the comma-separated skill list, or an empty string.
+    """
+    args = list(job.args)
+    for index, item in enumerate(args):
+        if item == "--skills" and index + 1 < len(args):
+            return args[index + 1]
+        if item.startswith("--skills="):
+            return item.split("=", 1)[1]
+    return ""
+
+
+def _job_skill_names(job: Job) -> set[str]:
+    """Read selected skill names from a job.
+
+    Parameters: job - one launcher job.
+
+    Returns: skill names from the comma list.
+    """
+    return {token for token in _job_skills_csv(job).split(",") if token}
 
 
 def _self_test() -> int:
@@ -128,6 +167,16 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
     )
     catalog = shipped_presets()
     catalog_names = [item.name for item in catalog]
+    default_names = tuple(
+        token for token in DEFAULT_SKILLS.split(",") if token
+    )
+    record(
+        "shared_default_skill_names",
+        default_names == REQUIRED_DEFAULT_SKILLS
+        and set(default_names) == set(REQUIRED_DEFAULT_SKILLS)
+        and not any(name in default_names for name in FORBIDDEN_DEFAULT_SKILLS),
+        DEFAULT_SKILLS,
+    )
     expected_stems = {
         "positive-all-harnesses-all-judges",
         "baseline-all-harnesses-all-judges",
@@ -170,8 +219,16 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
             issues.append(f"jobs={len(preset.jobs)}")
         if any(("--baseline" in job.args) is not baseline for job in preset.jobs):
             issues.append("baseline-flag")
-        if any(DEFAULT_SKILLS not in job.args for job in preset.jobs):
+        if any(
+            set(REQUIRED_DEFAULT_SKILLS) - _job_skill_names(job) for job in preset.jobs
+        ):
             issues.append("skills")
+        if any(
+            name in _job_skill_names(job)
+            for job in preset.jobs
+            for name in FORBIDDEN_DEFAULT_SKILLS
+        ):
+            issues.append("opt-in-skills")
         if any("-n" in job.args or "--n-concurrent" in job.args for job in preset.jobs):
             issues.append("explicit-n")
         excluded = [item for item in HARNESS_ORDER if item not in harnesses]
@@ -222,6 +279,34 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
         if loaded.jobs != expected.jobs or loaded.description != expected.description:
             disk_mismatch.append(expected.name)
     record("catalog_matches_disk", not disk_mismatch, ",".join(disk_mismatch) or "ok")
+    harness_skill_gaps: list[str] = []
+    seen_harnesses: set[str] = set()
+    for expected in catalog:
+        path = PRESETS_DIR / f"{expected.name}.json"
+        try:
+            loaded = load_preset_file(path)
+        except (ValueError, OSError):
+            continue
+        for job in loaded.jobs:
+            harness = _job_harness(job)
+            seen_harnesses.add(harness)
+            missing = set(REQUIRED_DEFAULT_SKILLS) - _job_skill_names(job)
+            extra = _job_skill_names(job) & set(FORBIDDEN_DEFAULT_SKILLS)
+            if missing or extra:
+                harness_skill_gaps.append(
+                    f"{expected.name}:{harness}:missing={sorted(missing)} extra={sorted(extra)}"
+                )
+    record(
+        "disk_jobs_eight_default_skills",
+        not harness_skill_gaps,
+        ",".join(harness_skill_gaps) or "ok",
+    )
+    for harness in HARNESS_ORDER:
+        record(
+            f"disk_has_{harness}_job",
+            harness in seen_harnesses,
+            harness,
+        )
     listed = [path.stem for path in list_preset_files(PRESETS_DIR)]
     record(
         "catalog_menu_order",
@@ -348,7 +433,8 @@ HDMI-1 disconnected (normal left inverted right x axis y axis)
             and "harness=codex" in one.jobs[0].args
             and "evalAgent=codex" in one.jobs[0].args
             and "evalAgent=grok" not in one.jobs[0].args
-            and "evalAgent=cc" not in one.jobs[0].args,
+            and "evalAgent=cc" not in one.jobs[0].args
+            and _job_skill_names(one.jobs[0]) == set(REQUIRED_DEFAULT_SKILLS),
             " ".join(one.jobs[0].args),
         )
         two = load_preset_file(folder / "positive-cc-grok.json")

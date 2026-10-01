@@ -14,7 +14,17 @@ from .log import log
 EVALS_DIR = Path(__file__).resolve().parent.parent
 PRESETS_DIR = EVALS_DIR / "presets"
 RUN_SCRIPT = "run_benchmark.sh"
-DEFAULT_SKILLS = "srp,commenting,logging,worktree"
+DEFAULT_SKILL_NAMES: tuple[str, ...] = (
+    "commenting",
+    "commits",
+    "debug",
+    "docs",
+    "logging",
+    "srp",
+    "testing",
+    "worktree",
+)
+DEFAULT_SKILLS = ",".join(DEFAULT_SKILL_NAMES)
 HARNESS_ORDER: tuple[str, ...] = ("codex", "cc", "grok")
 
 
