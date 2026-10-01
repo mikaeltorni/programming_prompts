@@ -39,10 +39,14 @@ including a requested rule's deliberate replacement in a later revision.
 judge sync appends it to each LLM judge prompt. The coding agent's rewritten
 README, commit subjects, and claimed completion do not replace that request.
 
-`greeter` supplies a broken greeter and failure logs. The logs are planted
-under `.log/` in the workspace and preserved under `tests/task-logs/` for the
-judge. The debug judge checks the reported behavior by inspecting and executing
-the program; comments containing expected words do not demonstrate a fix.
+`greeter` is the log-driven debug task. It supplies a broken greeter and
+failure logs. The logs are planted under `.log/` in the workspace and
+preserved under `tests/task-logs/` for the judge. The public entrypoint is
+`run_greeter` in `/app/greeter.py`. It accepts `<name> <hour>` (match the
+planted `want:` line), `bye <name>` (`bye=<name>`), and `period <hour>`
+(`period=<phrase>`). The debug judge checks the reported behavior by inspecting
+and executing the program; comments containing expected words do not
+demonstrate a fix.
 
 Select tasks through the benchmark's canonical flags:
 

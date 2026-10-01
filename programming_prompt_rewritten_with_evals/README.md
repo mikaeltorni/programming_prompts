@@ -72,7 +72,7 @@ Committed fallbacks:
 - `prompts/programming-skills/` — injectable skills (`srp`, `commenting`,
   `logging`, `worktree`, `commits`, `debug`, `testing`, `docs`, explicit-only `workflow`,
   plus `*-vague` controls)
-- `evals/coding-prompts/` — one `.md` per write-from-scratch coding task
+- `evals/coding-prompts/` — one `.md` per coding task, including the log-driven `greeter`
 - `evals/seeds/` — optional planted files for a task (`log/` → image `.log/`)
 - `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill
 - `evals/verifier/run_judges.sh` — shared Harbor verifier (one LLM judge pass per eval agent)
