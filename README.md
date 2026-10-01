@@ -148,7 +148,11 @@ hostname without confirming SSH setup, it gives Ubuntu VM-console setup
 commands, including setting the account password, and waits for confirmation
 before any network attempt. Once confirmed, it connects using a key or an
 interactive password prompt, updates the project copy, and installs and checks
-it on the VM. Installed as a native skill under each harness's skill directory.
+it on the VM. For visual behavior, it captures and inspects a VM screenshot
+when a safe capture path is available. If visual confirmation would help but
+no capture path exists, it asks the user for a screenshot. SSH alone does not
+guarantee guest desktop access. Installed as a native skill under each
+harness's skill directory.
 
 ### workflow
 
@@ -194,7 +198,10 @@ selection. Python setup remains owned by `init-project`, and desktop deployment
 remains owned by `linux-configuration`.
 
 The testing skill has a semantic Harbor judge under `evals/judges/testing/`.
-Default benchmark skill discovery includes it. To evaluate the full suite:
+Default benchmark skill discovery and shipped launcher presets select the eight
+companions (`commenting`, `commits`, `debug`, `docs`, `logging`, `srp`,
+`testing`, `worktree`). `workflow` stays explicit `--skills workflow`.
+To evaluate the full suite including workflow:
 
 ```bash
 cd programming_prompt_rewritten_with_evals/evals

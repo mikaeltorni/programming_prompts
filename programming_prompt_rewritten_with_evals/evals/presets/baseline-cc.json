@@ -10,7 +10,7 @@
         "evalAgent=cc",
         "--baseline",
         "--skills",
-        "srp,commenting,logging,worktree",
+        "commenting,commits,debug,docs,logging,srp,testing,worktree",
         "-k",
         "5"
       ]
