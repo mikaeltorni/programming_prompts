@@ -138,3 +138,13 @@ def test_write_from_scratch_greeter_is_not_a_live_prompt() -> None:
         assert "morning=<name>" not in text, f"{prompt.stem} still advertises the discarded morning= greeter"
         assert "afternoon=<name>" not in text, f"{prompt.stem} still advertises the discarded afternoon= greeter"
         assert "evening=<name>" not in text, f"{prompt.stem} still advertises the discarded evening= greeter"
+
+
+def test_greeter_oracle_matches_planted_log_and_later_commands() -> None:
+    """The remaining greeter oracle implements the log-driven debug contract."""
+    greeter = load_oracle("greeter")
+    assert greeter.run_greeter("Ada 3") == "hi=Good twilight, Ada"
+    assert greeter.run_greeter("bye Ada") == "bye=Ada"
+    assert greeter.run_greeter("period 3") == "period=Good twilight"
+    assert greeter.run_greeter("Bob 8") == "hi=Good day, Bob"
+    assert greeter.run_greeter("period 20") == "period=Good evening"
