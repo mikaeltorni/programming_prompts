@@ -1,12 +1,17 @@
 ---
 name: commenting
 description: >-
-  v1.0.3 — Use whenever writing or editing Python (or other) functions: every
+  v1.0.4 — Use whenever writing or editing Python (or other) functions: every
   function, including authored tests and fixtures, needs a description and
   same-line Parameters and Returns labels. Apply on every coding task.
 ---
 
 # Function docstrings
+
+Write the complete docstring when creating each function, including the first
+regression test. A framework-generated or copied one-line test description
+must be expanded before saving it. Passing tests or adding logging does not
+complete this separate docstring obligation.
 
 Give every `def`, `async def`, and method a docstring with:
 
@@ -44,3 +49,22 @@ Parameters: value - amount to add; count - current count.
 Returns: the updated count.
 """
 ```
+
+For an assertion-only instance test, the docstring itself has this shape even
+when no logging companion is selected. The uppercase names below are placeholders
+for the requested public call and an independently expected result:
+
+```python
+def test_requested_behavior(self):
+    """Check the requested public behavior.
+
+    Parameters: self - the test instance.
+    Returns: None.
+    """
+    self.assertEqual(PUBLIC_ENTRYPOINT(REQUESTED_INPUT), EXPECTED_RESULT)
+```
+
+At the commit gate, enumerate the functions in every changed application and
+test file. Check description, parameter meanings and return meaning separately
+for each function; a description-only test method is unfinished even when its
+assertions and entry/exit prints are correct.

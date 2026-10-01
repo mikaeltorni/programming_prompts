@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.3 — Use whenever writing, fixing, refactoring, or verifying code:
+  v1.0.4 — Use whenever writing, fixing, refactoring, or verifying code:
   save and run meaningful regression tests using existing project tooling.
   Use direct checks for static content and honor project verification rules.
 ---
@@ -42,6 +42,15 @@ or add hosted CI unless the user requests it.
   changed flag and multi-word or quoted inputs when accepted. Do not invent
   error strings, input restrictions, or behavior absent from the specification.
 - Isolate mutable state so cases are repeatable and do not depend on order.
+  Establish a fresh state before **every** independent case through a shared
+  fixture/setup hook, a fresh module instance, or a consistent per-case reset;
+  resetting only newly added tests leaves earlier tests dependent on prior use.
+  Preserve state within a requested multi-call sequence. Fixture setup may
+  reset private state when necessary, but behavioral assertions still exercise
+  the public interface. Do not add a public reset API just for tests or call a
+  reset command before the stage that introduces it. For a mutable module, run
+  its saved cases again in the same process or a different order to check the
+  isolation mechanism, in addition to the normal runner.
   Check representative earlier capabilities after changing shared parsing,
   dispatch, or helpers. Do not weaken assertions or alter expected results
   merely to make an unexplained failure green.
@@ -58,7 +67,13 @@ Keep coverage for earlier behavior that still applies; replace only expectations
 explicitly retired by the request. Earlier commits retain the checks for retired
 rules, so the final suite must not assert both the old and replacement behavior.
 Do not overwrite the saved suite with only the newest stage's examples and lose
-unaffected regressions. Run the accumulated applicable checks before committing.
+unaffected regressions. When formerly invalid inputs become valid, revise or
+remove their obsolete rejection assertions and keep representative inputs that
+remain invalid under the current contract. Do not leave an empty negative-test
+loop or replace it with a before/after read that never attempts an operation.
+Retain meaningful failure and unchanged-state checks elsewhere in the suite;
+assert expected state independently before checking that a rejected operation
+preserves it. Run the accumulated applicable checks before committing.
 
 Before saving the first test file, check independently selected function skills.
 When commenting is selected, every test/helper/fixture method needs a purpose,
