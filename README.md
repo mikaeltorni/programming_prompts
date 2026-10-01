@@ -293,6 +293,15 @@ Run one benchmark invocation at a time. See the
 command surface and [AGENTS.md](AGENTS.md) for the repository's run policy and
 required full-suite command.
 
+The [SRP skill](programming_prompt_rewritten_with_evals/prompts/programming-skills/srp/SKILL.md)
+also guides focused edits: start with a small working slice, extend its existing
+helpers and command path, and preserve simple responsibilities as requirements
+change. The `todo`, `bank`, and `stats` benchmark prompts repeatedly revise
+earlier behavior as well as adding commands. Each stage requires public-entrypoint
+checks and a working commit; the SRP judge receives historical source and diffs
+to assess unnecessary churn alongside the final function structure. A justified
+local extraction is allowed, and diff size alone is not the score.
+
 Semantic judges receive the actual source, function boundaries, workflow plan,
 and reachable commit history. A verdict that contradicts its own reason or
 bounded source/plan evidence is retried once; both raw attempts remain in the

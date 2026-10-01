@@ -9,7 +9,7 @@ marker or count file:
 | Prompt | Entrypoint |
 | --- | --- |
 | [`coding-prompts/calculator.md`](coding-prompts/calculator.md) | `/app/calculator.py` → `run_calculator` (`add`, `sub`, `mul`, `div`) |
-| [`coding-prompts/todo.md`](coding-prompts/todo.md) | `/app/todo.py` → `run_todo` (`add`, `list`, `done`) |
+| [`coding-prompts/todo.md`](coding-prompts/todo.md) | `/app/todo.py` → `run_todo` (`add`, `list`, `done <n>`, `clear`) |
 | [`coding-prompts/counter.md`](coding-prompts/counter.md) | `/app/counter.py` → `run_counter` (`inc`, `dec`, `get`, `set`) |
 | [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` (`hello`, hour-based greeting, `bye`) |
 | [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` (`c2f`, `f2c`, Kelvin conversion) |
@@ -22,6 +22,32 @@ Each coding prompt is the product instruction (what to build) plus “Follow the
 provided programming skill.” Skills under
 [`../prompts/programming-skills/`](../prompts/programming-skills/) guide *how*
 to write it. Each skill has its own judge under [`judges/<skill>/`](judges/).
+
+## Repeated build/edit tasks
+
+`todo`, `bank`, and `stats` start from a small working program, then alternate
+new capabilities with revisions to earlier behavior:
+
+| Task | Earlier behavior revised |
+| --- | --- |
+| `todo` | Single-word items become normalized multi-word text; completing the oldest item becomes indexed completion. |
+| `bank` | Deposits and withdrawals expand from whole numbers to decimals; transfers subsequently undergo the same change. |
+| `stats` | Sample input expands from whole numbers to decimals; the mean later changes from truncation to actual arithmetic precision. |
+
+Each task requires checking and committing the current working stage before
+implementing the next. Check sequences use a fresh module per sequence and
+preserve state between calls within it. Later-stage behavior must remain
+unavailable until its stage; an explicit replacement retires only the affected
+earlier rule. These examples clarify capability sentences rather than creating
+extra Features. The other coding tasks retain shorter growth patterns.
+
+The SRP judge receives the reachable Git graph, actual diffs, and historical
+Python source through the same evidence helper as commits. It assesses focused
+functions throughout the revisions and unnecessary changes, allowing justified
+local extractions without a line-count or function-count budget. The commits
+judge checks each rule in its own revision and preserves unaffected contracts
+when a later sentence intentionally changes an earlier rule. Final oracle
+solutions cover the final API; they are not staged-history examples.
 
 ## Edit surfaces
 
