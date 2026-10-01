@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.2 — Use whenever writing, fixing, refactoring, or verifying code:
+  v1.0.3 — Use whenever writing, fixing, refactoring, or verifying code:
   save and run meaningful regression tests using existing project tooling.
   Use direct checks for static content and honor project verification rules.
 ---
@@ -45,6 +45,46 @@ or add hosted CI unless the user requests it.
   Check representative earlier capabilities after changing shared parsing,
   dispatch, or helpers. Do not weaken assertions or alter expected results
   merely to make an unexplained failure green.
+
+## Preserve runnable verification across revisions
+
+For code creation and behavior changes, save runnable checks in the task
+repository before running them, and include the current capability's checks in
+its commit. Static content and project-specific test prohibitions retain the
+direct-verification allowances above. A terminal heredoc with assertions can add
+an exploratory check, but it does not replace a saved runnable regression.
+For staged changes, extend the saved checks through the existing test path.
+Keep coverage for earlier behavior that still applies; replace only expectations
+explicitly retired by the request. Earlier commits retain the checks for retired
+rules, so the final suite must not assert both the old and replacement behavior.
+Do not overwrite the saved suite with only the newest stage's examples and lose
+unaffected regressions. Run the accumulated applicable checks before committing.
+
+Before saving the first test file, check independently selected function skills.
+When commenting is selected, every test/helper/fixture method needs a purpose,
+`Parameters: self - the test instance.` (or its actual parameters) and
+`Returns: None` for an assertion-only method. When logging is selected, print
+`self=` first and `None` after its final assertion. The application's docstrings
+and prints do not satisfy these obligations in its caller. Apply this to the
+initial failing regression too, then repeat the check for every later test
+addition before committing. This does not enable an unselected companion.
+
+With both companions selected, adapt this test-method shape to the request;
+the uppercase values below stand for the actual public-interface input and
+independently expected result, not extra requirements or tests to copy unchanged:
+
+```python
+def test_requested_behavior(self):
+    """Check the requested public behavior.
+
+    Parameters: self - the test instance.
+    Returns: None.
+    """
+    print(f"self={object.__repr__(self)}")
+    self.assertEqual(PUBLIC_ENTRYPOINT(REQUESTED_INPUT), EXPECTED_RESULT)
+    print(None)
+```
+
 
 ## Keep automated checks isolated
 

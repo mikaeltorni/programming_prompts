@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.9 — Use whenever writing or editing Python (or other) code: enforce
+  v1.0.10 — Use whenever writing or editing Python (or other) code: enforce
   single-responsibility functions and methods. Apply on every coding task,
   including small scripts and new files from scratch.
 ---
@@ -83,6 +83,17 @@ Write code as single-responsibility functions/methods.
   When a logging skill applies, the entry `print(...)` is still the first
   statement and the parse-helper call comes after it — printing is not
   parsing, so both rules hold.
+
+## Establish responsibilities in the current slice
+
+The first capability already needs a parse helper, its operation helper(s), and
+an entrypoint that delegates to them. A single command, a short function, or a
+simple greeting/conversion does not exempt raw-command parsing or computed
+output from these boundaries. When fixing an existing program, inspect its
+entrypoint too: extract existing mixed parsing and core work as part of the
+current repair, preserving the public signature and earlier behavior. Do not
+leave the original command monolithic while giving only new commands helpers,
+or defer the extraction to a later capability or final cleanup.
 
 ## Reduce churn while modifying code
 

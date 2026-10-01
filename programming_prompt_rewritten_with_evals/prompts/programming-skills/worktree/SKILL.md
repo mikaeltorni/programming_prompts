@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >-
-  v1.0.7 — Edit Git projects in a sibling .worktrees project/task checkout,
+  v1.0.8 — Edit Git projects in a sibling .worktrees project/task checkout,
   commit there, merge each Feature into the live default branch, and reapply
   its consumers. Never push unless requested.
 ---
@@ -73,6 +73,15 @@ later tool calls. Check status afterward and inspect the project group
 for misplaced files; recover only this task's files without overwriting
 user work in the live checkout. For multiple repositories, establish
 this layout separately from each live project.
+
+The external `<project-parent>/.worktrees/<project>/` group holds registered
+worktrees only. Put scratch files and recovered drafts inside this task's
+checkout under `tmp/`, never in a second unregistered directory or loose file
+beside it. If a write accidentally landed in the live checkout, compare it with
+the task copy and move only this task's draft into the task checkout (or its
+`tmp/` recovery directory), then commit and merge the intended deliverable.
+Before delivery, inspect the project group for this task's stray recovery files;
+preserve other tasks and user work.
 
 ## Deliver each completed Feature
 
