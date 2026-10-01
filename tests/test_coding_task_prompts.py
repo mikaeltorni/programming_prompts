@@ -128,3 +128,13 @@ def test_stats_oracle_refuses_bad_commands() -> None:
         stats.run_stats("add")
     with pytest.raises(ValueError):
         stats.run_stats("fly")
+
+
+def test_write_from_scratch_greeter_is_not_a_live_prompt() -> None:
+    """The discarded hello= greeter is not a live coding prompt."""
+    for prompt in prompt_paths():
+        text = prompt.read_text(encoding="utf-8")
+        assert "hello=<name>" not in text, f"{prompt.stem} still advertises the discarded hello= greeter"
+        assert "morning=<name>" not in text, f"{prompt.stem} still advertises the discarded morning= greeter"
+        assert "afternoon=<name>" not in text, f"{prompt.stem} still advertises the discarded afternoon= greeter"
+        assert "evening=<name>" not in text, f"{prompt.stem} still advertises the discarded evening= greeter"
