@@ -126,14 +126,14 @@ otherwise keep findings in the task output or existing logs.
 Work under `programming_prompt_rewritten_with_evals/` is prompt-and-Harbor
 evaluation content, not application code. **Do not create, update, or commit
 pytest/unit/integration tests for that tree** — not for judge prompts, Harbor
-wrappers, Dockerfiles, job configs, or skills — even when
-`general-programming-guidelines` would normally require tests first.
+wrappers, Dockerfiles, job configs, or skills — even when the selected
+`testing` skill would normally require tests first.
 
 Verify eval changes by reading the prompt/config and running Harbor tasks
 (oracle / `nop` / Codex) when a live check is needed. LLM judges are not
 deterministic; wrapping them in repo unit tests does not make the evaluation
-deterministic and is not wanted here. This AGENTS.md rule overrides the shared
-programming guidelines on tests for this path.
+deterministic and is not wanted here. This AGENTS.md rule overrides the selected
+testing guidance on tests for this path.
 
 ## Evaluation commands: one fenced block per terminal
 

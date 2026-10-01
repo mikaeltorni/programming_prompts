@@ -104,9 +104,9 @@ def test_dispatch_skill_carries_no_plugin_manifest(skill_path: Path):
 
 
 @pytest.mark.parametrize("skill_path", dispatch_skill_paths(), ids=lambda p: p.parent.name)
-def test_dispatch_skill_defers_isolation_policy_to_the_shared_guidelines(skill_path: Path):
+def test_dispatch_skill_defers_isolation_policy_to_worktree(skill_path: Path):
     content = skill_path.read_text(encoding="utf-8")
-    assert "general-programming-guidelines" in content
+    assert "`worktree`" in content
 
 
 def test_seo_rubric_categories_sum_to_one_hundred():

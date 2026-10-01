@@ -1,7 +1,7 @@
 ---
 name: github-seo
 description: >-
-  v1.3.0 — Use when a GitHub project needs to be found: search-engine ranking, AI/LLM
+  v1.3.1 — Use when a GitHub project needs to be found: search-engine ranking, AI/LLM
   citability, GitHub-internal discovery, and registry presence. Runs a
   weighted 100-point audit, records a tracked scorecard, then closes the highest-value gap
   round after round until the score is a fully evidenced 100/100, and maintains it after.
@@ -18,9 +18,9 @@ against the same rubric, so two agents a month apart produce comparable numbers.
 
 Read the repository's own `AGENTS.md` and `CLAUDE.md` before editing anything;
 they outrank this skill for ownership, routing, deployment, and local policy.
-Then follow `general-programming-guidelines` for isolation, branch naming,
-testing, logging, documentation, and the commit → merge → reapply delivery step.
-This skill does not restate that policy; it only adds what is specific to
+Follow the independently selected `worktree` and `commits` skills for
+isolation and commit → merge → reapply delivery, and `testing`, `logging`, and
+`docs` for applicable engineering checks. This skill does not restate their policy; it only adds what is specific to
 discoverability work.
 
 ## Owner-wide SEO workflow
@@ -120,9 +120,8 @@ The file has exactly these sections:
 Run these steps in order, every invocation, including the ones where you expect
 nothing to have changed.
 
-1. **Set up isolation** exactly as `general-programming-guidelines` Step 1
-   requires — a worktree under the shared `.worktrees/` store on a
-   `docs/seo-<round>` or `feat/seo-<topic>` branch — before the first edit.
+1. **Set up isolation** under the selected `worktree` skill before the first
+   repository edit. It owns the physical project/task layout and branch naming.
 2. **Recon the project as it really is.** Read the code entry points, the
    package manifest, the CLI/API surface, and the existing README. You cannot
    write a truthful description of software you have not looked at, and every
@@ -142,9 +141,9 @@ nothing to have changed.
 7. **Pick the work.** Order the open gaps by `weight × gap × confidence`, and
    take the top item that you can complete and verify now. Anything that needs
    the user goes to *Pending user actions* instead of blocking the round.
-8. **Implement one Feature at a time**, following the Feature discipline in
-   `general-programming-guidelines`: tests or direct verification, then the
-   change, then documentation.
+8. **Implement one Feature at a time**, following the selected `commits` skill.
+   Apply `testing` checks during implementation and document changed behavior
+   through `docs`.
 9. **Verify the change is real.** Run the install/quickstart commands you just
    wrote. Fetch the links you just added. Render the Markdown. A README that
    claims a command works is a defect until you have run it.
@@ -428,7 +427,7 @@ but it is still the user's repository:
 
 ## Definition of Done
 
-Beyond the checklist in `general-programming-guidelines`:
+Alongside the applicable selected engineering skills:
 
 - [ ] The matching `seo_optimization/scorecards/<repository>.md` exists in the
       central SEO repository, is committed, and its numbers come from

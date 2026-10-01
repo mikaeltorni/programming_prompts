@@ -51,8 +51,8 @@ are injected; each selected
 skill’s judge scores the result. See [`evals/README.md`](evals/README.md) for
 CLI parameters, which all take the same `--flag value` form (`--harness`,
 `--eval-agent`, `--eval-agent-model`, `--eval-agent-reasoning-effort`,
-`--skills`, `--tasks`). Omit `--eval-agent` and the LLM judge is the same
-harness as the coding agent; pass `--eval-agent cc,codex` to grade twice.
+`--skills`, `--tasks`). Repository test runs explicitly use `--eval-agent codex`; additional judges
+require an explicit user request.
 
 Default models: Codex `openai/gpt-6-luna` @ low; Claude Code `claude-opus-5`
 @ low; Grok `grok-4.6` @ low. Each new Harbor instance looks up the newest

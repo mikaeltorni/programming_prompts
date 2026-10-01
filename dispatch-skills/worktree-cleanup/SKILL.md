@@ -1,7 +1,7 @@
 ---
 name: worktree-cleanup
 description: >-
-  v1.1.0 — Use when linked git worktrees have piled up and are eating disk: audit every
+  v1.1.1 — Use when linked git worktrees have piled up and are eating disk: audit every
   worktree of a repository against a fixed expiry rubric, remove only the ones that are
   provably finished — merged, clean, unreferenced by any live agent session and by any
   open, in-progress, blocked or benched note — and report the round round after
@@ -28,9 +28,9 @@ unmerged or in-flight work is not.
 
 Read the repository's own `AGENTS.md` and `CLAUDE.md` before touching anything;
 they outrank this skill for ownership, routing, deployment, and local policy.
-Then follow `general-programming-guidelines` for isolation, branch naming,
-testing, logging, documentation, and the commit → merge → reapply delivery step.
-This skill does not restate that policy; it only adds what is specific to
+Follow the independently selected `worktree` and `commits` skills for
+isolation and commit → merge → reapply delivery, and `testing`, `logging`, and
+`docs` for applicable engineering checks. This skill does not restate their policy; it only adds what is specific to
 worktree expiry. Any file this skill changes in a repository is committed
 through that shared delivery policy, from a task worktree — never from the live
 default branch.
