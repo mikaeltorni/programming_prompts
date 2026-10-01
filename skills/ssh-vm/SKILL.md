@@ -1,7 +1,7 @@
 ---
 name: ssh-vm
 description: >-
-  v1.0.12 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
+  v1.0.13 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM
@@ -93,3 +93,11 @@ For every relevant local change to a project the user asked to run on the VM,
 update that project's VM copy, apply the change there, and verify it there.
 Local tests alone do not prove a VM deployment. If SSH is unavailable, report
 the exact failure and the VM-console step needed to resume.
+
+When a test depends on visible desktop behavior, capture and inspect a VM
+screenshot if a safe, supported capture method is available. SSH access alone
+does not guarantee access to the guest display; do not assume GUI screenshot
+tools will work from a remote shell. If visual confirmation would help but no
+capture method is available, ask the user to provide a screenshot. Use the
+image to guide any needed fix, then deploy and verify that fix on the VM. Keep
+captures outside the project source unless the user asks to retain them.
