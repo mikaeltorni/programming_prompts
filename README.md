@@ -346,6 +346,23 @@ as the aggregate score: a reported pass can still miss a real artifact defect.
 An empty Python source listing supports a missing-submission failure; mentioning
 the requested filename alone does not make that verdict inconsistent.
 
+Function contracts cover authored test methods, fixtures and assertion helpers
+as well as the program: selected commenting requires inline `Parameters:` and
+`Returns:` content, and selected logging requires each function's own parameter
+entry trace and returned-value trace, including `None` on normal fallthrough.
+Testing alone does not enable these companions. With SRP selected, the first
+working slice and repairs to existing code also keep raw-command parsing and
+computed results in helpers.
+
+The testing judge accepts meaningful saved assertion scripts or framework tests
+by source inspection when execution is unavailable, with that limit disclosed.
+It inspects available historical checks against their own revisions, so retired
+rules are not required in the final suite. Agents should retain unaffected
+regressions as they extend a suite; terminal-only assertions do not replace
+saved checks. Worktree recovery drafts belong inside the registered task
+checkout's `tmp/`, keeping the external project worktree group free of stray
+files and unregistered directories.
+
 ## Configuration
 
 This content repository has no runtime configuration. Plugin manifests,
