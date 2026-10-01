@@ -1,7 +1,7 @@
 ---
 name: ssh-vm
 description: >-
-  v1.0.10 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
+  v1.0.11 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM
@@ -16,38 +16,70 @@ them to send it in chat. For password-based SSH login, use an interactive
 SSH prompt and let the user enter it there. Never print, log, save, or put
 passwords in a shell command.
 
-First try a short connection, such as
-`ssh -o BatchMode=yes -o ConnectTimeout=5 ubuntu@VM_IP 'id -un; hostname'`.
-Use the user's port, username, and key when provided. A password-only VM needs
-an interactive SSH session after the probe.
+## First contact with a VM
 
-## Fresh Ubuntu live USB
+When the user starts a VM task by providing an IP address or hostname and has
+not confirmed that SSH setup is complete, assume the VM is unprepared. Do not
+connect, probe the port, or run any network reachability check. Give the user
+the VM-console setup commands below and wait for them to confirm they ran the
+commands. An IP address alone does not mean SSH is ready. If the user confirms
+SSH is already configured, proceed to **Connect after setup is confirmed**.
 
-If port 22 refuses the connection, ask the user to finish the Ubuntu welcome
-screen, open Terminal **on the VM**, and run:
+If the operating system is unknown, ask the user to identify it from the VM
+console before giving operating-system-specific commands; still do not probe
+the VM over the network.
+
+## Fresh Ubuntu VM setup
+
+For a fresh Ubuntu Desktop VM, ask the user to open Terminal on the VM itself
+(and finish the welcome screen first if this is a live USB), then run:
 
 ```bash
 whoami
 sudo apt update
 sudo apt install -y openssh-server
-sudo systemctl start ssh
-sudo passwd ubuntu
+sudo systemctl enable --now ssh
+sudo passwd "$(id -un)"
+sudo sshd -T | grep -i '^passwordauthentication'
+sudo ss -lntp | grep ':22'
 hostname -I
 ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 ```
 
-Use the name from `whoami` instead of `ubuntu` if different. The user sets the
-password at the local `passwd` prompts; a blank live-desktop login is not an
-SSH password. The last two commands show the current IP and host-key
-fingerprint. This setup can disappear on the next live USB boot.
+`sudo passwd "$(id -un)"` sets the password for the account shown by `id -un`;
+if the SSH username is different, use `sudo passwd <ssh_username>` for that
+account. The user enters the new password at the VM's local `passwd` prompt.
+Ask them to report whether `passwordauthentication` is `yes` and whether SSH
+is listening, but not to share the password. A live USB loses this setup on
+reboot.
+
+## Connect after setup is confirmed
+
+Only after the user confirms the console commands ran, or confirms SSH was
+already configured, make a connection attempt. Use their IP/hostname, username,
+port, and key when provided. For key-based access, a short probe is:
+
+```bash
+ssh -o BatchMode=yes -o ConnectTimeout=5 ubuntu@VM_IP 'id -un; hostname'
+```
+
+For password-only access, skip the `BatchMode` probe and open an interactive
+SSH session so the user can enter the password at the SSH prompt:
+
+```bash
+ssh -tt -o ConnectTimeout=5 ubuntu@VM_IP
+```
+
+Use the actual username and add `-p PORT` when the user provides a non-default
+port. Never ask the user to send the password in chat or put it in a command.
 
 A new live session may generate a new host key. If SSH warns that the key
 changed, compare its fingerprint with the VM console's `ssh-keygen` output
 before replacing the old `known_hosts` entry. Never disable host-key checks.
-If the server answers but says `Permission denied`, check the username and
-password; have the user reset the password with `sudo passwd ubuntu` on the VM
-if needed. For a timeout, check the current IP, port 22 with
-`sudo ss -lntp`, and `sudo ufw status` on the VM.
+If authentication fails, check the username and ask the user to reset the
+password locally with `sudo passwd <ssh_username>` if needed. For a timeout,
+check the current IP, port 22 with `sudo ss -lntp`, and `sudo ufw status` on the
+VM.
 
 ## Deploy and verify
 
