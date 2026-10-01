@@ -79,12 +79,17 @@ under `.generated/tasks/*/tests/judges/` are also runtime-only.
 | `--no-pin-refresh` | Skip registry lookup; use committed `*-version.txt` pins |
 | `-k` / `-m` / `--ak` | Passed through to Harbor; raw `-n` is ignored |
 
-When `--skills workflow` is selected, each isolated job task prompt explicitly
-invokes `$workflow`. The source coding prompts and runs without that selected
-skill remain unchanged. Baselines receive the same task instruction without
-the skill installed, so they still measure the effect of the skill itself. The
-workflow judge receives that delivered task prompt, so its optional-companion
-decision uses the selection the agent saw.
+Selecting `workflow` or `commits` with `--skills` explicitly invokes each selected
+skill in the isolated job task prompt and lists the selected programming skills.
+Commits-only runs invoke `$commits` without enabling `$workflow`. Their prompt
+directs the agent to the supplied skill-catalog paths outside the repository,
+explicitly authorizes the local Git commits required by the commits skill, and
+explains that `/app` is a symlink to `/Projects/app`; requested absolute paths
+must resolve into that checkout rather than a nested `app/` directory.
+The canonical coding prompts remain unchanged. Baseline and positive jobs
+receive the same selection context, while baselines do not install the selected
+skill bodies. The workflow judge receives the delivered task prompt, so its
+optional-companion decision uses the selection the agent saw.
 
 The workflow skill keeps the UI-readable progress list in the target project's
 `tmp/workflow.md`. The UI contract is one `## Tasks` table with the exact four
@@ -374,7 +379,9 @@ suite goes further:
   [`verifier/llm_judge/`](verifier/llm_judge/) list and inline the real
   `*.py` files under `/Projects/app` so no agent can score a hallucinated
   `app.py`. A no whose reasoning admits non-inspection or cites a `.py` path
-  that is not in that listing is retried once (still inside the judge timeout).
+  that is not in a nonempty listing is retried once (still inside the judge
+  timeout). An empty source listing supports a missing-submission no verdict;
+  naming the requested file alone does not turn it into an infrastructure error.
 - Sign in once on the host: `grok login --oauth` (SuperGrok / Grok.com).
   Confirm with `test -f ~/.grok/auth.json && grok --version`.
 
