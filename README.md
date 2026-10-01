@@ -354,18 +354,33 @@ Function contracts cover authored test methods, fixtures and assertion helpers
 as well as the program: selected commenting requires inline `Parameters:` and
 `Returns:` content, and selected logging requires each function's own parameter
 entry trace and returned-value trace, including `None` on normal fallthrough.
-Testing alone does not enable these companions. With SRP selected, the first
-working slice and repairs to existing code also keep raw-command parsing and
-computed results in helpers.
+Testing alone does not enable these companions. Write complete docstrings when
+creating each function, including the initial regression test, and review test
+methods independently of their assertions and logging. With SRP selected,
+identify the parser and operation owners before the first source write. The
+first working slice and repairs to existing code keep raw-command parsing,
+state changes and computed results in helpers; extracting only formatting,
+token conversion or history recording leaves the operation mixed.
 
 The testing judge accepts meaningful saved assertion scripts or framework tests
 by source inspection when execution is unavailable, with that limit disclosed.
 It inspects available historical checks against their own revisions, so retired
-rules are not required in the final suite. Agents should retain unaffected
-regressions as they extend a suite; terminal-only assertions do not replace
-saved checks. Worktree recovery drafts belong inside the registered task
-checkout's `tmp/`, keeping the external project worktree group free of stray
-files and unregistered directories.
+rules are not required in the final suite. Missing historical source is an
+unverified limit, rather than evidence that earlier tests were absent. Agents
+should retain unaffected regressions and meaningful negative assertions as they
+extend a suite; terminal-only assertions do not replace saved checks.
+
+For stateful checks, establish fresh state before every independent case while
+preserving state within each requested multi-call sequence. Fixture setup may
+reset private state or load a fresh module; behavioral assertions use the
+public interface. Run mutable suites again in the same process or another order
+to check isolation. The testing judge traces repeatability case by case and
+cites the actual conflicting assertion for an isolation failure. A no-op method
+adds no coverage, but does not erase meaningful assertions elsewhere.
+
+Worktree recovery drafts belong inside the registered task checkout's `tmp/`,
+keeping the external project worktree group free of stray files and unregistered
+directories.
 
 ## Configuration
 
