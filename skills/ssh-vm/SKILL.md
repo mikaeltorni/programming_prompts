@@ -1,17 +1,20 @@
 ---
 name: ssh-vm
 description: >-
-  v1.0.9 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
+  v1.0.10 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM
 
 Use this skill only when the task calls for an actual SSH deployment or test on
 a VM. Ask for the VM IP or hostname if missing. Use `ubuntu` for an Ubuntu
-Desktop live USB unless the user gives another username. If password login is
-needed and no password or authorized key is available, ask for the VM login
-password. Enter passwords only at an interactive SSH prompt; never print, log,
-save, or put them in a shell command.
+Desktop live USB unless the user gives another username. Whenever you provide
+VM-console bootstrap commands, always include a `sudo passwd <username>` step
+for the SSH account (default `ubuntu`; use the VM's `whoami` value if different).
+The user chooses the password at the VM's local `passwd` prompt; do not ask
+them to send it in chat. For password-based SSH login, use an interactive
+SSH prompt and let the user enter it there. Never print, log, save, or put
+passwords in a shell command.
 
 First try a short connection, such as
 `ssh -o BatchMode=yes -o ConnectTimeout=5 ubuntu@VM_IP 'id -un; hostname'`.
