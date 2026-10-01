@@ -142,11 +142,13 @@ codex plugin list
 
 ### ssh-vm
 
-Automatically applies when a task requires deploying or testing software on a
-VM over SSH. It verifies the remote login, updates the project copy on the VM
-after relevant local changes, runs the project's installation and checks there,
-and explains Ubuntu live USB SSH setup when the connection is unavailable.
-Installed as a native skill under each harness's skill directory.
+Use `$ssh-vm`, or let it apply automatically, for tasks that deploy or test
+software on a VM over SSH. On first contact, if the user provides an IP or
+hostname without confirming SSH setup, it gives Ubuntu VM-console setup
+commands, including setting the account password, and waits for confirmation
+before any network attempt. Once confirmed, it connects using a key or an
+interactive password prompt, updates the project copy, and installs and checks
+it on the VM. Installed as a native skill under each harness's skill directory.
 
 ### workflow
 
