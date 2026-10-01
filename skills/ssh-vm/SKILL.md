@@ -1,7 +1,7 @@
 ---
 name: ssh-vm
 description: >-
-  v1.0.11 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
+  v1.0.12 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM
@@ -35,9 +35,8 @@ For a fresh Ubuntu Desktop VM, ask the user to open Terminal on the VM itself
 (and finish the welcome screen first if this is a live USB), then run:
 
 ```bash
-whoami
 sudo apt update
-sudo apt install -y openssh-server
+sudo apt install -y -o Dpkg::Options::="--force-confold" openssh-server
 sudo systemctl enable --now ssh
 sudo passwd "$(id -un)"
 sudo sshd -T | grep -i '^passwordauthentication'
@@ -46,9 +45,10 @@ hostname -I
 ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 ```
 
-`sudo passwd "$(id -un)"` sets the password for the account shown by `id -un`;
-if the SSH username is different, use `sudo passwd <ssh_username>` for that
-account. The user enters the new password at the VM's local `passwd` prompt.
+`sudo passwd "$(id -un)"` sets the password for the current account; if the SSH
+username is different, use `sudo passwd <ssh_username>` for that account. The
+user enters the new password at the VM's local `passwd` prompt. The apt option
+keeps existing package configuration files if dpkg asks which version to use.
 Ask them to report whether `passwordauthentication` is `yes` and whether SSH
 is listening, but not to share the password. A live USB loses this setup on
 reboot.
