@@ -1,9 +1,9 @@
 ---
 name: logging
 description: >-
-  v1.0.5 — Use whenever writing or editing Python (or other) functions: print each
-  function's incoming parameters at entry and the return value just before
-  returning. Keep it to plain print() — no logging modules or log files.
+  v1.0.6 — Trace every authored function, including tests and fixtures: print its
+  incoming parameters at entry and return value just before returning.
+  Keep it to plain print() — no logging modules or log files.
 ---
 
 # Function entry/exit print logging
@@ -84,6 +84,15 @@ representation.
    A helper's exit print does not cover its caller: before `return helper()`,
    assign the helper result, print that result in the caller, and return it.
    Check every dispatch branch, including branches with direct helper returns.
+
+Apply this rule to agent-authored tests as well as application code. Test methods,
+fixtures, setup/teardown methods, and assertion helpers have their own entries
+and normal exits. An assertion-only test method still receives `self` and
+normally returns `None`: print `self=` first and `None` after its final assertion.
+Calling a traced application function does not trace the test method itself.
+Redirecting stdout inside a test does not waive its first-statement entry print;
+place that print before opening the redirect. Review every changed Python file,
+including tests, before each commit.
 
 Before committing, inspect source order in every function: the first
 non-docstring statement must be its parameter print. A successful runtime
