@@ -41,8 +41,8 @@ enough functions to print. Pair `worktree` with `srp`. Pair `commits` with
 
 ## Current evaluation
 
-Write-from-scratch tasks (`calculator`, `todo`, `counter`, `greeter`,
-`temperature`, `shop`, `bank`, and `stats`) and `greeter-fix` (broken greeter
+Write-from-scratch tasks (`calculator`, `todo`, `counter`,
+`temperature`, `shop`, `bank`, and `stats`) and `greeter` (broken greeter
 plus planted logs) live as Markdown under
 [`evals/coding-prompts/`](evals/coding-prompts/). The runner materializes Harbor
 task trees under `evals/.generated/tasks/` from those prompts. Selected skills

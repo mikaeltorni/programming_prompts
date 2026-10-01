@@ -148,3 +148,16 @@ def test_greeter_oracle_matches_planted_log_and_later_commands() -> None:
     assert greeter.run_greeter("period 3") == "period=Good twilight"
     assert greeter.run_greeter("Bob 8") == "hi=Good day, Bob"
     assert greeter.run_greeter("period 20") == "period=Good evening"
+
+
+def test_greeter_fix_is_not_a_live_task() -> None:
+    """The retired greeter-fix name is not a prompt, oracle, seed, or RESULTS column."""
+    assert not (PROMPTS_DIR / "greeter-fix.md").exists()
+    assert not (ORACLES_DIR / "greeter-fix.py").exists()
+    assert not (EVALS / "seeds" / "greeter-fix").exists()
+    assert (PROMPTS_DIR / "greeter.md").is_file()
+    assert (ORACLES_DIR / "greeter.py").is_file()
+    assert (EVALS / "seeds" / "greeter").is_dir()
+    order_source = (EVALS / "archive_run" / "results_index.py").read_text(encoding="utf-8")
+    assert "greeter-fix" not in order_source
+    assert '"greeter"' in order_source or "'greeter'" in order_source

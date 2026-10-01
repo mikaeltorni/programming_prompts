@@ -36,7 +36,7 @@ that implements it. It reads diffs and complete relevant trees, excludes the
 supplied seed, allows repair commits, and rejects bundling or history padding.
 Output formatting is evaluated as behavior, not a source-spelling constraint.
 
-**Debug eval note:** pair `debug` with `greeter-fix`. The LLM judge reads the
+**Debug eval note:** pair `debug` with `greeter`. The LLM judge reads the
 original logs in `tests/task-logs/` and executes the reported failing example
 and documented boundaries against the submitted program. With no log-guided
 failure it reports not applicable. Reading order is verified only if a
