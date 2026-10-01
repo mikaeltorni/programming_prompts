@@ -293,12 +293,21 @@ Run one benchmark invocation at a time. See the
 command surface and [AGENTS.md](AGENTS.md) for the repository's run policy and
 required full-suite command.
 
+Selecting `--skills commits` explicitly invokes `$commits` in each isolated
+task prompt and authorizes its local Git commits. The prompt directs the agent
+to the supplied skill-catalog paths and explains that `/app` resolves to the
+checkout at `/Projects/app`. Selecting `workflow` invokes `$workflow`
+independently. Baseline and positive jobs receive the same selection context;
+positive jobs also install the selected skill bodies.
+
 Semantic judges receive the actual source, function boundaries, workflow plan,
 and reachable commit history. A verdict that contradicts its own reason or
 bounded source/plan evidence is retried once; both raw attempts remain in the
 archived reward details. Unresolved inconsistent judgments and provider/auth
 failures are reported as infrastructure exclusions. Check the archive as well
 as the aggregate score: a reported pass can still miss a real artifact defect.
+An empty Python source listing supports a missing-submission failure; mentioning
+the requested filename alone does not make that verdict inconsistent.
 
 ## Configuration
 
