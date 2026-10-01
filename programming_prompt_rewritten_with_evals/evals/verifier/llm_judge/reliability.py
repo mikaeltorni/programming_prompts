@@ -196,9 +196,9 @@ def unreliable_score_reason(
     """Return why a score contradicts supplied evidence, or None.
 
     Triggers on skip-inspect wording, a no verdict whose reasoning explicitly
-    says the score should be yes, or ``.py`` citations outside the workspace
-    listing. A workflow yes also retries when it contradicts concrete plan
-    structure or internal-consistency issues. This gate never assigns a
+    says the score should be yes, or ``.py`` citations outside a nonempty
+    workspace listing. A workflow yes also retries when it contradicts concrete
+    plan structure or internal-consistency issues. This gate never assigns a
     semantic replacement score.
 
     Args:
@@ -238,7 +238,10 @@ def unreliable_score_reason(
             if function:
                 return f"exit_trace_conflict:{name}:{function}"
         mentioned = mentioned_python_paths(reasoning)
-        if not mentioned:
+        # An empty source listing supports a missing-submission no verdict.
+        # Naming the requested file then is not a contradictory source citation
+        # and must not turn a submission failure into judge infrastructure error.
+        if not mentioned or not listed_keys:
             continue
         if any(_path_is_listed(item, listed_keys) for item in mentioned):
             continue

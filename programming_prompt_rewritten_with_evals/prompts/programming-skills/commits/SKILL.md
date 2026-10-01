@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.1.14 — Give each complete capability sentence its own Feature and working
+  v1.1.15 — Give each complete capability sentence its own Feature and working
   commit. Every separate "It should also" sentence gets a new ledger row;
   an optional "and may" clause inside one sentence stays in that row.
 ---
@@ -20,7 +20,11 @@ that allowed set with the original sentence, not a previous summary of the
 program. Write only the current row's implementation, then verify and commit
 it before writing the next row. This also applies to the first file creation.
 
-Before writing code, build a numbered ledger from the original request.
+Before writing code, extract the capability sentences from the original
+request before grouping commands or choosing a commit count. Copy one complete
+sentence per numbered row; a row containing a period followed by another
+"It should also" capability must be split before any implementation. Related
+behavior cannot remove that sentence boundary.
 **Copy each complete capability sentence verbatim into its own row**, then
 read it back against the source request character by character before code:
 copy the complete capability sentence rather than retyping it from memory.
