@@ -11,7 +11,7 @@ marker or count file:
 | [`coding-prompts/calculator.md`](coding-prompts/calculator.md) | `/app/calculator.py` → `run_calculator` (`add`, `sub`, `mul`, `div`) |
 | [`coding-prompts/todo.md`](coding-prompts/todo.md) | `/app/todo.py` → `run_todo` (`add`, `list`, `done <n>`, `clear`) |
 | [`coding-prompts/counter.md`](coding-prompts/counter.md) | `/app/counter.py` → `run_counter` (`inc`, `dec`, `get`, `set`) |
-| [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` (`hello`, hour-based greeting, `bye`) |
+| [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` (fix from `.log/`, `bye`, `period`) |
 | [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` (`c2f`, `f2c`, Kelvin conversion) |
 | [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (`add`, `total`, `remove`) |
 | [`coding-prompts/bank.md`](coding-prompts/bank.md) | `/app/bank.py` → `run_bank` (`open`, `deposit`/`withdraw`, `transfer`, `history`) |

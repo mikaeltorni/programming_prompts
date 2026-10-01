@@ -313,7 +313,11 @@ claude plugin list --json
 
 The Harbor benchmark's public entrypoint is
 [`run_benchmark.sh`](programming_prompt_rewritten_with_evals/evals/run_benchmark.sh).
-It runs coding tasks with `--harness`, selects the Codex judge with
+Coding tasks live under
+[`evals/coding-prompts/`](programming_prompt_rewritten_with_evals/evals/coding-prompts/);
+`greeter` is the remaining log-driven debug task (`/app/greeter.py` →
+`run_greeter` for `<name> <hour>`, `bye <name>`, and `period <hour>`).
+The runner accepts `--harness`, selects the Codex judge with
 `--eval-agent codex`, selects programming skills with `--skills`, and accepts
 `--tasks`, `--concurrency`, `--baseline`, and Harbor's `-k` attempt count.
 Without `--concurrency`, it requests all selected tasks × attempts in parallel,
