@@ -9,6 +9,7 @@ Skills live under
 [`prompts/programming-skills/`](prompts/programming-skills/README.md):
 
 - [`srp`](prompts/programming-skills/srp/SKILL.md) — single-responsibility
+  functions and focused edits that keep growing code simple
 - [`commenting`](prompts/programming-skills/commenting/SKILL.md) — docstrings
   with description, Parameters, and Returns
 - [`logging`](prompts/programming-skills/logging/SKILL.md) — plain `print` of
@@ -36,19 +37,23 @@ The `workflow` skill carries a `.opt-in` marker, so omitted `--skills` arguments
 retain the legacy default set; select `workflow` by name to evaluate it.
 Pair `logging` / `logging-vague` with `srp` when benchmarking so there are
 enough functions to print. Pair `worktree` with `srp`. Pair `commits` with
-`worktree` and a multi-Feature task (`shop`, or the four-Feature `bank` / `stats`).
+`worktree` and a multi-Feature task such as `shop`, `todo`, `bank`, or `stats`.
 
 ## Current evaluation
 
-Five write-from-scratch tasks (`calculator`, `todo`, `counter`, `greeter`,
-`temperature`) plus `shop` (three Features: catalog, total, remove), `bank`
-(four Features: open, deposit/withdraw, transfer, history), `stats` (four
-Features: add, mean, low/high, median) and
-`greeter-fix` (broken greeter + planted logs) live as markdown under
+Write-from-scratch tasks (`calculator`, `todo`, `counter`, `greeter`,
+`temperature`, `shop`, `bank`, and `stats`) and `greeter-fix` (broken greeter
+plus planted logs) live as Markdown under
 [`evals/coding-prompts/`](evals/coding-prompts/). The runner materializes Harbor
 task trees under `evals/.generated/tasks/` from those prompts. Selected skills
 are injected; each selected
-skill’s judge scores the result. See [`evals/README.md`](evals/README.md) for
+skill’s judge scores the result. `todo`, `bank`, and `stats` require repeated
+build/edit cycles: start with a working slice, revise an earlier rule, extend
+the program, and check retained behavior at each committed stage. Their final
+APIs stay aligned with the existing oracle solutions; intermediate behavior is
+specified in the task prompts. SRP receives historical source and diffs to
+assess unnecessary rewrites across stages alongside the final function structure.
+See [`evals/README.md`](evals/README.md) for
 CLI parameters, which all take the same `--flag value` form (`--harness`,
 `--eval-agent`, `--eval-agent-model`, `--eval-agent-reasoning-effort`,
 `--skills`, `--tasks`). Omit `--eval-agent` and the LLM judge is the same

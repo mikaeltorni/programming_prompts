@@ -9,7 +9,7 @@ Current skills:
 
 | Directory | Focus |
 | --- | --- |
-| [`srp`](srp/SKILL.md) | Single-responsibility functions/methods |
+| [`srp`](srp/SKILL.md) | Single-responsibility functions/methods; focused edits and simple incremental growth |
 | [`commenting`](commenting/SKILL.md) | Docstrings with description, Parameters, Returns |
 | [`logging`](logging/SKILL.md) | Plain `print` of parameters at entry and return value before exit |
 | [`logging-vague`](logging-vague/SKILL.md) | Control: one vague “Use logging.” line; scored by the logging judge |
