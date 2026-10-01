@@ -194,7 +194,10 @@ selection. Python setup remains owned by `init-project`, and desktop deployment
 remains owned by `linux-configuration`.
 
 The testing skill has a semantic Harbor judge under `evals/judges/testing/`.
-Default benchmark skill discovery includes it. To evaluate the full suite:
+Default benchmark skill discovery and shipped launcher presets select the eight
+companions (`commenting`, `commits`, `debug`, `docs`, `logging`, `srp`,
+`testing`, `worktree`). `workflow` stays explicit `--skills workflow`.
+To evaluate the full suite including workflow:
 
 ```bash
 cd programming_prompt_rewritten_with_evals/evals
