@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.10 — Use whenever writing or editing Python (or other) code: enforce
+  v1.0.11 — Use whenever writing or editing Python (or other) code: enforce
   single-responsibility functions and methods. Apply on every coding task,
   including small scripts and new files from scratch.
 ---
@@ -9,6 +9,22 @@ description: >-
 # Single responsibility
 
 Write code as single-responsibility functions/methods.
+
+Before the first source write, identify the raw-command parser, the operation
+owner(s) for the current capability, and the public dispatcher. Implement that
+separation in the initial working slice. Do not first draft a complete operation
+in the entrypoint and plan to extract it after testing or in a later commit.
+A helper that only formats output, converts one token, or records history does
+not extract the operation that computes or mutates the value.
+
+Before each commit, read the public entrypoint itself and locate its call to
+the raw-command parser and its calls to the current operation owners. Move any
+remaining raw-string manipulation, aggregate calculation, state mutation or
+state-dependent validation into its responsible helper before committing.
+Adding a later helper elsewhere in the file does not repair work still left
+in the entrypoint. Simple state reads and format guards retain the narrow
+allowances below; this check does not require pass-through wrappers.
+
 
 - **Parsing lives in its own helper(s).** Every `strip()`, `split()`,
   `startswith()`, `partition()`, slice, or regex on the raw command belongs
