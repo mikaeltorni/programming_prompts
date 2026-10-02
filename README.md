@@ -358,13 +358,19 @@ Function contracts cover authored test methods, fixtures and assertion helpers
 as well as the program: selected commenting requires inline `Parameters:` and
 `Returns:` content, and selected logging requires each function's own parameter
 entry trace and returned-value trace, including `None` on normal fallthrough.
+The entry print precedes parsing and `global`/`nonlocal` declarations; a
+parameterless function may print a literal entry message. A final `print(None)`
+traces an implicit `None` return without requiring an explicit `return None`.
+Logging verdicts must agree with the current source and function-boundary report.
 Testing alone does not enable these companions. Write complete docstrings when
 creating each function, including the initial regression test, and review test
 methods independently of their assertions and logging. With SRP selected,
 identify the parser and operation owners before the first source write. The
 first working slice and repairs to existing code keep raw-command parsing,
-state changes and computed results in helpers; extracting only formatting,
-token conversion or history recording leaves the operation mixed.
+state changes and computed results in helpers. The public dispatcher receives
+an operation and its arguments from one shared parsing call before branching;
+parsers may compose helpers internally. Extracting only formatting, token
+conversion or history recording leaves the operation mixed.
 
 The testing judge accepts meaningful saved assertion scripts or framework tests
 by source inspection when execution is unavailable, with that limit disclosed.
@@ -372,7 +378,17 @@ It inspects available historical checks against their own revisions, so retired
 rules are not required in the final suite. Missing historical source is an
 unverified limit, rather than evidence that earlier tests were absent. Agents
 should retain unaffected regressions and meaningful negative assertions as they
-extend a suite; terminal-only assertions do not replace saved checks.
+extend a suite; terminal-only assertions do not replace saved checks. Choose
+and save runnable public-interface checks with each working revision, covering
+explicitly requested empty commands, unknown operations and invalid argument
+shapes when those rejection classes are part of the original contract.
+
+Both debug and testing judges receive verifier-owned original failure logs
+from `tests/task-logs/`. A saved regression assertion may use a literal expected
+value that matches the original log; the test itself need not parse that log.
+The docs checker treats authored test runners as checks rather than application
+entrypoints and evaluates exclusions relative to the checkout, so an external
+worktree's `.worktrees` parent does not hide its application source.
 
 For stateful checks, establish fresh state before every independent case while
 preserving state within each requested multi-call sequence. Fixture setup may
@@ -382,6 +398,9 @@ to check isolation. The testing judge traces repeatability case by case and
 cites the actual conflicting assertion for an isolation failure. A no-op method
 adds no coverage, but does not erase meaningful assertions elsewhere.
 
+Before the first source write, verify the registered physical task path and
+matching branch against the full `<parent>/.worktrees/<project>/<project>_<type>-<feature>`
+layout. Derive the project component from the live repository basename.
 Worktree recovery drafts belong inside the registered task checkout's `tmp/`,
 keeping the external project worktree group free of stray files and unregistered
 directories.

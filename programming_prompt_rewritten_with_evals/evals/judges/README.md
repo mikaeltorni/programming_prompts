@@ -26,7 +26,9 @@ reads actual implementation history. Extra legitimate repairs are allowed;
 empty commits, bundled Features, and cosmetic history padding do not pass.
 Source strings and commit counts cannot substitute for this assessment.
 
-The debug judge reads original logs preserved in `tests/task-logs/`, then
+Both debug and testing judges receive original logs preserved in
+`tests/task-logs/`. Testing accepts saved literal regression assertions that
+match those logs; the checks need not load the logs themselves. The debug judge
 executes the reported example and documented boundaries in an isolated copy.
 It reports applicability separately in its reasoning. Without a chronological
 tool trace it cannot prove that logs were read before editing; its verdict

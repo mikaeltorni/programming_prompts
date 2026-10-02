@@ -24,7 +24,7 @@ that fail constrained decode still score when the yes/no JSON is in ``text``.
 `*.py` files into the prompt for every agent and retries once on skip-inspect,
 invented paths, or an explicit no verdict contradicting its own reasoning.
 It also inlines the launch-project workflow plan for the workflow judge and
-bounded original failure logs for the debug judge. Codex and Claude Code still use pinned harbor-rewardkit
+bounded original failure logs for both debug and testing judges. Codex and Claude Code still use pinned harbor-rewardkit
 (with a writable `CLAUDE_CONFIG_DIR` / `CODEX_HOME` overlay passed into the
 `rewardkit` child, not only `os.environ`). The task image installs
 `rewardkit` onto `PATH`; the wrapper uses that binary and only falls back
@@ -39,8 +39,10 @@ runner as the other semantic skills.
 LLM judge text stays in `../judges/<skill>/prompt.md`. The original coding
 request is preserved in `tests/task.md` and appended during judge sync.
 Original failure logs are in `tests/task-logs/`. Commits judges inspect Git
-history; debug judges execute reported behavior in a temporary copy. Neither
-may modify the submission. Semantic verdicts require live Harbor calibration.
+history; debug judges execute reported behavior in a temporary copy. Testing
+judges compare saved public-interface assertions against the original contract
+and failure logs; literal expected values may establish the regression without
+reading the logs at test runtime. Judges may not modify the submission. Semantic verdicts require live Harbor calibration.
 The worktree and docs skills remain **programmatic**: `run_judges.sh` runs
 `check_<skill>.py` against `/Projects/app`.
 The worktree checker requires a project-prefixed leaf such as
