@@ -1,12 +1,29 @@
 ---
 name: logging
 description: >-
-  v1.0.6 — Trace every authored function, including tests and fixtures: print its
-  incoming parameters at entry and return value just before returning.
-  Keep it to plain print() — no logging modules or log files.
+  v1.0.7 — Every authored function, test and fixture prints parameters first
+  after its docstring, before helper calls, validation or declarations, and
+  prints each normal return value. Use plain print(), with no logging modules or log files.
 ---
 
 # Function entry/exit print logging
+
+A public dispatcher follows this order: docstring, its own parameter print,
+shared parse call, dispatch, result print, return. Never move the parser call
+above the caller's entry trace during extraction; a parser's print does not
+replace the dispatcher's own first-statement print.
+
+When creating a function, write its docstring, then its entry print, then any
+`global` / `nonlocal` declaration, then its work. Build the body in that order
+from the first saved draft. A conventional declaration-first template must be
+reordered even for a parameterless state updater: its first body statement is
+`print("parameters=none")`, and its declaration follows that print.
+
+Parsing and validation helpers follow this same template: print the raw
+parameter before any type check or tokenization, and print each complete parsed
+return value in its own branch. Printing only in the operation helper and
+public caller leaves the parser untraced. Before saving a new helper, inspect
+its signature, first statement and every normal return independently.
 
 **Every** `def` / `async def` / method you write or edit gets an entry print
 and an exit print. No function is exempt — not private `_helpers`, not

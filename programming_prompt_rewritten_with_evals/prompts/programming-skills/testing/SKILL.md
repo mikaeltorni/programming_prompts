@@ -1,9 +1,9 @@
 ---
 name: testing
 description: >-
-  v1.0.4 — Use whenever writing, fixing, refactoring, or verifying code:
-  save and run meaningful regression tests using existing project tooling.
-  Use direct checks for static content and honor project verification rules.
+  v1.0.5 — Executable code creation and behavior changes require saved,
+  runnable public-interface checks in each working revision. Run them with
+  fresh state; honor static-content and project verification exceptions.
 ---
 
 # Test the changed behavior
@@ -17,11 +17,33 @@ verification commands and any restrictions on creating tests.
 
 ## Choose checks from the contract
 
+For code creation or behavior changes, choose the saved test/check path and its
+normal runner before the first application source write. Save the current
+capability's assertions there before executing verification, and include them
+in that capability's commit. At every commit gate, inspect the actual saved
+artifact and its public-interface assertions. `python -c` and shell heredoc
+assertions alone leave this obligation unfinished, even when they pass every
+example. Do not defer saved checks to a final documentation or cleanup commit.
+A new executable program with observable command results has useful regression
+assertions; being short, local or reversible does not make its creation a
+static-content exception. A final claim that no checks were saved means this
+requirement is unfinished. Refactors, static content and project prohibitions
+keep the allowances below.
+
 Inspect the request, public interface, existing tests, manifests, and documented
 commands before choosing checks. Test observable behavior against the request,
 not a copy of the implementation or whatever result it currently returns.
 Reuse the project's test framework and fixtures. Do not install a new framework
 or add hosted CI unless the user requests it.
+
+Read the request's shared validation rules as well as its stage examples. When
+empty commands, unknown operations or invalid argument shapes are explicitly
+rejected, save a representative public-interface assertion for each specified
+class; successful command sequences and domain failures do not cover malformed
+dispatch. For stateful operations, establish the expected state independently,
+then assert that the rejected command preserves it. This is coverage of the
+written contract, not a requirement to enumerate every possible invalid input
+or invent restrictions that the request never states.
 
 - For a reported bug, add a focused regression test before the fix when a
   practical test path exists. Save the runnable regression in the repository
@@ -50,7 +72,10 @@ or add hosted CI unless the user requests it.
   the public interface. Do not add a public reset API just for tests or call a
   reset command before the stage that introduces it. For a mutable module, run
   its saved cases again in the same process or a different order to check the
-  isolation mechanism, in addition to the normal runner.
+  isolation mechanism, in addition to the normal runner. Repeat through the
+  saved runner's fixture lifecycle: framework setup runs before each case, and
+  a script's explicit reload/reset between sequences is a valid fixture. A
+  case may leave state behind when the next case establishes fresh state.
   Check representative earlier capabilities after changing shared parsing,
   dispatch, or helpers. Do not weaken assertions or alter expected results
   merely to make an unexplained failure green.

@@ -1,19 +1,34 @@
 ---
 name: srp
 description: >-
-  v1.0.11 — Use whenever writing or editing Python (or other) code: enforce
-  single-responsibility functions and methods. Apply on every coding task,
-  including small scripts and new files from scratch.
+  v1.0.12 — Keep raw-command parsing and operation logic in separate helpers
+  from the first working slice. Public entrypoints delegate; small scripts
+  and new files follow the same boundaries on every coding task.
 ---
 
 # Single responsibility
 
 Write code as single-responsibility functions/methods.
 
+When logging is independently selected, the public body is docstring → its own
+parameter print → shared parse call → dispatch to operation helpers → result
+print → return. "Parse first" means before dispatch, after the entry trace;
+extracting parsing must never move its call above that parameter print.
+
 Before the first source write, identify the raw-command parser, the operation
 owner(s) for the current capability, and the public dispatcher. Implement that
-separation in the initial working slice. Do not first draft a complete operation
-in the entrypoint and plan to extract it after testing or in a later commit.
+separation in the initial working slice. Write the parser and current operation
+owner before writing the public dispatcher that calls them. Its first saved
+body must already delegate, even for a single simple command. When command
+variants require branching, the shared parser returns the operation selector
+and its parsed arguments in that one call. A single-operation slice with no
+variant dispatch can return only that operation's arguments.
+After branching, the public dispatcher passes those returned values to operation
+helpers; it must not pass the raw command to another parser. A kind-only
+classifier followed by raw-command parsers in dispatch branches is an unfinished
+extraction. The shared parser may compose smaller parsing helpers internally.
+Do not first draft a complete operation in the entrypoint and plan to extract
+it after testing or in a later commit.
 A helper that only formats output, converts one token, or records history does
 not extract the operation that computes or mutates the value.
 
@@ -22,8 +37,20 @@ the raw-command parser and its calls to the current operation owners. Move any
 remaining raw-string manipulation, aggregate calculation, state mutation or
 state-dependent validation into its responsible helper before committing.
 Adding a later helper elsewhere in the file does not repair work still left
-in the entrypoint. Simple state reads and format guards retain the narrow
-allowances below; this check does not require pass-through wrappers.
+in the entrypoint. Apply this gate to every subsequent capability: write or
+edit its operation helper first, then add only its helper call to dispatch.
+Extend the shared parser for every new command variant, including commands
+with no arguments. Compare each new dispatch condition with the parsed data;
+never inspect the original raw command to route a special case ahead of the
+parser. Keep this boundary when growing a single-command parser into a
+multi-command program.
+A parser helper plus a formatting helper is insufficient while calculations,
+collection updates or result selection still happen in the public body.
+Simple state reads and format guards retain the narrow allowances below; this check does not require pass-through wrappers. If the
+public body still contains `command.split()` / `command.strip()`, classification
+of a result from an input range, or a mutation of application state, stop and
+extract that work before staging. Passing behavioral tests does not complete
+this separate structural obligation.
 
 
 - **Parsing lives in its own helper(s).** Every `strip()`, `split()`,
