@@ -12,7 +12,7 @@ ENTRYPOINT_RE = re.compile(r"^def (run_[A-Za-z0-9_]+)\s*\(", re.MULTILINE)
 
 
 def _workspace_python_files(repo: Path) -> list[Path]:
-    """List workspace Python files, skipping git and worktree stores.
+    """List application Python files, excluding tests and internal stores.
 
     Parameters: repo - project checkout.
 
@@ -20,7 +20,10 @@ def _workspace_python_files(repo: Path) -> list[Path]:
     """
     files: list[Path] = []
     for path in sorted(repo.rglob("*.py")):
-        if any(part in {".git", "__pycache__", ".worktrees"} for part in path.parts):
+        relative = path.relative_to(repo)
+        if any(part in {".git", "__pycache__", ".worktrees", "tests", "test"} for part in relative.parts):
+            continue
+        if path.name == "conftest.py" or path.name.startswith("test_") or path.name.endswith("_test.py"):
             continue
         files.append(path)
     return files

@@ -86,11 +86,31 @@ def run_self_test() -> int:
             )
         )
 
+        for location in ("test_shop.py", "shop_test.py", "tests/checks.py", "test/checks.py", "conftest.py"):
+            checks = ok / location
+            checks.parent.mkdir(parents=True, exist_ok=True)
+            write_python(checks, "def run_checks():\n    return None\n")
+        record("pass_test_runners_are_not_program_entrypoints", True, ok)
+        names = public_entrypoints(ok)
+        cases.append(("exclude_test_runner_names", names == ["run_shop"], f"entrypoints {names!r}"))
+        write_python(ok / "reports.py", "def run_report():\n    return 1\n")
+        record("fail_undocumented_application_entrypoint_with_tests", False, ok)
+
+        nested = root / ".worktrees" / "project" / "task"
+        nested.mkdir(parents=True)
+        write_python(nested / "tool.py", "def run_tool():\n    return 1\n")
+        (nested / "README.md").write_text("Public entrypoint: run_tool.\n", encoding="utf-8")
+        record("pass_checkout_inside_external_worktree_store", True, nested)
+        write_python(nested / ".worktrees" / "other" / "hidden.py", "def run_hidden():\n    return 1\n")
+        record("pass_skip_store_inside_checkout", True, nested)
+
         no_run = root / "no-run-def"
         no_run.mkdir()
         write_python(no_run / "util.py", "def helper():\n    return 1\n")
         (no_run / "README.md").write_text("Documents util.py usage.\n", encoding="utf-8")
         record("pass_readme_names_module_without_run", True, no_run)
+        write_python(no_run / "test_util.py", "def run_checks():\n    return None\n")
+        record("pass_module_fallback_ignores_test_files", True, no_run)
 
         no_run_miss = root / "no-run-miss"
         no_run_miss.mkdir()

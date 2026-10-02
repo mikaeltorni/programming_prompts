@@ -11,6 +11,16 @@ Answer yes when ALL of these hold:
   churn, as detailed below; a final-file-only assessment is insufficient for
   an incremental task.
 
+At the public boundary, one shared parse call supplies the operation selector
+and parsed arguments before dispatch between command variants. A single-operation
+slice with no variant dispatch may return only its arguments; do not demand an
+unused operation key. Parsing may compose smaller helpers internally; do
+not fail merely because several helpers exist or a parser lacks "parse" in its
+name. A public entrypoint that first calls a kind-only raw-command classifier,
+then passes the same raw command to additional parsers after branching, has not
+established this shared parsing boundary. Cite those calls in a no verdict;
+judge the actual data flow, not whether a function is called a dispatch helper.
+
 A thin entrypoint may dispatch with if/elif, return what the helpers
 produced, and format already-computed state in one line — including a get
 branch that only reads current state (`str(state)` or

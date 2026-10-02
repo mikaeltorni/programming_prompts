@@ -8,7 +8,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "meaningful_verification"
-description = "verification checks the original requested behavior through the public interface, with appropriate isolation and honest evidence"
+description = "saved public-interface checks cover requested capabilities and explicitly required validation classes, use effective isolation fixtures, and match the current contract with honest execution evidence"
 type = "binary"
 
 [scoring]
