@@ -9,11 +9,27 @@ does both:
   (`print(result)` is a yes; a `return=` label is not required). When
   falling off the end with no meaningful return, print `None`.
 
+A function or test method whose final normal statement is builtin `print(None)`
+has traced its implicit `None` return. That print is immediately before the
+implicit exit; it does not need an explicit `return None` after it. Do not reject
+a final `print(None)` for being the method's last statement. If alleging an
+untraced implicit exit, quote the actual final statement and explain the
+reachable path that lacks the print; a final `print(None)` covers that path.
+
 The entry position is a literal source-order rule, not merely the first runtime
 side effect. Ignore a leading docstring, but a `global` or `nonlocal` declaration
 before the entry print is a no even though the declaration is handled at compile
-time. Python permits a parameter-only print before that declaration. Do not
+time. An entry print that does not read the declared state can precede that
+declaration, including a literal print in a function with no parameters. Do not
 invent receiver parameters: compare the trace against the actual signature.
+
+Before claiming an entry-order failure, identify the actual function and quote
+its `first_statement_source` from the supplied boundary report, excluding its
+docstring. Reconcile that statement with the current inlined source. A builtin
+print first, followed by a global/nonlocal declaration, satisfies source order;
+the declaration's presence later is not a missing entry print. Parameterless
+functions follow this same order and may print a literal entry message. Check
+named-parameter coverage separately rather than inventing a preceding declaration.
 
 Before claiming a missing exit print, identify the exact function, line and
 reachable normal exit. Read the supplied Python boundary report or run the
