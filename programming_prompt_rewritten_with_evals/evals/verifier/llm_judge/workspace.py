@@ -2,8 +2,8 @@
 
 Harbor trials keep the agent program at ``/Projects/app`` (often one file
 such as ``temperature.py``). Listing and inlining those paths stops every
-eval agent from scoring a hallucinated ``app.py``. Workflow and debug judges
-also receive their temporary progress plan and original task logs, respectively.
+eval agent from scoring a hallucinated ``app.py``. Workflow judges also receive their temporary progress plan; debug and testing
+judges receive the original task logs for checking reported regressions.
 """
 
 from __future__ import annotations
@@ -313,7 +313,7 @@ def workspace_workflow_plan_context(workspace: Path) -> str:
 
 
 def original_task_logs_context(logs_root: Path = Path("/tests/task-logs")) -> str:
-    """Inline bounded, verifier-owned failure logs for the debug judge.
+    """Inline bounded, verifier-owned failure logs for debugging and regression checks.
 
     Args:
         logs_root: Original task-log directory, outside the agent workspace.
@@ -370,7 +370,7 @@ def pin_workspace_python(
         workspace: Path shown in the inspect instruction.
         files: Paths from :func:`list_workspace_python`.
         judge_name: Skill judge name; workflow and commits receive the plan,
-            logging receives Python boundaries, debug receives original logs,
+            logging receives Python boundaries, debug/testing receive original logs,
             and srp receives the same historical source/diffs as commits.
 
     Returns:
@@ -379,7 +379,7 @@ def pin_workspace_python(
     plan_context = (
         workspace_workflow_plan_context(workspace) if judge_name in {"workflow", "commits"} else ""
     )
-    debug_logs_context = original_task_logs_context() if judge_name == "debug" else ""
+    task_logs_context = original_task_logs_context() if judge_name in {"debug", "testing"} else ""
     boundaries = []
     if judge_name in {"logging", "commenting"}:
         for path in files:
@@ -416,7 +416,7 @@ def pin_workspace_python(
         + plan_context
         + boundary_context
         + git_context
-        + debug_logs_context
+        + task_logs_context
     )
 
 

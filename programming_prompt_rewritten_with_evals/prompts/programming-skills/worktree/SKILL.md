@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >-
-  v1.0.8 — Edit Git projects in a sibling .worktrees project/task checkout,
+  v1.0.9 — Edit Git projects in a sibling .worktrees project/task checkout,
   commit there, merge each Feature into the live default branch, and reapply
   its consumers. Never push unless requested.
 ---
@@ -61,6 +61,13 @@ cd "$WT"
 pwd -P
 git branch --show-current
 ```
+
+Before the first source write, verify the registered checkout against the full
+expanded `WT`, not just whether it is outside the live repository. The project
+component is a directory under `.worktrees/`, followed by the task leaf; a
+sibling checkout beside the live repository or a task leaf directly under
+`.worktrees/` does not satisfy that layout. Verify registration, physical path
+and matching branch together before advancing to implementation.
 
 Compare the printed physical path and branch with `WT` and `BRANCH`
 before editing. Keep that same checkout and branch for every Feature,

@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 from .grok import DEFAULT_MAX_TURNS, build_grok_command, score_with_grok
 from .homes import claude_judge_env, claude_wrapper_script, codex_reasoning_on_path
@@ -575,6 +576,15 @@ def run_self_test() -> int:
             "{criteria}" in pinned and "temperature.py" in pinned,
             "rewardkit prompt still has {criteria} after pinning files",
         )
+        original_log = "Original task-log evidence: want: independently expected result"
+        with patch("llm_judge.workspace.original_task_logs_context", return_value=original_log):
+            for judge_name in ("debug", "testing", "commenting"):
+                evidence = pin_workspace_python("Score it.\n{criteria}\n", root, listed, judge_name)
+                check(
+                    "original_logs_routed_" + judge_name,
+                    (original_log in evidence) == (judge_name in {"debug", "testing"}),
+                    "original regression logs reach debug and testing, without unrelated judge context",
+                )
         listed_keys = listed_python_keys(listed, root)
         withheld = [
             {
