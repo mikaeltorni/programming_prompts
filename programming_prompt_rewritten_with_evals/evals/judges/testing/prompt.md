@@ -30,7 +30,11 @@ Git trees before claiming checks are absent; use the read-only Git evidence
 helper for omitted revisions when available.
 
 For a reported bug, checks cover the original failure and related requested
-behavior. Existing regressions can suffice for a pure refactor. Accept direct
+behavior. Compare their independent expected values with the supplied original
+task-log evidence. A literal expected value matching the logged failure is a
+valid regression assertion; checks need not parse the log themselves or prove
+where the author copied it from. Missing original logs limit that comparison;
+unavailable log evidence alone does not invalidate otherwise adequate checks. Existing regressions can suffice for a pure refactor. Accept direct
 verification for static content or low-impact changes without useful regression
 assertions. Honor a test prohibition or alternative mechanism only when it is
 part of the original coding task and applies to its submission. Instructions
