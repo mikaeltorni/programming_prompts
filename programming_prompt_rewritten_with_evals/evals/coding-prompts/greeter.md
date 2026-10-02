@@ -1,8 +1,8 @@
 ---
 artifact: /app/greeter.py
-description: Write a tiny greeter; hello, then hour-based greetings, then farewell.
+description: Fix a broken greeter from logs, then farewell, then period.
 ---
-Follow every provided programming skill. Write `/app/greeter.py` with `run_greeter(command: str) -> str`.
-A greeter should say hello (`hello <name>` returns `hello=<name>`).
-It should also greet by hour (`<name> <hour>`: 5–11 → `morning=<name>`, 12–16 → `afternoon=<name>`, 17–21 → `evening=<name>`).
+Follow every provided programming skill. The greeter at `/app/greeter.py` is broken.
+Logs under `.log/` record the failure. Fix `run_greeter(command: str) -> str` for `<name> <hour>` so it matches the `want:` line.
 It should also farewell (`bye <name>` returns `bye=<name>`).
+It should also report a period (`period <hour>` returns `period=<phrase>`).

@@ -11,10 +11,9 @@ marker or count file:
 | [`coding-prompts/calculator.md`](coding-prompts/calculator.md) | `/app/calculator.py` → `run_calculator` (`add`, `sub`, `mul`, `div`) |
 | [`coding-prompts/todo.md`](coding-prompts/todo.md) | `/app/todo.py` → `run_todo` (`add`, `list`, `done <n>`, `clear`) |
 | [`coding-prompts/counter.md`](coding-prompts/counter.md) | `/app/counter.py` → `run_counter` (`inc`, `dec`, `get`, `set`) |
-| [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` (`hello`, hour-based greeting, `bye`) |
+| [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` (fix from `.log/`, `bye`, `period`) |
 | [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` (`c2f`, `f2c`, Kelvin conversion) |
 | [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (`add`, `total`, `remove`) |
-| [`coding-prompts/greeter-fix.md`](coding-prompts/greeter-fix.md) | `/app/greeter.py` → `run_greeter` (fix from `.log/`, `bye`, `period`) |
 | [`coding-prompts/bank.md`](coding-prompts/bank.md) | `/app/bank.py` → `run_bank` (`open`, `deposit`/`withdraw`, `transfer`, `history`) |
 | [`coding-prompts/stats.md`](coding-prompts/stats.md) | `/app/stats.py` → `run_stats` (`add`, `mean`, `low`/`high`, `median`) |
 
@@ -106,13 +105,13 @@ cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals
 A focused positive check:
 
 ```bash
-ACC_CODEX_INSTANCE=2 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug --tasks greeter-fix -k 1
+ACC_CODEX_INSTANCE=2 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug --tasks greeter -k 1
 ```
 
 A baseline injects no skill bodies but keeps the selected judges:
 
 ```bash
-ACC_CODEX_INSTANCE=2 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug --tasks greeter-fix --baseline -k 1
+ACC_CODEX_INSTANCE=2 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug --tasks greeter --baseline -k 1
 ```
 
 Wait for each command to finish before starting the next. Use the account
@@ -136,7 +135,7 @@ Use long kebab-case flags followed by values. Historical `harness=`,
 | `--harness codex` | Coding harness; supported alternatives include `cc` and `grok`. Omission runs Codex and Claude Code. |
 | `--eval-agent codex` | LLM judge. Repository test runs always select Codex explicitly. |
 | `--skills workflow,testing,debug` | Skills to inject and score; omission selects the default suite. |
-| `--tasks greeter-fix` | Task subset; omission selects every coding task. |
+| `--tasks greeter` | Task subset; omission selects every coding task. |
 | `--baseline` | No skill injection, retaining selected judges. |
 | `--run-separately` | Independent skill scores in the same job and trial count, instead of requiring every judge to pass. |
 | `--install-only` | Prepare and verify CLI installation without an LLM coding run. |

@@ -128,3 +128,36 @@ def test_stats_oracle_refuses_bad_commands() -> None:
         stats.run_stats("add")
     with pytest.raises(ValueError):
         stats.run_stats("fly")
+
+
+def test_write_from_scratch_greeter_is_not_a_live_prompt() -> None:
+    """The discarded hello= greeter is not a live coding prompt."""
+    for prompt in prompt_paths():
+        text = prompt.read_text(encoding="utf-8")
+        assert "hello=<name>" not in text, f"{prompt.stem} still advertises the discarded hello= greeter"
+        assert "morning=<name>" not in text, f"{prompt.stem} still advertises the discarded morning= greeter"
+        assert "afternoon=<name>" not in text, f"{prompt.stem} still advertises the discarded afternoon= greeter"
+        assert "evening=<name>" not in text, f"{prompt.stem} still advertises the discarded evening= greeter"
+
+
+def test_greeter_oracle_matches_planted_log_and_later_commands() -> None:
+    """The remaining greeter oracle implements the log-driven debug contract."""
+    greeter = load_oracle("greeter")
+    assert greeter.run_greeter("Ada 3") == "hi=Good twilight, Ada"
+    assert greeter.run_greeter("bye Ada") == "bye=Ada"
+    assert greeter.run_greeter("period 3") == "period=Good twilight"
+    assert greeter.run_greeter("Bob 8") == "hi=Good day, Bob"
+    assert greeter.run_greeter("period 20") == "period=Good evening"
+
+
+def test_greeter_fix_is_not_a_live_task() -> None:
+    """The retired greeter-fix name is not a prompt, oracle, seed, or RESULTS column."""
+    assert not (PROMPTS_DIR / "greeter-fix.md").exists()
+    assert not (ORACLES_DIR / "greeter-fix.py").exists()
+    assert not (EVALS / "seeds" / "greeter-fix").exists()
+    assert (PROMPTS_DIR / "greeter.md").is_file()
+    assert (ORACLES_DIR / "greeter.py").is_file()
+    assert (EVALS / "seeds" / "greeter").is_dir()
+    order_source = (EVALS / "archive_run" / "results_index.py").read_text(encoding="utf-8")
+    assert "greeter-fix" not in order_source
+    assert '"greeter"' in order_source or "'greeter'" in order_source

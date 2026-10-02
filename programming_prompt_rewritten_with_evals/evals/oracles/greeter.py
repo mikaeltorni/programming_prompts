@@ -1,11 +1,9 @@
 def parse_command(command: str) -> tuple[str, list[str]]:
-    """Split a greeter command into an action or name and remaining tokens.
+    """Split a greeter command into the first token and the rest.
 
-    Parameters:
-        command: Raw greeter command text.
+    Parameters: command - text like "<name> <hour>", "bye <name>", or "period <hour>".
 
-    Returns:
-        A tuple of first token and remaining argument tokens.
+    Returns: a tuple of first token and remaining argument tokens.
     """
     parts = command.strip().split()
     if not parts:
@@ -13,69 +11,69 @@ def parse_command(command: str) -> tuple[str, list[str]]:
     return parts[0], parts[1:]
 
 
-def hello_name(name: str) -> str:
-    """Greet by name only.
+def period_for_hour(hour: int) -> str:
+    """Map an hour to the production greeting period.
 
-    Parameters:
-        name: Person to greet.
+    Parameters: hour - hour of day in 0..23.
 
-    Returns:
-        String like "hello=<name>".
+    Returns: greeting period such as "Good twilight".
     """
-    return f"hello={name}"
+    if hour < 0 or hour > 23:
+        raise ValueError("hour must be 0-23")
+    if 0 <= hour <= 6:
+        return "Good twilight"
+    if 7 <= hour <= 14:
+        return "Good day"
+    return "Good evening"
+
+
+def format_greeting(period: str, name: str) -> str:
+    """Format the greeter API response.
+
+    Parameters: period - greeting period phrase; name - person to greet.
+
+    Returns: string like "hi=Good twilight, Ada".
+    """
+    return f"hi={period}, {name}"
 
 
 def farewell(name: str) -> str:
     """Format a farewell.
 
-    Parameters:
-        name: Person to farewell.
+    Parameters: name - person to farewell.
 
-    Returns:
-        String like "bye=<name>".
+    Returns: string like "bye=<name>".
     """
     return f"bye={name}"
 
 
-def timed_greeting(name: str, hour: int) -> str:
-    """Greet by name and hour of day.
+def format_period(hour: int) -> str:
+    """Format a period-only response.
 
-    Parameters:
-        name: Person to greet.
-        hour: Hour of day in 0..23.
+    Parameters: hour - hour of day in 0..23.
 
-    Returns:
-        morning=, afternoon=, or evening= string.
+    Returns: string like "period=Good twilight".
     """
-    if hour < 0 or hour > 23:
-        raise ValueError("hour must be 0-23")
-    if 5 <= hour <= 11:
-        return f"morning={name}"
-    if 12 <= hour <= 16:
-        return f"afternoon={name}"
-    if 17 <= hour <= 21:
-        return f"evening={name}"
-    return f"hello={name}"
+    return f"period={period_for_hour(hour)}"
 
 
 def run_greeter(command: str) -> str:
-    """Build a greeting from a command.
+    """Build a time-based greeting, farewell, or period from a command.
 
-    Parameters:
-        command: "hello <name>", "<name> <hour>", or "bye <name>".
+    Parameters: command - "<name> <hour>", "bye <name>", or "period <hour>".
 
-    Returns:
-        Formatted greeting string.
+    Returns: formatted greeting, farewell, or period string.
     """
     first, rest = parse_command(command)
-    if first == "hello":
-        if len(rest) != 1:
-            raise ValueError("hello requires a name")
-        return hello_name(rest[0])
     if first == "bye":
         if len(rest) != 1:
             raise ValueError("bye requires a name")
         return farewell(rest[0])
+    if first == "period":
+        if len(rest) != 1:
+            raise ValueError("period requires an hour")
+        return format_period(int(rest[0]))
     if len(rest) != 1:
         raise ValueError("expected '<name> <hour>'")
-    return timed_greeting(first, int(rest[0]))
+    name, hour = first, int(rest[0])
+    return format_greeting(period_for_hour(hour), name)

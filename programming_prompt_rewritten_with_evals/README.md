@@ -41,8 +41,8 @@ enough functions to print. Pair `worktree` with `srp`. Pair `commits` with
 
 ## Current evaluation
 
-Write-from-scratch tasks (`calculator`, `todo`, `counter`, `greeter`,
-`temperature`, `shop`, `bank`, and `stats`) and `greeter-fix` (broken greeter
+Write-from-scratch tasks (`calculator`, `todo`, `counter`,
+`temperature`, `shop`, `bank`, and `stats`) and `greeter` (broken greeter
 plus planted logs) live as Markdown under
 [`evals/coding-prompts/`](evals/coding-prompts/). The runner materializes Harbor
 task trees under `evals/.generated/tasks/` from those prompts. Selected skills
@@ -72,7 +72,7 @@ Committed fallbacks:
 - `prompts/programming-skills/` — injectable skills (`srp`, `commenting`,
   `logging`, `worktree`, `commits`, `debug`, `testing`, `docs`, explicit-only `workflow`,
   plus `*-vague` controls)
-- `evals/coding-prompts/` — one `.md` per write-from-scratch coding task
+- `evals/coding-prompts/` — one `.md` per coding task, including the log-driven `greeter`
 - `evals/seeds/` — optional planted files for a task (`log/` → image `.log/`)
 - `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill
 - `evals/verifier/run_judges.sh` — shared Harbor verifier (one LLM judge pass per eval agent)
