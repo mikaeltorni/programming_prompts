@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.9 — Executable code creation and behavior changes require saved,
+  v1.0.10 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -48,7 +48,12 @@ state. Read setup paragraphs and original failure logs as well as stage examples
 examples do not replace shared validation rules. Keep this coverage map scoped
 to capabilities implemented so far. Extend it when a capability is introduced,
 revise only explicitly replaced rules, and inspect the saved assertions against
-it before every commit. A passing runner does not close an uncovered rule.
+it before every commit. A passing runner does not close an uncovered rule. Map failures by operation
+and rejection reason, not just a single "invalid command" category: a shape
+check for one operation does not cover another independently validated shape,
+and one domain error does not cover a different explicitly required rejection.
+For each implemented operation, retain its applicable malformed shape check
+and each specified domain rejection through later revisions.
 
 When empty commands, unknown operations or invalid argument shapes are explicitly
 rejected, save a representative assertion for each specified class. Domain errors
@@ -124,7 +129,10 @@ Keep coverage for earlier behavior that still applies; replace only expectations
 explicitly retired by the request. Earlier commits retain the checks for retired
 rules, so the final suite must not assert both the old and replacement behavior.
 Do not overwrite the saved suite with only the newest stage's examples and lose
-unaffected regressions. When formerly invalid inputs become valid, revise or
+unaffected regressions. If consolidating or rewriting tests, inventory the
+existing assertions first and transfer every still-required success and failure
+class into the replacement before removing the old cases. New state/history
+checks extend that coverage; they do not replace earlier rejection rules. When formerly invalid inputs become valid, revise or
 remove their obsolete rejection assertions and keep representative inputs that
 remain invalid under the current contract. Do not leave an empty negative-test
 loop or replace it with a before/after read that never attempts an operation.
