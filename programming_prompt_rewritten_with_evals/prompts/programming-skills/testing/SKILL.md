@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.8 — Executable code creation and behavior changes require saved,
+  v1.0.9 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -55,7 +55,10 @@ rejected, save a representative assertion for each specified class. Domain error
 such as missing resources do not cover malformed dispatch. For changed command
 shapes, cover missing or extra arguments where the contract rejects them; include
 an extra-argument case when adding a no-argument command with its own validation
-path. Reuse coverage when commands share that path. Do not invent restrictions
+path. A separate dispatch branch has its own rejection path even when its
+condition resembles another branch: save an extra-argument assertion for each
+new no-argument operation. Reuse coverage only when the operations delegate to
+the same validation path. Do not invent restrictions
 or enumerate every spelling of an invalid input. Put these shared validation
 assertions in the first working revision that supports dispatch. When extending
 the suite, retain those cases explicitly rather than reconstructing only the
