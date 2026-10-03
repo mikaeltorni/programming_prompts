@@ -15,6 +15,17 @@ SPEC.loader.exec_module(builder)
 
 
 class GlobalInstructionsTests(unittest.TestCase):
+    def test_headers_preserve_policy_content_and_code_fences(self):
+        text = "---\nname: example\ndescription: v1.0.0 — Example.\n---\n# Purpose\nFull policy.\n```markdown\n# Literal code\n```"
+        output = builder.render_instructions([builder.Instruction("example", text, "/source/SKILL.md")])
+        self.assertIn("# Global agent instructions", output)
+        self.assertIn("## Policy: example", output)
+        self.assertIn("### Purpose", output)
+        self.assertIn("```markdown\n# Literal code\n```", output)
+        self.assertIn("Full policy.", output)
+        self.assertIn("v1.0.0", output)
+        self.assertIn("/source/SKILL.md", output)
+
     def test_native_filenames_follow_explicit_instance_homes(self):
         self.assertEqual(builder.instruction_path("claude", Path("/isolated/claude")), Path("/isolated/claude/CLAUDE.md"))
         self.assertEqual(builder.instruction_path("codex", Path("/isolated/codex")), Path("/isolated/codex/AGENTS.md"))
