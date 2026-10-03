@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.13 — Keep raw-command parsing and operation logic in separate helpers
+  v1.0.14 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
@@ -26,7 +26,11 @@ variant dispatch can return only that operation's arguments.
 After branching, the public dispatcher passes those returned values to operation
 helpers; it must not pass the raw command to another parser. A kind-only
 classifier followed by raw-command parsers in dispatch branches is an unfinished
-extraction. The shared parser may compose smaller parsing helpers internally.
+extraction. The shared parser may compose smaller parsing helpers internally. When command
+variants accept the same token type and range, reuse one conversion/validation
+helper inside that parser rather than copying its conversion, exception handling
+and range checks into each branch. Keep command-specific shape checks in their
+own branches; share only the rules that are actually identical.
 Do not first draft a complete operation in the entrypoint and plan to extract
 it after testing or in a later commit.
 A helper that only formats output, converts one token, or records history does
