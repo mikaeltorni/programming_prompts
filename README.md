@@ -476,3 +476,5 @@ This notice is intended to clarify the nature of the project and does not impose
 `write_instructions` to combine selected instruction texts into one global
 Markdown file. The writer replaces only owned blocks and preserves unrelated
 user instructions. It has no command-line interface yet.
+`instruction_path` resolves Codex's `AGENTS.md` and Claude's `CLAUDE.md`
+under an explicit instance home, or `CODEX_HOME` / `CLAUDE_CONFIG_DIR`.

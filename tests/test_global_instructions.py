@@ -14,6 +14,10 @@ SPEC.loader.exec_module(builder)
 
 
 class GlobalInstructionsTests(unittest.TestCase):
+    def test_native_filenames_follow_explicit_instance_homes(self):
+        self.assertEqual(builder.instruction_path("claude", Path("/isolated/claude")), Path("/isolated/claude/CLAUDE.md"))
+        self.assertEqual(builder.instruction_path("codex", Path("/isolated/codex")), Path("/isolated/codex/AGENTS.md"))
+
     def test_complete_sources_and_unrelated_text_survive_reconfiguration(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "AGENTS.md"
