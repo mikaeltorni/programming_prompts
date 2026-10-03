@@ -2,6 +2,7 @@
 
 import importlib.util
 import sys
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -44,3 +45,25 @@ class GlobalInstructionsTests(unittest.TestCase):
             builder.render_instructions([builder.Instruction("one", "")])
         with self.assertRaises(ValueError):
             builder.render_instructions([builder.Instruction("one", "x"), builder.Instruction("one", "y")])
+
+
+class GlobalInstructionsCliTests(unittest.TestCase):
+    def test_cli_selection_and_rejection_preserve_user_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "skills/example/SKILL.md"
+            source.parent.mkdir(parents=True)
+            source.write_text("Example policy.")
+            target = root / "instructions.md"
+            target.write_text("Personal policy.\n")
+            command = [sys.executable, str(SOURCE), "--source-root", str(root), "--output", str(target)]
+            result = subprocess.run(command + ["--skills", "example"], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Example policy.", target.read_text())
+            original = target.read_text()
+            result = subprocess.run(command + ["--skills", "missing"], capture_output=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(target.read_text(), original)
+            result = subprocess.run(command + ["--skills", ""], capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(target.read_text().strip(), "Personal policy.")

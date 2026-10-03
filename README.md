@@ -475,6 +475,19 @@ This notice is intended to clarify the nature of the project and does not impose
 `scripts/global_instructions.py` provides `render_instructions` and
 `write_instructions` to combine selected instruction texts into one global
 Markdown file. The writer replaces only owned blocks and preserves unrelated
-user instructions. It has no command-line interface yet.
+user instructions.
+
+Build selected policies with the stdlib-only command:
+
+```bash
+python3 scripts/global_instructions.py --skills v2:workflow,v2:commits,v2:worktree,v2:docs,v2:testing --runtime codex --config-home ~/.codex
+```
+
+Accepted parameters: `--list`, `--skills` (comma-separated, family-qualified
+when ambiguous), `--source-root`, `--output`, `--runtime`, `--config-home`, and
+`--bundle-dir`. An empty `--skills ''` clears managed selections while retaining
+personal instructions. Harbor uses the same builder to package one document
+per job, then places it in each trial's native global file. Baselines clear
+native instruction and skill surfaces; task prompts and judges are unchanged.
 `instruction_path` resolves Codex's `AGENTS.md` and Claude's `CLAUDE.md`
 under an explicit instance home, or `CODEX_HOME` / `CLAUDE_CONFIG_DIR`.

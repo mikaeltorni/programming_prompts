@@ -124,47 +124,6 @@ list_task_dirs() {
   done | sort
 }
 
-inject_selected_workflow_invocation() {
-  # Preserve this helper's name for existing sourced callers. Independently
-  # invoke selected workflow/commits in isolated job copies, not canonical tasks.
-  # Parameters: $1 job task root; remaining arguments selected skill names.
-  # Returns: 0 after injection or when neither skill is selected; 1 on write error.
-  # Baseline and positive jobs receive identical selection context; installing
-  # the selected skill bodies remains the experimental difference.
-  local root="$1"
-  shift
-  local skill instruction body selected_names="" prompt="" has_commits=0
-  for skill in "$@"; do
-    selected_names+="${selected_names:+, }$skill"
-    case "$skill" in
-      workflow)
-        prompt+="${prompt:+$'\n'}"'Use $workflow to coordinate this programming task from start to finish.'
-        ;;
-      commits)
-        prompt+="${prompt:+$'\n'}"'Use $commits for this programming task.'
-        has_commits=1
-        ;;
-    esac
-  done
-  [[ -n "$prompt" ]] || return 0
-  prompt+=$'\n'"Enabled programming skills for this task: $selected_names."
-  if [[ "$has_commits" -eq 1 ]]; then
-    prompt+=$'\n''Read the selected skills SKILL.md files using their supplied skill-catalog paths before editing; they are installed outside the repository.'
-    prompt+=$'\n''Create the local Git commits required by the selected commits skill; this task explicitly authorizes those commits. Do not push.'
-    prompt+=$'\n''In this task image, /app is a symlink to the Git checkout /Projects/app. Resolve the requested absolute path before writing; do not turn /app/file into /Projects/app/app/file.'
-  fi
-  for instruction in "$root"/*/instruction.md; do
-    [[ -f "$instruction" ]] || continue
-    body="$(<"$instruction")"
-    [[ "$body" == "$prompt"* ]] && continue
-    if ! printf '%s\n\n%s\n' "$prompt" "$body" >"$instruction"; then
-      echo "Failed to invoke selected skills in $instruction" >&2
-      return 1
-    fi
-  done
-  echo "Explicitly invoked selected programming skills ($selected_names) in isolated task prompts under $root" >&2
-  return 0
-}
 
 yaml_task_entries() {
   local root="$1"

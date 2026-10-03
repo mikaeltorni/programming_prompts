@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import os
+import argparse
 import re
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -89,3 +91,83 @@ def write_instructions(
         if os.path.exists(temporary):
             os.unlink(temporary)
     return True
+
+
+SOURCE_ROOTS = {
+    "original": "skills",
+    "v2": "programming_prompt_rewritten_with_evals/prompts/programming-skills",
+    "linux": "plugins/linux-desktop-configuration/skills",
+}
+
+
+def discover_sources(root: Path) -> dict[str, Path]:
+    """Discover family-qualified policy names from the unchanged source tree."""
+    return {
+        f"{family}:{path.parent.name}": path
+        for family, relative in SOURCE_ROOTS.items()
+        for path in sorted((root / relative).glob("*/SKILL.md"))
+    }
+
+
+def select_instructions(root: Path, names: Iterable[str]) -> tuple[Instruction, ...]:
+    """Resolve comma-list names, rejecting unknown or ambiguous selections."""
+    sources = discover_sources(root)
+    result = []
+    seen = set()
+    for name in names:
+        matches = [key for key in sources if key == name or key.split(":", 1)[1] == name]
+        if name in sources:
+            matches = [name]
+        if len(matches) != 1:
+            raise ValueError(f"unknown or ambiguous skill {name!r}; use a family:name from --list")
+        key = matches[0]
+        if key in seen:
+            continue
+        seen.add(key)
+        marker_key = key if key.startswith("v2:") else key.split(":", 1)[1]
+        result.append(Instruction(marker_key, sources[key].read_text(encoding="utf-8")))
+    return tuple(result)
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Build a native file or a Harbor transport bundle with explicit selection."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source-root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--skills", help="comma-separated skill names; empty selects none")
+    parser.add_argument("--list", action="store_true", help="list family-qualified source names")
+    destinations = parser.add_mutually_exclusive_group()
+    destinations.add_argument("--output", type=Path, help="global Markdown destination")
+    destinations.add_argument("--bundle-dir", type=Path, help="Harbor transport directory")
+    parser.add_argument("--runtime", choices=["codex", "claude", "cc", "cca", "ca"])
+    parser.add_argument("--config-home", type=Path, help="explicit native instance home")
+    args = parser.parse_args(argv)
+    try:
+        if args.list:
+            print("\n".join(discover_sources(args.source_root)))
+            return 0
+        if args.skills is None:
+            parser.error("--skills is required (use --skills '' to clear managed policies)")
+        if not args.output and not args.bundle_dir and not args.runtime:
+            parser.error("choose --output, --bundle-dir, or --runtime")
+        instructions = select_instructions(args.source_root, (name.strip() for name in args.skills.split(",") if name.strip()))
+        owned = [key if key.startswith("v2:") else key.split(":", 1)[1] for key in discover_sources(args.source_root)]
+        if args.bundle_dir:
+            args.bundle_dir.mkdir(parents=True, exist_ok=True)
+            # Harbor requires SKILL.md to discover a transport directory. The
+            # harness consumes only instructions.md and never registers this skill.
+            (args.bundle_dir / "SKILL.md").write_text(
+                "---\nname: global-instructions\ndescription: Transport for generated global instructions.\n---\n",
+                encoding="utf-8",
+            )
+            (args.bundle_dir / "instructions.md").write_text(render_instructions(instructions), encoding="utf-8")
+        else:
+            destination = args.output or instruction_path(args.runtime, args.config_home)
+            write_instructions(destination, instructions, owned_keys=owned)
+        return 0
+    except (OSError, ValueError) as exc:
+        print(f"global-instructions: {exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

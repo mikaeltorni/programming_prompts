@@ -188,89 +188,48 @@ def build_ensure_git_repo_command(repo: str = "/Projects/app") -> str:
     )
 
 
-def build_clean_skills_register_command(skills_dir: str | None) -> str:
-    """Build a shell snippet that resets Codex skills then installs only *skills_dir*.
-
-    Codex discovers skills from ``$HOME/.agents/skills``, ``/etc/codex/skills``,
-    and ``$CODEX_HOME/skills`` (including seeded ``.system`` skills). This
-    command removes those trees, recreates empty destinations, and — when
-    Harbor uploaded benchmark skills — copies only that upload into the user
-    and ``CODEX_HOME`` skill roots.
-
-    Args:
-        skills_dir: Absolute path inside the trial environment where Harbor
-            uploaded the configured skills (for example ``/harbor/skills``),
-            or ``None`` when the job configured no skills.
-
-    Returns:
-        A shell command string safe to run with ``CODEX_HOME`` already set.
-    """
+def _build_global_register_command(skills_dir: str | None, runtime: str) -> str:
+    """Reset trial discovery and install only the generated global document."""
     ensure = build_ensure_git_repo_command()
-    wipe = (
-        'rm -rf "$HOME/.agents/skills" /etc/codex/skills "$CODEX_HOME/skills"; '
-        'mkdir -p "$HOME/.agents/skills" "$CODEX_HOME/skills"'
-    )
-    if not skills_dir:
-        return f"{ensure}; {wipe}"
+    if runtime == "codex":
+        wipe = (
+            'rm -rf "$HOME/.agents/skills" /etc/codex/skills "$CODEX_HOME/skills"; '
+            'mkdir -p "$CODEX_HOME"; '
+            'rm -f "$CODEX_HOME/AGENTS.md" "$CODEX_HOME/AGENTS.override.md"'
+        )
+        target = '"$CODEX_HOME/AGENTS.md"'
+    elif runtime == "claude":
+        wipe = (
+            'rm -rf "$HOME/.claude/skills" "$CLAUDE_CONFIG_DIR/skills"; '
+            'mkdir -p "$CLAUDE_CONFIG_DIR"; '
+            'rm -f "$HOME/.claude/CLAUDE.md" "$CLAUDE_CONFIG_DIR/CLAUDE.md"'
+        )
+        target = '"$CLAUDE_CONFIG_DIR/CLAUDE.md"'
+    else:
+        wipe = (
+            'rm -rf "$HOME/.grok/skills" "$HOME/.grok/installed-plugins" '
+            '"$HOME/.agents/skills" "$HOME/.claude/skills"; '
+            'mkdir -p "$HOME/.grok"; '
+            'rm -f "$HOME/.grok/AGENTS.md" "$HOME/.claude/CLAUDE.md"'
+        )
+        target = '"$HOME/.grok/AGENTS.md"'
+    command = f"({ensure}) && ({wipe})"
+    if skills_dir:
+        source = shlex.quote(skills_dir.rstrip("/") + "/global-instructions/instructions.md")
+        command += f" && test -f {source} && cp {source} {target}"
+    return command
 
-    quoted = shlex.quote(skills_dir)
-    return (
-        f"{ensure}; {wipe}; "
-        f'cp -a {quoted}/. "$HOME/.agents/skills/"; '
-        f'cp -a {quoted}/. "$CODEX_HOME/skills/"'
-    )
+
+def build_clean_skills_register_command(skills_dir: str | None) -> str:
+    """Install a job-local AGENTS.md, or clear all policies for baseline."""
+    return _build_global_register_command(skills_dir, "codex")
 
 
 def build_clean_claude_skills_register_command(skills_dir: str | None) -> str:
-    """Build a shell snippet that resets Claude skills then installs only *skills_dir*.
-
-    Harbor's Claude agent may copy ``~/.claude/skills`` into
-    ``$CLAUDE_CONFIG_DIR/skills`` before this runs. This command wipes both
-    trees and — when Harbor uploaded benchmark skills — installs only that
-    upload into ``$CLAUDE_CONFIG_DIR/skills``.
-
-    Args:
-        skills_dir: Absolute path inside the trial environment where Harbor
-            uploaded the configured skills, or ``None`` for baseline jobs.
-
-    Returns:
-        A shell command string safe to run after ``CLAUDE_CONFIG_DIR`` is set.
-    """
-    ensure = build_ensure_git_repo_command()
-    wipe = (
-        'rm -rf "$HOME/.claude/skills" "$CLAUDE_CONFIG_DIR/skills"; '
-        'mkdir -p "$HOME/.claude/skills" "$CLAUDE_CONFIG_DIR/skills"'
-    )
-    if not skills_dir:
-        return f"{ensure}; {wipe}"
-
-    quoted = shlex.quote(skills_dir)
-    return f"{ensure}; {wipe}; cp -a {quoted}/. \"$CLAUDE_CONFIG_DIR/skills/\""
+    """Install CLAUDE.md into Harbor's isolated CLAUDE_CONFIG_DIR."""
+    return _build_global_register_command(skills_dir, "claude")
 
 
 def build_clean_grok_skills_register_command(skills_dir: str | None) -> str:
-    """Build a shell snippet that resets Grok skills then installs only *skills_dir*.
-
-    Grok discovers skills from ``$HOME/.grok/skills`` (and may auto-install
-    marketplace plugins). This command wipes those trees and — when Harbor
-    uploaded benchmark skills — copies only that upload into
-    ``$HOME/.grok/skills``. Host SuperGrok marketplace skills never enter
-    the trial.
-
-    Args:
-        skills_dir: Absolute path inside the trial where Harbor uploaded the
-            configured skills, or ``None`` for baseline jobs.
-
-    Returns:
-        A shell command string safe to run after ``$HOME/.grok`` exists.
-    """
-    ensure = build_ensure_git_repo_command()
-    wipe = (
-        'rm -rf "$HOME/.grok/skills" "$HOME/.grok/installed-plugins"; '
-        'mkdir -p "$HOME/.grok/skills"'
-    )
-    if not skills_dir:
-        return f"{ensure}; {wipe}"
-
-    quoted = shlex.quote(skills_dir)
-    return f"{ensure}; {wipe}; cp -a {quoted}/. \"$HOME/.grok/skills/\""
+    """Install a job-local Grok AGENTS.md without registering native skills."""
+    return _build_global_register_command(skills_dir, "grok")
