@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.6 — Executable code creation and behavior changes require saved,
+  v1.0.7 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -35,6 +35,11 @@ commands before choosing checks. Test observable behavior against the request,
 not a copy of the implementation or whatever result it currently returns.
 Reuse the project's test framework and fixtures. Do not install a new framework
 or add hosted CI unless the user requests it.
+Record the exact runnable command with the saved checks (a file comment or
+existing project documentation is sufficient). Run that command and confirm it
+actually executes assertions; a successful exit with zero discovered tests is
+not verification. Choose explicit discovery or a runnable script when default
+discovery does not include the saved location.
 
 Before writing checks, map the current capability and shared request rules to
 concrete public-interface inputs and independently expected results. Include
@@ -119,6 +124,12 @@ loop or replace it with a before/after read that never attempts an operation.
 Retain meaningful failure and unchanged-state checks elsewhere in the suite;
 assert expected state independently before checking that a rejected operation
 preserves it. Run the accumulated applicable checks before committing.
+At this gate, inspect actual executable assertions for every still-applicable
+shared validation class. Keep empty-command and unknown-operation checks when
+those are required; revising numeric input or one operation's arguments does
+not retire those shared rules. If a negative-case loop is replaced, transfer
+its unaffected assertions before removing it. Coverage of operation-specific
+errors cannot substitute for these dispatch checks.
 
 Before saving the first test file, check independently selected function skills.
 When commenting is selected, every test/helper/fixture method needs a purpose,

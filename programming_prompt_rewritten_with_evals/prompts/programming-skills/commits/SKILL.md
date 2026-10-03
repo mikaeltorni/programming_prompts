@@ -1,12 +1,17 @@
 ---
 name: commits
 description: >-
-  v1.1.15 — Give each complete capability sentence its own Feature and working
+  v1.1.16 — Give each complete capability sentence its own Feature and working
   commit. Every separate "It should also" sentence gets a new ledger row;
   an optional "and may" clause inside one sentence stays in that row.
 ---
 
 # Feature commits
+
+The commit unit is the complete source sentence. When it names several commands,
+implement and verify all required commands in that sentence before its first
+introducing commit. Finishing one command does not finish the sentence; do not
+make a partial Feature commit and continue its remaining commands afterward.
 
 Apply this skill at each source write, not only when reviewing finished history.
 When workflow is selected, its `Write code` phase contains the entire Feature
