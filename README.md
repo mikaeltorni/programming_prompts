@@ -489,5 +489,9 @@ when ambiguous), `--source-root`, `--output`, `--runtime`, `--config-home`, and
 personal instructions. Harbor uses the same builder to package one document
 per job, then places it in each trial's native global file. Baselines clear
 native instruction and skill surfaces; task prompts and judges are unchanged.
+Generated documents contain a global overview, the selected policy list, and
+one section per source with its original metadata and complete body. Markdown
+headings are nested while fenced examples remain verbatim. Source files and
+judge definitions are never rewritten by assembly.
 `instruction_path` resolves Codex's `AGENTS.md` and Claude's `CLAUDE.md`
 under an explicit instance home, or `CODEX_HOME` / `CLAUDE_CONFIG_DIR`.

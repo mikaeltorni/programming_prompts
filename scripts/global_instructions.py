@@ -30,6 +30,7 @@ class Instruction:
 
     key: str
     text: str
+    source: str = ""
 
     def markers(self) -> tuple[str, str]:
         if not re.fullmatch(r"[A-Za-z0-9_.:-]+", self.key):
@@ -40,8 +41,38 @@ class Instruction:
         )
 
 
+def policy_section(instruction: Instruction) -> str:
+    """Render one complete policy with metadata and nested Markdown headings."""
+    text = instruction.text.strip()
+    metadata = ""
+    if text.startswith("---\n"):
+        parts = text.split("\n---", 1)
+        if len(parts) != 2:
+            raise ValueError(f"unclosed frontmatter: {instruction.key}")
+        metadata, text = parts[0][4:], parts[1].lstrip("\n")
+    lines = []
+    fence = None
+    for line in text.splitlines():
+        match = re.match(r"^\s*(`{3,}|~{3,})", line)
+        if match:
+            token = match.group(1)
+            if fence is None:
+                fence = token
+            elif token[0] == fence[0] and len(token) >= len(fence):
+                fence = None
+        if fence is None and not match:
+            line = re.sub(r"^(#{1,6}) ", lambda m: "#" * min(6, len(m[1]) + 2) + " ", line)
+        lines.append(line)
+    header = f"## Policy: {instruction.key}\n"
+    if instruction.source:
+        header += f"\nSource: `{instruction.source}`\n"
+    if metadata:
+        header += "\nSource metadata:\n" + "\n".join(f"> {line}" for line in metadata.splitlines()) + "\n"
+    return header + "\n" + "\n".join(lines)
+
+
 def render_instructions(instructions: Iterable[Instruction]) -> str:
-    """Combine complete source texts without changing the source files."""
+    """Combine full selected policy bodies in a comprehensive instruction file."""
     blocks = []
     seen = set()
     for instruction in instructions:
@@ -51,8 +82,23 @@ def render_instructions(instructions: Iterable[Instruction]) -> str:
         if not instruction.text.strip():
             raise ValueError(f"empty instruction: {instruction.key}")
         seen.add(instruction.key)
-        blocks.append(f"{start}\n{instruction.text.strip()}\n{end}")
-    return "\n\n".join(blocks) + ("\n" if blocks else "")
+        blocks.append(f"{start}\n{policy_section(instruction)}\n{end}")
+    if not blocks:
+        return ""
+    start, end = Instruction("global-instructions", "").markers()
+    overview = (
+        f"{start}\n# Global agent instructions\n\n"
+        "These selected policies are enabled for this session in every project. "
+        "Selection explicitly invokes workflow when included. Apply the policies "
+        "in their required order and within their stated scope. Their complete "
+        "instructions are embedded below, so rereading SKILL.md files merely to "
+        "load them is unnecessary. Resolve referenced supporting resources relative "
+        "to each stated source file. Explicit user instructions take precedence.\n\n"
+        "## Selected policies\n\n"
+        + "\n".join(f"- `{key}`" for key in (item.split("programming-prompts:", 1)[1].split(":start", 1)[0] for item in blocks))
+        + f"\n{end}"
+    )
+    return overview + "\n\n" + "\n\n".join(blocks) + "\n"
 
 
 def write_instructions(
@@ -66,7 +112,7 @@ def write_instructions(
     rendered = render_instructions(instructions)
     current = destination.read_text(encoding="utf-8") if destination.exists() else ""
     remaining = current
-    for key in dict.fromkeys((*owned_keys, *(item.key for item in instructions))):
+    for key in dict.fromkeys(("global-instructions", *owned_keys, *(item.key for item in instructions))):
         start, end = Instruction(key, "").markers()
         if remaining.count(start) != remaining.count(end):
             raise ValueError(f"incomplete managed block {key} in {destination}")
@@ -125,7 +171,7 @@ def select_instructions(root: Path, names: Iterable[str]) -> tuple[Instruction, 
             continue
         seen.add(key)
         marker_key = key if key.startswith("v2:") else key.split(":", 1)[1]
-        result.append(Instruction(marker_key, sources[key].read_text(encoding="utf-8")))
+        result.append(Instruction(marker_key, sources[key].read_text(encoding="utf-8"), str(sources[key].resolve())))
     return tuple(result)
 
 
