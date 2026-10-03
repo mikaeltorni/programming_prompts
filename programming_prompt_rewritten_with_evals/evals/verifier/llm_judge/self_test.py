@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
 import subprocess
 import tempfile
+import sys
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -19,6 +21,7 @@ from .rewardkit import (
     _rewardkit_error_excerpt,
     rewardkit_backend,
     rewardkit_command,
+    run_rewardkit,
     score_with_rewardkit,
     write_pinned_judge_dir,
 )
@@ -798,6 +801,82 @@ def run_self_test() -> int:
             and "yes" in grok_raw,
             "Grok path retries once on skip-inspect",
         )
+
+    # Runner: python3 verifier/run_llm_judge.py --self-test (from evals/).
+    # Reproduce the archived E2BIG crash through the public rewardkit runner.
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        package = root / "rewardkit"
+        package.mkdir()
+        (package / "__init__.py").write_text("", encoding="utf-8")
+        (package / "agents.py").write_text(
+            "class CodexCLI:\n"
+            "    def build_command(self, prompt, schema, allowed_tools=()):\n"
+            "        return ['codex', 'exec', prompt, '--model', 'fixture model']\n",
+            encoding="utf-8",
+        )
+        cli = root / "codex"
+        cli.write_text(
+            f"#!{sys.executable}\n"
+            "import hashlib, json, os, sys\n"
+            "payload = sys.stdin.read() if sys.argv[2] == '-' else sys.argv[2]\n"
+            "print(json.dumps({'argv': sys.argv[1:], 'transport_dir': "
+            "os.environ.get('ACC_JUDGE_PROMPT_DIR'), 'digest': "
+            "hashlib.sha256(payload.encode('utf-8')).hexdigest()}))\n",
+            encoding="utf-8",
+        )
+        cli.chmod(0o755)
+        # The installed rewardkit command has this basename and import boundary.
+        runner = root / "rewardkit-bin" / "rewardkit"
+        runner.parent.mkdir()
+        runner.write_text(
+            f"#!{sys.executable}\n"
+            "import json, subprocess, sys\n"
+            "from pathlib import Path\n"
+            "from rewardkit.agents import CodexCLI\n"
+            "args = sys.argv[1:]\n"
+            "prompt = (Path(args[0]) / 'prompt.md').read_text(encoding='utf-8')\n"
+            "proc = subprocess.run(CodexCLI().build_command(prompt, {}), "
+            "capture_output=True, text=True, check=True)\n"
+            "Path(args[args.index('--output') + 1]).write_text(proc.stdout)\n",
+            encoding="utf-8",
+        )
+        runner.chmod(0o755)
+        work = root / "judge"
+        work.mkdir()
+        prompt = "Full evidence with spaces, quotes and \nUnicode: é漢字\n" * 5000
+        (work / "prompt.md").write_text(prompt, encoding="utf-8")
+        output = root / "reward.json"
+        with patch.dict(os.environ, {
+            "PATH": f"{root}{os.pathsep}{os.environ.get('PATH', '')}",
+            "PYTHONPATH": str(root),
+        }), patch("llm_judge.rewardkit.rewardkit_command", return_value=[str(runner)]), \
+                patch("llm_judge.rewardkit.ensure_rewardkit_cli"):
+            try:
+                with codex_reasoning_on_path():
+                    run_rewardkit(work=work, output=output, backend="codex",
+                                  model="fixture model", workspace=root, timeout=30)
+                result = json.loads(output.read_text())
+                ok = (result['argv'] == ['exec', '-', '--model', 'fixture model']
+                      and result['digest'] == hashlib.sha256(prompt.encode('utf-8')).hexdigest()
+                      and not Path(result['transport_dir']).exists())
+            except subprocess.CalledProcessError:
+                ok = False
+        check("codex_large_prompt_transport", ok,
+              "complete evidence above Linux's per-argument limit reaches stdin unchanged")
+        (work / "prompt.md").write_text("small prompt with spaces", encoding="utf-8")
+        with patch.dict(os.environ, {
+            "PATH": f"{root}{os.pathsep}{os.environ.get('PATH', '')}",
+            "PYTHONPATH": str(root),
+        }), patch("llm_judge.rewardkit.rewardkit_command", return_value=[str(runner)]), \
+                patch("llm_judge.rewardkit.ensure_rewardkit_cli"):
+            run_rewardkit(work=work, output=output, backend="claude-code",
+                          model="fixture model", workspace=root, timeout=30)
+        result = json.loads(output.read_text())
+        check("other_backend_transport_unchanged",
+              result['argv'] == ['exec', 'small prompt with spaces', '--model', 'fixture model']
+              and result['transport_dir'] is None,
+              "the Codex transport adapter does not change other backend launches")
 
     failed = [name for name, ok, _ in cases if not ok]
     if failed:

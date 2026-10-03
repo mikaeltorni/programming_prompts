@@ -265,8 +265,10 @@ def codex_wrapper_script(real: str) -> str:
         "import os, sys\n"
         f"sys.path.insert(0, {module_root!r})\n"
         "from llm_judge.homes import rewrite_codex_output_schema\n"
-        "rewrite_codex_output_schema(sys.argv[1:])\n"
-        f"os.execv({real!r}, [{real!r}, *sys.argv[1:]])\n"
+        "from llm_judge.transport import codex_prompt_stdin\n"
+        "arguments = codex_prompt_stdin(sys.argv[1:])\n"
+        "rewrite_codex_output_schema(arguments)\n"
+        f"os.execv({real!r}, [{real!r}, *arguments])\n"
     )
 
 

@@ -244,14 +244,32 @@ def run_rewardkit(
         f"starting rewardkit judge argv0={cmd[0]} backend={backend} model={model} "
         f"workspace={workspace} timeout={timeout}s"
     )
-    proc = subprocess.run(
-        cmd,
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        env=merged,
-    )
+    # Rewardkit's pinned backend embeds prompts in argv. Install a scoped
+    # backend adapter before it builds argv; the CLI shim alone is too late
+    # for Linux's per-argument size limit. Other backends stay unchanged.
+    with tempfile.TemporaryDirectory(prefix="rewardkit-transport-") as directory:
+        if backend == "codex":
+            bootstrap = Path(directory) / "sitecustomize.py"
+            bootstrap.write_text(
+                "import os, sys\n"
+                "if os.path.basename(sys.argv[0]) == 'rewardkit':\n"
+                "    from llm_judge.transport import install_codex_prompt_transport\n"
+                "    install_codex_prompt_transport()\n",
+                encoding="utf-8",
+            )
+            merged["ACC_JUDGE_PROMPT_DIR"] = directory
+            merged["PYTHONPATH"] = os.pathsep.join(filter(None, [
+                directory, str(Path(__file__).resolve().parent.parent),
+                merged.get("PYTHONPATH", ""),
+            ]))
+        proc = subprocess.run(
+            cmd,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            env=merged,
+        )
     if proc.returncode != 0:
         err = _rewardkit_error_excerpt(proc.stderr or proc.stdout or "")
         log(f"rewardkit judge failed rc={proc.returncode}: {err}")

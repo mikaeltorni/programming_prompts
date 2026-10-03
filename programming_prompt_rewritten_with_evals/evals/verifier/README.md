@@ -28,7 +28,12 @@ bounded original failure logs for both debug and testing judges. Codex and Claud
 (with a writable `CLAUDE_CONFIG_DIR` / `CODEX_HOME` overlay passed into the
 `rewardkit` child, not only `os.environ`). The task image installs
 `rewardkit` onto `PATH`; the wrapper uses that binary and only falls back
-to `uvx --from`. A `subprocess.TimeoutExpired` (uvx warmup under a
+to `uvx --from`. Codex judge prompts use a scoped rewardkit backend adapter
+and file-backed stdin, preserving all evidence without Linux argv size limits.
+The temporary prompt files are removed when the judge subprocess ends; other
+backends retain their existing transport. The standalone LLM self-test exercises
+this path with a prompt larger than the per-argument limit and a fake CLI.
+A `subprocess.TimeoutExpired` (uvx warmup under a
 100-trial wave) is recorded as a rate-limit skip, not a skill no.
 Grok uses the CLI. Judge subprocesses
 default to one worker so dual eval agents do not stampede subscription
