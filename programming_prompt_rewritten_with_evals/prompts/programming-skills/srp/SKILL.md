@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.12 — Keep raw-command parsing and operation logic in separate helpers
+  v1.0.13 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
@@ -154,6 +154,12 @@ integration points; preserve working behavior outside the request.
   and update its callers. A local extraction may touch several files; prefer
   that justified change over a tiny patch that leaves mixed responsibilities,
   duplicated logic, or another special case.
+- When a new operation needs an existing classification or conversion, reuse
+  its current helper. If it is embedded in an earlier operation, extract only
+  that shared computation and have both operations call it. Keep each operation's
+  own formatting and effects with that operation. Copying the classification
+  branches into the new helper leaves duplicated business logic even when
+  both public dispatch paths are thin.
 - Add helpers for a clear responsibility or actual reuse. Avoid speculative
   frameworks, pass-through layers, and broad reorganizations for hypothetical
   future requirements. Simple functions may share a small private helper.
