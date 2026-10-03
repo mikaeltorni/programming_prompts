@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.5 — Executable code creation and behavior changes require saved,
+  v1.0.6 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -36,19 +36,39 @@ not a copy of the implementation or whatever result it currently returns.
 Reuse the project's test framework and fixtures. Do not install a new framework
 or add hosted CI unless the user requests it.
 
-Read the request's shared validation rules as well as its stage examples. When
-empty commands, unknown operations or invalid argument shapes are explicitly
-rejected, save a representative public-interface assertion for each specified
-class; successful command sequences and domain failures do not cover malformed
-dispatch. For stateful operations, establish the expected state independently,
-then assert that the rejected command preserves it. This is coverage of the
-written contract, not a requirement to enumerate every possible invalid input
-or invent restrictions that the request never states.
+Before writing checks, map the current capability and shared request rules to
+concrete public-interface inputs and independently expected results. Include
+success, meaningful boundaries, specified failures, and any required unchanged
+state. Read setup paragraphs and original failure logs as well as stage examples;
+examples do not replace shared validation rules. Keep this coverage map scoped
+to capabilities implemented so far. Extend it when a capability is introduced,
+revise only explicitly replaced rules, and inspect the saved assertions against
+it before every commit. A passing runner does not close an uncovered rule.
+
+When empty commands, unknown operations or invalid argument shapes are explicitly
+rejected, save a representative assertion for each specified class. Domain errors
+such as missing resources do not cover malformed dispatch. For changed command
+shapes, cover missing or extra arguments where the contract rejects them; include
+an extra-argument case when adding a no-argument command with its own validation
+path. Reuse coverage when commands share that path. Do not invent restrictions
+or enumerate every spelling of an invalid input.
+
+For a required rejection that preserves state, establish the expected state
+independently, attempt the rejected operation, then assert the specified state
+immediately afterward through the public interface. Check every affected resource
+when the contract requires it, including stored history when available at this
+stage. Catching the exception alone is insufficient. A later successful update
+or an unchanged aggregate may miss a changed individual resource; choose an
+observation that would expose the mutation. Preserve the requested stateful
+sequence rather than resetting state between the rejection and its assertion.
 
 - For a reported bug, add a focused regression test before the fix when a
-  practical test path exists. Save the runnable regression in the repository
-  before editing the broken behavior; confirm it fails for the reported defect, then
-  passes after the fix. Separate dependency or setup failures from that result.
+  practical test path exists. Save the exact reported public-interface input
+  and its independently specified expected result before editing the broken
+  behavior; nearby boundaries supplement that reproducer. When logs supply the
+  expected result, copy it accurately into the assertion. Confirm the saved
+  regression fails for the reported defect, then passes after the fix. Separate
+  dependency or setup failures from that result.
 - For behavior changes and new capabilities, save runnable tests in the
   repository's normal test location before executing them. A small stdlib
   assertion script is enough when there is no framework; terminal-only
