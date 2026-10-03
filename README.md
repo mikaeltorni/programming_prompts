@@ -390,6 +390,27 @@ available; a successful test run alone does not establish complete coverage.
 Later-stage rules stay deferred and explicitly replaced rules retire only at
 the revision that replaces them.
 
+Record the saved suite's runnable command and confirm it discovers and executes
+assertions. Track required failures by operation and rejection reason, retain
+shared empty/unknown checks, and preserve applicable cases when consolidating a
+suite. Separately dispatched no-argument commands need their own extra-argument
+checks. Function documentation and entry/exit traces cover authored test helpers
+and fixtures as well as application functions; root README delivery remains
+required without workflow. Complete every required command in a capability
+sentence before its introducing commit, and reuse shared classification and
+token-validation helpers when extending the program.
+
+Codex semantic judges stream complete prompts through file-backed stdin. This
+avoids Linux's per-argument limit for large source/history evidence without
+truncating it or changing judge prompts and scoring. The adapter is scoped to
+rewardkit's child process; other backends keep their existing launch behavior.
+Run its isolated standalone checks from the repository root with:
+
+```bash
+python3 programming_prompt_rewritten_with_evals/evals/verifier/run_llm_judge.py --self-test
+```
+
+
 Both debug and testing judges receive verifier-owned original failure logs
 from `tests/task-logs/`. A saved regression assertion may use a literal expected
 value that matches the original log; the test itself need not parse that log.
