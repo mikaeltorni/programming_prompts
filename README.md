@@ -382,6 +382,13 @@ extend a suite; terminal-only assertions do not replace saved checks. Choose
 and save runnable public-interface checks with each working revision, covering
 explicitly requested empty commands, unknown operations and invalid argument
 shapes when those rejection classes are part of the original contract.
+Before each commit, the testing policy maps the current capability and shared
+validation rules to actual saved assertions. A reported bug retains its exact
+input and expected result alongside boundary checks. Required rejection checks
+inspect affected resources immediately after failure, including history when
+available; a successful test run alone does not establish complete coverage.
+Later-stage rules stay deferred and explicitly replaced rules retire only at
+the revision that replaces them.
 
 Both debug and testing judges receive verifier-owned original failure logs
 from `tests/task-logs/`. A saved regression assertion may use a literal expected
