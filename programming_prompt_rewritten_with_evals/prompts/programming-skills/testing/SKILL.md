@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.7 — Executable code creation and behavior changes require saved,
+  v1.0.8 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -56,7 +56,11 @@ such as missing resources do not cover malformed dispatch. For changed command
 shapes, cover missing or extra arguments where the contract rejects them; include
 an extra-argument case when adding a no-argument command with its own validation
 path. Reuse coverage when commands share that path. Do not invent restrictions
-or enumerate every spelling of an invalid input.
+or enumerate every spelling of an invalid input. Put these shared validation
+assertions in the first working revision that supports dispatch. When extending
+the suite, retain those cases explicitly rather than reconstructing only the
+latest command examples. Read their actual inputs at each commit gate; a
+negative-test method name does not establish empty or unknown input coverage.
 
 For a required rejection that preserves state, establish the expected state
 independently, attempt the rejected operation, then assert the specified state

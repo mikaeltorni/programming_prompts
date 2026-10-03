@@ -1,7 +1,7 @@
 ---
 name: commenting
 description: >-
-  v1.0.4 — Use whenever writing or editing Python (or other) functions: every
+  v1.0.5 — Use whenever writing or editing Python (or other) functions: every
   function, including authored tests and fixtures, needs a description and
   same-line Parameters and Returns labels. Apply on every coding task.
 ---
@@ -11,7 +11,9 @@ description: >-
 Write the complete docstring when creating each function, including the first
 regression test. A framework-generated or copied one-line test description
 must be expanded before saving it. Passing tests or adding logging does not
-complete this separate docstring obligation.
+complete this separate docstring obligation. Build each test or fixture with
+its complete docstring before adding assertions or setup code; do not save a
+bare framework scaffold and rely on a later documentation pass to fill it in.
 
 Give every `def`, `async def`, and method a docstring with:
 
