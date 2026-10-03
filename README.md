@@ -470,3 +470,9 @@ You are solely responsible for determining whether this software is suitable, sa
 The authors and copyright holders make no guarantees regarding security, reliability, availability, correctness, compliance, non-infringement, or fitness for any particular purpose.
 
 This notice is intended to clarify the nature of the project and does not impose additional restrictions beyond the MIT License.
+# Global instruction assembly
+
+`scripts/global_instructions.py` provides `render_instructions` and
+`write_instructions` to combine selected instruction texts into one global
+Markdown file. The writer replaces only owned blocks and preserves unrelated
+user instructions. It has no command-line interface yet.
