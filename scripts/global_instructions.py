@@ -11,6 +11,17 @@ from pathlib import Path
 from collections.abc import Iterable
 
 
+def instruction_path(runtime: str, config_home: Path | None = None) -> Path:
+    """Resolve the native global filename, including isolated Claude homes."""
+    if runtime in {"claude", "cc", "cca"}:
+        root = config_home or Path(os.environ.get("CLAUDE_CONFIG_DIR") or Path.home() / ".claude")
+        return root.expanduser() / "CLAUDE.md"
+    if runtime in {"codex", "ca"}:
+        root = config_home or Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex")
+        return root.expanduser() / "AGENTS.md"
+    raise ValueError(f"unsupported instruction runtime: {runtime}")
+
+
 @dataclass(frozen=True)
 class Instruction:
     """A selected source and its stable managed-block identity."""
