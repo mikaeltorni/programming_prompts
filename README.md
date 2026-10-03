@@ -470,14 +470,15 @@ You are solely responsible for determining whether this software is suitable, sa
 The authors and copyright holders make no guarantees regarding security, reliability, availability, correctness, compliance, non-infringement, or fitness for any particular purpose.
 
 This notice is intended to clarify the nature of the project and does not impose additional restrictions beyond the MIT License.
-# Global instruction assembly
+
+## Global instruction assembly
 
 `scripts/global_instructions.py` provides `render_instructions` and
 `write_instructions` to combine selected instruction texts into one global
 Markdown file. The writer replaces only owned blocks and preserves unrelated
 user instructions.
 
-Build selected policies with the stdlib-only command:
+Build selected policies with Python 3.11 or newer (standard library only):
 
 ```bash
 python3 scripts/global_instructions.py --skills v2:workflow,v2:commits,v2:worktree,v2:docs,v2:testing --runtime codex --config-home ~/.codex
@@ -486,7 +487,10 @@ python3 scripts/global_instructions.py --skills v2:workflow,v2:commits,v2:worktr
 Accepted parameters: `--list`, `--skills` (comma-separated, family-qualified
 when ambiguous), `--source-root`, `--output`, `--runtime`, `--config-home`, and
 `--bundle-dir`. An empty `--skills ''` clears managed selections while retaining
-personal instructions. Harbor uses the same builder to package one document
+personal instructions. `--output` writes an explicit destination; otherwise
+`--runtime` and `--config-home` resolve the native file. `--bundle-dir` creates
+a transport bundle for isolated evaluation instances. `--list` prints available
+policy names. Harbor uses the same builder to package one document
 per job, then places it in each trial's native global file. Baselines clear
 native instruction and skill surfaces; task prompts and judges are unchanged.
 Generated documents contain a global overview, the selected policy list, and
