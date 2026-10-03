@@ -31,7 +31,10 @@ def instruction_path(runtime: str, config_home: Path | None = None) -> Path:
         "grok": ".grok", "ga": ".grok",
     }
     if runtime in homes:
-        root = config_home or Path(os.environ.get("GROK_HOME") or Path.home() / homes[runtime]) if runtime in {"grok", "ga"} else config_home or Path.home() / homes[runtime]
+        default_home = Path.home() / homes[runtime]
+        if runtime in {"grok", "ga"}:
+            default_home = Path(os.environ.get("GROK_HOME") or default_home)
+        root = config_home or default_home
         return root.expanduser() / "AGENTS.md"
     if runtime in {"cline", "cla"}:
         root = config_home or Path.home() / "Documents/Cline/Rules"

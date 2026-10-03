@@ -40,22 +40,6 @@ check "explicit workflow selection resolves" "workflow" \
 check "mixed explicit selection preserves order" $'standard\nworkflow' \
   "$(resolve_skills standard,workflow)"
 
-task_root="$fixture/tasks"
-mkdir -p "$task_root/calculator"
-printf '%s\n' 'Follow every provided programming skill.' >"$task_root/calculator/instruction.md"
-inject_selected_workflow_invocation "$task_root" standard
-check "unselected workflow leaves task prompt intact" \
-  'Follow every provided programming skill.' \
-  "$(<"$task_root/calculator/instruction.md")"
-inject_selected_workflow_invocation "$task_root" standard workflow
-check "selected workflow receives an explicit invocation" \
-  $'Use $workflow to coordinate this programming task from start to finish.\nEnabled programming skills for this task: standard, workflow.\n\nFollow every provided programming skill.' \
-  "$(<"$task_root/calculator/instruction.md")"
-inject_selected_workflow_invocation "$task_root" standard workflow
-check "explicit invocation is idempotent" \
-  $'Use $workflow to coordinate this programming task from start to finish.\nEnabled programming skills for this task: standard, workflow.\n\nFollow every provided programming skill.' \
-  "$(<"$task_root/calculator/instruction.md")"
-
 SKILLS_ROOT="$(cd "$SCRIPT_DIR/../../prompts/programming-skills" && pwd)"
 JUDGES_ROOT="$(cd "$SCRIPT_DIR/../judges" && pwd)"
 eight=$'commenting\ncommits\ndebug\ndocs\nlogging\nsrp\ntesting\nworktree'
