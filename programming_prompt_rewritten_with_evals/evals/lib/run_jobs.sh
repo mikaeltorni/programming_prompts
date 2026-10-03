@@ -23,7 +23,15 @@ run_one_job() {
     write_job_config "$harness" "$config_file" "[]" "$tasks_root"
   else
     config_file="$JOBS/harbor.${job_name}.yaml"
-    write_job_config "$harness" "$config_file" "$(skills_yaml_block "${skill_paths[@]}")" "$tasks_root"
+    local bundle="$JOBS/instruction-bundles/$job_name/global-instructions"
+    local bundle_skills="" selected
+    for selected in "${SELECTED_SKILLS_FOR_JOB[@]}"; do
+      bundle_skills+="${bundle_skills:+,}v2:$selected"
+    done
+    python3 "$SCRIPT_DIR/../../scripts/global_instructions.py" \
+      --source-root "$SCRIPT_DIR/../.." --skills "$bundle_skills" \
+      --bundle-dir "$bundle" || return 1
+    write_job_config "$harness" "$config_file" "$(skills_yaml_block "$bundle")" "$tasks_root"
   fi
 
   collect_artifact_flags
