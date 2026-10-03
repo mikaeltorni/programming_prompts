@@ -15,6 +15,22 @@ SPEC.loader.exec_module(builder)
 
 
 class GlobalInstructionsTests(unittest.TestCase):
+    def test_codex_budget_preserves_provider_tables_and_larger_limits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            config = home / "config.toml"
+            config.write_text('model = "chosen"\n[model_providers.custom]\nname = "Provider"\n')
+            self.assertTrue(builder.ensure_codex_instruction_budget(home))
+            self.assertEqual(builder.tomllib.loads(config.read_text())["model"], "chosen")
+            self.assertIn('name = "Provider"', config.read_text())
+            self.assertFalse(builder.ensure_codex_instruction_budget(home))
+
+    def test_all_native_runtime_destinations(self):
+        for runtime in ["qwen", "openrouter", "nvidia", "opencode", "grok"]:
+            self.assertEqual(builder.instruction_path(runtime, Path("/instance")), Path("/instance/AGENTS.md"))
+        self.assertEqual(builder.instruction_path("cline", Path("/rules")), Path("/rules/global-instructions.md"))
+        self.assertEqual(builder.instruction_path("cursor", Path("/cursor")), Path("/cursor/rules/agent-command-center-guidelines.mdc"))
+
     def test_headers_preserve_policy_content_and_code_fences(self):
         text = "---\nname: example\ndescription: v1.0.0 — Example.\n---\n# Purpose\nFull policy.\n```markdown\n# Literal code\n```"
         output = builder.render_instructions([builder.Instruction("example", text, "/source/SKILL.md")])
