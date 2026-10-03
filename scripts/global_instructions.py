@@ -7,7 +7,9 @@ import os
 import argparse
 import re
 import sys
+import shutil
 import tempfile
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from collections.abc import Iterable
@@ -21,7 +23,53 @@ def instruction_path(runtime: str, config_home: Path | None = None) -> Path:
     if runtime in {"codex", "ca"}:
         root = config_home or Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex")
         return root.expanduser() / "AGENTS.md"
+    homes = {
+        "qwen": ".codex-qwen", "qa": ".codex-qwen",
+        "openrouter": ".codex-openrouter", "oa": ".codex-openrouter",
+        "nvidia": ".codex-nvidia", "na": ".codex-nvidia",
+        "opencode": ".config/opencode", "oca": ".config/opencode",
+        "grok": ".grok", "ga": ".grok",
+    }
+    if runtime in homes:
+        root = config_home or Path(os.environ.get("GROK_HOME") or Path.home() / homes[runtime]) if runtime in {"grok", "ga"} else config_home or Path.home() / homes[runtime]
+        return root.expanduser() / "AGENTS.md"
+    if runtime in {"cline", "cla"}:
+        root = config_home or Path.home() / "Documents/Cline/Rules"
+        return root.expanduser() / "global-instructions.md"
+    if runtime in {"cursor", "cu"}:
+        root = config_home or Path.home() / ".cursor"
+        return root.expanduser() / "rules/agent-command-center-guidelines.mdc"
     raise ValueError(f"unsupported instruction runtime: {runtime}")
+
+
+CODEX_RUNTIMES = {"codex", "ca", "qwen", "qa", "openrouter", "oa", "nvidia", "na"}
+
+
+def ensure_codex_instruction_budget(config_home: Path, minimum: int = 1048576) -> bool:
+    """Raise the native document budget without changing other TOML settings."""
+    path = config_home / "config.toml"
+    current = path.read_text(encoding="utf-8") if path.exists() else ""
+    values = tomllib.loads(current)
+    old = values.get("project_doc_max_bytes")
+    if isinstance(old, int) and old >= minimum:
+        return False
+    if old is not None:
+        updated = re.sub(r"(?m)^\s*project_doc_max_bytes\s*=.*$", f"project_doc_max_bytes = {minimum}", current, count=1)
+    else:
+        updated = f"project_doc_max_bytes = {minimum}\n" + current
+    tomllib.loads(updated)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    target = path.resolve() if path.is_symlink() else path
+    descriptor, temporary = tempfile.mkstemp(prefix=".instruction-budget-", dir=target.parent)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            stream.write(updated)
+        os.chmod(temporary, target.stat().st_mode & 0o777 if target.exists() else 0o600)
+        os.replace(temporary, target)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+    return True
 
 
 @dataclass(frozen=True)
@@ -178,13 +226,15 @@ def select_instructions(root: Path, names: Iterable[str]) -> tuple[Instruction, 
 def main(argv: list[str] | None = None) -> int:
     """Build a native file or a Harbor transport bundle with explicit selection."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source-root", type=Path, default=Path(__file__).resolve().parents[1])
+    checkout = Path(__file__).resolve().parents[1]
+    default_root = os.environ.get("PROGRAMMING_PROMPTS_DIR") or (checkout if (checkout / "skills").is_dir() else Path.home() / "projects/programming_prompts")
+    parser.add_argument("--source-root", type=Path, default=Path(default_root))
     parser.add_argument("--skills", help="comma-separated skill names; empty selects none")
     parser.add_argument("--list", action="store_true", help="list family-qualified source names")
     destinations = parser.add_mutually_exclusive_group()
     destinations.add_argument("--output", type=Path, help="global Markdown destination")
     destinations.add_argument("--bundle-dir", type=Path, help="Harbor transport directory")
-    parser.add_argument("--runtime", choices=["codex", "claude", "cc", "cca", "ca"])
+    parser.add_argument("--runtime", choices=sorted(CODEX_RUNTIMES | {"claude", "cc", "cca", "grok", "ga", "opencode", "oca", "cline", "cla", "cursor", "cu"}))
     parser.add_argument("--config-home", type=Path, help="explicit native instance home")
     args = parser.parse_args(argv)
     try:
@@ -206,9 +256,15 @@ def main(argv: list[str] | None = None) -> int:
                 encoding="utf-8",
             )
             (args.bundle_dir / "instructions.md").write_text(render_instructions(instructions), encoding="utf-8")
+            shutil.copyfile(Path(__file__), args.bundle_dir / "builder.py")
         else:
             destination = args.output or instruction_path(args.runtime, args.config_home)
+            if destination.suffix == ".mdc" and not destination.exists():
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_text('---\ndescription: "Global agent instructions"\nglobs:\nalwaysApply: true\n---\n\n', encoding="utf-8")
             write_instructions(destination, instructions, owned_keys=owned)
+            if args.runtime in CODEX_RUNTIMES:
+                ensure_codex_instruction_budget(destination.parent)
         return 0
     except (OSError, ValueError) as exc:
         print(f"global-instructions: {exc}", file=sys.stderr)

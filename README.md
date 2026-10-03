@@ -493,5 +493,9 @@ Generated documents contain a global overview, the selected policy list, and
 one section per source with its original metadata and complete body. Markdown
 headings are nested while fenced examples remain verbatim. Source files and
 judge definitions are never rewritten by assembly.
+The same CLI supports Codex, Claude, Grok, Cline, OpenCode, Cursor, and the
+Local/Qwen, OpenRouter, and NVIDIA Codex homes (their ACC aliases are accepted).
+Codex destinations receive at least a 1 MiB document budget to accommodate the
+full combined instructions. ACC installs the tool as `acc-build-instructions`.
 `instruction_path` resolves Codex's `AGENTS.md` and Claude's `CLAUDE.md`
 under an explicit instance home, or `CODEX_HOME` / `CLAUDE_CONFIG_DIR`.

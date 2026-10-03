@@ -217,6 +217,10 @@ def _build_global_register_command(skills_dir: str | None, runtime: str) -> str:
     if skills_dir:
         source = shlex.quote(skills_dir.rstrip("/") + "/global-instructions/instructions.md")
         command += f" && test -f {source} && cp {source} {target}"
+        if runtime == "codex":
+            builder = shlex.quote(skills_dir.rstrip("/") + "/global-instructions/builder.py")
+            budget = shlex.quote('import runpy,sys; from pathlib import Path; runpy.run_path(sys.argv[1])["ensure_codex_instruction_budget"](Path(sys.argv[2]))')
+            command += f' && python3 -c {budget} {builder} "$CODEX_HOME"'
     return command
 
 
