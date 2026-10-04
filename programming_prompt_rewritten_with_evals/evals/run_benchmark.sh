@@ -58,13 +58,14 @@
 # ~28 user-defined /16 slots. Leftover ``*__env-main`` images plus BuildKit
 # cache still fill the disk; docker_networks.py prunes leftover containers
 # and empty nets (keeps images and BuildKit cache).
-# Live coding trials have no LLM cap unless EVAL_LLM_MAX_CONCURRENT is set.
-# Overlapping wrappers run at the selected concurrency; Harbor retries ApiRateLimitError
-# (too many requests) with backoff instead of dropping those trials.
-# Harbor -n is not a user flag: concurrency defaults to all selected trials,
-# or the explicit --concurrency limit. With 5 tasks × -k 20 this requests 100
-# docker compose builds at once; Harbor's 300s environment-start budget then
-# drops roughly half the trials (EnvironmentStartTimeoutError).
+# The requested ceiling is all trials unless --concurrency or a configured
+# capacity cap lowers it. The automatic launch guard starts a small wave,
+# holds new containers when active agents approach their execution deadlines,
+# and adjusts future admission using completed trials. Waiting occurs before
+# container setup and does not consume the waiting trial's execution budget.
+# Harbor -n is not a user flag. Harbor retries ApiRateLimitError (too many
+# requests) with backoff instead of dropping those trials. Run one wrapper
+# at a time; admission pacing is scoped to that Harbor job.
 # EVAL_LLM_MAX_CONCURRENT=20 serializes overlapping jobs to one proven -k 20
 # wave. EVAL_LLM_MAX_CONCURRENT=2 restores the old quota-safe cap.
 # --run-separately is one Harbor job; skill Pass is independent (not AND).
@@ -235,7 +236,7 @@ echo "Selected skill(s): ${SELECTED_SKILLS[*]}" >&2
 mapfile -t SELECTED_TASKS < <(resolve_tasks "$TASKS_ARG")
 echo "Selected coding task(s): ${SELECTED_TASKS[*]}" >&2
 if [[ -z "${EVAL_LLM_MAX_CONCURRENT:-}" ]]; then
-  echo "LLM trial cap: unset (no LLM cap). Overlapping jobs run at selected concurrency; Harbor retries ApiRateLimitError." >&2
+  echo "LLM trial ceiling: unset; automatic launch guard paces starts using active deadlines and completed trials." >&2
 else
   echo "LLM trial cap: EVAL_LLM_MAX_CONCURRENT=$EVAL_LLM_MAX_CONCURRENT (coding trials live on this machine)" >&2
 fi
