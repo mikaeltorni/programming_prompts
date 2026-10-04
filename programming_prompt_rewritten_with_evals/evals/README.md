@@ -145,9 +145,40 @@ Use long kebab-case flags followed by values. Historical `harness=`,
 
 Normal commands omit pin options and concurrency limits. Without an explicit
 pin option the wrapper checks stable versions; without a concurrency option it
-requests selected trials subject to configured capacity. `EVAL_JUDGE_WORKERS`
-controls parallel judge workers (default four). Do not add a second judge
-unless the user explicitly requests it.
+requests selected trials subject to configured capacity and automatic launch
+pacing. `EVAL_JUDGE_WORKERS` controls parallel judge workers (default four).
+Do not add a second judge unless the user explicitly requests it.
+
+## Automatic launch pacing
+
+Every wrapper invocation installs the Harbor job plugin
+[`DeadlineLaunchGuard`](harbor_agents/launch_guard.py). It applies to all coding
+harnesses, positive/baseline jobs and install-only runs, without adding a flag to
+the user's command. The existing trial ceiling remains an upper bound; the guard
+admits up to four trials initially and holds admission through setup, coding,
+verification and cleanup.
+
+New containers wait when any running agent has used 80% of its effective timeout
+(480 seconds for the normal 600-second budget). The guard honors the existing
+agent timeout override, maximum and multiplier. Waiting uses Harbor's START
+hook before environment setup; the agent timer starts later at AGENT_START.
+Each queued trial therefore gets its own full execution budget after admission.
+Deadline pressure is rechecked before every admission and at least every five
+seconds while a trial is queued.
+
+A completed batch of agents that used less than 60% of their budgets and had no
+infrastructure exception increases the admission window by one, up to the
+requested ceiling. Near-deadline or slow agents halve future admission, with a
+minimum of one. Agent, setup and environment-start timeouts, plus rate-limit
+exceptions, also lower pressure. Running trials continue; results, retries and
+timeout budgets are preserved. Admission is released on END or cancellation,
+using each attempt's ID so retries cannot reuse an old permit.
+
+The job log contains `Automatic launch guard:` lines for admission, queueing,
+deadline pressure and window changes. Pacing is local to the job; continue to run
+one wrapper at a time. It reduces contention but cannot predict how much work a
+particular task still needs or guarantee completion within its own deadline.
+Account usage quotas remain separate from these per-trial wall-clock limits.
 
 ## Read the evidence
 

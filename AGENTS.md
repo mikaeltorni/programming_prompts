@@ -53,8 +53,10 @@ run.
 
 Omit `--concurrency` from benchmark commands given to the user unless they
 explicitly request a concurrency limit. Without the flag, the wrapper requests
-all selected trials at once, subject to configured LLM and Docker network
-capacity limits; agents do not need to supply a value.
+all selected trials, subject to configured LLM and Docker network capacity
+limits. Its automatic launch guard paces container starts and holds new starts
+when active agents approach their execution deadlines; agents do not need to
+supply a value. Queue waiting precedes setup and the waiting agent's timer.
 
 Example (each command in its own terminal):
 
