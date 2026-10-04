@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.12 — Executable code creation and behavior changes require saved,
+  v1.0.13 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -84,8 +84,13 @@ history when available at this stage. Choose observations that expose changes
 to the values, not only their count or an aggregate that could stay constant
 while individual values change. Use only public observations already supported
 in this revision; extend them when later capabilities make more state visible,
-without implementing a future observation API early. A later successful update
-with the expected count does not establish that the earlier contents survived.
+without implementing a future observation API early. When the first public
+query becomes available, revisit earlier rejection tests in that same revision:
+add the query assertion immediately after each rejection, before the next
+mutation. Update these observations as the query contract changes. Private
+state reads are allowed for fixture setup, but do not satisfy these behavioral
+assertions. A later successful update with the expected count does not establish
+that the earlier contents survived.
 At each commit gate, locate the actual post-rejection assertions in the saved
 checks for every required rejection class; a passing runner or an exception-only
 negative test does not close missing state-preservation coverage.
