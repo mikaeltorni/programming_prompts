@@ -323,14 +323,16 @@ The runner accepts `--harness`, selects the Codex judge with
 Without `--concurrency`, all selected tasks × attempts remain eligible, subject
 to configured LLM caps and available per-trial Docker network slots. The automatic
 [launch guard](programming_prompt_rewritten_with_evals/evals/harbor_agents/launch_guard.py)
-paces container starts: it begins with up to four active trials and holds new
-starts when a running agent reaches 80% of its effective execution budget.
-Fast completed batches grow the admission window gradually; slow phases and
-infrastructure timeouts reduce it. Waiting happens before container setup and
+uses the full configured trial ceiling immediately. It holds new container
+starts only when a running agent's remaining execution time falls within
+measured setup headroom: the 95th percentile of the latest setup durations plus
+five seconds. Holds clear as agents finish; there is no ramp-up or permanent
+capacity reduction. Waiting happens before container setup and
 before the waiting trial's agent timer, so each trial receives its full budget.
 The guard applies to Codex, Claude Code and Grok in positive and baseline runs.
-It reduces launch pressure but cannot guarantee a task finishes before its own
-deadline. Use `--concurrency N` only to impose a lower ceiling; no flag is needed
+It avoids starting new containers close to active deadlines but cannot guarantee
+a task finishes before its own deadline. Use `--concurrency N` only to impose a
+lower ceiling; no flag is needed
 for pacing. `-k` controls attempts per task independently.
 Run one benchmark invocation at a time. See the
 [evals README](programming_prompt_rewritten_with_evals/evals/README.md) for the

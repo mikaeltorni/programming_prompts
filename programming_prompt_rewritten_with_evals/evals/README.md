@@ -154,29 +154,38 @@ Do not add a second judge unless the user explicitly requests it.
 Every wrapper invocation installs the Harbor job plugin
 [`DeadlineLaunchGuard`](harbor_agents/launch_guard.py). It applies to all coding
 harnesses, positive/baseline jobs and install-only runs, without adding a flag to
-the user's command. The existing trial ceiling remains an upper bound; the guard
-admits up to four trials initially and holds admission through setup, coding,
-verification and cleanup.
+the user's command. The guard immediately permits the full existing trial ceiling,
+subject to configured LLM and Docker capacity limits. There is no four-trial
+starting cap, gradual ramp-up or persistent halving of capacity. Each admitted
+trial holds its slot through setup, coding, verification and cleanup.
 
-New containers wait when any running agent has used 80% of its effective timeout
-(480 seconds for the normal 600-second budget). The guard honors the existing
+The guard measures admission-to-first-agent-start setup time and keeps the latest
+64 samples for the current job. Deadline headroom is their nearest-rank 95th
+percentile plus the five-second polling interval. Before any sample exists,
+headroom is five seconds. New containers wait only when a running agent's actual
+remaining execution time is within this headroom. For example, a measured setup
+p95 of 20 seconds yields 25 seconds of headroom, so a 600-second agent budget
+blocks new starts after 575 seconds rather than a fixed 480-second threshold.
+This is a launch-cost heuristic; it does not estimate unfinished coding work or
+prove concurrency caused a timeout. The guard honors the existing
 agent timeout override, maximum and multiplier. Waiting uses Harbor's START
 hook before environment setup; the agent timer starts later at AGENT_START.
 Each queued trial therefore gets its own full execution budget after admission.
 Deadline pressure is rechecked before every admission and at least every five
 seconds while a trial is queued.
 
-A completed batch of agents that used less than 60% of their budgets and had no
-infrastructure exception increases the admission window by one, up to the
-requested ceiling. Near-deadline or slow agents halve future admission, with a
-minimum of one. Agent, setup and environment-start timeouts, plus rate-limit
-exceptions, also lower pressure. Running trials continue; results, retries and
-timeout budgets are preserved. Admission is released on END or cancellation,
-using each attempt's ID so retries cannot reuse an old permit.
+When the near-deadline agent phase ends, the hold clears immediately and queued
+trials may use all available slots. Completed slow trials and exceptions do not
+permanently reduce capacity; Harbor's existing rate-limit retry backoff remains
+in effect. Running trials continue; results, retries and timeout budgets are
+preserved. Admission is released on END or cancellation, using each attempt's
+ID so retries cannot reuse an old permit. This guard affects queued launches;
+it cannot reduce a batch that has already started at the full ceiling.
 
 The job log contains `Automatic launch guard:` lines for admission, queueing,
-deadline pressure and window changes. Pacing is local to the job; continue to run
-one wrapper at a time. It reduces contention but cannot predict how much work a
+setup durations, computed headroom and near-deadline trial names with remaining
+seconds. Pacing is local to the job; continue to run one wrapper at a time.
+It avoids additional launch work near deadlines but cannot predict how much work a
 particular task still needs or guarantee completion within its own deadline.
 Account usage quotas remain separate from these per-trial wall-clock limits.
 
