@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.11 — Executable code creation and behavior changes require saved,
+  v1.0.12 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -163,8 +163,13 @@ When commenting is selected, every test/helper/fixture method needs a purpose,
 `Returns: None` for an assertion-only method. When logging is selected, print
 `self=` first and `None` after its final assertion. The application's docstrings
 and prints do not satisfy these obligations in its caller. Apply this to the
-initial failing regression too, then repeat the check for every later test
-addition before committing. This does not enable an unselected companion.
+initial failing regression too, then inspect the entire body of every added or
+changed test/helper/fixture before committing. Revisions to assertions must
+preserve these independently selected function contracts: with logging selected,
+the final normal path still prints `None` after its last assertion; with
+commenting selected, its inline parameter and return documentation remains
+complete. A passing behavioral suite does not check these structural contracts.
+This does not enable an unselected companion.
 
 With both companions selected, adapt this test-method shape to the request;
 the uppercase values below stand for the actual public-interface input and
