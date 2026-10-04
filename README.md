@@ -178,6 +178,13 @@ coverage, isolated execution, and existing project tooling. Static content uses
 direct checks or the project's prescribed evaluation method. It does not create
 CI or install a new test framework by default.
 
+Coverage distinguishes argument shape, numeric conversion, and domain rejection.
+Commands may share a representative rejection check when they execute the same
+validation path; independent handlers need their own coverage. When a later
+requirement changes accepted inputs or output, revise every affected retained
+assertion and recompute its expected result from that case's fixture and
+preceding public calls.
+
 Agent Command Center's default installation enables V2 `commits`, `worktree`,
 `workflow`, `docs`, and `testing`. Other skills remain independently selectable;
 manual selections are preserved. Apply this baseline across every harness with:
@@ -198,6 +205,10 @@ selection. Python setup remains owned by `init-project`, and desktop deployment
 remains owned by `linux-configuration`.
 
 The testing skill has a semantic Harbor judge under `evals/judges/testing/`.
+The judge resolves the current contract, traces assertions in execution order,
+and checks validation coverage, immediate public observations after rejection,
+and the saved runner's isolation fixtures. Historical coverage is assessed from
+the corresponding Git revision. A passing runner still needs this coverage audit.
 Default benchmark skill discovery and shipped launcher presets select the eight
 companions (`commenting`, `commits`, `debug`, `docs`, `logging`, `srp`,
 `testing`, `worktree`). `workflow` stays explicit `--skills workflow`.

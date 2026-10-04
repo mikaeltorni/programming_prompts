@@ -66,6 +66,14 @@ check afterward when practical. Static content uses direct verification and
 repository-specific test restrictions take precedence. The
 [testing judge](judges/testing/prompt.md) assesses this evidence semantically,
 without task markers, expected test counts, or prescribed filenames.
+It resolves later contract replacements before auditing retained assertions,
+traces each expected value from its own fixture and preceding calls, and checks
+actual validation paths, preservation after rejection, and fixture isolation.
+Argument shape, numeric conversion, and domain failures are distinct coverage
+classes. Representative checks may cover commands that share the same executed
+validation path; independent paths still need coverage even when the runner
+passes. Historical checks are judged at their committed contract rather than
+requiring superseded rejections in the final suite.
 
 Selecting `workflow` or `commits` with `--skills` explicitly invokes each selected
 skill in the isolated job task prompt and lists the selected programming skills.
