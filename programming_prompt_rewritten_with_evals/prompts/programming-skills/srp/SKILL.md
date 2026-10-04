@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.15 — Keep raw-command parsing and operation logic in separate helpers
+  v1.0.16 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
@@ -112,8 +112,12 @@ this separate structural obligation.
   domain values in the entrypoint under the format-guard allowance.
   Successful numeric conversion only establishes that the token can be
   represented. Whether that value is acceptable to an operation, including
-  finite-only, sign, or magnitude rules, is domain validation in the
-  operation helper. Pass the converted value there unchanged.
+  finite-only, sign, magnitude, or an operation's integral-value requirement,
+  is domain validation in the operation helper. A public-body type check such
+  as `isinstance(value, int)` still enforces that domain rule when it rejects
+  fractional amounts for one operation; it is not a format guard. Keep it in
+  that operation's helper at the revision where the rule applies, even if a
+  later requirement will accept decimals. Pass the converted value unchanged.
 - **Each command owns its own helper, amount, and label.** Do not collapse two
   commands into one parameterized helper by computing the difference in the
   entrypoint. Branching on the parsed command to call `_deposit(...)` or
