@@ -187,7 +187,7 @@ acc pp enable --both --skill v2:commits,v2:worktree,v2:workflow,v2:docs,v2:testi
 ```
 
 ```bash
-acc pp status --both --skill commits,worktree,workflow,docs,testing --check
+acc pp status --both --skill v2:commits,v2:worktree,v2:workflow,v2:docs,v2:testing --check
 ```
 
 The generic programming guidelines and their global bootstrap are retired and
@@ -344,6 +344,12 @@ earlier behavior as well as adding commands. Each stage requires public-entrypoi
 checks and a working commit; the SRP judge receives historical source and diffs
 to assess unnecessary churn alongside the final function structure. A justified
 local extraction is allowed, and diff size alone is not the score.
+Before introducing another operation, compare its decisions with existing
+owners and extract any shared classification, calculation or validation once.
+Keep operation labels and effects in their respective owners. Successful token
+conversion establishes representability; operation-specific sign, magnitude,
+finite-value and integral-value requirements stay in the operation helper,
+including historical revisions before a later requirement changes acceptance.
 
 Semantic judges receive the actual source, function boundaries, workflow plan,
 and reachable commit history. A verdict that contradicts its own reason or
@@ -382,23 +388,29 @@ extend a suite; terminal-only assertions do not replace saved checks. Choose
 and save runnable public-interface checks with each working revision, covering
 explicitly requested empty commands, unknown operations and invalid argument
 shapes when those rejection classes are part of the original contract.
-Before each commit, the testing policy maps the current capability and shared
-validation rules to actual saved assertions. A reported bug retains its exact
-input and expected result alongside boundary checks. Required rejection checks
-inspect affected resources immediately after failure, including history when
-available; a successful test run alone does not establish complete coverage.
-Later-stage rules stay deferred and explicitly replaced rules retire only at
-the revision that replaces them.
+The testing policy uses ordered revision gates and a saved coverage inventory
+that names executable cases and independently expected results. Extend the same
+suite, transfer unaffected assertions before replacing cases, and inspect the
+actual assertions before every commit. A reported bug retains its exact input
+and expected result alongside boundary checks. When a public state query first
+appears, upgrade earlier rejection tests in that revision. Each required
+state-preserving rejection is immediately followed by public observations of
+affected values and available history, before another rejection, mutation,
+reset or reload. A later successful mutation's count or a private-state read
+does not replace that observation. Task examples demonstrating recovery still
+need the intervening query. Later-stage rules stay deferred, and explicitly
+replaced rules retire only at the revision that replaces them.
 
 Record the saved suite's runnable command and confirm it discovers and executes
 assertions. Track required failures by operation and rejection reason, retain
 shared empty/unknown checks, and preserve applicable cases when consolidating a
 suite. Separately dispatched no-argument commands need their own extra-argument
 checks. Function documentation and entry/exit traces cover authored test helpers
-and fixtures as well as application functions; root README delivery remains
-required without workflow. Complete every required command in a capability
-sentence before its introducing commit, and reuse shared classification and
-token-validation helpers when extending the program.
+and fixtures as well as application functions; inspect the complete changed
+method body so its docstrings and final return trace survive assertion edits.
+Root README delivery remains required without workflow. Complete every required
+command in a capability sentence before its introducing commit, and reuse shared
+classification and token-validation helpers when extending the program.
 
 Codex semantic judges stream complete prompts through file-backed stdin. This
 avoids Linux's per-argument limit for large source/history evidence without
