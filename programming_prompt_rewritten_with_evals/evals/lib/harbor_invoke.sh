@@ -78,7 +78,10 @@ run_harbor_for_harness() {
     for pair in "${env_flags[@]}"; do
       ae_flags+=(--ae "$pair")
     done
+    # Admission waits before container setup and before the agent timeout.
+    # Applied to every coding harness; no user concurrency flag is required.
     harbor run \
+      --plugin harbor_agents.launch_guard:DeadlineLaunchGuard \
       --mounts "$mounts" \
       --ak "version=$version" \
       "${ae_flags[@]}" \
