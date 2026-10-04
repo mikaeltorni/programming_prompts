@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.14 — Executable code creation and behavior changes require saved,
+  v1.0.15 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -23,7 +23,27 @@ currently applicable success, rejection reason and unchanged-state rule from
 the original request to its executable test case. For a state-preserving
 rejection, include the public observation and independently expected result;
 an exception assertion or a later successful mutation is not that observation.
-Keep future capabilities out of the current inventory.
+Name the executable case for each entry; a paragraph listing stages without
+links to their actual assertions is not a coverage map. Keep future capabilities
+out of the current inventory.
+
+Once the public query exists, use this order inside the saved case for each
+required rejection. Adapt the placeholders to the actual contract and existing
+runner; they are not extra commands or a new test framework:
+
+```python
+# Seed known state through the public interface before this sequence.
+with self.assertRaises(EXPECTED_EXCEPTION):
+    PUBLIC_ENTRYPOINT(REJECTED_INPUT)
+self.assertEqual(PUBLIC_ENTRYPOINT(STATE_QUERY), EXPECTED_STATE_RESULT)
+# Only now attempt the next rejected input, mutation or reset.
+```
+
+Do not replace the query assertion with a private-state read or a successful
+update's count. If more than one resource must remain unchanged, assert each
+required public observation here. Apply the same observation to an older test
+when later revisions expose the needed query; update its expected result only
+when the contract changes.
 
 Extend this same inventory and suite as capabilities arrive. Read it before
 changing or removing a test, and transfer every still-applicable assertion
