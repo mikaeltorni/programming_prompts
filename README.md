@@ -389,17 +389,25 @@ and save runnable public-interface checks with each working revision, covering
 explicitly requested empty commands, unknown operations and invalid argument
 shapes when those rejection classes are part of the original contract.
 The testing policy uses ordered revision gates and a saved coverage inventory
-that names executable cases and independently expected results. Extend the same
-suite, transfer unaffected assertions before replacing cases, and inspect the
-actual assertions before every commit. A reported bug retains its exact input
-and expected result alongside boundary checks. When a public state query first
+that names executable cases and independently expected results. Its separate
+shared-validation section saves empty/unknown command and missing/extra argument
+assertions before application edits in the first dispatch revision when required
+by the contract. Extend the same suite, transfer unaffected assertions before
+replacing cases, and inspect the actual inputs and assertions before every
+commit; a docstring or implemented rejection branch does not supply coverage.
+A reported bug retains its exact input and expected result alongside boundary
+checks. When a public state query first
 appears, upgrade earlier rejection tests in that revision. Each required
 state-preserving rejection is immediately followed by public observations of
 affected values and available history, before another rejection, mutation,
 reset or reload. A later successful mutation's count or a private-state read
 does not replace that observation. Task examples demonstrating recovery still
 need the intervening query. Later-stage rules stay deferred, and explicitly
-replaced rules retire only at the revision that replaces them.
+replaced rules retire only at the revision that replaces them. Record each
+superseded expectation's last valid commit and replacement case, and update case
+names and docstrings to describe their current assertions. Broader numeric
+acceptance keeps other required domain rejections, including zero/negative
+values, in each independently implemented validation path.
 
 Record the saved suite's runnable command and confirm it discovers and executes
 assertions. Track required failures by operation and rejection reason, retain
@@ -440,7 +448,14 @@ adds no coverage, but does not erase meaningful assertions elsewhere.
 
 Before the first source write, verify the registered physical task path and
 matching branch against the full `<parent>/.worktrees/<project>/<project>_<type>-<feature>`
-layout. Derive the project component from the live repository basename.
+layout. Resolve the live repository with Git and its physical path, then derive
+the store from its immediate parent and the project component from its basename.
+Neither a guessed filesystem root nor an in-repository `.worktrees` directory
+satisfies that layout. Retain that live-derived destination when comparing
+registration before edits and at handoff; a successful merge does not repair a
+wrong location. Move this task's incorrectly placed checkout with
+`git worktree move` to the unused correct destination while preserving its branch
+and files.
 Worktree recovery drafts belong inside the registered task checkout's `tmp/`,
 keeping the external project worktree group free of stray files and unregistered
 directories.
