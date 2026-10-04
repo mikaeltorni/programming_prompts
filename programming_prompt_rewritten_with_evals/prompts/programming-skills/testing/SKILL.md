@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.15 — Executable code creation and behavior changes require saved,
+  v1.0.16 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -26,6 +26,12 @@ an exception assertion or a later successful mutation is not that observation.
 Name the executable case for each entry; a paragraph listing stages without
 links to their actual assertions is not a coverage map. Keep future capabilities
 out of the current inventory.
+
+Task examples may show a rejected operation followed by a successful mutation.
+That sequence demonstrates recovery, not unchanged state: insert the required
+public query before following the next example step. When the first query is
+introduced, revise every earlier saved rejection case that needs this
+observation; keeping it in an older stage class does not exempt it.
 
 Once the public query exists, use this order inside the saved case for each
 required rejection. Adapt the placeholders to the actual contract and existing
