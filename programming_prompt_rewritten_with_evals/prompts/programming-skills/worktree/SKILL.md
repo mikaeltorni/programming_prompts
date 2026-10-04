@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >-
-  v1.0.9 — Edit Git projects in a sibling .worktrees project/task checkout,
+  v1.0.10 — Edit Git projects in a sibling .worktrees project/task checkout,
   commit there, merge each Feature into the live default branch, and reapply
   its consumers. Never push unless requested.
 ---
@@ -21,9 +21,12 @@ init` or a history rewrite. Explain the limitation if there is no Git
 repository. An explicit request to edit the current checkout overrides
 isolation.
 
-Resolve the **physical live checkout** first. If already in a linked
-worktree, recover it from `git worktree list --porcelain` and the common
-Git directory. Let `PROJECT` be that live checkout's basename, never an
+Resolve the **physical live checkout** first. Start with that repository's
+`git rev-parse --show-toplevel`, then resolve its symlinks with `pwd -P` from
+that directory. Do not use the shell's launch directory or a guessed root.
+If already in a linked worktree, recover the live checkout from
+`git worktree list --porcelain` and the common Git directory before deriving
+any paths. Let `PROJECT` be that live checkout's basename, never an
 agent, model, account, or linked-worktree name. Use the external sibling
 layout:
 
@@ -42,20 +45,27 @@ does not match. The leaf separator after TYPE is `-`, while the branch uses
 same variables below; do not hand-type a different leaf or branch later.
 Verify both expanded strings before `git worktree add`. For `/home/mk/projects/widget`, `TYPE=fix` and `FEATURE=parser`
 produce `/home/mk/projects/.worktrees/widget/widget_fix-parser` and
-`fix/widget_parser`. The store must not sit inside the live repository.
-Resolve the store physically before creating it; a symlink must not
-redirect it inside the repository. On collision, add a unique suffix
+`fix/widget_parser`. The store must be directly under the physical live
+checkout's parent, outside the live repository. Being outside the repository alone is not enough:
+the filesystem root or another ancestor is the wrong parent. Resolve the store
+physically before creating it; a symlink must not redirect it inside the
+repository or under a different parent. On collision, add a unique suffix
 to FEATURE and recompute both names; never reuse or delete another
 task's checkout or branch.
 
 ```bash
-REPO="/home/mk/projects/widget"  # physical live checkout
+# Run from the physical live checkout resolved above, not a linked worktree.
+REPO="$(git rev-parse --show-toplevel)"
+REPO="$(cd "$REPO" && pwd -P)"
 TYPE="fix"
 FEATURE="parser"
 PARENT="$(dirname "$REPO")"
 PROJECT="$(basename "$REPO")"
-WT="$PARENT/.worktrees/$PROJECT/${PROJECT}_${TYPE}-${FEATURE}"
+STORE="$PARENT/.worktrees/$PROJECT"
+WT="$STORE/${PROJECT}_${TYPE}-${FEATURE}"
 BRANCH="$TYPE/${PROJECT}_${FEATURE}"
+printf '%s\n' "$REPO" "$PARENT" "$WT" "$BRANCH"
+# Compare these derived paths and resolve any existing store symlinks first.
 git -C "$REPO" worktree add -b "$BRANCH" "$WT"
 cd "$WT"
 pwd -P
@@ -74,7 +84,11 @@ before editing. Keep that same checkout and branch for every Feature,
 repair, and documentation commit; a new `docs/...` branch would break
 the directory-to-branch identity. Before **every edit and commit**,
 verify `pwd -P` is inside the external project group and the current
-branch is the task branch. Use the full worktree path for edits,
+branch is the task branch. Compare the registered physical path with the
+`WT` derived from the retained live `REPO` and its immediate `PARENT`; printing
+an arbitrary path and matching branch is not sufficient. Do not recompute the
+expected store from the current worktree or silently accept its existing
+location. Use the full worktree path for edits,
 README files, and scratch output. A shell `cd` does not persist into
 later tool calls. Check status afterward and inspect the project group
 for misplaced files; recover only this task's files without overwriting
@@ -118,6 +132,14 @@ accidentally drafted as an untracked file in the live checkout, move that
 content into the task worktree and remove only that misplaced draft before
 merging. Do not commit the live copy merely to clear a merge obstruction:
 the README's introducing commit must originate on the task branch.
+
+Before handoff, compare the task's registered physical location with the
+original live-derived `WT` again, even if every commit and merge succeeded.
+If this task's checkout was created under the wrong parent, stop editing and
+correct its registration and location with `git worktree move` to the unused,
+correctly derived destination before continuing; preserve its branch, commits
+and files. A merge does not make an invalid location compliant. Inspect both
+checkouts for remaining deliverables and finish their commits and merges.
 
 Report completion only when the live default branch contains the work
 and consumers are current. Never push, publish, add remotes, or rewrite

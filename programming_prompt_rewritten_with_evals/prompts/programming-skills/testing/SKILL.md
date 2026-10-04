@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.17 — Executable code creation and behavior changes require saved,
+  v1.0.18 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -24,13 +24,23 @@ verification commands and restrictions on creating tests.
    normal test location and runner. Beside the runnable checks, map each
    applicable success, boundary, rejection reason and unchanged-state rule to
    an actual executable case and its independently expected result. Name the
-   case; a list of stages or test method titles alone is not coverage. For
-   rejection without mutation, name the required public observations too.
+   case; a list of stages or test method titles alone is not coverage. Keep
+   shared input-validation rules in their own inventory section, apart from
+   capability examples. Before editing the application, save the assertions
+   for currently applicable shared rules: empty input, unknown operation and
+   missing/extra arguments when the contract rejects them. These checks belong
+   to the first dispatch revision even if its capability sentence mentions only
+   successful commands. For rejection without mutation, name the required
+   public observations too; add them when the public query becomes available.
 3. **Write or extend the saved assertions.** Preserve every unaffected case.
    Before replacing a method or file, transfer its still-required assertions;
    never reduce the suite to the latest examples. Retire an expectation only
    when the request explicitly replaces it. Do not assert both an old rule and
    its replacement in the final suite; history retains the earlier checks.
+   Record the superseded rule's last valid commit and its replacement case in
+   the inventory. Rename or revise affected case names and docstrings to match
+   their current assertions; a historical stage label does not preserve an
+   obsolete expectation or prove that it was checked in that earlier revision.
 4. **Revisit all rejection cases when adding a query.** If this revision first
    exposes a public observation of stored state, add that observation to every
    earlier applicable rejection test now. Older stage classes are part of the
@@ -38,8 +48,11 @@ verification commands and restrictions on creating tests.
    or changing their output contract.
 5. **Run and inspect the accumulated suite before committing.** Confirm the
    runner discovers and executes assertions. Follow every inventory entry to
-   its actual assertions, including the statement immediately after each
-   rejected operation. Resolve missing coverage even when the runner passes.
+   its actual assertions, including the shared-validation section and the
+   statement immediately after each rejected operation. Inspect the saved
+   inputs: implementation branches, docstrings and successful recovery calls
+   do not count as rejection assertions. Resolve missing coverage even when
+   the runner passes.
    Inspect complete added or changed test/helper/fixture bodies for independently
    selected commenting/logging rules. Commit the saved checks with this
    capability; do not advance merely because its tests passed.
@@ -105,9 +118,13 @@ When formerly invalid inputs become valid, replace their obsolete rejection
 assertions with acceptance checks and retain inputs that are still invalid.
 Do not leave an empty negative loop, a no-op test, or a before/after read with
 no rejected operation. Changing numeric acceptance does not retire empty and
-unknown commands or other shared rules. New history/state checks extend earlier
-coverage; they do not replace earlier rejection classes. A test name or green
-runner is not evidence that its required input or observation was asserted.
+unknown commands or other shared rules. Broader numeric acceptance replaces
+only the superseded numeric restriction: retain the contract's other domain
+rejections in each independently implemented validation path. For example,
+allowing fractions does not retire a required zero/negative-value rejection.
+New history/state checks extend earlier coverage; they do not replace earlier
+rejection classes. A test name or green runner is not evidence that its required
+input or observation was asserted.
 
 ## Choose the project's verification path
 
