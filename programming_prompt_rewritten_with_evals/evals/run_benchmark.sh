@@ -59,9 +59,9 @@
 # cache still fill the disk; docker_networks.py prunes leftover containers
 # and empty nets (keeps images and BuildKit cache).
 # The requested ceiling is all trials unless --concurrency or a configured
-# capacity cap lowers it. The automatic launch guard starts a small wave,
-# holds new containers when active agents approach their execution deadlines,
-# and adjusts future admission using completed trials. Waiting occurs before
+# capacity cap lowers it. The automatic launch guard uses that full ceiling,
+# holding new containers only when active agents' remaining time is within
+# measured setup p95 plus one polling interval. Waiting occurs before
 # container setup and does not consume the waiting trial's execution budget.
 # Harbor -n is not a user flag. Harbor retries ApiRateLimitError (too many
 # requests) with backoff instead of dropping those trials. Run one wrapper
@@ -236,7 +236,7 @@ echo "Selected skill(s): ${SELECTED_SKILLS[*]}" >&2
 mapfile -t SELECTED_TASKS < <(resolve_tasks "$TASKS_ARG")
 echo "Selected coding task(s): ${SELECTED_TASKS[*]}" >&2
 if [[ -z "${EVAL_LLM_MAX_CONCURRENT:-}" ]]; then
-  echo "LLM trial ceiling: unset; automatic launch guard paces starts using active deadlines and completed trials." >&2
+  echo "LLM trial ceiling: unset; full configured capacity with measured deadline headroom (no launch ramp-up)." >&2
 else
   echo "LLM trial cap: EVAL_LLM_MAX_CONCURRENT=$EVAL_LLM_MAX_CONCURRENT (coding trials live on this machine)" >&2
 fi

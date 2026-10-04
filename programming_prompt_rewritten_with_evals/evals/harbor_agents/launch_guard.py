@@ -7,7 +7,9 @@ at AGENT_START, which Harbor emits before starting its execution timeout.
 from __future__ import annotations
 
 import asyncio
+from collections import deque
 from dataclasses import dataclass
+import math
 import time
 import tomllib
 
@@ -21,10 +23,10 @@ class ActiveTrial:
     """Admission held from trial start through verification and cleanup."""
 
     name: str
+    admitted: float
     started: float | None = None
     budget: float | None = None
-    elapsed: float | None = None
-    pressured: bool = False
+    setup_recorded: bool = False
 
 
 def execution_budget(event: TrialHookEvent) -> float | None:
@@ -52,6 +54,8 @@ def execution_budget(event: TrialHookEvent) -> float | None:
 class DeadlineLaunchGuard(BaseJobPlugin):
     """Hold queued trials when active agents approach their own deadlines."""
 
+    poll_interval = 5.0
+
     async def on_job_start(self, job) -> None:
         """Attach admission and release hooks to the job's public lifecycle.
 
@@ -61,8 +65,7 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         self.condition = asyncio.Condition()
         self.active: dict[str, ActiveTrial] = {}
         self.ceiling = job.config.n_concurrent_trials
-        self.window = min(4, self.ceiling)
-        self.healthy = 0
+        self.setup_durations: deque[float] = deque(maxlen=64)
         self.log = logger.getChild(__name__)
         job.add_hook(TrialEvent.START, self.admit)
         job.add_hook(TrialEvent.AGENT_START, self.agent_started)
@@ -70,36 +73,34 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         job.add_hook(TrialEvent.END, self.finished)
         job.add_hook(TrialEvent.CANCEL, self.cancelled)
         self.log.info(
-            "Automatic launch guard: initial=%s ceiling=%s; pause at 80%% "
-            "of an active agent's execution budget (queue time is excluded)",
-            self.window, self.ceiling,
+            "Automatic launch guard: full trial ceiling=%s; deadline headroom "
+            "uses measured setup p95 + %.1fs (queue time is excluded)",
+            self.ceiling, self.poll_interval,
         )
 
-    def pressured_trials(self, now: float) -> list[ActiveTrial]:
-        """Identify running agents in the final fifth of their budgets.
+    def deadline_headroom(self) -> float:
+        """Allow observed setup cost plus a polling interval before deadlines.
+
+        Parameters: none.
+        Returns: seconds of headroom, using the latest setup durations' p95.
+        """
+        samples = sorted(self.setup_durations)
+        setup = samples[math.ceil(0.95 * len(samples)) - 1] if samples else 0.0
+        return setup + self.poll_interval
+
+    def pressured_trials(self, now: float) -> list[tuple[ActiveTrial, float]]:
+        """Compare each running phase's remaining time with measured headroom.
 
         Parameters: now - current monotonic timestamp.
-        Returns: active records that should block additional trial starts.
+        Returns: records and remaining seconds that block additional starts.
         """
+        headroom = self.deadline_headroom()
         return [
-            trial for trial in self.active.values()
+            (trial, trial.budget - (now - trial.started))
+            for trial in self.active.values()
             if trial.started is not None and trial.budget is not None
-            and now - trial.started >= 0.8 * trial.budget
+            and trial.budget - (now - trial.started) <= headroom
         ]
-
-    def reduce_window(self, reason: str) -> None:
-        """Lower future admission pressure while preserving running trials.
-
-        Parameters: reason - diagnostic explaining the slowdown.
-        Returns: None.
-        """
-        previous = self.window
-        self.window = max(1, self.window // 2)
-        self.healthy = 0
-        self.log.info(
-            "Automatic launch guard: %s; admission window %s -> %s",
-            reason, previous, self.window,
-        )
 
     async def admit(self, event: TrialHookEvent) -> None:
         """Wait before environment setup, then reserve this trial's admission.
@@ -108,33 +109,34 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         Returns: None after admission; cancellation releases a pending waiter.
         """
         key = str(event.trial_id)
-        waiting_logged = False
+        waiting_reason: tuple[str, ...] | None = None
         async with self.condition:
             while key not in self.active:
-                pressured = self.pressured_trials(time.monotonic())
-                for trial in pressured:
-                    if not trial.pressured:
-                        trial.pressured = True
-                        self.reduce_window(f"{trial.name} is near its execution deadline")
-                if not pressured and len(self.active) < self.window:
-                    self.active[key] = ActiveTrial(name=event.trial_name)
+                now = time.monotonic()
+                pressured = self.pressured_trials(now)
+                if not pressured and len(self.active) < self.ceiling:
+                    self.active[key] = ActiveTrial(name=event.trial_name, admitted=now)
                     self.log.info(
-                        "Automatic launch guard: admitted %s; active=%s window=%s",
-                        event.trial_name, len(self.active), self.window,
+                        "Automatic launch guard: admitted %s; active=%s ceiling=%s",
+                        event.trial_name, len(self.active), self.ceiling,
                     )
                     return
-                if not waiting_logged:
+                reason = tuple(sorted(trial.name for trial, _ in pressured))
+                if reason != waiting_reason:
                     self.log.info(
                         "Automatic launch guard: queued %s before container setup; "
-                        "active=%s window=%s near_deadline=%s",
-                        event.trial_name, len(self.active), self.window,
-                        [trial.name for trial in pressured],
+                        "active=%s ceiling=%s headroom=%.1fs near_deadline=%s",
+                        event.trial_name, len(self.active), self.ceiling,
+                        self.deadline_headroom(),
+                        [(trial.name, round(remaining, 1)) for trial, remaining in pressured],
                     )
-                    waiting_logged = True
+                    waiting_reason = reason
                 # Periodic wakeups detect approaching deadlines even when no
                 # phase finishes. A Condition notification wakes us sooner.
                 try:
-                    await asyncio.wait_for(self.condition.wait(), timeout=5.0)
+                    await asyncio.wait_for(
+                        self.condition.wait(), timeout=self.poll_interval,
+                    )
                 except TimeoutError:
                     pass
 
@@ -147,14 +149,22 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         budget = execution_budget(event)
         async with self.condition:
             trial = self.active[str(event.trial_id)]
-            trial.started = time.monotonic()
+            now = time.monotonic()
+            if not trial.setup_recorded:
+                self.setup_durations.append(now - trial.admitted)
+                trial.setup_recorded = True
+                self.log.info(
+                    "Automatic launch guard: setup %s took %.1fs; "
+                    "samples=%s deadline headroom=%.1fs",
+                    trial.name, now - trial.admitted, len(self.setup_durations),
+                    self.deadline_headroom(),
+                )
+            trial.started = now
             trial.budget = budget
-            trial.elapsed = None
-            trial.pressured = False
             self.condition.notify_all()
 
     async def agent_ended(self, event: TrialHookEvent) -> None:
-        """Stop deadline tracking and lower pressure after a slow agent phase.
+        """Clear phase deadline pressure immediately when execution ends.
 
         Parameters: event - AGENT_END event, including timeout and cancellation.
         Returns: None; admission stays held through verification and cleanup.
@@ -163,16 +173,11 @@ class DeadlineLaunchGuard(BaseJobPlugin):
             trial = self.active.get(str(event.trial_id))
             if trial is None or trial.started is None:
                 return
-            trial.elapsed = time.monotonic() - trial.started
-            if trial.budget is not None and trial.elapsed >= 0.8 * trial.budget:
-                if not trial.pressured:
-                    self.reduce_window(f"{trial.name} used at least 80% of its budget")
-                trial.pressured = True
             trial.started = None
             self.condition.notify_all()
 
     async def finished(self, event: TrialHookEvent) -> None:
-        """Release admission, retaining timeout evidence and original rewards.
+        """Release admission without permanent backoff or changing rewards.
 
         Parameters: event - END event after outputs and results have been saved.
         Returns: None.
@@ -181,28 +186,6 @@ class DeadlineLaunchGuard(BaseJobPlugin):
             trial = self.active.pop(str(event.trial_id), None)
             if trial is None:
                 return
-            error = event.result.exception_info
-            if error is not None:
-                self.healthy = 0
-                if error.exception_type in {
-                    "AgentTimeoutError", "ApiRateLimitError",
-                    "EnvironmentStartTimeoutError", "AgentSetupTimeoutError",
-                } and not trial.pressured:
-                    self.reduce_window(f"{trial.name}: {error.exception_type}")
-            elif (
-                not trial.pressured and trial.elapsed is not None
-                and (trial.budget is None or trial.elapsed < 0.6 * trial.budget)
-            ):
-                self.healthy += 1
-                if self.healthy >= self.window and self.window < self.ceiling:
-                    self.window += 1
-                    self.healthy = 0
-                    self.log.info(
-                        "Automatic launch guard: healthy completed wave; window=%s",
-                        self.window,
-                    )
-            else:
-                self.healthy = 0
             self.condition.notify_all()
 
     async def cancelled(self, event: TrialHookEvent) -> None:
@@ -213,7 +196,6 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         """
         async with self.condition:
             self.active.pop(str(event.trial_id), None)
-            self.healthy = 0
             self.condition.notify_all()
 
     async def on_job_end(self, job_result) -> None:
@@ -222,4 +204,4 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         Parameters: job_result - original Harbor job result.
         Returns: None.
         """
-        self.log.info("Automatic launch guard finished; admission window=%s", self.window)
+        self.log.info("Automatic launch guard finished; trial ceiling=%s", self.ceiling)
