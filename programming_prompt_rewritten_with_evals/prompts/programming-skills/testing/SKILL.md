@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.10 — Executable code creation and behavior changes require saved,
+  v1.0.11 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -70,14 +70,25 @@ the suite, retain those cases explicitly rather than reconstructing only the
 latest command examples. Read their actual inputs at each commit gate; a
 negative-test method name does not establish empty or unknown input coverage.
 
-For a required rejection that preserves state, establish the expected state
-independently, attempt the rejected operation, then assert the specified state
-immediately afterward through the public interface. Check every affected resource
-when the contract requires it, including stored history when available at this
-stage. Catching the exception alone is insufficient. A later successful update
-or an unchanged aggregate may miss a changed individual resource; choose an
-observation that would expose the mutation. Preserve the requested stateful
-sequence rather than resetting state between the rejection and its assertion.
+When the contract requires rejection without mutation, the coverage map must
+pair each rejection class with its immediate public observation of unchanged
+state. This applies to malformed commands and failed token conversion as well
+as domain errors; checking only that they raise leaves that rule uncovered.
+Seed known, nonempty state, attempt one rejected operation, then observe the
+specified state before another rejected operation, successful mutation or
+reset. Keep this sequence inside one case. A shared assertion helper may perform
+the same reject-and-observe sequence for several inputs.
+
+Check every affected resource when the contract requires it, including stored
+history when available at this stage. Choose observations that expose changes
+to the values, not only their count or an aggregate that could stay constant
+while individual values change. Use only public observations already supported
+in this revision; extend them when later capabilities make more state visible,
+without implementing a future observation API early. A later successful update
+with the expected count does not establish that the earlier contents survived.
+At each commit gate, locate the actual post-rejection assertions in the saved
+checks for every required rejection class; a passing runner or an exception-only
+negative test does not close missing state-preservation coverage.
 
 - For a reported bug, add a focused regression test before the fix when a
   practical test path exists. Save the exact reported public-interface input
