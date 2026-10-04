@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.13 — Executable code creation and behavior changes require saved,
+  v1.0.14 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -14,6 +14,27 @@ phase rather than adding another phase. When commits is selected, include the
 current Feature's checks and tests in that commit; do not implement or test
 future capabilities early. Repository AGENTS.md and CLAUDE.md determine local
 verification commands and any restrictions on creating tests.
+
+## Keep the contract visible while changing checks
+
+Before the first implementation edit, save a short coverage inventory beside
+the runnable checks (in comments or existing test documentation). Map each
+currently applicable success, rejection reason and unchanged-state rule from
+the original request to its executable test case. For a state-preserving
+rejection, include the public observation and independently expected result;
+an exception assertion or a later successful mutation is not that observation.
+Keep future capabilities out of the current inventory.
+
+Extend this same inventory and suite as capabilities arrive. Read it before
+changing or removing a test, and transfer every still-applicable assertion
+before replacing its method or file. Replacing the suite with the newest
+stage's examples loses earlier contracts. Retire only rules that the new
+request explicitly replaces. At every commit gate, follow each inventory entry
+to actual executable assertions and repair missing entries or assertions before
+committing. When a new public query exposes stored state, update the earlier
+rejection entries and their cases now; merely describing them as unchanged
+state tests is insufficient. This inventory records coverage, not a requested
+number of tests, and a green runner cannot substitute for it.
 
 ## Choose checks from the contract
 
