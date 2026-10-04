@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.18 — Executable code creation and behavior changes require saved,
+  v1.0.19 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -41,6 +41,11 @@ verification commands and restrictions on creating tests.
    the inventory. Rename or revise affected case names and docstrings to match
    their current assertions; a historical stage label does not preserve an
    obsolete expectation or prove that it was checked in that earlier revision.
+   When replacing an expected result, reconstruct that case's state from its
+   own fixture and preceding public calls, then compute the expected result
+   from the request. Do not copy a value from another case with different
+   inputs. Inspect every retained assertion affected by the revised rule,
+   including earlier test classes, before running the accumulated suite.
 4. **Revisit all rejection cases when adding a query.** If this revision first
    exposes a public observation of stored state, add that observation to every
    earlier applicable rejection test now. Older stage classes are part of the
@@ -104,15 +109,25 @@ extra restrictions. Exercise meaningful success and boundary cases, nontrivial
 arguments, the default/no-argument path when supported, each changed flag, and
 accepted multi-word or quoted inputs.
 
-Map failures by operation and rejection reason. A missing-resource failure does
-not cover malformed shape, and one domain rejection does not cover another.
+Map failures by operation, validation path and rejection reason. Separate
+argument-count/dispatch shape, token conversion and operation domain rules in
+the inventory. A missing-resource or out-of-range failure does not cover a
+malformed numeric token or missing/extra arguments. When the interface requires
+a numeric token and rejects invalid arguments, save a representative nonnumeric
+input for each independently implemented conversion path, in the revision that
+introduces it. Do not infer this coverage from zero, negative, fractional or
+otherwise numeric domain inputs, and do not invent unspecified numeric policies.
+
 When specified, save empty-command, unknown-operation and malformed-argument
 assertions in the first revision supporting dispatch; preserve them through
 later revisions. Cover missing and extra arguments where rejected. Each new
 no-argument operation with a separate validation path needs an extra-argument
-assertion; similar conditions in separate branches are separate paths. Reuse
-representative coverage only for operations delegating to the same validation
-path. Do not enumerate every invalid spelling.
+assertion; similar conditions in separate branches are separate paths. Operations
+that actually delegate to the same validation path may share representative
+coverage for that reason. Distinct operation-specific domain checks still need
+their own applicable cases. A similar command spelling or repeated condition
+in separate branches does not establish a shared path. Do not enumerate every
+invalid spelling.
 
 When formerly invalid inputs become valid, replace their obsolete rejection
 assertions with acceptance checks and retain inputs that are still invalid.
