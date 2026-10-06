@@ -226,7 +226,18 @@ for prompt_path in prompt_files:
     (task_dir / "solution").mkdir(parents=True)
     (task_dir / "tests").mkdir(parents=True)
 
-    (task_dir / "instruction.md").write_text(body, encoding="utf-8")
+    workspace_context = (
+        "Benchmark workspace: /Projects/app is the writable Git project; "
+        "/app is a symlink to the same directory. An empty checkout is intentional "
+        "for creation tasks, not a missing repository. Create the requested program "
+        "and any checks required by the selected skills without asking for another "
+        "repository or permission to create those files. Follow any selected "
+        "worktree policy and deliver its changes back to this live project. "
+        "Complete the requested implementation before ending the turn; an "
+        "inspection or a promise to implement is not delivery. Report only files "
+        "actually saved and commands actually executed.\n\n"
+    )
+    (task_dir / "instruction.md").write_text(workspace_context + body, encoding="utf-8")
     (task_dir / "artifact.txt").write_text(artifact + "\n", encoding="utf-8")
     write_task_toml(task_dir / "task.toml", name, description)
     shutil.copy2(template_dir / "environment" / "Dockerfile", task_dir / "environment" / "Dockerfile")

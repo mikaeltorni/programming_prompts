@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from llm_judge.log import log
+from llm_judge.testing_evidence import MAX_SOURCE_BYTES, equality_expectations
 
 MIN_RETRY_SECONDS = 40
 _NOT_INSPECTED = re.compile(
@@ -72,6 +73,11 @@ _FALLTHROUGH_CLAIM = re.compile(
 )
 
 AttemptFn = Callable[[str | None, int], tuple[str, list[dict[str, Any]]]]
+_EXPECTED_LITERAL_CLAIM = re.compile(
+    r"\bexpects?\s+"
+    r"(?:`(?P<backtick>[^`\n]{1,160})`|[\"“](?P<quoted>[^\"”\n]{1,160})[\"”])",
+    re.IGNORECASE,
+)
 
 
 class UnreliableJudgeScore(RuntimeError):
@@ -187,6 +193,46 @@ def _contradicted_request_boundary(reasoning: str, request_text: str) -> bool:
     return False
 
 
+def _contradicted_testing_literal(reasoning: str, python_files: list[Path]) -> bool:
+    """Detect a quoted current expectation absent from cited literal assertions.
+
+    Dynamic expected expressions and historical/corrective claims are left to
+    the semantic judge. This only requests reinspection; it never awards yes.
+    """
+    cited = {Path(item).name for item in mentioned_python_paths(reasoning)}
+    literals: set[str] = set()
+    found = False
+    for path in python_files:
+        if path.name not in cited:
+            continue
+        try:
+            with path.open("rb") as handle:
+                data = handle.read(MAX_SOURCE_BYTES + 1)
+            if len(data) > MAX_SOURCE_BYTES:
+                return False
+            values, dynamic = equality_expectations(ast.parse(data.decode("utf-8")))
+        except (OSError, UnicodeError, SyntaxError):
+            return False
+        if dynamic:
+            return False
+        literals.update(values)
+        found = found or bool(values)
+    if not found:
+        return False
+    for match in _EXPECTED_LITERAL_CLAIM.finditer(reasoning):
+        prefix = reasoning[max(0, match.start() - 180):match.start()]
+        if not re.search(r"\.py\b|\blines?\s+\d", prefix, re.I):
+            continue
+        if re.search(r"historical|earlier commit|at commit|\b[0-9a-f]{7,40}\b"
+                     r"|\b(?:no|not|never|missing|absent|omitted)\b"
+                     r"|should\s*$|must\s*$|ought to\s*$", prefix, re.I):
+            continue
+        value = match.group("backtick") or match.group("quoted")
+        if value not in literals:
+            return True
+    return False
+
+
 def unreliable_score_reason(
     rows: list[dict[str, Any]], listed_keys: set[str],
     *, judge_name: str = "", python_files: list[Path] | None = None,
@@ -204,7 +250,7 @@ def unreliable_score_reason(
     Args:
         rows: Parsed criterion scores.
         listed_keys: Lowercased names from ``listed_python_keys``.
-        judge_name: Skill name; logging receives a syntax contradiction check.
+        judge_name: Skill name; logging and testing receive syntax contradiction checks.
         python_files: Solution source paths for that bounded check.
         request_text: Original task context for literal punctuation claims.
         workflow_issues: Concrete issues within the saved plan, not expected
@@ -214,6 +260,8 @@ def unreliable_score_reason(
         ``not_inspected:<criterion>``, ``contradictory_no:<criterion>``,
         ``source_conflict:<criterion>:<function>``, ``plan_conflict:<criterion>``,
         ``request_boundary_conflict:<criterion>``, or ``wrong_path:<criterion>:<file>``.
+        Testing may return ``testing_literal_conflict:<criterion>`` for a quoted
+        current expectation absent from the cited file's literal assertions.
     """
     for row in rows:
         reasoning = re.sub(r"[*`]", "", str(row.get("reasoning") or ""))
@@ -230,6 +278,10 @@ def unreliable_score_reason(
             return f"not_inspected:{name}"
         if _CONTRADICTORY_NO.search(reasoning):
             return f"contradictory_no:{name}"
+        if judge_name == "testing" and python_files and _contradicted_testing_literal(
+            str(row.get("reasoning") or ""), python_files
+        ):
+            return f"testing_literal_conflict:{name}"
         if judge_name == "logging" and python_files:
             function = _contradicted_fallthrough(str(row.get("reasoning") or ""), python_files)
             if function:
@@ -266,6 +318,17 @@ def retry_prompt(prompt: str, reason: str) -> str:
             + "verdict contradicted its own reasoning. Re-evaluate the supplied "
             + "evidence and make the score agree with the concrete reason. "
             + "Do not change a genuine no merely to match prior wording.\n"
+        )
+    if reason.startswith("testing_literal_conflict:"):
+        return (
+            prompt
+            + "\n\nRETRY: the previous no cited a quoted expected value absent "
+            + "from the current literal equality assertions in its cited files. "
+            + "Re-read the current assertion and its preceding fixture calls; "
+            + "quote its actual expected expression. Distinguish historical "
+            + "commit source from the current runner's imported source. Identify "
+            + "a supported material failure or score yes; absence of a literal "
+            + "alone is not a semantic failure or an automatic pass.\n"
         )
     if reason.startswith("plan_conflict:"):
         return (

@@ -217,6 +217,35 @@ def _retain_judge_artifact(source: Path, prefix: Path | None, suffix: str) -> No
         log(f"could not retain judge evidence artifact: {exc}")
 
 
+def _retain_codex_sessions(home: Path, prefix: Path | None) -> None:
+    """Retain judge session JSONL before cleanup, excluding credentials/config.
+
+    Args:
+        home: Temporary Codex judge home, shared by its bounded attempts.
+        prefix: Optional verifier artifact prefix; None disables retention.
+
+    Returns:
+        None; retention failures are logged without replacing the verdict.
+    """
+    if prefix is None:
+        return
+    root = home / "sessions"
+    destination = prefix.with_name(prefix.name + "-sessions")
+    try:
+        sources = sorted(root.rglob("*.jsonl"))
+    except OSError as exc:
+        log(f"could not list judge session artifacts: {exc}")
+        return
+    for source in sources:
+        try:
+            relative = source.resolve().relative_to(root.resolve())
+            target = destination / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, target)
+        except (OSError, ValueError) as exc:
+            log(f"could not retain judge session artifact: {exc}")
+
+
 def run_rewardkit(
     *,
     work: Path,
@@ -326,6 +355,7 @@ def score_with_rewardkit(
         invoke: Optional ``run_rewardkit`` replacement for ``--self-test``.
         evidence_prefix: Optional verifier artifact prefix for the exact pinned
             prompt and full backend details, separately for an attempt and retry.
+            Codex session JSONL is also retained before its temporary home cleanup.
 
     Returns:
         Details JSON text and parsed rows from the last attempt used.
@@ -389,6 +419,7 @@ def score_with_rewardkit(
                                      if judge_dir.name == "workflow" else None),
                 )
         finally:
+            _retain_codex_sessions(home, evidence_prefix)
             shutil.rmtree(home, ignore_errors=True)
 
     if invoke is not None:
