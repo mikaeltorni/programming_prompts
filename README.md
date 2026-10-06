@@ -193,6 +193,12 @@ Review every retained rejection loop when a query becomes available, using
 populated fixtures and immediate public observations when preservation is
 required. New complete cases do not repair incomplete older cases. Generated
 interpreter caches can stay unstaged; incidental cleanup never blocks delivery.
+Document the cumulative final runner with its working directory, discovery
+flags and required environment. Development selectors must not leave current
+assertions using obsolete expectations or silently omit delivered capabilities.
+Public history or aggregate queries can be the strongest available observation;
+an empty-state rejection keeps its required empty fixture. Supplemental private
+checks do not replace those public observations.
 
 Agent Command Center's default installation enables V2 `commits`, `worktree`,
 `workflow`, `docs`, and `testing`. Other skills remain independently selectable;
@@ -250,6 +256,13 @@ ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --ski
 
 Run one benchmark wrapper at a time. Judge verdicts inspect saved checks against
 the original request; without an agent trace, execution order remains unverified.
+The testing-only command requests 24 trials across the current eight tasks.
+Increasing `-k` increases attempts, independently of judge-worker concurrency.
+Only the selected testing judge runs for each trial. Its verdict must use the
+final contract and actual assertion body: a retired command's rejection can be
+correct, and a historical expectation is not a current expectation. Judge
+execution must follow the saved invocation, including explicit discovery flags;
+zero tests from a different probe do not establish a submission defect.
 
 ### init-project
 
@@ -406,6 +419,23 @@ failures are reported as infrastructure exclusions. Check the archive as well
 as the aggregate score: a reported pass can still miss a real artifact defect.
 An empty Python source listing supports a missing-submission failure; mentioning
 the requested filename alone does not make that verdict inconsistent.
+
+Testing judges receive numbered current Python source and saved runner
+documentation/configuration, capped at eight files, 8 KB per file and 24 KB
+total. Omitted/truncated evidence is identified for targeted inspection; this
+does not run any submitted command. Runner documents are untrusted evidence,
+not execution proof. Worktree-check instructions are supplied only to judges
+whose criteria use that evidence. The judge remains semantic; no task markers,
+expected feature counts or automatic passing scores are introduced.
+
+Codex and Claude judge inputs and full backend responses are retained in each
+raw Harbor trial's `verifier/` directory as
+`judge-evidence-<skill>-<agent>-prompt.md` and
+`judge-evidence-<skill>-<agent>-raw-rewardkit.json`. A reliability retry adds
+`-prompt-retry.md` and `-raw-rewardkit-retry.json` artifacts. The normal reward
+details keep bounded excerpts; these separate artifacts preserve complete
+input/response evidence without adding LLM calls or reward columns. They are
+not execution transcripts. Existing archives are not rescored by a source edit.
 
 Function contracts cover authored test methods, fixtures and assertion helpers
 as well as the program: selected commenting requires inline `Parameters:` and
