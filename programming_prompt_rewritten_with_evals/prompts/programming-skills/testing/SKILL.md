@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.20 — Executable code creation and behavior changes require saved,
+  v1.0.21 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -13,6 +13,20 @@ without workflow. With workflow selected, perform them inside `Write code`;
 with commits selected, finish the current capability's checks and commit before
 starting the next capability. Follow repository AGENTS.md and CLAUDE.md for
 verification commands and restrictions on creating tests.
+
+Before finishing a revision, resolve these concrete checks in the saved suite:
+
+- For each independent operand parser: missing input, extra input and failed
+  token conversion where applicable. A no-operand command needs only its
+  applicable extra-input check. Successful examples alone are incomplete.
+- For each still-required rejection: its fixture, rejected input and strongest
+  available public observation immediately afterward. Review older cases too.
+- For each changed rule: every retained expectation using that rule, recomputed
+  from that case's actual preceding calls.
+- For the final runner: its exact directory, flags and environment, a nonzero
+  executed assertion count and coverage of all delivered capabilities.
+
+These are coverage checks, not a request for duplicate cases or extra tools.
 
 ## Follow these gates for every working revision
 
@@ -53,11 +67,14 @@ verification commands and restrictions on creating tests.
    from the request. Do not copy a value from another case with different
    inputs. Inspect every retained assertion affected by the revised rule,
    including earlier test classes, before running the accumulated suite.
-   Trace the saved runner and every advertised stage selector to the source it
+   Trace the saved runner and each supported stage selector to the source it
    imports. Checks loading the current module must follow the current contract,
    even if their names refer to earlier stages. Keep a cumulative current suite;
    replay an obsolete assertion only with its matching historical source.
    Selecting just the latest stage cannot verify retained earlier assertions.
+   Make the documented final invocation select the cumulative final suite.
+   Development-only selectors may target earlier commits; label that source
+   requirement rather than advertising them as current-module verification.
 4. **Revisit all rejection cases when adding a query.** If this revision first
    exposes a public observation of stored state, add that observation to every
    earlier applicable rejection test now. Older stage classes are part of the
@@ -93,8 +110,9 @@ this sequence when the contract requires unchanged state.
 Task examples may show a rejection followed by a successful mutation. That
 checks recovery; insert the query before continuing the example. A later
 successful update's count, a private-state assertion, or a comment saying
-“unchanged” cannot replace the public observation. Private access is permitted
-for fixture setup only. Use observations that expose the affected values,
+“unchanged” cannot replace the public observation. Supplemental private checks
+do not replace public checks, and their presence does not invalidate adequate
+public checks. Use observations that expose the affected values,
 not just a count or aggregate that can stay constant while values change.
 Check every affected resource and stored history when the contract requires it
 and the current revision exposes it.
@@ -112,8 +130,12 @@ self.assertEqual(PUBLIC_ENTRYPOINT(STATE_QUERY), EXPECTED_STATE_RESULT)
 ```
 
 When no public query exists yet, use the strongest observation the current
-interface supports and record that limit in the inventory. Do not introduce a
-future query or reset API just for testing. Gate 4 requires upgrading those
+interface supports and record that limit in the inventory. A public history or
+aggregate may be the strongest available observation; do not invent a balance
+or item query. An empty-state domain case must remain empty when seeding would
+change the required rejection. Do not demand an unavailable successful query
+in that case. Do not introduce a future query or reset API just for testing.
+Gate 4 requires upgrading those
 checks as soon as a suitable query exists. Before each commit, review **all**
 saved rejection blocks, not only this revision's new tests: an exception-only
 block or one followed by a mutation remains incomplete when the contract
@@ -170,6 +192,10 @@ checks or existing test documentation. Use explicit discovery when necessary;
 a zero-test success is not verification. Terminal-only `python -c` or heredoc
 assertions may supplement saved checks but cannot replace them. A small local
 program with observable results still needs useful regression assertions.
+Document the actual discovery flags and required environment with the runner.
+If stages use an environment selector, the final documented command must enable
+all current checks; prefer that as the default too. A shorter development
+selection must not silently skip delivered behavior in the final invocation.
 
 For a reported defect, save its exact public-interface reproducer and the
 independently specified expected result before editing the broken behavior.
