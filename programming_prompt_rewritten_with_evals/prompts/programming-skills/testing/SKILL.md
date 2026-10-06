@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.19 — Executable code creation and behavior changes require saved,
+  v1.0.20 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -32,6 +32,13 @@ verification commands and restrictions on creating tests.
    to the first dispatch revision even if its capability sentence mentions only
    successful commands. For rejection without mutation, name the required
    public observations too; add them when the public query becomes available.
+   Use a table of operations and rejection reasons, not just a stage list. For each
+   supported public command, record its operands, applicable missing/extra
+   argument cases, numeric-conversion case, domain cases, and saved assertion
+   locations. Mark a class inapplicable only with its contract or actual shared
+   validation owner. A shared helper's case can cover its callers; repeated
+   conversions or argument checks in separate handlers cannot. Resolve every
+   applicable gap before committing, including commands with operands.
 3. **Write or extend the saved assertions.** Preserve every unaffected case.
    Before replacing a method or file, transfer its still-required assertions;
    never reduce the suite to the latest examples. Retire an expectation only
@@ -46,16 +53,27 @@ verification commands and restrictions on creating tests.
    from the request. Do not copy a value from another case with different
    inputs. Inspect every retained assertion affected by the revised rule,
    including earlier test classes, before running the accumulated suite.
+   Trace the saved runner and every advertised stage selector to the source it
+   imports. Checks loading the current module must follow the current contract,
+   even if their names refer to earlier stages. Keep a cumulative current suite;
+   replay an obsolete assertion only with its matching historical source.
+   Selecting just the latest stage cannot verify retained earlier assertions.
 4. **Revisit all rejection cases when adding a query.** If this revision first
    exposes a public observation of stored state, add that observation to every
    earlier applicable rejection test now. Older stage classes are part of the
    current suite. Apply the same review when adding more state/history queries
-   or changing their output contract.
+   or changing their output contract. Review every retained rejection block,
+   including shared empty/unknown/argument-shape loops and older test classes.
+   A new complete reject-and-observe case does not repair another retained case
+   that still skips its observations. Seed populated state for those shared
+   loops too; checking only an empty result cannot expose accidental clearing.
 5. **Run and inspect the accumulated suite before committing.** Confirm the
    runner discovers and executes assertions. Follow every inventory entry to
    its actual assertions, including the shared-validation section and the
-   statement immediately after each rejected operation. Inspect the saved
-   inputs: implementation branches, docstrings and successful recovery calls
+   statement immediately after each rejected operation. Check both missing and
+   extra operands where rejected: covering one side of a shared length predicate
+   does not cover the other rejection class. Inspect the saved inputs:
+   implementation branches, docstrings and successful recovery calls
    do not count as rejection assertions. Resolve missing coverage even when
    the runner passes.
    Inspect complete added or changed test/helper/fixture bodies for independently
@@ -105,8 +123,10 @@ requires a now-observable state guarantee.
 
 Use concrete public inputs and expected results from the request. Do not copy
 the implementation's answer or invent error strings, unsupported inputs or
-extra restrictions. Exercise meaningful success and boundary cases, nontrivial
-arguments, the default/no-argument path when supported, each changed flag, and
+extra restrictions. A numeric range added by an implementation is not itself
+a requested domain rule; distinguish it from the request and supplied logs.
+Exercise meaningful success and boundary cases, nontrivial arguments, the
+default/no-argument path when supported, each changed flag, and
 accepted multi-word or quoted inputs.
 
 Map failures by operation, validation path and rejection reason. Separate
@@ -214,6 +234,12 @@ def test_requested_behavior(self):
 ```
 
 ## Verify tooling, installation and delivery
+
+Keep interpreter caches and other generated runner output out of staged source
+changes using existing ignores or exact-path staging. Removing these files is
+not a prerequisite to committing working code and saved checks. If incidental
+cleanup is refused, preserve the files and continue the authorized work; do not
+abandon the capability or leave a verified revision uncommitted for that reason.
 
 Run relevant tests and configured lint, type or build checks using the existing
 environment and dependency policy; do not resolve dependencies ad hoc. When

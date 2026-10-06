@@ -16,6 +16,10 @@ applicable gate; a real failure in one is sufficient for no.
    was never tested historically, inspect the earlier committed case and name
    the commit; absence from the final file does not prove historical absence.
    Unavailable history leaves earlier coverage unverified, not defective.
+   Read the saved runner and advertised stage selectors before classifying a
+   check as historical: a stage label does not pin the imported source. Earlier
+   assertions loading the current module must match the final contract. A latest
+   stage's successful run does not establish that the cumulative runner works.
 
 2. Audit every retained executable assertion against that contract. Reconstruct
    each case's state from its own fixture and preceding public calls, stopping
@@ -35,12 +39,21 @@ applicable gate; a real failure in one is sufficient for no.
    arguments and requires a numeric token, locate a representative nonnumeric
    rejection assertion for each independent conversion path; zero, negative,
    fractional or other numeric domain cases do not test failed conversion.
-   Do not invent unspecified numeric restrictions or error semantics.
-   For each implemented no-argument operation, locate its extra-argument
-   validation and the saved input exercising it. Operations that execute the
-   same validation branch or helper may share representative coverage for that
-   reason. Similar conditions in independent handlers are separate paths.
+   Do not invent unspecified numeric restrictions or error semantics. An
+   implementation's range check alone does not establish a requested range;
+   identify its original request or task-log basis before demanding a domain
+   assertion. Resolve command shape from its public operands, not its Python
+   signature: an operation taking tokens is not a no-argument operation.
+   For every supported operation, locate applicable missing/extra-argument
+   validation and saved inputs exercising both rejection classes. A no-operand
+   command has no missing-operand case, but may have an extra-argument case.
+   Operations that execute the same validation branch or helper may share
+   representative coverage for that reason. Similar conditions in independent
+   handlers are separate paths.
    Inspect the called helper before demanding another operation's spelling.
+   Multiple callers of one token converter share its conversion path; separate
+   builtin conversions in separate handlers do not. Merely ending at the same
+   raise statement does not merge different command-shape predicates.
    Distinct domain rules retain their own applicable cases. Require meaningful
    success, boundary and specified rejection coverage, not every invalid
    spelling or every exact illustrative sequence from the task.
@@ -52,16 +65,25 @@ applicable gate; a real failure in one is sufficient for no.
    Do not claim an asserted input is absent or invent a successful assertion.
 
 4. Check required preservation immediately after rejected input. In every
-   retained rejection case, observe the affected values and stored history
-   through currently available public queries before another rejection,
-   successful mutation or fixture reset. Seed meaningful known state where the
+   retained case whose rejection must preserve mutable state, observe the
+   affected values and required stored history through currently available
+   public queries before another rejection, successful mutation or fixture reset.
+   Seed meaningful known state where the
    rejection permits it. Follow the contract and the available observation
    interface; do not require an unsupported future query. A later successful
    mutation, private-state assertion or aggregate that can hide affected values
-   does not establish their preservation. When a later revision exposes a
-   suitable query, earlier still-applicable rejection cases need observations
-   too. Inspect the actual statements after the rejection, not an "unchanged"
-   comment or a successful recovery call.
+   does not establish their preservation when a more informative public query
+   exists. When only aggregates are available, use the strongest supported
+   observations and disclose their limits; do not invent an item-list, balance
+   or history command. A stateless interface needs no preservation query.
+   When a later revision exposes a suitable query, earlier still-applicable
+   rejection cases need observations too. Inspect the actual statements after
+   the rejection, not an "unchanged"
+   comment or a successful recovery call. Audit all retained executable cases,
+   including older classes and shared empty/unknown/argument-shape loops. A new
+   complete rejection case does not repair another retained case that lacks its
+   required observations. Seed nonempty state when possible; an intentionally
+   empty-state domain case still follows its required empty fixture.
 
 5. Trace isolation through the SAVED RUNNER and its fixture lifecycle. Every
    state-dependent case starts with the state it requires; preserve state within
@@ -108,14 +130,19 @@ logging or weaken the requested contract to make assertions pass.
 
 Explain only source-supported material findings, concisely. Discard allegations
 contradicted by the current source; do not include tentative or refuted failures
-in the final reason. Necessary missing artifacts can support no with the named
-evidence gap; unavailable execution, logs or history alone cannot.
+in the final reason. Resolve a shared-versus-independent path claim before
+writing the reason; do not narrate a refuted omission as another failure.
+Necessary missing artifacts can support no with the named evidence gap;
+unavailable execution, logs or history alone cannot.
 
 Before a yes, finish the validation and preservation gates even when every
 executed test passes and every expected value is correct. Identify the actual
-shared or independent extra-argument path for each no-argument operation and
-locate its representative rejection assertion. Passing results for other
-operations do not cover an untested independent validation path.
+shared or independent validation paths for commands with and without operands,
+then locate representative assertions for each applicable rejection class.
+Review every retained rejection block's fixture and immediately following
+observations, rather than sampling only the newest tests. Passing results for
+other operations do not cover an untested independent validation path or an
+incomplete retained state-preservation sequence.
 
 Criteria to score:
 {criteria}
