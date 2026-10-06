@@ -27,6 +27,9 @@ turning a missing README or Git commit into an unrelated testing failure.
    An expected-exception assertion for that retired spelling is then correct.
    Determine acceptance versus rejection from the latest contract and the
    actual assertion block, never from the case's historical name.
+   If a final selector skips a method containing an obsolete expectation,
+   locate its unaffected shared-validation assertions in active cases too.
+   Retiring one numeric rule does not retire the whole method's other checks.
 
 2. Audit every retained executable assertion against that contract. Reconstruct
    each case's state from its own fixture and preceding public calls, stopping
@@ -55,6 +58,10 @@ turning a missing README or Git commit into an unrelated testing failure.
    identify its original request or task-log basis before demanding a domain
    assertion. Resolve command shape from its public operands, not its Python
    signature: an operation taking tokens is not a no-argument operation.
+   The declared input type still bounds the interface: a defensive guard for
+   non-string objects does not require non-string checks for a string-command
+   contract. Require a strict bound's excluded endpoint and a value beyond it
+   only when the original contract specifies that bound.
    For every supported operation, locate applicable missing/extra-argument
    validation and saved inputs exercising both rejection classes. A no-operand
    command has no missing-operand case, but may have an extra-argument case.
@@ -79,6 +86,9 @@ turning a missing README or Git commit into an unrelated testing failure.
    retained case whose rejection must preserve mutable state, observe the
    affected values and required stored history through currently available
    public queries before another rejection, successful mutation or fixture reset.
+   Inspect the numbered rejection block and its immediately following source
+   statements before alleging a missing observation. Require observations of
+   the resources affected by that operation, not unrelated resources.
    Seed meaningful known state where the
    rejection permits it. Follow the contract and the available observation
    interface; do not require an unsupported future query. A later successful
@@ -135,8 +145,13 @@ Honor a test prohibition only when the original task applies it to its target;
 instructions for the evaluation repository or replay location do not create
 such an exception for the coding agent's submission.
 
-If execution tools are callable, inspect the checks first and run appropriate
-checks in an isolated temporary copy with a timeout. Never modify the submission
+Use recorded coding-command results when supplied: inspect the actual command,
+output, exit code and later edits, rather than treating a final message or README
+claim as execution proof. These are the coding agent's runs, not your own runs.
+If a material execution or isolation question remains and execution tools are
+callable, inspect the checks first and run appropriate checks in an isolated
+temporary copy with a timeout. Do not rerun solely to produce your own trace.
+Never modify the submission
 or history, install dependencies, contact external services or execute destructive
 effects. Keep unnecessary network, GUI and process effects mocked or isolated;
 harmless local operations need no mocks. Report observed results. Infrastructure
@@ -161,6 +176,8 @@ in the final reason. Resolve a shared-versus-independent path claim before
 writing the reason; do not narrate a refuted omission as another failure.
 Necessary missing artifacts can support no with the named evidence gap;
 unavailable execution, logs or history alone cannot.
+An unperformed isolated judge run or missing runner configuration is not a
+standalone failure when the saved checks have an identifiable runnable command.
 Before returning no, recheck its decisive allegation against the cited source
 and latest contract. If that allegation is refuted, drop it and reassess; do not
 retain no by searching for a speculative historical omission. Give a short

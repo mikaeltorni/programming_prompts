@@ -17,6 +17,7 @@ from pathlib import Path
 
 from llm_judge.log import log
 from llm_judge.evidence import commit_source_context, python_boundaries
+from llm_judge.testing_evidence import coding_commands_context, testing_source_context
 
 DEFAULT_WORKSPACE = Path("/Projects/app")
 INSPECT_BEFORE_SCORE = (
@@ -457,7 +458,8 @@ def pin_workspace_python(
         files: Paths from :func:`list_workspace_python`.
         judge_name: Skill judge name; workflow and commits receive the plan,
             logging receives Python boundaries, debug/testing receive original logs,
-            testing receives saved runner instructions and numbered current source,
+            testing receives saved runner instructions, numbered current source,
+            assertion syntax and recorded coding-command results,
             and srp receives the same historical source/diffs as commits.
 
     Returns:
@@ -501,6 +503,10 @@ def pin_workspace_python(
         )
     tools_context += "These tools supply evidence, not semantic Feature scores. Inspect actual source; do not infer behavior from commit subjects.\n"
     runner_context = workspace_runner_context(workspace) if judge_name == "testing" else ""
+    testing_context = (
+        testing_source_context(workspace, files) + coding_commands_context()
+        if judge_name == "testing" else ""
+    )
     return (
         template.rstrip()
         + tools_context
@@ -509,6 +515,7 @@ def pin_workspace_python(
         + "\n\n"
         + workspace_python_context(workspace, files, line_numbers=judge_name == "testing")
         + runner_context
+        + testing_context
         + plan_context
         + boundary_context
         + git_context

@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.21 — Executable code creation and behavior changes require saved,
+  v1.0.22 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -13,6 +13,13 @@ without workflow. With workflow selected, perform them inside `Write code`;
 with commits selected, finish the current capability's checks and commit before
 starting the next capability. Follow repository AGENTS.md and CLAUDE.md for
 verification commands and restrictions on creating tests.
+
+An empty creation-task checkout or absent test framework is not a blocker.
+Create the requested program and saved stdlib assertions or unittest checks
+when no framework exists; no framework installation is needed. Finish the
+implementation and applicable checks before ending the turn. Read back the
+delivered files before claiming they were saved or changed; inspection and
+promises to implement do not complete the request.
 
 Before finishing a revision, resolve these concrete checks in the saved suite:
 
@@ -84,6 +91,10 @@ These are coverage checks, not a request for duplicate cases or extra tools.
    A new complete reject-and-observe case does not repair another retained case
    that still skips its observations. Seed populated state for those shared
    loops too; checking only an empty result cannot expose accidental clearing.
+   A reusable rejection helper can take independently expected observations
+   and check them immediately after each rejection. Route retained cases
+   through it too, and extend its observations when new queries appear.
+   Retained inline rejection blocks still need the same review.
 5. **Run and inspect the accumulated suite before committing.** Confirm the
    runner discovers and executes assertions. Follow every inventory entry to
    its actual assertions, including the shared-validation section and the
@@ -150,6 +161,12 @@ a requested domain rule; distinguish it from the request and supplied logs.
 Exercise meaningful success and boundary cases, nontrivial arguments, the
 default/no-argument path when supported, each changed flag, and
 accepted multi-word or quoted inputs.
+Use the public input type declared by the request. A defensive guard against
+objects outside that type does not create a required rejection class.
+For a specified strict numeric bound, check the excluded endpoint and a value
+beyond it in each independent validation path. A negative-value check alone
+does not check a required zero rejection; share these cases only when their
+actual validation owner is shared.
 
 Map failures by operation, validation path and rejection reason. Separate
 argument-count/dispatch shape, token conversion and operation domain rules in
@@ -196,6 +213,9 @@ Document the actual discovery flags and required environment with the runner.
 If stages use an environment selector, the final documented command must enable
 all current checks; prefer that as the default too. A shorter development
 selection must not silently skip delivered behavior in the final invocation.
+When a selector retires a numeric expectation, preserve unaffected assertions
+from that same method in active cases. Skipping the whole method may silently
+lose empty/unknown/argument-shape checks that still apply.
 
 For a reported defect, save its exact public-interface reproducer and the
 independently specified expected result before editing the broken behavior.
