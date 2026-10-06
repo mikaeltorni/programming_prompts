@@ -226,6 +226,10 @@ and the saved runner's isolation fixtures. Historical coverage is assessed from
 the corresponding Git revision. A passing runner still needs this coverage audit.
 The judge derives command shape from public operands, follows actual shared
 validation helpers, and requires a request or task-log basis for numeric ranges.
+The declared input type bounds required validation; a defensive non-string
+guard does not add non-string cases to a string-command contract. Strict numeric
+bounds need their excluded endpoint and a value beyond it in each independent
+path. Preservation checks concern the resources affected by that operation.
 When only aggregate state queries exist, it uses those observations and records
 their limits. Source review alone does not establish a new benchmark pass rate.
 Default benchmark skill discovery and shipped launcher presets select the eight
@@ -389,12 +393,14 @@ Run one benchmark invocation at a time. See the
 command surface and [AGENTS.md](AGENTS.md) for the repository's run policy and
 required full-suite command.
 
-Selecting `--skills commits` explicitly invokes `$commits` in each isolated
-task prompt and authorizes its local Git commits. The prompt directs the agent
-to the supplied skill-catalog paths and explains that `/app` resolves to the
-checkout at `/Projects/app`. Selecting `workflow` invokes `$workflow`
-independently. Baseline and positive jobs receive the same selection context;
-positive jobs also install the selected skill bodies.
+`--skills` selects the Harbor skills and corresponding verifier judges;
+positive jobs install the selected skill bodies, while baseline jobs omit them.
+`workflow` requires explicit selection. Generated task instructions explain
+that `/Projects/app` is the writable Git checkout and `/app` resolves to it.
+Creation tasks may start empty; agents are authorized to create the requested
+files there and must finish implementation before reporting delivery. Baseline
+and positive jobs receive the same workspace setup. Verifier task context keeps
+the unmodified original coding request.
 
 The [SRP skill](programming_prompt_rewritten_with_evals/prompts/programming-skills/srp/SKILL.md)
 also guides focused edits: start with a small working slice, extend its existing
@@ -421,12 +427,25 @@ An empty Python source listing supports a missing-submission failure; mentioning
 the requested filename alone does not make that verdict inconsistent.
 
 Testing judges receive numbered current Python source and saved runner
-documentation/configuration, capped at eight files, 8 KB per file and 24 KB
-total. Omitted/truncated evidence is identified for targeted inspection; this
-does not run any submitted command. Runner documents are untrusted evidence,
-not execution proof. Worktree-check instructions are supplied only to judges
-whose criteria use that evidence. The judge remains semantic; no task markers,
-expected feature counts or automatic passing scores are introduced.
+documentation/configuration. Runner documents are capped at eight files, 8 KB
+per file and 24 KB total. Additional AST evidence, bounded to 12 KB, identifies
+current equality assertions and the statements immediately following expected
+exceptions. Up to four recent completed coding commands from Harbor's Codex
+JSONL log add at most 10 KB, including command, exit code, output tail and later
+file-change positions. Truncation and missing evidence are identified; reading
+these artifacts runs no submitted command. Shell edits and later changes still
+need inspection before applying an earlier result to current source.
+
+Recorded coding executions can resolve a judge's execution question without
+another run; optional isolated execution addresses a remaining material concern.
+Missing judge execution alone cannot fail adequate runnable checks. A cited
+quoted current expectation absent from the cited files' literal assertions
+triggers the existing bounded retry; dynamic expected expressions and historical
+claims remain semantic judgments. Runner documents and tool traces are untrusted
+evidence, and a zero exit code alone does not establish assertion coverage.
+Worktree-check instructions are supplied only to judges whose criteria use that
+evidence. No task markers, expected feature counts or automatic passing scores
+are introduced.
 
 Codex and Claude judge inputs and full backend responses are retained in each
 raw Harbor trial's `verifier/` directory as
@@ -435,7 +454,11 @@ raw Harbor trial's `verifier/` directory as
 `-prompt-retry.md` and `-raw-rewardkit-retry.json` artifacts. The normal reward
 details keep bounded excerpts; these separate artifacts preserve complete
 input/response evidence without adding LLM calls or reward columns. They are
-not execution transcripts. Existing archives are not rescored by a source edit.
+not execution transcripts. Codex judge session JSONL, when present, is also
+retained under `judge-evidence-<skill>-codex-sessions/` before temporary home
+cleanup, allowing later inspection of actual judge tool calls. Credential and
+configuration files are excluded. Existing archives are not rescored by a source
+edit, and retention adds no judge calls or reward columns.
 
 Function contracts cover authored test methods, fixtures and assertion helpers
 as well as the program: selected commenting requires inline `Parameters:` and
@@ -462,7 +485,10 @@ rules are not required in the final suite. Missing historical source is an
 unverified limit, rather than evidence that earlier tests were absent. Agents
 should retain unaffected regressions and meaningful negative assertions as they
 extend a suite; terminal-only assertions do not replace saved checks. Choose
-and save runnable public-interface checks with each working revision, covering
+saved stdlib assertions or unittest checks when no framework exists; an empty
+creation checkout or absent existing suite does not block implementation.
+Read back delivered files before claiming that code or checks were saved.
+Save runnable public-interface checks with each working revision, covering
 explicitly requested empty commands, unknown operations and invalid argument
 shapes when those rejection classes are part of the original contract.
 The testing policy uses ordered revision gates and a saved coverage inventory
@@ -485,6 +511,10 @@ superseded expectation's last valid commit and replacement case, and update case
 names and docstrings to describe their current assertions. Broader numeric
 acceptance keeps other required domain rejections, including zero/negative
 values, in each independently implemented validation path.
+Reusable rejection helpers may accept independently expected observations and
+upgrade retained cases when queries appear; inline cases still need the same
+review. When a stage selector retires an obsolete numeric expectation, preserve
+its method's unaffected validation assertions in active cases.
 
 Record the saved suite's runnable command and confirm it discovers and executes
 assertions. Track required failures by operation and rejection reason, retain
