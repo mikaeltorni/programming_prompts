@@ -60,6 +60,9 @@ def run_eval_agent(
                 effort=effort,
                 timeout=budget,
                 criteria=criteria,
+                evidence_prefix=output.with_name(
+                    "judge-evidence-" + output.stem.removeprefix("reward-")
+                ),
             )
         else:
             raise ValueError(

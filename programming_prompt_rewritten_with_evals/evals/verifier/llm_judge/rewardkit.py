@@ -196,6 +196,27 @@ def load_rewardkit_details(output: Path) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
+def _retain_judge_artifact(source: Path, prefix: Path | None, suffix: str) -> None:
+    """Save exact judge evidence beside rewards without affecting its score.
+
+    Args:
+        source: Temporary prompt or backend details file.
+        prefix: Optional verifier artifact prefix; None disables retention.
+        suffix: Unique artifact suffix, including its extension.
+
+    Returns:
+        None; a storage failure is reported without replacing the verdict.
+    """
+    if prefix is None:
+        return
+    artifact = prefix.with_name(prefix.name + suffix)
+    try:
+        artifact.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, artifact)
+    except OSError as exc:
+        log(f"could not retain judge evidence artifact: {exc}")
+
+
 def run_rewardkit(
     *,
     work: Path,
@@ -289,6 +310,7 @@ def score_with_rewardkit(
     timeout: int,
     criteria: list[dict[str, str]],
     invoke: Callable[..., None] | None = None,
+    evidence_prefix: Path | None = None,
 ) -> tuple[str, list[dict[str, Any]]]:
     """Pin workspace Python, run rewardkit, and retry once if unusable.
 
@@ -302,6 +324,8 @@ def score_with_rewardkit(
         timeout: Wall budget in seconds for both attempts.
         criteria: Name/description pairs from ``judge.toml``.
         invoke: Optional ``run_rewardkit`` replacement for ``--self-test``.
+        evidence_prefix: Optional verifier artifact prefix for the exact pinned
+            prompt and full backend details, separately for an attempt and retry.
 
     Returns:
         Details JSON text and parsed rows from the last attempt used.
@@ -316,6 +340,10 @@ def score_with_rewardkit(
         work = write_pinned_judge_dir(judge_dir, workspace, files, reason)
         tmp_out = work / "reward.json"
         try:
+            _retain_judge_artifact(
+                work / "prompt.md", evidence_prefix,
+                "-prompt-retry.md" if reason else "-prompt.md",
+            )
             runner(
                 work=work,
                 output=tmp_out,
@@ -326,6 +354,10 @@ def score_with_rewardkit(
                 env=overlay or None,
             )
             details = load_rewardkit_details(tmp_out)
+            _retain_judge_artifact(
+                tmp_out.with_name("reward-details.json"), evidence_prefix,
+                "-raw-rewardkit-retry.json" if reason else "-raw-rewardkit.json",
+            )
             rows = rows_from_rewardkit_details(details, criteria)
             raw = json.dumps(details)[:8000]
             return raw, rows
