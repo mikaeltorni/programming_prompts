@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.22 — Executable code creation and behavior changes require saved,
+  v1.0.23 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -20,6 +20,8 @@ when no framework exists; no framework installation is needed. Finish the
 implementation and applicable checks before ending the turn. Read back the
 delivered files before claiming they were saved or changed; inspection and
 promises to implement do not complete the request.
+File discovery returning no matches or status 1 only means that search found
+nothing. Continue the authorized creation task with the known writable checkout.
 
 Before finishing a revision, resolve these concrete checks in the saved suite:
 
@@ -28,6 +30,9 @@ Before finishing a revision, resolve these concrete checks in the saved suite:
   applicable extra-input check. Successful examples alone are incomplete.
 - For each still-required rejection: its fixture, rejected input and strongest
   available public observation immediately afterward. Review older cases too.
+  Check rejected clear/reset forms while meaningful state is still populated,
+  before a successful clear/reset. For resource lookups, identify each actual
+  shared or independent lookup path as well as numeric and operand validation.
 - For each changed rule: every retained expectation using that rule, recomputed
   from that case's actual preceding calls.
 - For the final runner: its exact directory, flags and environment, a nonzero
@@ -167,6 +172,10 @@ For a specified strict numeric bound, check the excluded endpoint and a value
 beyond it in each independent validation path. A negative-value check alone
 does not check a required zero rejection; share these cases only when their
 actual validation owner is shared.
+A shared predicate covers all of its callers for that rejection reason; do not
+mistake different operation names for independent copies of the same guard.
+Text/name operands have no numeric-conversion requirement unless the contract
+requires numeric input for those operands.
 
 Map failures by operation, validation path and rejection reason. Separate
 argument-count/dispatch shape, token conversion and operation domain rules in
