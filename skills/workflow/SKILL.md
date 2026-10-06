@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.0.20 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.1.0 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -75,9 +75,8 @@ Follow this order:
    is not the plan. Do not place
    the plan in the skill directory, an agent home, or the system `/tmp/`. Keep
    all progress in that one file; update it as phases advance, and do not stage
-   or commit it unless the user explicitly asks. The terminal overlay reads
-   the table below and renders `complete` as `[x]`, `in_progress` as `[>]`,
-   `pending` as `[ ]`, and `skipped` as `[-]`:
+   or commit it unless the user explicitly asks. The progress display reads the four phase rows and the concrete microsteps
+   defined below. Use the same statuses in both tables:
 
    ```markdown
    # Workflow
@@ -106,7 +105,7 @@ Follow this order:
    Keep the headings, table columns, four task names, row numbers, and order
    exactly as shown. The `## Tasks` table has exactly four data rows: put
    workflow phase progress and task-specific deliverables in `Details`, not
-   in extra task rows or a second progress checklist. Prefer naming the
+   in extra phase rows. Keep executable microsteps in the section below. Prefer naming the
    deliverables in `Details` and keep numeric Feature counts out of those cells; the
    ledger owns that count. If a Details cell does state one, compare it
    with the ledger before handoff. A selected `commits`
@@ -186,6 +185,53 @@ single-responsibility structure, or testing to the documentation phase. Preserve
 companion's own scope and exact rules instead of restating weaker substitutes
 here.
 
+## Concrete programming microsteps
+
+The initial plan must include a `## Microsteps` table after `## Tasks`, before
+any Feature ledger. Write it before implementation, alongside the four phase
+rows; do not start with a vague "implement the task" placeholder and fill in
+the plan only after the work. Discover enough of the project first to name
+real files, entrypoints, dependencies and checks. When a detail is unknown,
+name the concrete investigation and its expected decision, then refine the
+remaining steps when that investigation finishes.
+
+Use exactly these columns:
+
+```markdown
+## Microsteps
+| Step | Phase | Action | Status | Evidence |
+| --- | --- | --- | --- | --- |
+```
+
+Populate the table with the current task's actual actions, not a copied generic
+checklist or a predetermined number of steps. `Step` is a unique positive
+integer in execution order. `Phase` is exactly one of `Plan`, `Establish
+worktree`, `Write code`, or `Write documentation`. Each `Action` names a small,
+independently finishable change or investigation, its target file or public
+interface, and the intended observable result. Split implementation into
+concrete steps covering the requested capabilities and their necessary
+integration. Include checks, commits, merges and consumer reapplication inside
+their owning phase only when required by selected companions or project rules.
+Microsteps are supporting detail within the four phases, never extra workflow
+phases, and do not change the per-capability-sentence commit boundaries.
+
+Use `pending`, `in_progress`, `complete`, or `skipped` in `Status`. Record a
+specific outcome, check result or commit reference in `Evidence` when finishing
+an action; an intention is not evidence. Keep only the currently executing
+step `in_progress`. Update this same absolute plan at each microstep boundary,
+not only at the end of a phase. Escape literal pipes in cells as `\|`.
+
+Keep future steps visible so the UI can show completed/total progress for the
+active phase, especially code writing. Change a pending step when discovery
+requires it, add newly discovered necessary work, and retain completed steps
+and their evidence. Explain scope changes in the plan; never mark undone work
+complete, remove pending steps to inflate progress, or invent percentages.
+If an optional phase is skipped, mark all its microsteps skipped too. Before a
+phase becomes complete, all its microsteps must be complete or skipped.
+Read back both tables after each update and recover malformed or missing rows
+before advancing. Keep this table in the authoritative launch-project plan;
+never create another progress file in the linked worktree.
+
 ## Handoff gate
 
 Immediately before you stop, reread the original absolute plan file and
@@ -210,7 +256,10 @@ check fails, edit that same file now and do not hand off:
    other entries. Inspect the
    whole `## Feature ledger` section for any leftover `pending` reference;
    fix it in this same file even when the task table says `complete`.
-5. Skipped companions stay `skipped`; do not invent extra rows for them.
+5. Skipped companions stay `skipped`; do not invent extra phase rows for them.
+6. The `## Microsteps` table describes the actual delivered work. Every step
+   in a finished phase is `complete` or `skipped` with concrete evidence; no
+   stale active or pending action remains.
 
 ## No workflow verification phase
 
@@ -220,8 +269,9 @@ handoff. When an independently enabled companion skill requires checks, honor
 that requirement within the phase that skill owns; do not represent it as an
 extra phase supplied by this skill.
 
-This applies to plan entries as well as headings: do not add a separate check,
-test, review, validation, or verification task merely because it is customary.
+This applies to phase rows as well as headings: do not add a separate check,
+test, review, validation, or verification phase merely because it is customary.
+Required checks may be concrete microsteps within their owning phase.
 The four-row plan must not grow another step for that work. Checking code during
 `Write code` is allowed, and its `Details` may mention checks performed or
 planned within that row. Such a mention does not create a separate step, and
