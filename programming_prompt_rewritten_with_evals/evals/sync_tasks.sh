@@ -229,8 +229,10 @@ for prompt_path in prompt_files:
     workspace_context = (
         "Benchmark workspace: /Projects/app is the writable Git project; "
         "/app is a symlink to the same directory. An empty checkout is intentional "
-        "for creation tasks, not a missing repository. Create the requested program "
-        "and any checks required by the selected skills without asking for another "
+        "for creation tasks, not a missing repository. An initial file search "
+        "returning no matches or exit status 1 is expected in an empty project. "
+        "Continue by creating the requested program and any checks required by "
+        "the selected skills without asking for another "
         "repository or permission to create those files. Follow any selected "
         "worktree policy and deliver its changes back to this live project. "
         "Complete the requested implementation before ending the turn; an "

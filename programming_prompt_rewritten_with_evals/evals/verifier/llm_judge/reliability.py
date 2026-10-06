@@ -9,11 +9,13 @@ from __future__ import annotations
 import ast
 import json
 import re
+import subprocess
 import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from llm_judge.evidence import git
 from llm_judge.log import log
 from llm_judge.testing_evidence import MAX_SOURCE_BYTES, equality_expectations
 
@@ -77,6 +79,10 @@ _EXPECTED_LITERAL_CLAIM = re.compile(
     r"\bexpects?\s+"
     r"(?:`(?P<backtick>[^`\n]{1,160})`|[\"“](?P<quoted>[^\"”\n]{1,160})[\"”])",
     re.IGNORECASE,
+)
+_TESTING_CITATION = re.compile(
+    r"(?:^|\n)Citation:\s*(?:(?P<commit>[0-9a-f]{7,40}):)?"
+    r"(?P<path>[^\s|:]+\.py):(?P<line>\d+)\s*\|\s*(?P<source>[^\n]+)"
 )
 
 
@@ -233,6 +239,58 @@ def _contradicted_testing_literal(reasoning: str, python_files: list[Path]) -> b
     return False
 
 
+def _testing_citation_issue(reasoning: str, python_files: list[Path]) -> str | None:
+    """Check the judge's quoted source lines without deciding their semantics.
+
+    A testing no with submitted source must quote its decisive evidence. A quote
+    may describe a missing check's closest existing case or validation owner.
+    Historical saved snapshots use their actual listed path. Git quotes use a
+    named commit's blob; the claim still needs semantic inspection of that revision.
+    """
+    citations = list(_TESTING_CITATION.finditer(reasoning))
+    if not citations:
+        return "missing"
+    if len(citations) > 3:
+        return "excess"
+    root = None
+    for match in citations:
+        name = match.group("path").strip("`")
+        commit = match.group("commit")
+        if commit:
+            try:
+                if root is None:
+                    root = Path(git(python_files[0].parent, "rev-parse", "--show-toplevel").strip())
+                if Path(name).is_absolute() or ".." in Path(name).parts:
+                    return "path"
+                text = git(root, "show", f"{commit}:{name}")
+                if len(text.encode("utf-8")) > MAX_SOURCE_BYTES:
+                    return "unavailable"
+                lines = text.splitlines()
+            except (OSError, ValueError, UnicodeError, subprocess.TimeoutExpired):
+                return "unavailable"
+        else:
+            paths = [path for path in python_files if path.as_posix() == name
+                     or path.as_posix().endswith("/" + name)]
+            if len(paths) != 1:
+                return "path"
+            try:
+                with paths[0].open("rb") as handle:
+                    data = handle.read(MAX_SOURCE_BYTES + 1)
+                if len(data) > MAX_SOURCE_BYTES:
+                    return "unavailable"
+                lines = data.decode("utf-8").splitlines()
+            except (OSError, UnicodeError):
+                return "unavailable"
+        line_number = match.group("line")
+        if len(line_number) > 10:
+            return "mismatch"
+        number = int(line_number)
+        quoted = match.group("source").strip().strip("`")
+        if number < 1 or number > len(lines) or lines[number - 1].strip() != quoted:
+            return "mismatch"
+    return None
+
+
 def unreliable_score_reason(
     rows: list[dict[str, Any]], listed_keys: set[str],
     *, judge_name: str = "", python_files: list[Path] | None = None,
@@ -261,7 +319,8 @@ def unreliable_score_reason(
         ``source_conflict:<criterion>:<function>``, ``plan_conflict:<criterion>``,
         ``request_boundary_conflict:<criterion>``, or ``wrong_path:<criterion>:<file>``.
         Testing may return ``testing_literal_conflict:<criterion>`` for a quoted
-        current expectation absent from the cited file's literal assertions.
+        current expectation absent from the cited file's literal assertions, or
+        ``testing_citation_<issue>:<criterion>`` for missing/mismatched source quotes.
     """
     for row in rows:
         reasoning = re.sub(r"[*`]", "", str(row.get("reasoning") or ""))
@@ -282,6 +341,10 @@ def unreliable_score_reason(
             str(row.get("reasoning") or ""), python_files
         ):
             return f"testing_literal_conflict:{name}"
+        if judge_name == "testing" and python_files:
+            issue = _testing_citation_issue(str(row.get("reasoning") or ""), python_files)
+            if issue:
+                return f"testing_citation_{issue}:{name}"
         if judge_name == "logging" and python_files:
             function = _contradicted_fallthrough(str(row.get("reasoning") or ""), python_files)
             if function:
@@ -329,6 +392,23 @@ def retry_prompt(prompt: str, reason: str) -> str:
             + "commit source from the current runner's imported source. Identify "
             + "a supported material failure or score yes; absence of a literal "
             + "alone is not a semantic failure or an automatic pass.\n"
+        )
+    if reason.startswith("testing_citation_"):
+        return (
+            prompt
+            + "\n\nRETRY: the previous testing no omitted or misstated its exact "
+            + "current-source citation. Reinspect the decisive claim and include "
+            + "a separate reasoning line: Citation: relative/path.py:LINE | "
+            + "the exact source line, without a line-number prefix. Quote the "
+            + "line without wrapping backticks or trailing prose. For a Git "
+            + "historical claim use Citation: HASH:relative/path.py:LINE | "
+            + "the exact line from that commit. Supply one to three citations. "
+            + "Quote the assertion for a wrong-expectation claim, or the actual validation "
+            + "owner and closest retained check for a missing-coverage claim. "
+            + "Use the snapshot actually loaded by the runner. A quote confirms "
+            + "source text only, not failure: reassess shared owners, fixtures "
+            + "and later successful executions. Keep a supported failure, or "
+            + "score yes when no material testing failure remains.\n"
         )
     if reason.startswith("plan_conflict:"):
         return (

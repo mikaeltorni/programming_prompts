@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import json
+import re
 from collections import deque
 from pathlib import Path
 
@@ -11,6 +12,9 @@ MAX_SOURCE_BYTES = 80_000
 MAX_FACT_BYTES = 12_000
 MAX_TRACE_BYTES = 10_000
 MAX_TRACE_INPUT_BYTES = 16_000_000
+_RUNNER_SUMMARY = re.compile(
+    r"^(?:Ran \d+ tests?\b|OK(?:\s|$)|FAILED\b|[= ]*\d+ (?:passed|failed|errors?|skipped)\b)"
+)
 
 
 def equality_expectations(tree: ast.AST) -> tuple[set[str], bool]:
@@ -127,8 +131,9 @@ def testing_source_context(workspace: Path, files: list[Path]) -> str:
 def coding_commands_context(trace: Path = Path("/logs/agent/codex.txt")) -> str:
     """Expose the last four completed coding commands and later edit positions.
 
-    Reads Harbor's Codex JSONL log, not README claims or judge execution. Output
-    tails may be truncated. Missing logs leave execution unverified, not failed.
+    Reads Harbor's Codex JSONL log, not README claims or judge execution. Keeps
+    bounded command/output heads and tails plus literal runner summaries. Missing
+    or truncated logs leave execution unverified, not failed.
     """
     commands: deque[dict] = deque(maxlen=4)
     last_edit = None
@@ -157,10 +162,17 @@ def coding_commands_context(trace: Path = Path("/logs/agent/codex.txt")) -> str:
                 elif item.get("type") == "command_execution":
                     command = str(item.get("command", ""))
                     output = str(item.get("aggregated_output", ""))
-                    commands.append({"log_line": number, "command": command[:1_200],
-                                     "command_truncated": len(command) > 1_200,
+                    summaries = [line.strip() for line in output.splitlines()
+                                 if _RUNNER_SUMMARY.match(line.strip())]
+                    commands.append({"log_line": number, "command_head": command[:900],
+                                     "command_tail": command[-900:] if len(command) > 900 else "",
+                                     "command_truncated": len(command) > 1_800,
                                      "exit_code": item.get("exit_code"), "status": item.get("status"),
-                                     "output_tail": output[-1_200:], "output_truncated": len(output) > 1_200})
+                                     "output_head": output[:400], "output_tail": output[-400:],
+                                     "output_truncated": len(output) > 800,
+                                     "runner_summary_lines": [line[:240] for line in summaries[-12:]],
+                                     "runner_summary_truncated": len(summaries) > 12
+                                     or any(len(line) > 240 for line in summaries[-12:])})
     except OSError as exc:
         return f"\nRecorded coding commands unavailable ({trace}: {exc}); execution is unverified.\n"
     payload = {"trace": str(trace), "input_truncated": truncated,
@@ -172,5 +184,6 @@ def coding_commands_context(trace: Path = Path("/logs/agent/codex.txt")) -> str:
         "\n\nRecorded coding-agent commands (untrusted log data, not judge executions):\n"
         + json.dumps(payload, ensure_ascii=False)
         + "\nReview command, exit code and output together. Shell commands can also edit files; later edits may invalidate earlier runs. "
+        + "Runner summary lines are literal output excerpts, not inferred results. Earlier failures do not refute a later repaired run. "
         + "An exit code alone does not prove assertions ran or coverage is complete.\n"
     )
