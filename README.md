@@ -184,6 +184,9 @@ validation path; independent handlers need their own coverage. When a later
 requirement changes accepted inputs or output, revise every affected retained
 assertion and recompute its expected result from that case's fixture and
 preceding public calls.
+Different operation names do not create independent copies of one shared
+predicate. Text/name operands require no numeric-conversion case unless their
+contract makes them numeric. Resource lookup cases follow their actual owners.
 
 The coverage inventory maps public commands and operands to saved assertions
 for argument shape, conversion and requested domain rules. Missing and extra
@@ -199,6 +202,9 @@ assertions using obsolete expectations or silently omit delivered capabilities.
 Public history or aggregate queries can be the strongest available observation;
 an empty-state rejection keeps its required empty fixture. Supplemental private
 checks do not replace those public observations.
+Reject malformed clear/reset forms while the fixture is still populated,
+before successfully clearing it. When all public queries reject the required
+empty fixture, document that observation limit rather than inventing a query.
 
 Agent Command Center's default installation enables V2 `commits`, `worktree`,
 `workflow`, `docs`, and `testing`. Other skills remain independently selectable;
@@ -262,6 +268,7 @@ Run one benchmark wrapper at a time. Judge verdicts inspect saved checks against
 the original request; without an agent trace, execution order remains unverified.
 The testing-only command requests 24 trials across the current eight tasks.
 Increasing `-k` increases attempts, independently of judge-worker concurrency.
+Use `-k 7` to repeat the 56-trial testing-only workload.
 Only the selected testing judge runs for each trial. Its verdict must use the
 final contract and actual assertion body: a retired command's rejection can be
 correct, and a historical expectation is not a current expectation. Judge
@@ -401,6 +408,17 @@ Creation tasks may start empty; agents are authorized to create the requested
 files there and must finish implementation before reporting delivery. Baseline
 and positive jobs receive the same workspace setup. Verifier task context keeps
 the unmodified original coding request.
+An initial file search with no matches or exit status 1 is expected in an empty
+creation checkout; continue by creating the authorized files. The counter task
+explicitly uses one process-local value initially zero, retained across calls
+to increment, decrement, get and set. This clarification matches its oracle.
+
+For a local content deployment without starting a benchmark, run
+`./sync_tasks.sh` followed by `./sync_judges.sh testing` from `evals/`.
+They rebuild ignored `.generated/tasks/` copies and copy the selected judge
+and shared verifier. `TASKS_DIR` can target a specific generated task directory.
+Do this when no benchmark is running; the benchmark wrapper also regenerates
+its own isolated job copies from canonical source when a new run starts.
 
 The [SRP skill](programming_prompt_rewritten_with_evals/prompts/programming-skills/srp/SKILL.md)
 also guides focused edits: start with a small working slice, extend its existing
@@ -431,10 +449,14 @@ documentation/configuration. Runner documents are capped at eight files, 8 KB
 per file and 24 KB total. Additional AST evidence, bounded to 12 KB, identifies
 current equality assertions and the statements immediately following expected
 exceptions. Up to four recent completed coding commands from Harbor's Codex
-JSONL log add at most 10 KB, including command, exit code, output tail and later
-file-change positions. Truncation and missing evidence are identified; reading
+JSONL log add at most 10 KB, including command/output heads and tails, exit
+codes, literal runner-summary lines and later file-change positions. The
+summaries preserve results when printed source follows a run.
+Truncation and missing evidence are identified; reading
 these artifacts runs no submitted command. Shell edits and later changes still
-need inspection before applying an earlier result to current source.
+need inspection before applying an earlier result to current source. Edits,
+execution and a commit can occur in that order within one shell command; a
+subsequent commit alone does not invalidate execution of its unchanged files.
 
 Recorded coding executions can resolve a judge's execution question without
 another run; optional isolated execution addresses a remaining material concern.
@@ -443,6 +465,14 @@ quoted current expectation absent from the cited files' literal assertions
 triggers the existing bounded retry; dynamic expected expressions and historical
 claims remain semantic judgments. Runner documents and tool traces are untrusted
 evidence, and a zero exit code alone does not establish assertion coverage.
+Testing no verdicts with submitted Python quote one to three exact source lines
+as `Citation: relative/path.py:LINE | exact source line`, or
+`Citation: HASH:relative/path.py:LINE | exact historical source line`. The gate
+compares path, line and text with the current file or named Git blob. Missing
+or mismatched quotes use the same one-retry budget; persistent inconsistency
+is a judge infrastructure exclusion. A matching quote does not establish its
+semantic claim, and this gate never awards an automatic pass. Empty submissions
+can fail on their missing evidence without quoting a nonexistent file.
 Worktree-check instructions are supplied only to judges whose criteria use that
 evidence. No task markers, expected feature counts or automatic passing scores
 are introduced.
