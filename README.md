@@ -192,6 +192,10 @@ The coverage inventory maps public commands and operands to saved assertions
 for argument shape, conversion and requested domain rules. Missing and extra
 operands are separate rejection classes. Current-source runners retain only
 current-contract expectations; historical stage checks require matching source.
+Add executable future-capability cases only at their implementing revision.
+When a new command replaces its former unknown-command rejection, update that
+current-suite assertion and continue the remaining stages; a historical runner
+is not needed solely to preserve the retired expectation.
 Review every retained rejection loop when a query becomes available, using
 populated fixtures and immediate public observations when preservation is
 required. New complete cases do not repair incomplete older cases. Generated
@@ -497,6 +501,9 @@ entry trace and returned-value trace, including `None` on normal fallthrough.
 The entry print precedes parsing and `global`/`nonlocal` declarations; a
 parameterless function may print a literal entry message. A final `print(None)`
 traces an implicit `None` return without requiring an explicit `return None`.
+After editing a test's assertions, read its actual final statement and preserve
+or restore `print(None)` on every normal fallthrough path; passing assertions
+alone do not verify logging.
 Logging verdicts must agree with the current source and function-boundary report.
 Testing alone does not enable these companions. Write complete docstrings when
 creating each function, including the initial regression test, and review test
@@ -507,6 +514,9 @@ state changes and computed results in helpers. The public dispatcher receives
 an operation and its arguments from one shared parsing call before branching;
 parsers may compose helpers internally. Extracting only formatting, token
 conversion or history recording leaves the operation mixed.
+Command-shape validation has one owner: a dispatcher does not repeat guards
+already enforced by its shared parser. Moving a guard removes its former copy
+in the same edit.
 
 The testing judge accepts meaningful saved assertion scripts or framework tests
 by source inspection when execution is unavailable, with that limit disclosed.
