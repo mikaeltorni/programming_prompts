@@ -185,6 +185,15 @@ requirement changes accepted inputs or output, revise every affected retained
 assertion and recompute its expected result from that case's fixture and
 preceding public calls.
 
+The coverage inventory maps public commands and operands to saved assertions
+for argument shape, conversion and requested domain rules. Missing and extra
+operands are separate rejection classes. Current-source runners retain only
+current-contract expectations; historical stage checks require matching source.
+Review every retained rejection loop when a query becomes available, using
+populated fixtures and immediate public observations when preservation is
+required. New complete cases do not repair incomplete older cases. Generated
+interpreter caches can stay unstaged; incidental cleanup never blocks delivery.
+
 Agent Command Center's default installation enables V2 `commits`, `worktree`,
 `workflow`, `docs`, and `testing`. Other skills remain independently selectable;
 manual selections are preserved. Apply this baseline across every harness with:
@@ -209,9 +218,26 @@ The judge resolves the current contract, traces assertions in execution order,
 and checks validation coverage, immediate public observations after rejection,
 and the saved runner's isolation fixtures. Historical coverage is assessed from
 the corresponding Git revision. A passing runner still needs this coverage audit.
+The judge derives command shape from public operands, follows actual shared
+validation helpers, and requires a request or task-log basis for numeric ranges.
+When only aggregate state queries exist, it uses those observations and records
+their limits. Source review alone does not establish a new benchmark pass rate.
 Default benchmark skill discovery and shipped launcher presets select the eight
 companions (`commenting`, `commits`, `debug`, `docs`, `logging`, `srp`,
 `testing`, `worktree`). `workflow` stays explicit `--skills workflow`.
+To inject and score only testing on Codex instance 1, use the public benchmark
+entrypoint below. Omitted `--tasks` selects all coding tasks, `-k 3` requests
+three attempts per task, and omitted concurrency uses automatic capacity. The
+runner copies the authoritative testing skill and judge into the new job.
+
+```bash
+cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
+```
+
+```bash
+ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills testing -k 3
+```
+
 To evaluate the full suite including workflow:
 
 ```bash
