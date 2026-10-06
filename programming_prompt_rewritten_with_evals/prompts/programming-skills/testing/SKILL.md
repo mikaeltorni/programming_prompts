@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.0.23 — Executable code creation and behavior changes require saved,
+  v1.0.24 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
@@ -66,10 +66,18 @@ These are coverage checks, not a request for duplicate cases or extra tools.
    conversions or argument checks in separate handlers cannot. Resolve every
    applicable gap before committing, including commands with operands.
 3. **Write or extend the saved assertions.** Preserve every unaffected case.
+   Save executable cases for the current capability and retained behavior;
+   later capabilities may be planned in the inventory, but their executable
+   expectations wait for their own revision.
    Before replacing a method or file, transfer its still-required assertions;
    never reduce the suite to the latest examples. Retire an expectation only
    when the request explicitly replaces it. Do not assert both an old rule and
    its replacement in the final suite; history retains the earlier checks.
+   When a command becomes supported, replace its earlier unknown-command
+   rejection with the required success in the current-module suite. A failure
+   caused by that expected stage transition needs an assertion repair; continue
+   the remaining implementation rather than ending the turn or building a new
+   historical runner solely to preserve the superseded expectation.
    Record the superseded rule's last valid commit and its replacement case in
    the inventory. Rename or revise affected case names and docstrings to match
    their current assertions; a historical stage label does not preserve an

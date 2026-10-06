@@ -1,7 +1,7 @@
 ---
 name: logging
 description: >-
-  v1.0.8 — Every authored function, test and fixture prints parameters first
+  v1.0.9 — Every authored function, test and fixture prints parameters first
   after its docstring, before helper calls, validation or declarations, and
   prints each normal return value. Use plain print(), with no logging modules or log files.
 ---
@@ -108,8 +108,11 @@ and normal exits. An assertion-only test method still receives `self` and
 normally returns `None`: print `self=` first and `None` after its final assertion.
 Calling a traced application function does not trace the test method itself.
 Redirecting stdout inside a test does not waive its first-statement entry print;
-place that print before opening the redirect. Review every changed Python file,
-including tests, before each commit.
+place that print before opening the redirect. After editing a test's assertions,
+read its actual final statement: preserve or restore `print(None)` after the
+last assertion on each normal fallthrough path. A passing test run does not
+verify this trace. Review every changed Python file, including tests, before
+each commit.
 
 A new test loader or fixture helper is an authored function even when copied
 from an ordinary untraced testing template. Add its own parameter print before
