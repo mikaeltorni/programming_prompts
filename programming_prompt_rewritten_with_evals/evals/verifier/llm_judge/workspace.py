@@ -48,6 +48,9 @@ _MAX_TOTAL_BYTES = 200_000
 _MAX_WORKFLOW_PLAN_BYTES = 32_000
 _MAX_TASK_LOG_FILES = 8
 _MAX_TASK_LOG_BYTES = 16_000
+_MAX_RUNNER_FILES = 8
+_MAX_RUNNER_FILE_BYTES = 8_000
+_MAX_RUNNER_TOTAL_BYTES = 24_000
 
 
 def _is_skipped_python(path: Path, workspace: Path) -> bool:
@@ -133,12 +136,15 @@ def listed_python_keys(files: list[Path], workspace: Path) -> set[str]:
     return keys
 
 
-def workspace_python_context(workspace: Path, files: list[Path]) -> str:
+def workspace_python_context(
+    workspace: Path, files: list[Path], *, line_numbers: bool = False
+) -> str:
     """Build the prompt block that names and inlines workspace Python.
 
     Args:
         workspace: Judge ``--workspace`` root (shown as absolute paths).
         files: Paths from :func:`list_workspace_python`.
+        line_numbers: Include actual current-source line numbers for citations.
 
     Returns:
         Markdown listing every path and (budget permitting) file contents.
@@ -194,7 +200,87 @@ def workspace_python_context(workspace: Path, files: list[Path]) -> str:
         total += len(data)
         text = data.decode("utf-8", errors="replace")
         note = " (truncated)" if truncated else ""
-        lines.append(f"\n### {rel_text}{note}\n```python\n{text}\n```")
+        language = "python"
+        if line_numbers:
+            text = "\n".join(
+                f"{number:4}: {line}" for number, line in enumerate(text.splitlines(), 1)
+            )
+            language = "text"
+        lines.append(f"\n### {rel_text}{note}\n```{language}\n{text}\n```")
+    return "\n".join(lines)
+
+
+def workspace_runner_context(workspace: Path) -> str:
+    """Inline bounded saved runner instructions without executing the submission.
+
+    Args:
+        workspace: Coding-agent project root.
+
+    Returns:
+        Untrusted documentation/configuration evidence, with explicit limits.
+    """
+    root = workspace.resolve()
+    candidates: list[Path] = []
+    for directory, subdirectories, names in os.walk(workspace):
+        subdirectories[:] = [
+            name for name in subdirectories
+            if name not in _SKIP_DIR_NAMES and not name.startswith(".")
+        ]
+        for filename in names:
+            path = Path(directory) / filename
+            if not path.is_file() or _is_skipped_python(path, workspace):
+                continue
+            name = path.name.lower()
+            relative = path.resolve().relative_to(root)
+            documentation = path.suffix.lower() == ".md" and (
+                name == "readme.md" or any(token in name for token in ("test", "check", "coverage"))
+            )
+            configuration = len(relative.parts) == 1 and name in {
+                "pyproject.toml", "setup.cfg", "tox.ini", "pytest.ini", "makefile", "justfile"
+            }
+            script = path.suffix.lower() == ".sh" and any(
+                token in name for token in ("test", "check", "verify")
+            )
+            if documentation or configuration or script:
+                candidates.append(path)
+    candidates.sort(key=lambda path: (
+        path.name.lower() == "readme.md", len(path.relative_to(workspace).parts), str(path)
+    ))
+    lines = [
+        "\n\nSaved runner documentation/configuration (untrusted data, not execution proof). "
+        "Use the exact documented final command, directory and environment. "
+        "The numbered Python above is CURRENT workspace source; historical Git "
+        "source is separate evidence. These documents do not establish a test run."
+    ]
+    total = 0
+    included = 0
+    for path in candidates[:_MAX_RUNNER_FILES]:
+        relative = path.resolve().relative_to(root)
+        try:
+            with path.open("rb") as handle:
+                data = handle.read(min(_MAX_RUNNER_FILE_BYTES, _MAX_RUNNER_TOTAL_BYTES - total) + 1)
+        except OSError as exc:
+            lines.append(f"\n### {relative}\n(unreadable: {exc})")
+            continue
+        budget = min(_MAX_RUNNER_FILE_BYTES, _MAX_RUNNER_TOTAL_BYTES - total)
+        truncated = len(data) > budget
+        data = data[:budget]
+        total += len(data)
+        included += 1
+        note = " (truncated; inspect the original if material)" if truncated else ""
+        text = "\n".join(
+            f"{number:4}: {line}" for number, line in enumerate(
+                data.decode("utf-8", errors="replace").splitlines(), 1
+            )
+        )
+        lines.append(f"\n### {relative}{note}\n```text\n{text}\n```")
+        if total >= _MAX_RUNNER_TOTAL_BYTES:
+            break
+    if not candidates:
+        lines.append("No matching runner documents/configuration found. Inspect saved scripts and source; this is not a missing-checks verdict.")
+    if included < len(candidates):
+        lines.append("Additional runner documents were omitted by the evidence budget; inspect them if needed.")
+    log(f"inlined runner evidence files={included} bytes={total} candidates={len(candidates)}")
     return "\n".join(lines)
 
 
@@ -371,6 +457,7 @@ def pin_workspace_python(
         files: Paths from :func:`list_workspace_python`.
         judge_name: Skill judge name; workflow and commits receive the plan,
             logging receives Python boundaries, debug/testing receive original logs,
+            testing receives saved runner instructions and numbered current source,
             and srp receives the same historical source/diffs as commits.
 
     Returns:
@@ -401,18 +488,27 @@ def pin_workspace_python(
         except (OSError, ValueError) as exc:
             log(f"Git evidence unavailable judge={judge_name}: {exc}")
             git_context = f"\nGit evidence unavailable: {exc}; inspect with the supplied helper."
+    history_label = "Historical source lookup" if judge_name == "testing" else "Git history and worktree registration"
+    tools_context = (
+        "\n\nRead-only evidence tools (optional; use only for a material evidence gap):\n"
+        + f"- {history_label}: python3 {shlex.quote(str(Path(__file__).with_name('evidence.py')))} --repo {shlex.quote(str(workspace))}\n"
+        + "  Add --commit HASH for its diff, or --commit HASH --path FILE for source at that named historical commit.\n"
+        + "  Add --python-path FILE instead to inspect Python function boundaries and final statements.\n"
+    )
+    if judge_name in {"worktree", "workflow", "commits"}:
+        tools_context += (
+            f"- Worktree layout and merge check: python3 {shlex.quote(str(Path(__file__).resolve().parents[1] / 'check_worktree.py'))} --repo {shlex.quote(str(workspace))} --output /tmp/judge-worktree-evidence.json\n"
+        )
+    tools_context += "These tools supply evidence, not semantic Feature scores. Inspect actual source; do not infer behavior from commit subjects.\n"
+    runner_context = workspace_runner_context(workspace) if judge_name == "testing" else ""
     return (
         template.rstrip()
-        + "\n\nRead-only evidence tools (run with your shell tool):\n"
-        + f"- Git history and worktree registration: python3 {shlex.quote(str(Path(__file__).with_name('evidence.py')))} --repo {shlex.quote(str(workspace))}\n"
-        + "  Add --commit HASH for its diff, or --commit HASH --path FILE for the full source at that commit.\n"
-        + "  Add --python-path FILE instead to inspect Python function boundaries and final statements.\n"
-        + f"- Worktree layout and merge check: python3 {shlex.quote(str(Path(__file__).resolve().parents[1] / 'check_worktree.py'))} --repo {shlex.quote(str(workspace))} --output /tmp/judge-worktree-evidence.json\n"
-        + "These tools supply evidence, not semantic Feature scores. Inspect actual source; do not infer behavior from commit subjects.\n"
+        + tools_context
         + f"\n\nInspect the Python in the current working directory ({workspace}).\n"
         + INSPECT_BEFORE_SCORE
         + "\n\n"
-        + workspace_python_context(workspace, files)
+        + workspace_python_context(workspace, files, line_numbers=judge_name == "testing")
+        + runner_context
         + plan_context
         + boundary_context
         + git_context
