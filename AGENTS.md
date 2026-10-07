@@ -35,6 +35,37 @@ reported in the run output when a stored audit would commit private detail —
 and it must define an improvement loop with an explicit stop condition. Prompts that need a
 conversation before they can act belong in `skills/`, not here.
 
+## Evidence-gated programming-skill activation
+
+The injectable V2 programming policies live under
+`programming_prompt_rewritten_with_evals/prompts/programming-skills/`.
+Agent Command Center owns their native harness instructions and fresh-install
+selection. A skill file existing in the source tree does not mean that it is
+active in a harness.
+
+Only add a real policy to the shared default after a positive archived
+benchmark result with no rate-limit or infrastructure failures. The currently
+verified default set is
+`v2:commits,v2:worktree,v2:workflow,v2:docs,v2:testing,v2:srp,v2:commenting,v2:logging,v2:debug`.
+The positive run `2026-10-06_232302_1042609` scored 55/56 with zero
+rate-limited or infrastructure trials across `srp`, `commenting`, `logging`,
+`worktree`, `commits`, `debug`, `docs`, and `testing`; the latest aggregate
+policy scores were 56/56 except `logging` at 55/56. Workflow also scored 27/27
+in positive run `2026-09-29_123912_3648118`, with no infrastructure failures.
+
+`debug_logs` is available for explicit selection, but the archived results do
+not record a numeric positive score for it; keep it out of runtime defaults
+until the focused `greeter` positive evaluation is scored. `logging-vague` is a
+benchmark control and must never be installed as a runtime default.
+
+When a policy earns its first positive result, update both
+`ACC_PP_DEFAULT_SKILLS` defaults and the matching saved installer assertions
+in the sibling `agent_command_center` repository, then record the policy here.
+Apply new defaults to the current harnesses with `acc pp enable -v2 --skill
+<names>` and verify every harness with `acc pp status --skill <v2:names>
+--check`. Keep benchmark skill lists aligned with this verified set; explicitly
+include `workflow` because benchmark default discovery treats it as opt-in.
+
 ## Harness smoke tests when the agent verifies evals code
 
 When an agent changes Harbor wrappers, verifier code, `run_benchmark.sh`,
