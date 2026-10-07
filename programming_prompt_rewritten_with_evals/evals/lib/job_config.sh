@@ -19,7 +19,6 @@ write_job_config() {
   # to disable. Do not retry usage-limit / timeout / reward-file errors.
   # Parameters: $1 - harness; $2 - YAML destination; $3 - skills YAML; $4 - task root.
   # Returns: None; writes the job configuration.
-  printf 'harness=%s config_file=%s skills_block=%s tasks_root=%s\n' "$1" "$2" "$3" "$4" >&2
   local harness="$1"
   local config_file="$2"
   local skills_block="$3"
@@ -51,5 +50,4 @@ agents:
 tasks:
 $(yaml_task_entries "$tasks_root")
 EOF
-  printf 'None\n' >&2
 }
