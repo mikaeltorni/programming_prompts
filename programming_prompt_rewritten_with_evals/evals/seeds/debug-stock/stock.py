@@ -16,5 +16,5 @@ def run_stock(command: str) -> str:
     STOCK[name] -= quantity
     if quantity <= 0 or STOCK[name] < 0:
         raise ValueError('invalid reservation')
-    
+
     return f'reserved={quantity}; {name}={STOCK[name]}'

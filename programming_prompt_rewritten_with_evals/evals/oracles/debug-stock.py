@@ -13,7 +13,7 @@ def run_stock(command: str) -> str:
     if name not in STOCK:
         raise ValueError('unknown item')
     quantity = int(parts[2])
-    
+
     if quantity <= 0 or quantity > STOCK[name]:
         raise ValueError('invalid reservation')
     STOCK[name] -= quantity
