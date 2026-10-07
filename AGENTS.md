@@ -444,7 +444,8 @@ once a real run produced a non-zero scored trial and its archive was read.
 ## Skill versions
 
 Every `SKILL.md` in this repository declares a `vMAJOR.MINOR.PATCH` version as
-the start of its YAML `description` (the `vX.Y.Z — …` form). Skill versions
-must be bumped whenever those skills are updated, so later edits cannot leave
-versions stale. Keep an already-versioned skill at its current number unless
-its text also changes.
+the start of its YAML `description` (the `vX.Y.Z — …` form). Whenever a skill's
+text is changed, that `vMAJOR.MINOR.PATCH` value must be strictly increased —
+never left the same, and never decreased or reset to a lower number — so later
+edits cannot leave versions stale. Keep an already-versioned skill at its
+current number unless its text also changes.

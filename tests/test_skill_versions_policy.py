@@ -3,7 +3,7 @@
 Skill pickers and installed copies read the YAML ``description`` first. The
 repository keeps that prefix in ``vMAJOR.MINOR.PATCH —`` form (folded ``>-`` or
 a single line). AGENTS.md owns the keep-updating rule so a later skill edit
-cannot leave the number stale.
+cannot leave the number stale, leave it unchanged, or decrease it.
 """
 
 from __future__ import annotations
@@ -73,7 +73,13 @@ SKILL_IDS = [str(path.relative_to(REPO_ROOT)) for path in SKILL_PATHS]
 
 
 def test_skill_md_glob_lists_every_owned_tree():
-    """The inventory must cover the four skill trees and list every path."""
+    """The inventory must cover the four skill trees and list every path.
+
+    Parameters: none.
+
+    Returns: None.
+    """
+    print("parameters=none")
     assert SKILL_IDS, "expected at least one SKILL.md"
     joined = "\n".join(SKILL_IDS)
     assert any(item.startswith("skills/") for item in SKILL_IDS), joined
@@ -83,25 +89,53 @@ def test_skill_md_glob_lists_every_owned_tree():
         item.startswith("programming_prompt_rewritten_with_evals/prompts/programming-skills/")
         for item in SKILL_IDS
     ), joined
+    print(None)
 
 
 @pytest.mark.parametrize("skill_path", SKILL_PATHS, ids=SKILL_IDS)
 def test_every_skill_description_starts_with_semver(skill_path: Path):
-    """Each skill description must open with ``vDIGITS.DIGITS.DIGITS —``."""
+    """Each skill description must open with ``vDIGITS.DIGITS.DIGITS —``.
+
+    Parameters: skill_path - a repository ``SKILL.md`` file.
+
+    Returns: None.
+    """
+    print(f"skill_path={skill_path}")
     description = skill_description(skill_path)
     assert VERSION_PREFIX.match(description), (
         f"{skill_path.relative_to(REPO_ROOT)}: description must start with "
         f"vMAJOR.MINOR.PATCH — ; got {description!r}"
     )
+    print(None)
 
 
 def test_agents_md_requires_bumping_skill_versions_when_skills_change():
-    """The keep-updating rule must live in the real AGENTS.md, not a restated copy."""
+    """Require the real AGENTS.md Skill versions section to mandate a strict increase.
+
+    Parameters: none.
+
+    Returns: None.
+    """
+    print("parameters=none")
+    assert AGENTS_PATH.is_file()
+    assert AGENTS_PATH.name == "AGENTS.md"
+    assert AGENTS_PATH.parent.resolve() == REPO_ROOT.resolve()
     text = AGENTS_PATH.read_text(encoding="utf-8")
-    content = " ".join(text.split())
+    heading = "## Skill versions"
+    assert heading in text
+    section = text.split(heading, 1)[1]
+    next_heading = re.search(r"\n## ", section)
+    if next_heading:
+        section = section[: next_heading.start()]
+    content = " ".join(section.split())
     assert "vMAJOR.MINOR.PATCH" in content
-    assert (
-        "Skill versions must be bumped whenever those skills are updated" in content
-    )
+    assert "YAML `description`" in section or "YAML ``description``" in section
+    assert "strictly increased" in content
+    assert "never left the same" in content
+    assert "never decreased" in content
     assert "cannot leave versions stale" in content
-    assert "YAML `description`" in text or "YAML ``description``" in text
+    assert (
+        "Keep an already-versioned skill at its current number unless "
+        "its text also changes."
+    ) in content
+    print(None)
