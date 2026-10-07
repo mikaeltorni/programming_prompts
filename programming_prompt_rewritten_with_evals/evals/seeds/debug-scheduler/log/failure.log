@@ -1,0 +1,58 @@
+Original failure capture; public calls in each scenario share one fresh process.
+
+Scenario: overlap is checked on instants rather than local wall times
+call: run_schedule(["book red a 2026-01-01T10:00:00Z 2026-01-01T11:00:00Z"])
+got: {"result": {"end": "2026-01-01T11:00:00Z", "id": "a", "start": "2026-01-01T10:00:00Z"}}
+want: {"result": {"end": "2026-01-01T11:00:00Z", "id": "a", "start": "2026-01-01T10:00:00Z"}}
+call: run_schedule(["book red other 2026-01-01T12:30:00+02:00 2026-01-01T13:30:00+02:00"])
+got: {"result": {"end": "2026-01-01T13:30:00Z", "id": "other", "start": "2026-01-01T12:30:00Z"}}
+want: {"raises": "ValueError"}
+call: run_schedule(["list red"])
+got: {"result": [{"end": "2026-01-01T11:00:00Z", "id": "a", "start": "2026-01-01T10:00:00Z"}, {"end": "2026-01-01T13:30:00Z", "id": "other", "start": "2026-01-01T12:30:00Z"}]}
+want: {"result": [{"end": "2026-01-01T11:00:00Z", "id": "a", "start": "2026-01-01T10:00:00Z"}]}
+call: run_schedule(["list blue"])
+got: {"result": []}
+want: {"result": []}
+
+Scenario: half-open endpoints allow adjacent bookings
+call: run_schedule(["book red a 2026-01-01T10:00:00Z 2026-01-01T11:00:00Z"])
+got: {"result": {"end": "2026-01-01T11:00:00Z", "id": "a", "start": "2026-01-01T10:00:00Z"}}
+want: {"result": {"end": "2026-01-01T11:00:00Z", "id": "a", "start": "2026-01-01T10:00:00Z"}}
+call: run_schedule(["book red next 2026-01-01T11:00:00Z 2026-01-01T12:00:00Z"])
+got: {"raises": "ValueError"}
+want: {"result": {"end": "2026-01-01T12:00:00Z", "id": "next", "start": "2026-01-01T11:00:00Z"}}
+call: run_schedule(["list red"])
+got: {"result": [{"end": "2026-01-01T11:00:00Z", "id": "a", "start": "2026-01-01T10:00:00Z"}]}
+want: {"result": [{"end": "2026-01-01T11:00:00Z", "id": "a", "start": "2026-01-01T10:00:00Z"}, {"end": "2026-01-01T12:00:00Z", "id": "next", "start": "2026-01-01T11:00:00Z"}]}
+call: run_schedule(["list blue"])
+got: {"result": []}
+want: {"result": []}
+
+Scenario: failed move must retain the old booking
+call: run_schedule(["book red a 2026-01-01T10:00:00Z 2026-01-01T11:00:00Z"])
+got: {"result": {"end": "2026-01-01T11:00:00Z", "id": "a", "start": "2026-01-01T10:00:00Z"}}
+want: {"result": {"end": "2026-01-01T11:00:00Z", "id": "a", "start": "2026-01-01T10:00:00Z"}}
+call: run_schedule(["book red b 2026-01-01T12:00:00Z 2026-01-01T13:00:00Z"])
+got: {"result": {"end": "2026-01-01T13:00:00Z", "id": "b", "start": "2026-01-01T12:00:00Z"}}
+want: {"result": {"end": "2026-01-01T13:00:00Z", "id": "b", "start": "2026-01-01T12:00:00Z"}}
+call: run_schedule(["move red a 2026-01-01T10:00:00Z 2026-01-01T11:00:00Z"])
+got: {"result": {"end": "2026-01-01T11:00:00Z", "id": "a", "start": "2026-01-01T10:00:00Z"}}
+want: {"result": {"end": "2026-01-01T11:00:00Z", "id": "a", "start": "2026-01-01T10:00:00Z"}}
+call: run_schedule(["move red a 2026-01-01T12:30:00Z 2026-01-01T13:30:00Z"])
+got: {"raises": "ValueError"}
+want: {"raises": "ValueError"}
+call: run_schedule(["list red"])
+got: {"result": [{"end": "2026-01-01T13:00:00Z", "id": "b", "start": "2026-01-01T12:00:00Z"}]}
+want: {"result": [{"end": "2026-01-01T11:00:00Z", "id": "a", "start": "2026-01-01T10:00:00Z"}, {"end": "2026-01-01T13:00:00Z", "id": "b", "start": "2026-01-01T12:00:00Z"}]}
+call: run_schedule(["list blue"])
+got: {"result": []}
+want: {"result": []}
+call: run_schedule(["move red a 2026-01-01T09:30:00Z 2026-01-01T10:30:00Z"])
+got: {"raises": "ValueError"}
+want: {"result": {"end": "2026-01-01T10:30:00Z", "id": "a", "start": "2026-01-01T09:30:00Z"}}
+call: run_schedule(["list red"])
+got: {"result": [{"end": "2026-01-01T13:00:00Z", "id": "b", "start": "2026-01-01T12:00:00Z"}]}
+want: {"result": [{"end": "2026-01-01T10:30:00Z", "id": "a", "start": "2026-01-01T09:30:00Z"}, {"end": "2026-01-01T13:00:00Z", "id": "b", "start": "2026-01-01T12:00:00Z"}]}
+call: run_schedule(["list blue"])
+got: {"result": []}
+want: {"result": []}

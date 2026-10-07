@@ -1,0 +1,1962 @@
+{
+  "artifact": "orders.py",
+  "entrypoint": "run_orders",
+  "sequences": [
+    {
+      "name": "late batch shortage rolls back all items and request identity",
+      "steps": [
+        {
+          "args": [
+            "reserve acme base bolt 1 nut 1"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme bad bolt 2 nut 9"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "order acme bad"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme bad bolt 2 nut 1"
+          ],
+          "expected": {
+            "order": "bad",
+            "status": "active",
+            "items": {
+              "bolt": 2,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 5,
+            "nut": 3
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base",
+            "reserve:bad"
+          ]
+        }
+      ],
+      "reported": true
+    },
+    {
+      "name": "same request identifier is independent across tenants",
+      "steps": [
+        {
+          "args": [
+            "reserve acme same bolt 2"
+          ],
+          "expected": {
+            "order": "same",
+            "status": "active",
+            "items": {
+              "bolt": 2
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve beta same nut 3"
+          ],
+          "expected": {
+            "order": "same",
+            "status": "active",
+            "items": {
+              "nut": 3
+            }
+          }
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 5
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 6
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:same"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": [
+            "reserve:same"
+          ]
+        },
+        {
+          "args": [
+            "order acme same"
+          ],
+          "expected": {
+            "order": "same",
+            "status": "active",
+            "items": {
+              "bolt": 2
+            }
+          }
+        },
+        {
+          "args": [
+            "order beta same"
+          ],
+          "expected": {
+            "order": "same",
+            "status": "active",
+            "items": {
+              "nut": 3
+            }
+          }
+        },
+        {
+          "args": [
+            "cancel acme same"
+          ],
+          "expected": {
+            "order": "same",
+            "status": "cancelled",
+            "items": {
+              "bolt": 2
+            }
+          }
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 8,
+            "nut": 5
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 6
+          }
+        },
+        {
+          "args": [
+            "order beta same"
+          ],
+          "expected": {
+            "order": "same",
+            "status": "active",
+            "items": {
+              "nut": 3
+            }
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:same",
+            "cancel:same"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": [
+            "reserve:same"
+          ]
+        }
+      ],
+      "reported": true
+    },
+    {
+      "name": "cancellation retry restores stock and records history once",
+      "steps": [
+        {
+          "args": [
+            "reserve acme x bolt 3 nut 2"
+          ],
+          "expected": {
+            "order": "x",
+            "status": "active",
+            "items": {
+              "bolt": 3,
+              "nut": 2
+            }
+          }
+        },
+        {
+          "args": [
+            "cancel acme x"
+          ],
+          "expected": {
+            "order": "x",
+            "status": "cancelled",
+            "items": {
+              "bolt": 3,
+              "nut": 2
+            }
+          }
+        },
+        {
+          "args": [
+            "cancel acme x"
+          ],
+          "expected": {
+            "order": "x",
+            "status": "cancelled",
+            "items": {
+              "bolt": 3,
+              "nut": 2
+            }
+          }
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 8,
+            "nut": 5
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:x",
+            "cancel:x"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme x"
+          ],
+          "expected": {
+            "order": "x",
+            "status": "cancelled",
+            "items": {
+              "bolt": 3,
+              "nut": 2
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme x bolt 3 nut 2"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 8,
+            "nut": 5
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:x",
+            "cancel:x"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme x"
+          ],
+          "expected": {
+            "order": "x",
+            "status": "cancelled",
+            "items": {
+              "bolt": 3,
+              "nut": 2
+            }
+          }
+        }
+      ],
+      "reported": true
+    },
+    {
+      "name": "duplicate lines normalize before retry and exact depletion",
+      "steps": [
+        {
+          "args": [
+            "reserve acme mix bolt 2 bolt 1 nut 2"
+          ],
+          "expected": {
+            "order": "mix",
+            "status": "active",
+            "items": {
+              "bolt": 3,
+              "nut": 2
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme mix nut 2 bolt 3"
+          ],
+          "expected": {
+            "order": "mix",
+            "status": "active",
+            "items": {
+              "bolt": 3,
+              "nut": 2
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme mix bolt 2 nut 2"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 5,
+            "nut": 3
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:mix"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme mix"
+          ],
+          "expected": {
+            "order": "mix",
+            "status": "active",
+            "items": {
+              "bolt": 3,
+              "nut": 2
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme rest bolt 5 nut 3"
+          ],
+          "expected": {
+            "order": "rest",
+            "status": "active",
+            "items": {
+              "bolt": 5,
+              "nut": 3
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme mix nut 2 bolt 3"
+          ],
+          "expected": {
+            "order": "mix",
+            "status": "active",
+            "items": {
+              "bolt": 3,
+              "nut": 2
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme excess bolt 1"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 0,
+            "nut": 0
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:mix",
+            "reserve:rest"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme mix"
+          ],
+          "expected": {
+            "order": "mix",
+            "status": "active",
+            "items": {
+              "bolt": 3,
+              "nut": 2
+            }
+          }
+        },
+        {
+          "args": [
+            "order acme rest"
+          ],
+          "expected": {
+            "order": "rest",
+            "status": "active",
+            "items": {
+              "bolt": 5,
+              "nut": 3
+            }
+          }
+        },
+        {
+          "args": [
+            "cancel acme rest"
+          ],
+          "expected": {
+            "order": "rest",
+            "status": "cancelled",
+            "items": {
+              "bolt": 5,
+              "nut": 3
+            }
+          }
+        },
+        {
+          "args": [
+            "cancel acme mix"
+          ],
+          "expected": {
+            "order": "mix",
+            "status": "cancelled",
+            "items": {
+              "bolt": 3,
+              "nut": 2
+            }
+          }
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 8,
+            "nut": 5
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:mix",
+            "reserve:rest",
+            "cancel:rest",
+            "cancel:mix"
+          ]
+        }
+      ],
+      "reported": false
+    },
+    {
+      "name": "dispatch conversion domain and lookup rejections preserve all public state",
+      "steps": [
+        {
+          "args": [
+            "reserve acme base bolt 1 nut 1"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            ""
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "wat acme"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "stock"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "stock acme extra"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "history"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "history acme extra"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "order acme"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "order acme base extra"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "cancel acme"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "cancel acme base extra"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme missing"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme missing bolt"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme missing bolt 1 nut"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme missing bolt bad"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme missing nut 0"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme missing nut -2"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme missing bolt 1 missing 2"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve acme missing nut 5"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "reserve ghost missing bolt 1"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "stock ghost"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "history ghost"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "order ghost base"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "cancel ghost base"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "order acme missing"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        },
+        {
+          "args": [
+            "cancel acme missing"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "stock acme"
+          ],
+          "expected": {
+            "bolt": 7,
+            "nut": 4
+          }
+        },
+        {
+          "args": [
+            "stock beta"
+          ],
+          "expected": {
+            "bolt": 6,
+            "nut": 9
+          }
+        },
+        {
+          "args": [
+            "history acme"
+          ],
+          "expected": [
+            "reserve:base"
+          ]
+        },
+        {
+          "args": [
+            "history beta"
+          ],
+          "expected": []
+        },
+        {
+          "args": [
+            "order acme base"
+          ],
+          "expected": {
+            "order": "base",
+            "status": "active",
+            "items": {
+              "bolt": 1,
+              "nut": 1
+            }
+          }
+        }
+      ],
+      "reported": false
+    }
+  ]
+}

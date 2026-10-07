@@ -1,0 +1,139 @@
+Original failure capture; public calls in each scenario share one fresh process.
+
+Scenario: late batch shortage rolls back all items and request identity
+call: run_orders(["reserve acme base bolt 1 nut 1"])
+got: {"result": {"items": {"bolt": 1, "nut": 1}, "order": "base", "status": "active"}}
+want: {"result": {"items": {"bolt": 1, "nut": 1}, "order": "base", "status": "active"}}
+call: run_orders(["reserve acme bad bolt 2 nut 9"])
+got: {"raises": "ValueError"}
+want: {"raises": "ValueError"}
+call: run_orders(["stock acme"])
+got: {"result": {"bolt": 5, "nut": 4}}
+want: {"result": {"bolt": 7, "nut": 4}}
+call: run_orders(["stock beta"])
+got: {"result": {"bolt": 6, "nut": 9}}
+want: {"result": {"bolt": 6, "nut": 9}}
+call: run_orders(["history acme"])
+got: {"result": ["reserve:base"]}
+want: {"result": ["reserve:base"]}
+call: run_orders(["history beta"])
+got: {"result": []}
+want: {"result": []}
+call: run_orders(["order acme base"])
+got: {"result": {"items": {"bolt": 1, "nut": 1}, "order": "base", "status": "active"}}
+want: {"result": {"items": {"bolt": 1, "nut": 1}, "order": "base", "status": "active"}}
+call: run_orders(["order acme bad"])
+got: {"raises": "ValueError"}
+want: {"raises": "ValueError"}
+call: run_orders(["stock acme"])
+got: {"result": {"bolt": 5, "nut": 4}}
+want: {"result": {"bolt": 7, "nut": 4}}
+call: run_orders(["stock beta"])
+got: {"result": {"bolt": 6, "nut": 9}}
+want: {"result": {"bolt": 6, "nut": 9}}
+call: run_orders(["history acme"])
+got: {"result": ["reserve:base"]}
+want: {"result": ["reserve:base"]}
+call: run_orders(["history beta"])
+got: {"result": []}
+want: {"result": []}
+call: run_orders(["order acme base"])
+got: {"result": {"items": {"bolt": 1, "nut": 1}, "order": "base", "status": "active"}}
+want: {"result": {"items": {"bolt": 1, "nut": 1}, "order": "base", "status": "active"}}
+call: run_orders(["reserve acme bad bolt 2 nut 1"])
+got: {"result": {"items": {"bolt": 2, "nut": 1}, "order": "bad", "status": "active"}}
+want: {"result": {"items": {"bolt": 2, "nut": 1}, "order": "bad", "status": "active"}}
+call: run_orders(["stock acme"])
+got: {"result": {"bolt": 3, "nut": 3}}
+want: {"result": {"bolt": 5, "nut": 3}}
+call: run_orders(["history acme"])
+got: {"result": ["reserve:base", "reserve:bad"]}
+want: {"result": ["reserve:base", "reserve:bad"]}
+
+Scenario: same request identifier is independent across tenants
+call: run_orders(["reserve acme same bolt 2"])
+got: {"result": {"items": {"bolt": 2}, "order": "same", "status": "active"}}
+want: {"result": {"items": {"bolt": 2}, "order": "same", "status": "active"}}
+call: run_orders(["reserve beta same nut 3"])
+got: {"raises": "ValueError"}
+want: {"result": {"items": {"nut": 3}, "order": "same", "status": "active"}}
+call: run_orders(["stock acme"])
+got: {"result": {"bolt": 6, "nut": 5}}
+want: {"result": {"bolt": 6, "nut": 5}}
+call: run_orders(["stock beta"])
+got: {"result": {"bolt": 6, "nut": 9}}
+want: {"result": {"bolt": 6, "nut": 6}}
+call: run_orders(["history acme"])
+got: {"result": ["reserve:same"]}
+want: {"result": ["reserve:same"]}
+call: run_orders(["history beta"])
+got: {"result": []}
+want: {"result": ["reserve:same"]}
+call: run_orders(["order acme same"])
+got: {"result": {"items": {"bolt": 2}, "order": "same", "status": "active"}}
+want: {"result": {"items": {"bolt": 2}, "order": "same", "status": "active"}}
+call: run_orders(["order beta same"])
+got: {"result": {"items": {"bolt": 2}, "order": "same", "status": "active"}}
+want: {"result": {"items": {"nut": 3}, "order": "same", "status": "active"}}
+call: run_orders(["cancel acme same"])
+got: {"result": {"items": {"bolt": 2}, "order": "same", "status": "cancelled"}}
+want: {"result": {"items": {"bolt": 2}, "order": "same", "status": "cancelled"}}
+call: run_orders(["stock acme"])
+got: {"result": {"bolt": 8, "nut": 5}}
+want: {"result": {"bolt": 8, "nut": 5}}
+call: run_orders(["stock beta"])
+got: {"result": {"bolt": 6, "nut": 9}}
+want: {"result": {"bolt": 6, "nut": 6}}
+call: run_orders(["order beta same"])
+got: {"result": {"items": {"bolt": 2}, "order": "same", "status": "cancelled"}}
+want: {"result": {"items": {"nut": 3}, "order": "same", "status": "active"}}
+call: run_orders(["history acme"])
+got: {"result": ["reserve:same", "cancel:same"]}
+want: {"result": ["reserve:same", "cancel:same"]}
+call: run_orders(["history beta"])
+got: {"result": []}
+want: {"result": ["reserve:same"]}
+
+Scenario: cancellation retry restores stock and records history once
+call: run_orders(["reserve acme x bolt 3 nut 2"])
+got: {"result": {"items": {"bolt": 3, "nut": 2}, "order": "x", "status": "active"}}
+want: {"result": {"items": {"bolt": 3, "nut": 2}, "order": "x", "status": "active"}}
+call: run_orders(["cancel acme x"])
+got: {"result": {"items": {"bolt": 3, "nut": 2}, "order": "x", "status": "cancelled"}}
+want: {"result": {"items": {"bolt": 3, "nut": 2}, "order": "x", "status": "cancelled"}}
+call: run_orders(["cancel acme x"])
+got: {"result": {"items": {"bolt": 3, "nut": 2}, "order": "x", "status": "cancelled"}}
+want: {"result": {"items": {"bolt": 3, "nut": 2}, "order": "x", "status": "cancelled"}}
+call: run_orders(["stock acme"])
+got: {"result": {"bolt": 11, "nut": 7}}
+want: {"result": {"bolt": 8, "nut": 5}}
+call: run_orders(["stock beta"])
+got: {"result": {"bolt": 6, "nut": 9}}
+want: {"result": {"bolt": 6, "nut": 9}}
+call: run_orders(["history acme"])
+got: {"result": ["reserve:x", "cancel:x", "cancel:x"]}
+want: {"result": ["reserve:x", "cancel:x"]}
+call: run_orders(["history beta"])
+got: {"result": []}
+want: {"result": []}
+call: run_orders(["order acme x"])
+got: {"result": {"items": {"bolt": 3, "nut": 2}, "order": "x", "status": "cancelled"}}
+want: {"result": {"items": {"bolt": 3, "nut": 2}, "order": "x", "status": "cancelled"}}
+call: run_orders(["reserve acme x bolt 3 nut 2"])
+got: {"raises": "ValueError"}
+want: {"raises": "ValueError"}
+call: run_orders(["stock acme"])
+got: {"result": {"bolt": 11, "nut": 7}}
+want: {"result": {"bolt": 8, "nut": 5}}
+call: run_orders(["stock beta"])
+got: {"result": {"bolt": 6, "nut": 9}}
+want: {"result": {"bolt": 6, "nut": 9}}
+call: run_orders(["history acme"])
+got: {"result": ["reserve:x", "cancel:x", "cancel:x"]}
+want: {"result": ["reserve:x", "cancel:x"]}
+call: run_orders(["history beta"])
+got: {"result": []}
+want: {"result": []}
+call: run_orders(["order acme x"])
+got: {"result": {"items": {"bolt": 3, "nut": 2}, "order": "x", "status": "cancelled"}}
+want: {"result": {"items": {"bolt": 3, "nut": 2}, "order": "x", "status": "cancelled"}}
