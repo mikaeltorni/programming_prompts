@@ -759,7 +759,12 @@ ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --ski
 `--tasks debug-clock` narrows that run to one case. Selecting only `debug`
 without `--suite` or `--tasks` also chooses the repair family. A mixed selection
 of `debug` and coding skills includes both families by default, in isolated
-jobs with only their applicable instructions and judges. Other-skill runs
+trials within one Harbor job per harness. Coding and debug trials can run at
+the same time from one console, sharing the concurrency ceiling and automatic
+launch guard. Each trial receives only its family's applicable instructions
+and judges. No second console or extra flag is required; the existing mixed
+skill command enables this for both baseline and positive runs. Run baseline
+and positive wrappers sequentially. Other-skill runs
 neither prepare nor execute the new debug fixtures. `--suite coding` selects
 existing tasks; `--suite all` explicitly selects both families. Incompatible
 skill/task selections fail before account preflight or Docker work. Baselines

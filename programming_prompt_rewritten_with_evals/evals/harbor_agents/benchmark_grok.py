@@ -16,6 +16,7 @@ or an explicit ``XAI_API_KEY`` on the host. The wrapper never logs the key.
 
 from __future__ import annotations
 
+import sys
 from typing import override
 
 from harbor.agents.installed.grok_build import GrokBuild
@@ -79,12 +80,18 @@ class BenchmarkGrok(GrokBuild):
 
     @override
     def _build_register_skills_command(self) -> str | None:
-        """Always wipe Grok skill roots; install Harbor-injected skills when present."""
-        command = build_clean_grok_skills_register_command(self.skills_dir)
+        """Install only the current Grok trial's selected global policies.
+
+        Parameters: self - the benchmark harness instance.
+        Returns: the isolated trial registration shell command.
+        """
+        print(f"self={object.__repr__(self)}", file=sys.stderr)
+        command = build_clean_grok_skills_register_command(self.skills_dir, self.session_id)
         self.logger.info(
             "Resetting Grok skill discovery paths; installing skills_dir=%s",
             self.skills_dir,
         )
+        print(command, file=sys.stderr)
         return command
 
     async def _installed_grok_satisfies_version(
