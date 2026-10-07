@@ -200,7 +200,7 @@ if tasks_dir.exists():
     shutil.rmtree(tasks_dir)
 tasks_dir.mkdir(parents=True)
 
-prompt_files = sorted(prompts_dir.glob("*.md"))
+prompt_files = sorted(prompts_dir.glob("*.md")) + sorted((prompts_dir.parent / "debug-prompts").glob("*.md"))
 prompt_files = [p for p in prompt_files if p.name.lower() != "readme.md"]
 if not prompt_files:
     raise SystemExit(f"No coding-prompts/*.md under {prompts_dir}")
