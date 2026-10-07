@@ -1,0 +1,29 @@
+Original failure capture; public calls in each scenario share one fresh process.
+
+Scenario: rejected shortage must preserve stock
+call: run_stock(["reserve bolt 3"])
+got: {"result": "reserved=3; bolt=5"}
+want: {"result": "reserved=3; bolt=5"}
+call: run_stock(["reserve bolt 6"])
+got: {"raises": "ValueError"}
+want: {"raises": "ValueError"}
+call: run_stock(["show bolt"])
+got: {"result": "bolt=-1"}
+want: {"result": "bolt=5"}
+call: run_stock(["show nut"])
+got: {"result": "nut=5"}
+want: {"result": "nut=5"}
+
+Scenario: negative reservation must preserve stock
+call: run_stock(["reserve nut 2"])
+got: {"result": "reserved=2; nut=3"}
+want: {"result": "reserved=2; nut=3"}
+call: run_stock(["reserve nut -2"])
+got: {"raises": "ValueError"}
+want: {"raises": "ValueError"}
+call: run_stock(["show nut"])
+got: {"result": "nut=5"}
+want: {"result": "nut=3"}
+call: run_stock(["show bolt"])
+got: {"result": "bolt=8"}
+want: {"result": "bolt=8"}

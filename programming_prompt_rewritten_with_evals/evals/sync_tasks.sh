@@ -36,6 +36,7 @@ from harbor_agents.clean_skills import (
     load_grok_version,
 )
 from harbor_agents.log import log
+from verify_debug_fixtures import certify
 
 prompts_dir = Path(sys.argv[1])
 oracles_dir = Path(sys.argv[2])
@@ -195,6 +196,10 @@ git -C "$REPO" merge --no-ff feat/oracle -m "Merge feat/oracle: {oracle_name} re
     )
     dest.chmod(0o755)
 
+
+# Refuse stale or invented failure captures before constructing any task tree.
+if (template_dir.parent / "debug-cases").is_dir():
+    log(f"certified debug fixtures: {certify(template_dir.parent)}")
 
 if tasks_dir.exists():
     shutil.rmtree(tasks_dir)

@@ -1,0 +1,23 @@
+Original failure capture; public calls in each scenario share one fresh process.
+
+Scenario: same-SKU across tenants
+call: lookup(["acme", "tool"])
+got: {"result": 12}
+want: {"result": 12}
+call: lookup(["beta", "tool"])
+got: {"result": 12}
+want: {"result": 29}
+call: lookup(["acme", "tool"])
+got: {"result": 12}
+want: {"result": 12}
+
+Scenario: reverse tenant order
+call: lookup(["beta", "bolt"])
+got: {"result": 7}
+want: {"result": 7}
+call: lookup(["acme", "bolt"])
+got: {"result": 7}
+want: {"result": 3}
+call: lookup(["beta", "bolt"])
+got: {"result": 7}
+want: {"result": 7}

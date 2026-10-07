@@ -1,0 +1,11 @@
+Original failure capture; public calls in each scenario share one fresh process.
+
+Scenario: positive-offset failure
+call: to_utc(["2026-01-01T00:15:00+02:00"])
+got: {"result": "2026-01-01T00:15:00Z"}
+want: {"result": "2025-12-31T22:15:00Z"}
+
+Scenario: negative-offset rollover
+call: to_utc(["2026-04-30T23:30:00-03:00"])
+got: {"result": "2026-04-30T23:30:00Z"}
+want: {"result": "2026-05-01T02:30:00Z"}
