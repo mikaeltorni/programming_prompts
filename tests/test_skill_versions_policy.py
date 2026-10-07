@@ -20,17 +20,36 @@ AGENTS_PATH = REPO_ROOT / "AGENTS.md"
 # Folded or single-line description must start with this once whitespace is collapsed.
 VERSION_PREFIX = re.compile(r"^v\d+\.\d+\.\d+ —")
 
+# Gitignored Harbor artifacts may still exist on disk under these prefixes.
+_GENERATED_SKILL_PREFIXES = (
+    ("programming_prompt_rewritten_with_evals", "evals", "runs"),
+    ("programming_prompt_rewritten_with_evals", "evals", "tasks"),
+    ("programming_prompt_rewritten_with_evals", "evals", ".generated"),
+)
+
 
 def skill_md_paths() -> list[Path]:
-    """Return every repository ``SKILL.md``, excluding Git internals.
+    """Return every owned repository ``SKILL.md``, excluding Git internals and generated Harbor copies.
 
     Parameters: none.
 
     Returns: sorted absolute paths to skill files.
     """
-    return sorted(
-        path for path in REPO_ROOT.rglob("SKILL.md") if ".git" not in path.parts
-    )
+    print("parameters=none")
+    owned: list[Path] = []
+    for path in REPO_ROOT.rglob("SKILL.md"):
+        if ".git" in path.parts:
+            continue
+        relative_parts = path.relative_to(REPO_ROOT).parts
+        if any(
+            relative_parts[: len(prefix)] == prefix
+            for prefix in _GENERATED_SKILL_PREFIXES
+        ):
+            continue
+        owned.append(path)
+    result = sorted(owned)
+    print(result)
+    return result
 
 
 def skill_description(path: Path) -> str:
@@ -43,6 +62,7 @@ def skill_description(path: Path) -> str:
 
     Returns: the description text, or raises AssertionError when front matter is missing.
     """
+    print(f"path={path}")
     text = path.read_text(encoding="utf-8")
     relative = path.relative_to(REPO_ROOT)
     assert text.startswith("---\n"), f"{relative}: missing YAML front matter"
@@ -62,8 +82,11 @@ def skill_description(path: Path) -> str:
                     continue
                 break
             assert chunks, f"{relative}: folded description is empty"
-            return " ".join(chunks)
+            result = " ".join(chunks)
+            print(result)
+            return result
         assert rest, f"{relative}: single-line description is empty"
+        print(rest)
         return rest
     raise AssertionError(f"{relative}: YAML front matter has no description")
 
@@ -87,6 +110,12 @@ def test_skill_md_glob_lists_every_owned_tree():
     assert any(item.startswith("dispatch-skills/") for item in SKILL_IDS), joined
     assert any(
         item.startswith("programming_prompt_rewritten_with_evals/prompts/programming-skills/")
+        for item in SKILL_IDS
+    ), joined
+    assert all(
+        "evals/runs" not in item
+        and "evals/tasks" not in item
+        and "evals/.generated" not in item
         for item in SKILL_IDS
     ), joined
     print(None)
