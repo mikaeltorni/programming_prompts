@@ -444,6 +444,10 @@ include trials that failed before verification and show both `trials` and
 Summary and archive helpers do not print raw trial paths, returned values or
 `None` traces while classifying trials and rebuilding the results index. The
 formatted results, failure details and archive destination messages remain.
+The launch guard prints its capacity configuration once at startup; polling,
+per-trial admission and instruction-registration helpers run without verbose
+traces or shell-command dumps. Running jobs keep their already-loaded code;
+these console changes take effect on the next benchmark invocation.
 Run one benchmark invocation at a time. See the
 [evals README](programming_prompt_rewritten_with_evals/evals/README.md) for the
 command surface and [AGENTS.md](AGENTS.md) for the repository's run policy and
