@@ -721,3 +721,5 @@ Before materialization, `python3 evals/verify_debug_fixtures.py` (from the rewri
 With no `--suite` or `--tasks`, selecting only `debug` runs dedicated repair cases. Selecting `debug` alongside coding skills runs both task families in one wrapper invocation; each harness uses isolated coding and debugging jobs with only the applicable skills and judges. A default all-skill run includes both families. Baselines use the identical tasks and judges while omitting skill instructions.
 
 Other-skill runs keep the existing coding task pool and do not materialize or execute the new debugging cases. Explicit debug tasks require `debug` in `--skills`; incompatible suite/task selections fail before account preflight or Docker work. `sync_tasks.sh [TASK ...]` can materialize a selected set; no arguments materializes both canonical families.
+
+Judge synchronization also respects task families: direct `sync_judges.sh` installs only debug and functional judges on dedicated repair cases, and partial coding-skill syncs leave those cases intact.
