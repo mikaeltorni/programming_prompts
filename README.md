@@ -713,3 +713,5 @@ The existing read-logs-first policy is now [`debug_logs`](programming_prompt_rew
 Dedicated debug scenarios use `verifier/check_debug_behavior.py --repo PATH --cases CONTRACT.json --output REWARD.json`. It executes immutable public-call sequences with fresh module state and a per-sequence timeout. Harbor includes this functional judge alongside the semantic `debug` judge only on dedicated cases; missing contracts and execution failures cannot silently pass.
 
 The benchmark accepts `--suite coding`, `--suite debug`, or `--suite all` to select task families, and `--tasks NAME[,NAME]` to narrow the selected family. Dedicated debugging prompts are maintained separately under `evals/debug-prompts/`.
+
+The dedicated debug cases cover UTC offset/date rollover (`debug-clock`), tenant-aware cache results (`debug-catalog`), and rejected reservations preserving stock (`debug-stock`). Each has an intentionally broken seed, an independent reference repair, and cumulative public behavior sequences in `evals/debug-cases/`.
