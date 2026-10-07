@@ -80,6 +80,24 @@ SUITE_ARG=all
 check "explicit mixed tasks resolve across families" $'counter\ndebug-clock' "$(resolve_tasks counter,debug-clock)"
 echo 'ALL TASK FAMILY SELF-TESTS PASSED'
 
+task_scope="$fixture/task-scope"
+mkdir -p "$task_scope/counter/tests" "$task_scope/debug-clock/tests"
+printf 'Original counter request\n' > "$task_scope/counter/tests/task.md"
+printf 'Original debug request\n' > "$task_scope/debug-clock/tests/task.md"
+cp "$task_scope/counter/tests/task.md" "$task_scope/counter/instruction.md"
+cp "$task_scope/debug-clock/tests/task.md" "$task_scope/debug-clock/instruction.md"
+cp "$SCRIPT_DIR/../debug-cases/debug-clock.json" "$task_scope/debug-clock/tests/debug-cases.json"
+TASKS_DIR="$task_scope" "$SCRIPT_DIR/../sync_judges.sh" > "$fixture/sync.log" 2>&1 || exit 1
+check "default judge sync isolates repair judges" $'debug\ndebug_behavior' \
+  "$(find "$task_scope/debug-clock/tests/judges" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)"
+check "coding tasks never receive debug behavior checker" absent \
+  "$(if [[ ! -d "$task_scope/counter/tests/judges/debug_behavior" && ! -d "$task_scope/counter/tests/judges/debug" ]]; then echo absent; fi)"
+TASKS_DIR="$task_scope" "$SCRIPT_DIR/../sync_judges.sh" testing > "$fixture/sync.log" 2>&1 || exit 1
+check "partial coding sync preserves repair judges" $'debug\ndebug_behavior' \
+  "$(find "$task_scope/debug-clock/tests/judges" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)"
+check "partial coding sync limits coding judges" testing \
+  "$(find "$task_scope/counter/tests/judges" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)"
+
 if [[ $fails -eq 0 ]]; then
   echo "ALL SKILL DISCOVERY SELF-TESTS PASSED"
 else

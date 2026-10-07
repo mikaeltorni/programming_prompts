@@ -104,6 +104,16 @@ is_programmatic_judge() {
 copied_tasks=0
 for tests_dir in "$TASKS_DIR"/*/tests; do
   [[ -d "$tests_dir" ]] || continue
+  task_skills=()
+  for skill in "${skills[@]}"; do
+    if [[ -f "$tests_dir/debug-cases.json" ]]; then
+      [[ "$skill" == debug || "$skill" == debug_behavior ]] && task_skills+=("$skill")
+    else
+      [[ "$skill" != debug && "$skill" != debug_behavior ]] && task_skills+=("$skill")
+    fi
+  done
+  # A partial sync leaves unrelated task families intact.
+  [[ ${#task_skills[@]} -gt 0 ]] || continue
   rm -rf "$tests_dir/judges"
   mkdir -p "$tests_dir/judges"
   install -m 755 "$VERIFIER_SRC" "$tests_dir/run_judges.sh"
@@ -125,11 +135,11 @@ for tests_dir in "$TASKS_DIR"/*/tests; do
   install -m 644 "$LLM_JUDGE_SRC"/*.py "$tests_dir/llm_judge/"
   # Functional debug checks are independent from semantic scoring and are
   # installed only for dedicated scenarios when their debug judge is selected.
-  if [[ -f "$tests_dir/debug-cases.json" ]] && [[ " ${skills[*]} " == *" debug "* ]]; then
+  if [[ -f "$tests_dir/debug-cases.json" ]] && [[ " ${task_skills[*]} " == *" debug "* ]]; then
     mkdir -p "$tests_dir/judges/debug_behavior"
     cp "$JUDGES_ROOT/debug_behavior/judge.toml" "$tests_dir/judges/debug_behavior/"
   fi
-  for skill in "${skills[@]}"; do
+  for skill in "${task_skills[@]}"; do
     src="$JUDGES_ROOT/$skill"
     if is_programmatic_judge "$src"; then
       mkdir -p "$tests_dir/judges/$skill"
