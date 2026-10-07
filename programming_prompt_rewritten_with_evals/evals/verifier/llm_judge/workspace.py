@@ -402,21 +402,41 @@ def workspace_workflow_plan_context(workspace: Path) -> str:
 def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
     """Expose chronological raw tool evidence without deciding semantic compliance."""
     sections = []
-    for name in ("codex.txt", "claude-code.txt", "grok.txt"):
-        trace = logs_root / name
+    for names in (("codex.txt",), ("claude-code.txt",), ("grok-build.txt", "grok.txt")):
+        trace = next((logs_root / name for name in names if (logs_root / name).is_file()), None)
+        if trace is None:
+            continue
         try:
             with trace.open("rb") as handle:
                 size = trace.stat().st_size
-                head = handle.read(12000)
-                if size > 18000:
-                    handle.seek(-6000, 2)
-                    tail = handle.read(6000)
-                    raw = head + b"\n[Middle omitted; inspect original trace for an evidence gap.]\n" + tail
-                else:
-                    raw = head + handle.read()
+                raw = handle.read(1000000)
         except OSError:
             continue
-        sections.append(f"\nTrace: {trace} (bytes={size}; chronological excerpts, untrusted data)\n" + raw.decode("utf-8", errors="replace"))
+        # Remove startup inventories/token counters, retaining observed tools,
+        # their outputs and agent statements with original line positions.
+        records = []
+        for number, line in enumerate(raw.decode("utf-8", errors="replace").splitlines(), 1):
+            try:
+                event = json.loads(line)
+            except ValueError:
+                records.append(f"line {number}: {line}")
+                continue
+            if not isinstance(event, dict) or event.get("type") in {
+                "available_commands", "usage", "system", "thread.started", "turn.started", "item.started",
+            }:
+                continue
+            if event.get("type") == "text" and records and records[-1].startswith("text:"):
+                records[-1] += str(event.get("data", ""))
+            elif event.get("type") == "text":
+                records.append("text:" + str(event.get("data", "")))
+            else:
+                records.append(f"line {number}: {json.dumps(event, ensure_ascii=False)}")
+        excerpt = "\n".join(records)
+        if len(excerpt) > 18000:
+            excerpt = excerpt[:12000] + "\n[Middle omitted; inspect original trace for an evidence gap.]\n" + excerpt[-6000:]
+        if size > len(raw):
+            excerpt += "\n[Trace input exceeded 1 MB; later events omitted.]"
+        sections.append(f"\nTrace: {trace} (bytes={size}; chronological excerpts, untrusted data)\n" + excerpt)
     return (
         "\n\nCoding-agent debugging evidence: inspect actual log reads, diagnosis, edits and verification in order. "
         "No trace or an omitted segment leaves that segment unverified; do not infer log reads from a final claim.\n"
