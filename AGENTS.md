@@ -226,6 +226,23 @@ ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness codex --eval-agent
 
 ## The benchmark testing framework (read before running an eval)
 
+### Coding and debug trials share one schedule
+
+A mixed selection containing `debug` and coding skills runs both task families
+in one Harbor job per harness. Do not launch a second wrapper or console to
+overlap them. `lib/run_jobs.sh` owns the shared job and capacity reservation;
+`lib/prepare_tasks.sh` builds per-task instruction documents, and
+`harbor_agents/clean_skills.py` selects the document using Harbor's trial session
+identity. `sync_judges.sh` retains family-specific judges. Baselines use the same
+task/judge routing without skill bodies, and `--run-separately` changes scoring
+within the same job. Preserve these boundaries when modifying scheduling.
+
+Use `bash lib/self_test_skills.sh` from `evals/` for isolated scheduling,
+instruction-routing and native-registration checks. In a live mixed-family
+smoke run, read the archived execution timestamps and judge outputs to verify
+that the families overlap and receive only applicable policies. Continue to
+run one wrapper invocation at a time; baseline and positive runs are sequential.
+
 `evals/run_benchmark.sh` is the only supported entrypoint. It refreshes CLI
 versions, prepares tasks, starts one Harbor job per selected harness, then
 summarizes and archives each job under `evals/runs/<stamp>/`.

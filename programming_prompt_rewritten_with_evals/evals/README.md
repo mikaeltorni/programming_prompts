@@ -62,10 +62,16 @@ on the coding family, including the staged greeter repair. `debug` uses the
 separate [repair scenarios](debug-prompts/README.md): `debug-clock`,
 `debug-catalog`, and `debug-stock`. Default task selection depends on the selected
 skills: `debug` alone runs repair tasks; coding skills alone run coding tasks;
-a mixed selection runs both families. Each harness receives isolated jobs per
-family. Repair jobs inject and score only `debug`, plus the functional
+a mixed selection runs both families concurrently in one Harbor job per
+harness, from one console. The shared concurrency ceiling, Docker reservation
+and automatic launch guard apply across both families. Every trial still
+receives its own applicable instruction document and judges: repair trials
+inject and score only `debug`, plus the functional
 `debug_behavior` verifier. Other skills never run on these dedicated scenarios.
 Both baseline and positive jobs use the same family routing.
+The existing mixed-skill command needs no extra flag or second console.
+Run baseline and positive wrapper invocations sequentially; a configured
+capacity limit can reduce how many trials overlap.
 
 [Testing](../prompts/programming-skills/testing/SKILL.md) requires meaningful
 saved checks against the requested behavior using existing project tooling.
@@ -235,6 +241,14 @@ tasks, runtime artifacts, or add pytest suites in this evaluation tree.
 Prompt-only changes use direct consistency checks and focused Harbor runs.
 Runtime wrapper or verifier changes additionally require baseline and positive
 smoke jobs for every supported coding harness under the root AGENTS.md rules.
+
+From `evals/`, `bash lib/self_test_skills.sh` checks discovery, one-job scheduling
+for mixed and single-family selections, family-specific instruction documents
+and judges, and native registration for all three runtimes in temporary homes.
+It also checks baseline clearing, legacy bundles, missing trial identities,
+and `--run-separately` scoring. It makes no Docker, GUI or LLM calls. For live
+mixed-family smoke runs, inspect each trial's archived `agent_execution` times
+to confirm overlap and its verifier outputs to confirm family-specific scoring.
 
 ## Debug fixture verification
 
