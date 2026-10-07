@@ -22,7 +22,7 @@ if [[ ! -d "$TEMPLATE_DIR" ]]; then
   exit 1
 fi
 
-python3 - "$PROMPTS_DIR" "$ORACLES_DIR" "$TEMPLATE_DIR" "$TASKS_DIR" <<'PY'
+python3 - "$PROMPTS_DIR" "$ORACLES_DIR" "$TEMPLATE_DIR" "$TASKS_DIR" "$@" <<'PY'
 from __future__ import annotations
 
 import re
@@ -197,18 +197,25 @@ git -C "$REPO" merge --no-ff feat/oracle -m "Merge feat/oracle: {oracle_name} re
     dest.chmod(0o755)
 
 
-# Refuse stale or invented failure captures before constructing any task tree.
-if (template_dir.parent / "debug-cases").is_dir():
-    log(f"certified debug fixtures: {certify(template_dir.parent)}")
+prompt_files = sorted(prompts_dir.glob("*.md")) + sorted((prompts_dir.parent / "debug-prompts").glob("*.md"))
+prompt_files = [p for p in prompt_files if p.name.lower() != "readme.md"]
+requested = set(sys.argv[5:])
+if requested:
+    available = {p.stem for p in prompt_files}
+    if requested - available:
+        raise SystemExit(f"Unknown requested tasks: {sorted(requested - available)}")
+    prompt_files = [p for p in prompt_files if p.stem in requested]
+if not prompt_files:
+    raise SystemExit("No task prompts selected")
+
+# Unrelated coding runs neither materialize nor execute debug fixtures.
+debug_names = {p.stem for p in prompt_files if p.parent.name == "debug-prompts"}
+if debug_names:
+    log(f"certified debug fixtures: {certify(template_dir.parent, names=debug_names)}")
 
 if tasks_dir.exists():
     shutil.rmtree(tasks_dir)
 tasks_dir.mkdir(parents=True)
-
-prompt_files = sorted(prompts_dir.glob("*.md")) + sorted((prompts_dir.parent / "debug-prompts").glob("*.md"))
-prompt_files = [p for p in prompt_files if p.name.lower() != "readme.md"]
-if not prompt_files:
-    raise SystemExit(f"No coding-prompts/*.md under {prompts_dir}")
 
 compose_src = template_dir / "environment" / "docker-compose.yaml"
 if not compose_src.is_file():

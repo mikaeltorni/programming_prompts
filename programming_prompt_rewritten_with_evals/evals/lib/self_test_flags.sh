@@ -139,6 +139,15 @@ else
   fails=$((fails + 1))
 fi
 
+
+SUITE_ARG=''
+parse_benchmark_flags --suite debug
+check "space form: debug suite" debug "$SUITE_ARG"
+parse_benchmark_flags --suite=all
+check "equals form: all suites" all "$SUITE_ARG"
+check_rejects "missing value: --suite" "--suite requires a value" --suite
+check_rejects "unknown suite" "Unknown suite" --suite invalid
+
 if [[ $fails -eq 0 ]]; then
   echo "ALL FLAG PARSING SELF-TESTS PASSED"
 else

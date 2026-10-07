@@ -134,6 +134,15 @@ resolve_tasks() {
       echo "Unknown task '$task'; available: $(list_available_tasks all | tr '\n' ' ')" >&2
       return 1
     }
+    if [[ "$(task_family "$task")" == debug ]]; then
+      if [[ " ${SELECTED_SKILLS[*]:-} " != *" debug "* ]]; then
+        echo "Debug task '$task' requires --skills debug (alone or alongside other skills)" >&2
+        return 1
+      fi
+    elif [[ "$(default_task_suite)" == debug ]]; then
+      echo "Coding task '$task' has no applicable selected coding skill; use --suite debug or add a coding skill" >&2
+      return 1
+    fi
     if [[ -n "${SUITE_ARG:-}" && "$SUITE_ARG" != all ]]; then
       if ! list_available_tasks "$SUITE_ARG" | grep -qxF "$task"; then
         echo "Task '$task' is outside --suite $SUITE_ARG" >&2

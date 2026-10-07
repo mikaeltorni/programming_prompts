@@ -203,6 +203,16 @@ else
   unset _h
 fi
 
+_skills_out="$(resolve_skills "$SKILLS_ARG")" || exit 1
+mapfile -t SELECTED_SKILLS <<< "$_skills_out"
+unset _skills_out
+echo "Selected skill(s): ${SELECTED_SKILLS[*]}" >&2
+
+_tasks_out="$(resolve_tasks "$TASKS_ARG")" || exit 1
+mapfile -t SELECTED_TASKS <<< "$_tasks_out"
+unset _tasks_out
+echo "Selected coding task(s): ${SELECTED_TASKS[*]}" >&2
+
 # Ask Codex's account endpoint before Docker/Harbor fan-out. Rolling-window
 # percentages and workspace credit state are separate fields; authentication
 # alone cannot prove the selected account can start an LLM turn. This read does
@@ -232,15 +242,6 @@ CLAUDE_VERSION="$(python3 "$HARNESS_SPEC" version cc)"
 GROK_VERSION="$(python3 "$HARNESS_SPEC" version grok)"
 echo "Instance CLI versions: Codex $CODEX_VERSION | Claude Code $CLAUDE_VERSION | Grok $GROK_VERSION" >&2
 
-_skills_out="$(resolve_skills "$SKILLS_ARG")" || exit 1
-mapfile -t SELECTED_SKILLS <<< "$_skills_out"
-unset _skills_out
-echo "Selected skill(s): ${SELECTED_SKILLS[*]}" >&2
-
-_tasks_out="$(resolve_tasks "$TASKS_ARG")" || exit 1
-mapfile -t SELECTED_TASKS <<< "$_tasks_out"
-unset _tasks_out
-echo "Selected coding task(s): ${SELECTED_TASKS[*]}" >&2
 if [[ -z "${EVAL_LLM_MAX_CONCURRENT:-}" ]]; then
   echo "LLM trial ceiling: unset; full configured capacity with measured deadline headroom (no launch ramp-up)." >&2
 else
@@ -253,7 +254,7 @@ reclaim_docker_leftovers
 if [[ "$INSTALL_ONLY" -eq 1 ]]; then
   init_run_archive "install"
   SELECTED_SKILLS_FOR_JOB=("${SELECTED_SKILLS[@]}")
-  "$SCRIPT_DIR/sync_tasks.sh"
+  "$SCRIPT_DIR/sync_tasks.sh" "${SELECTED_TASKS[@]}"
   for install_harness in "${SELECTED_HARNESSES[@]}"; do
     install_version="$(harness_cli_version "$install_harness")"
     install_job_name="$(harbor_job_name "${install_harness}-install-$install_version")"
@@ -280,7 +281,7 @@ if [[ "$INSTALL_ONLY" -eq 1 ]]; then
   exit 0
 fi
 
-"$SCRIPT_DIR/sync_tasks.sh"
+"$SCRIPT_DIR/sync_tasks.sh" "${SELECTED_TASKS[@]}"
 TASK_COUNT="$(list_task_dirs | wc -l | tr -d ' ')"
 echo "Discovered $TASK_COUNT coding task(s) under $TASKS_DIR" >&2
 
