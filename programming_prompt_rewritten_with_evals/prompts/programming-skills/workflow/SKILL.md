@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.1.0 — Coordinate an end-to-end programming task as an ordered workflow
+  v1.1.1 — Coordinate an end-to-end programming task as an ordered workflow
   only when the user explicitly invokes this skill.
 ---
 
@@ -54,9 +54,23 @@ writing is the only execution phase after planning.
 
 ## Phase order
 
-Follow this order:
+Follow this order. Establish or verify the editing checkout immediately after
+reading project guidance and resolving the target repository; do not postpone
+it until investigation, a detailed plan, or implementation is finished.
+Read-only tasks and an explicit request to edit the live checkout retain the
+worktree companion's exceptions. A selected policy is already active when its
+body is included in native global instructions; no extra skill invocation is
+needed to begin this sequence.
 
-1. **Plan.** Before tracked repository mutation, translate the user's goal into an
+1. **Establish the worktree when enabled.** Retain the physical launch-project
+   root and absolute `ACC_WORKFLOW_FILE` value before changing directories.
+   If the worktree companion is enabled and isolation applies, follow it now:
+   create the task checkout, or verify and use the explicitly assigned existing
+   task checkout. Do not create another checkout for a continued task. Confirm
+   the registered physical path and branch before detailed planning. Otherwise
+   mark this phase skipped. Resolve only enough scope to choose the checkout;
+   detailed investigation and planning follow inside it.
+2. **Plan.** After establishing or verifying the task checkout, translate the user's goal into an
    actionable sequence that preserves their constraints and names the expected
    deliverables. If `ACC_WORKFLOW_FILE` is set to an absolute Markdown path
    inside the launch project's `tmp/workflow/` directory, use that exact path;
@@ -92,8 +106,8 @@ Follow this order:
    ## Tasks
    | Order | Task | Status | Details |
    | --- | --- | --- | --- |
-   | 1 | Plan | complete | Scope and deliverables recorded. |
-   | 2 | Establish worktree | pending | Use the worktree companion if enabled. |
+   | 1 | Establish worktree | complete | Task checkout verified; use skipped when isolation is not applicable. |
+   | 2 | Plan | complete | Scope and deliverables recorded. |
    | 3 | Write code | pending | Implement the requested behavior. |
    | 4 | Write documentation | pending | Use the docs companion if enabled. |
    ```
@@ -124,7 +138,9 @@ Follow this order:
    independently selected companions; naming `workflow` itself is harmless,
    but it does not make another companion selected. Mark optional phases
    `skipped` immediately when their companions
-   are not enabled or available. The initial file records `Plan` as `complete`.
+   are not enabled or available. The initial file records `Plan` as `complete`
+   and `Establish worktree` as `complete` or `skipped`, reflecting the startup
+   action already performed before this detailed plan.
    Before each later enabled phase starts, set its row to `in_progress`; after
    it finishes, rewrite the whole four-row `## Tasks` table in place as one
    block so that same row is `complete` with updated details. Never append a
@@ -164,10 +180,6 @@ Follow this order:
    phase is next. Remove such counts and rewrite those details to describe
    the current state before marking the plan
    complete; a correct ledger does not excuse a contradictory Plan row.
-2. **Establish the worktree when enabled.** If the `worktree` companion is in
-   the enabled-skill inventory and available, follow it to create the task's
-   isolated worktree before editing repository files. Otherwise skip this
-   phase.
 3. **Write the code.** Implement the plan inside that worktree while applying
    the programming skills supplied for the task.
 4. **Write the documentation when enabled.** If a documentation companion is
@@ -246,7 +258,7 @@ row above or below the replacement. Then confirm all of the following; if any
 check fails, edit that same file now and do not hand off:
 
 1. The table still has exactly four data rows, named once, in order:
-   `Plan`, `Establish worktree`, `Write code`, `Write documentation`.
+   `Establish worktree`, `Plan`, `Write code`, `Write documentation`.
 2. No task name appears twice.
 3. Every enabled row is `complete` or `skipped`. None is `pending` or
    `in_progress`, even when the Details cell already describes finished work.
