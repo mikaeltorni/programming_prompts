@@ -244,10 +244,13 @@ ID so retries cannot reuse an old permit. Setup admission is bounded from the
 first launch, before there are duration samples. This guard affects queued
 launches and does not stop running agents.
 
-The console emits `Automatic launch guard:` lines for admission, queueing,
-full-job and setup ceilings, setup durations, stalled setups, computed headroom
-and near-deadline trial names with remaining seconds. Pacing is local to the
-job; continue to run one wrapper at a time.
+The console emits one `Automatic launch guard:` startup line with the full-job
+and setup ceilings and the deadline headroom rule. Polling, admission, queueing,
+phase transitions and instruction registration do not emit verbose traces or
+shell-command dumps. Harbor progress, results and real error diagnostics remain.
+An already-running job keeps its loaded plugin code; these output changes take
+effect on the next invocation. Pacing is local to the job; continue to run one
+wrapper at a time.
 It avoids additional launch work near deadlines but cannot predict how much work a
 particular task still needs or guarantee completion within its own deadline.
 Account usage quotas remain separate from these per-trial wall-clock limits.
