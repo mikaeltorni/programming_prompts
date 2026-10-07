@@ -73,6 +73,14 @@ task_prompt_path() {
   return 1
 }
 
+skill_is_selected() {
+  local wanted="$1" selected
+  for selected in "${SELECTED_SKILLS[@]:-}"; do
+    [[ "$selected" == "$wanted" ]] && return 0
+  done
+  return 1
+}
+
 default_task_suite() {
   local skill has_debug=0 has_coding=0
   for skill in "${SELECTED_SKILLS[@]:-}"; do
@@ -135,7 +143,7 @@ resolve_tasks() {
       return 1
     }
     if [[ "$(task_family "$task")" == debug ]]; then
-      if [[ " ${SELECTED_SKILLS[*]:-} " != *" debug "* ]]; then
+      if ! skill_is_selected debug; then
         echo "Debug task '$task' requires --skills debug (alone or alongside other skills)" >&2
         return 1
       fi
