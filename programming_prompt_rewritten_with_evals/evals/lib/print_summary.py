@@ -305,12 +305,27 @@ def _python_sources(trial_dir: Path) -> list[tuple[str, str]]:
 
 
 def _trial_dirs(jobs_root: Path) -> list[Path]:
-    dirs: list[Path] = []
+    """Discover scored and interrupted trials without requiring a reward.
+
+    Parameters: jobs_root - one Harbor job or the directory containing jobs.
+    Returns: sorted unique trial directories, including startup failures.
+    """
+    print(f"jobs_root={jobs_root}", file=sys.stderr)
+    dirs: set[Path] = set()
+    for config_path in jobs_root.rglob("config.json"):
+        trial_dir = config_path.parent
+        if "artifacts" in trial_dir.relative_to(jobs_root).parts:
+            continue
+        if (trial_dir / "trial.log").is_file() or (trial_dir / "exception.txt").is_file():
+            dirs.add(trial_dir)
+    # Keep supporting reward-only fixtures and older partial archives.
     for reward_path in sorted(jobs_root.rglob("verifier/reward.json")):
         trial_dir = reward_path.parents[1]
-        if trial_dir.is_dir():
-            dirs.append(trial_dir)
-    return dirs
+        if "artifacts" not in trial_dir.relative_to(jobs_root).parts:
+            dirs.add(trial_dir)
+    result = sorted(dirs)
+    print(result, file=sys.stderr)
+    return result
 
 
 def _task_name(trial_dir: Path) -> str:
@@ -676,9 +691,11 @@ def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
 
     Returns: none.
     """
+    print(f"jobs_root={jobs_root} run_mode={run_mode} skills_csv={skills_csv}", file=sys.stderr)
     trial_dirs = _trial_dirs(jobs_root)
     if not trial_dirs:
-        print("No trial reward.json files found under", jobs_root, file=sys.stderr)
+        print("No trial records found under", jobs_root, file=sys.stderr)
+        print(None, file=sys.stderr)
         return
 
     run_stamp, runtime_text = _run_and_runtime(jobs_root)
@@ -711,6 +728,8 @@ def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
         reward = _reward_value(trial_dir)
         limited = trial_is_ratelimited(trial_dir)
         infrastructure = None if limited else trial_infrastructure_failure(trial_dir)
+        if not limited and not infrastructure and reward is None:
+            infrastructure = "missing numeric reward"
         judge_rows = _judge_criteria(trial_dir)
         sources = _python_sources(trial_dir)
         task = _task_name(trial_dir)
@@ -830,6 +849,7 @@ def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
     print(file=sys.stderr)
     print("-" * 78, file=sys.stderr)
     runtime_suffix = f"  runtime={runtime_text}" if runtime_text else ""
+    trial_suffix = f"  trials={len(trial_dirs)} scored={len(rewards)}"
     rate_suffix = (
         f"  rate_limited={ratelimited_n} (excluded from pass_rate)"
         if ratelimited_n
@@ -845,16 +865,17 @@ def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
         total = len(rewards)
         print(
             f"GRAND TOTAL pass_rate={_fmt_rate(passed, total)}"
-            f"{runtime_suffix}{rate_suffix}{infrastructure_suffix}",
+            f"{trial_suffix}{runtime_suffix}{rate_suffix}{infrastructure_suffix}",
             file=sys.stderr,
         )
     else:
         print(
             f"GRAND TOTAL pass_rate=n/a (no numeric rewards)"
-            f"{runtime_suffix}{rate_suffix}{infrastructure_suffix}",
+            f"{trial_suffix}{runtime_suffix}{rate_suffix}{infrastructure_suffix}",
             file=sys.stderr,
         )
     print("-" * 78, file=sys.stderr)
+    print(None, file=sys.stderr)
 
 
 def main(argv: list[str] | None = None) -> int:
