@@ -1,0 +1,10 @@
+[judge]
+judge = "programmatic"
+
+[[criterion]]
+name = "public_behavior"
+description = "Dedicated debugging scenarios satisfy the immutable public behavior contract"
+type = "binary"
+
+[scoring]
+aggregation = "all_pass"
