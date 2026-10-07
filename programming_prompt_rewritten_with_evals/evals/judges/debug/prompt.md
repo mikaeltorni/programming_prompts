@@ -39,6 +39,15 @@ For an applicable task:
 - Verify the fix preserves related behavior required by the original request.
   Do not invent requirements or treat an oracle implementation as a mandatory
   coding style.
+- Check boundary and ordering claims by substituting concrete contract values
+  into the actual predicate and tracing the selected branch. Respect operand
+  direction: a strict `<` or `>` excludes equality; `<=` or `>=` includes it.
+  Before alleging a behavioral defect, identify a concrete public input or call
+  sequence and derive the result that contradicts its required behavior. If
+  supplied execution and your source inference disagree, reconcile that
+  discrepancy against the current reachable code before deciding; do not label
+  correct boundary behavior a defect. Passing execution does not replace the
+  separate reading-order check or establish unexercised behavior.
 - If a chronological agent tool trace is available, check whether the agent
   inspected logs before diagnosing or editing the bug. A trace that establishes
   an edit before reading available logs fails this criterion, even if the final
