@@ -429,12 +429,21 @@ of recent setup durations plus five seconds. Holds clear as the affected phases
 finish, without permanently reducing capacity. Waiting happens before setup
 and agent timers, so queued trials retain their full budgets.
 The guard applies to Codex, Claude Code and Grok in positive and baseline runs.
+The generated job configuration gives each agent up to 1200 seconds (20 minutes)
+of execution, replacing the task's 600-second allowance. Multi-stage agents in
+the latest archive were still progressing at that cutoff. Successful agents
+return immediately; this allowance does not add a wait or change concurrency,
+setup limits or verifier budgets. The launch guard uses the effective execution
+deadline, including Harbor's configured timeout maximum and multiplier.
 It avoids starting new containers close to active deadlines but cannot guarantee
 a task finishes before its own deadline. Use `--concurrency N` only to impose a
 lower ceiling; no flag is needed
 for pacing. `-k` controls attempts per task independently. Console summaries
 include trials that failed before verification and show both `trials` and
 `scored` counts; infrastructure failures are reported separately from pass rate.
+Summary and archive helpers do not print raw trial paths, returned values or
+`None` traces while classifying trials and rebuilding the results index. The
+formatted results, failure details and archive destination messages remain.
 Run one benchmark invocation at a time. See the
 [evals README](programming_prompt_rewritten_with_evals/evals/README.md) for the
 command surface and [AGENTS.md](AGENTS.md) for the repository's run policy and

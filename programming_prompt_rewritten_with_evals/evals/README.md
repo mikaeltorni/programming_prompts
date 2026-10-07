@@ -186,6 +186,17 @@ requests selected trials subject to configured capacity and automatic launch
 pacing. `EVAL_JUDGE_WORKERS` controls parallel judge workers (default four).
 Do not add a second judge unless the user explicitly requests it.
 
+[`lib/job_config.sh`](lib/job_config.sh) sets Harbor's agent
+`override_timeout_sec` to 1200 seconds (20 minutes) for every harness in positive
+and baseline jobs. This replaces the generated task's 600-second execution
+allowance: six agents in the latest archive reached that cutoff while still
+progressing through multi-stage tasks. Completed agents return immediately, so
+the larger allowance adds no fixed delay. Setup and verifier budgets, parallel
+capacity and retry policy stay independent; timeouts are not automatically
+retried. Harbor's explicit timeout maximum and multipliers still apply, and the
+launch guard reads the resulting execution deadline. This change does not
+guarantee completion; a longer benchmark has not been run to verify it.
+
 ## Automatic launch pacing
 
 Every wrapper invocation installs the Harbor job plugin
@@ -214,8 +225,8 @@ admitted setup has used at least half its environment startup budget, avoiding
 additional launch work while an existing setup stalls. The startup budget uses
 the task's build timeout and Harbor's environment/general timeout multiplier.
 For example, a measured setup
-p95 of 20 seconds yields 25 seconds of headroom, so a 600-second agent budget
-blocks new starts after 575 seconds rather than a fixed 480-second threshold.
+p95 of 20 seconds yields 25 seconds of headroom, so a 1200-second agent budget
+blocks new starts after 1175 seconds rather than a fixed threshold.
 This is a launch-cost heuristic; it does not estimate unfinished coding work or
 prove concurrency caused a timeout. The guard honors the existing
 agent timeout override, maximum and multiplier. Waiting uses Harbor's START
@@ -227,8 +238,8 @@ seconds while a trial is queued.
 When the near-deadline agent phase ends, the hold clears immediately and queued
 trials may use available full-job and setup slots. Completed slow trials and exceptions do not
 permanently reduce capacity; Harbor's existing rate-limit retry backoff remains
-in effect. Running trials continue; results, retries and timeout budgets are
-preserved. Admission is released on END or cancellation, using each attempt's
+in effect. Running trials continue; results, retries and the configured timeout
+budgets are preserved. Admission is released on END or cancellation, using each attempt's
 ID so retries cannot reuse an old permit. Setup admission is bounded from the
 first launch, before there are duration samples. This guard affects queued
 launches and does not stop running agents.
@@ -247,6 +258,10 @@ so startup failures appear even when no verifier ran. The grand total reports
 limits from the pass-rate denominator. An execution timeout takes precedence
 over secondary judge errors generated during recovery. Missing numeric rewards
 are reported as infrastructure failures rather than disappearing from the total.
+Trial discovery and infrastructure classification are silent, including when
+archive synchronization and finalization rebuild the historical results index.
+The console keeps the formatted summary, meaningful failure diagnostics and
+archive destination messages without raw parameter, path-list or `None` traces.
 The summary entrypoint is `lib/print_summary.py JOBS_ROOT [MODE] [SKILLS_CSV]`;
 `JOBS_ROOT` may be one job or the directory containing jobs. It also accepts
 `--self-test` for the existing fixture checks.
