@@ -16,7 +16,8 @@ Current skills:
 | [`worktree`](worktree/SKILL.md) | Project-prefixed sibling `.worktrees/<project>/<project>_<type-feature>` worktree, merge back, never push |
 | [`commits`](commits/SKILL.md) | One working commit per capability sentence in the original request |
 | [`testing`](testing/SKILL.md) | Contract-based regression checks, existing tooling, isolated execution, and honest verification evidence |
-| [`debug`](debug/SKILL.md) | Read repo `.log/` before hypothesizing a bug |
+| [`debug_logs`](debug_logs/SKILL.md) | Existing read-logs-first policy |
+| [`debug`](debug/SKILL.md) | Diagnose, reproduce, repair and verify logged failures |
 | [`docs`](docs/SKILL.md) | README.md after the code: program, entrypoint, commands |
 | [`workflow`](workflow/SKILL.md) | Explicit-only plan → optional worktree → code → optional docs orchestration |
 

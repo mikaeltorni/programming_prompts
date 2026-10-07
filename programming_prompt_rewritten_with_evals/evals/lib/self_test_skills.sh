@@ -42,10 +42,10 @@ check "mixed explicit selection preserves order" $'standard\nworkflow' \
 
 SKILLS_ROOT="$(cd "$SCRIPT_DIR/../../prompts/programming-skills" && pwd)"
 JUDGES_ROOT="$(cd "$SCRIPT_DIR/../judges" && pwd)"
-eight=$'commenting\ncommits\ndebug\ndocs\nlogging\nsrp\ntesting\nworktree'
-check "real default discovery is the eight companions" "$eight" \
+eight=$'commenting\ncommits\ndebug\ndebug_logs\ndocs\nlogging\nsrp\ntesting\nworktree'
+check "real default discovery is the available companions" "$eight" \
   "$(list_available_skills)"
-check "omitting --skills resolves the eight companions" "$eight" \
+check "omitting --skills resolves the available companions" "$eight" \
   "$(resolve_skills '')"
 check "explicit workflow still resolves" "workflow" \
   "$(resolve_skills workflow)"
