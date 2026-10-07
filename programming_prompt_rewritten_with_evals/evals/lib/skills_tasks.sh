@@ -62,12 +62,27 @@ resolve_skills() {
   printf '%s\n' "${selected[@]}"
 }
 
+task_prompt_path() {
+  local name="$1" directory
+  for directory in "$CODING_PROMPTS_DIR" "${DEBUG_PROMPTS_DIR:-$CODING_PROMPTS_DIR/../debug-prompts}"; do
+    if [[ -f "$directory/$name.md" && "$name" != README ]]; then
+      printf '%s\n' "$directory/$name.md"
+      return 0
+    fi
+  done
+  return 1
+}
+
 list_available_tasks() {
-  local prompt
-  for prompt in "$CODING_PROMPTS_DIR"/*.md; do
-    [[ -f "$prompt" ]] || continue
-    [[ "$(basename "$prompt")" == "README.md" ]] && continue
-    printf '%s\n' "$(basename "$prompt" .md)"
+  local suite="${1:-${SUITE_ARG:-coding}}" directory prompt
+  local -a directories=()
+  [[ "$suite" == coding || "$suite" == all ]] && directories+=("$CODING_PROMPTS_DIR")
+  [[ "$suite" == debug || "$suite" == all ]] && directories+=("${DEBUG_PROMPTS_DIR:-$CODING_PROMPTS_DIR/../debug-prompts}")
+  for directory in "${directories[@]}"; do
+    for prompt in "$directory"/*.md; do
+      [[ -f "$prompt" && "$(basename "$prompt")" != README.md ]] || continue
+      printf '%s\n' "$(basename "$prompt" .md)"
+    done
   done | sort
 }
 
@@ -77,26 +92,29 @@ resolve_tasks() {
   if [[ -z "$raw" ]]; then
     mapfile -t selected < <(list_available_tasks)
   else
-    local IFS=','
+    local IFS=',' part
     local -a parts
     read -r -a parts <<<"$raw"
-    local part
     for part in "${parts[@]}"; do
       part="$(echo "$part" | tr -d '[:space:]')"
-      [[ -n "$part" ]] || continue
-      selected+=("$part")
+      [[ -n "$part" ]] && selected+=("$part")
     done
   fi
   if [[ ${#selected[@]} -eq 0 ]]; then
-    echo "No coding tasks selected under $CODING_PROMPTS_DIR" >&2
-    exit 1
+    echo "No tasks selected for suite ${SUITE_ARG:-coding}" >&2
+    return 1
   fi
-  local task
+  local task path
   for task in "${selected[@]}"; do
-    if [[ ! -f "$CODING_PROMPTS_DIR/$task.md" ]]; then
-      echo "Unknown coding task '$task' (expected $CODING_PROMPTS_DIR/$task.md)" >&2
-      echo "Available: $(list_available_tasks | tr '\n' ' ')" >&2
-      exit 1
+    path="$(task_prompt_path "$task")" || {
+      echo "Unknown task '$task'; available: $(list_available_tasks all | tr '\n' ' ')" >&2
+      return 1
+    }
+    if [[ -n "${SUITE_ARG:-}" && "$SUITE_ARG" != all ]]; then
+      if ! list_available_tasks "$SUITE_ARG" | grep -qxF "$task"; then
+        echo "Task '$task' is outside --suite $SUITE_ARG" >&2
+        return 1
+      fi
     fi
   done
   printf '%s\n' "${selected[@]}"

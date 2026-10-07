@@ -21,7 +21,7 @@
 
 # Canonical value-taking flags, for error messages and the self-test.
 BENCHMARK_VALUE_FLAGS=(--harness --eval-agent --eval-agent-model \
-  --eval-agent-reasoning-effort --skills --tasks --concurrency)
+  --eval-agent-reasoning-effort --skills --tasks --suite --concurrency)
 
 # Print the canonical usage on stdout.
 #
@@ -37,7 +37,8 @@ Every wrapper parameter is a long, kebab-case flag followed by its value:
   --eval-agent-model <id>              judge model id
   --eval-agent-reasoning-effort <low|medium|high>
   --skills <a,b,c>                     skills to evaluate (default: all)
-  --tasks <a,b,c>                      tasks to run (default: all)
+  --tasks <a,b,c>                      tasks to run (default: selected suite)
+  --suite <coding|debug|all>           task family (default: coding)
   --concurrency <positive integer>    trial ceiling (default: all; launches paced automatically)
 
 Switches:
@@ -178,6 +179,20 @@ parse_benchmark_flags() {
       --skills=*)
         SKILLS_ARG="$(benchmark_flag_value --skills "${1#*=}" "a list like srp,commenting")" || return 1
         shift
+        ;;
+      --suite|--suite=*)
+        local suite_value
+        if [[ "$1" == --suite ]]; then
+          suite_value="$(benchmark_flag_value --suite "${2:-}" "coding, debug or all")" || return 1
+          shift 2
+        else
+          suite_value="$(benchmark_flag_value --suite "${1#*=}" "coding, debug or all")" || return 1
+          shift
+        fi
+        case "$suite_value" in
+          coding|debug|all) SUITE_ARG="$suite_value" ;;
+          *) benchmark_flag_die "Unknown suite '$suite_value' (use coding, debug or all)" || return 1 ;;
+        esac
         ;;
       --tasks)
         TASKS_ARG="$(benchmark_flag_value --tasks "${2:-}" "a list like todo,calculator")" || return 1

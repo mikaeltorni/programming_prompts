@@ -124,6 +124,7 @@ RUNS_ROOT="${RUNS_ROOT:-$SCRIPT_DIR/runs}"
 SKILLS_ROOT="$SCRIPT_DIR/../prompts/programming-skills"
 JUDGES_ROOT="$SCRIPT_DIR/judges"
 CODING_PROMPTS_DIR="$SCRIPT_DIR/coding-prompts"
+DEBUG_PROMPTS_DIR="$SCRIPT_DIR/debug-prompts"
 TASKS_DIR="$SCRIPT_DIR/.generated/tasks"
 
 source "$SCRIPT_DIR/lib/parse_flags.sh"
@@ -149,6 +150,7 @@ BASELINE=0
 RUN_SEPARATELY=0
 SKILLS_ARG=""
 TASKS_ARG=""
+SUITE_ARG=""
 CONCURRENCY_ARG=""
 HARNESS_ARG=""
 EVAL_AGENT_ARG=""
@@ -230,10 +232,14 @@ CLAUDE_VERSION="$(python3 "$HARNESS_SPEC" version cc)"
 GROK_VERSION="$(python3 "$HARNESS_SPEC" version grok)"
 echo "Instance CLI versions: Codex $CODEX_VERSION | Claude Code $CLAUDE_VERSION | Grok $GROK_VERSION" >&2
 
-mapfile -t SELECTED_SKILLS < <(resolve_skills "$SKILLS_ARG")
+_skills_out="$(resolve_skills "$SKILLS_ARG")" || exit 1
+mapfile -t SELECTED_SKILLS <<< "$_skills_out"
+unset _skills_out
 echo "Selected skill(s): ${SELECTED_SKILLS[*]}" >&2
 
-mapfile -t SELECTED_TASKS < <(resolve_tasks "$TASKS_ARG")
+_tasks_out="$(resolve_tasks "$TASKS_ARG")" || exit 1
+mapfile -t SELECTED_TASKS <<< "$_tasks_out"
+unset _tasks_out
 echo "Selected coding task(s): ${SELECTED_TASKS[*]}" >&2
 if [[ -z "${EVAL_LLM_MAX_CONCURRENT:-}" ]]; then
   echo "LLM trial ceiling: unset; full configured capacity with measured deadline headroom (no launch ramp-up)." >&2
