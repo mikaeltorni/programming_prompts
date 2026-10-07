@@ -17,6 +17,9 @@ write_job_config() {
   # -k 20 jobs can run at CPU/disk speed: a Codex 429 requeues the trial
   # with backoff instead of leaving an unmerged worktree. Pass harbor -r 0
   # to disable. Do not retry usage-limit / timeout / reward-file errors.
+  # Parameters: $1 - harness; $2 - YAML destination; $3 - skills YAML; $4 - task root.
+  # Returns: None; writes the job configuration.
+  printf 'harness=%s config_file=%s skills_block=%s tasks_root=%s\n' "$1" "$2" "$3" "$4" >&2
   local harness="$1"
   local config_file="$2"
   local skills_block="$3"
@@ -38,6 +41,9 @@ agents:
   - import_path: ${import_path}
     model_name: ${model_name}
     skills: ${skills_block}
+    # Multi-stage agents were still progressing at the task's 600-second cutoff.
+    # Extend only execution; setup/verifier limits and capacity stay independent.
+    override_timeout_sec: 1200.0
     kwargs:
       version: "${version}"
       reasoning_effort: low
@@ -45,4 +51,5 @@ agents:
 tasks:
 $(yaml_task_entries "$tasks_root")
 EOF
+  printf 'None\n' >&2
 }
