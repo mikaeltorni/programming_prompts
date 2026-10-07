@@ -191,16 +191,29 @@ Do not add a second judge unless the user explicitly requests it.
 Every wrapper invocation installs the Harbor job plugin
 [`DeadlineLaunchGuard`](harbor_agents/launch_guard.py). It applies to all coding
 harnesses, positive/baseline jobs and install-only runs, without adding a flag to
-the user's command. The guard immediately permits the full existing trial ceiling,
-subject to configured LLM and Docker capacity limits. There is no four-trial
-starting cap, gradual ramp-up or persistent halving of capacity. Each admitted
-trial holds its slot through setup, coding, verification and cleanup.
+the user's command. The full existing trial ceiling remains subject to configured
+LLM and Docker capacity limits. Each admitted trial holds its full-job slot
+through setup, coding, verification and cleanup.
+
+Container and agent setup have a separate simultaneous-start ceiling: half the
+host's available CPUs, rounded down, with at least one slot and no more than the
+job's full ceiling. CPU affinity is used when available. On a 16-CPU host the
+setup ceiling is eight, even if the job requests 126 concurrent trials.
+`EVAL_SETUP_MAX_CONCURRENT` accepts a positive integer to impose a lower startup
+cap; it cannot raise the CPU-derived ceiling. This setting affects only setup.
+At the first AGENT_START the setup slot is released immediately, so coding and
+judging continue in parallel while queued trials start. Failed setups and
+install-only trials release their slots on END or cancellation.
 
 The guard measures admission-to-first-agent-start setup time and keeps the latest
 64 samples for the current job. Deadline headroom is their nearest-rank 95th
 percentile plus the five-second polling interval. Before any sample exists,
-headroom is five seconds. New containers wait only when a running agent's actual
-remaining execution time is within this headroom. For example, a measured setup
+headroom is five seconds. New containers wait when a running agent's actual
+remaining execution time is within this headroom. They also wait when any
+admitted setup has used at least half its environment startup budget, avoiding
+additional launch work while an existing setup stalls. The startup budget uses
+the task's build timeout and Harbor's environment/general timeout multiplier.
+For example, a measured setup
 p95 of 20 seconds yields 25 seconds of headroom, so a 600-second agent budget
 blocks new starts after 575 seconds rather than a fixed 480-second threshold.
 This is a launch-cost heuristic; it does not estimate unfinished coding work or
@@ -212,19 +225,31 @@ Deadline pressure is rechecked before every admission and at least every five
 seconds while a trial is queued.
 
 When the near-deadline agent phase ends, the hold clears immediately and queued
-trials may use all available slots. Completed slow trials and exceptions do not
+trials may use available full-job and setup slots. Completed slow trials and exceptions do not
 permanently reduce capacity; Harbor's existing rate-limit retry backoff remains
 in effect. Running trials continue; results, retries and timeout budgets are
 preserved. Admission is released on END or cancellation, using each attempt's
-ID so retries cannot reuse an old permit. This guard affects queued launches;
-it cannot reduce a batch that has already started at the full ceiling.
+ID so retries cannot reuse an old permit. Setup admission is bounded from the
+first launch, before there are duration samples. This guard affects queued
+launches and does not stop running agents.
 
-The job log contains `Automatic launch guard:` lines for admission, queueing,
-setup durations, computed headroom and near-deadline trial names with remaining
-seconds. Pacing is local to the job; continue to run one wrapper at a time.
+The console emits `Automatic launch guard:` lines for admission, queueing,
+full-job and setup ceilings, setup durations, stalled setups, computed headroom
+and near-deadline trial names with remaining seconds. Pacing is local to the
+job; continue to run one wrapper at a time.
 It avoids additional launch work near deadlines but cannot predict how much work a
 particular task still needs or guarantee completion within its own deadline.
 Account usage quotas remain separate from these per-trial wall-clock limits.
+
+Console summaries discover trial records independently of `verifier/reward.json`,
+so startup failures appear even when no verifier ran. The grand total reports
+`trials` and `scored` separately, and excludes infrastructure errors and rate
+limits from the pass-rate denominator. An execution timeout takes precedence
+over secondary judge errors generated during recovery. Missing numeric rewards
+are reported as infrastructure failures rather than disappearing from the total.
+The summary entrypoint is `lib/print_summary.py JOBS_ROOT [MODE] [SKILLS_CSV]`;
+`JOBS_ROOT` may be one job or the directory containing jobs. It also accepts
+`--self-test` for the existing fixture checks.
 
 ## Read the evidence
 

@@ -418,17 +418,23 @@ The runner accepts `--harness`, selects the Codex judge with
 Without `--concurrency`, all selected tasks × attempts remain eligible, subject
 to configured LLM caps and available per-trial Docker network slots. The automatic
 [launch guard](programming_prompt_rewritten_with_evals/evals/harbor_agents/launch_guard.py)
-uses the full configured trial ceiling immediately. It holds new container
-starts only when a running agent's remaining execution time falls within
-measured setup headroom: the 95th percentile of the latest setup durations plus
-five seconds. Holds clear as agents finish; there is no ramp-up or permanent
-capacity reduction. Waiting happens before container setup and
-before the waiting trial's agent timer, so each trial receives its full budget.
+keeps that full ceiling for running trials and separately bounds simultaneous
+setups to half the host's available CPUs (at least one). On a 16-CPU host,
+eight trials may set up at once; each releases its setup slot when its agent
+starts, allowing more setups while existing coding and judging continue.
+`EVAL_SETUP_MAX_CONCURRENT` can impose a lower setup cap. New starts also wait
+when admitted setup work reaches half its environment startup budget or a
+running agent approaches its deadline. Agent headroom is the 95th percentile
+of recent setup durations plus five seconds. Holds clear as the affected phases
+finish, without permanently reducing capacity. Waiting happens before setup
+and agent timers, so queued trials retain their full budgets.
 The guard applies to Codex, Claude Code and Grok in positive and baseline runs.
 It avoids starting new containers close to active deadlines but cannot guarantee
 a task finishes before its own deadline. Use `--concurrency N` only to impose a
 lower ceiling; no flag is needed
-for pacing. `-k` controls attempts per task independently.
+for pacing. `-k` controls attempts per task independently. Console summaries
+include trials that failed before verification and show both `trials` and
+`scored` counts; infrastructure failures are reported separately from pass rate.
 Run one benchmark invocation at a time. See the
 [evals README](programming_prompt_rewritten_with_evals/evals/README.md) for the
 command surface and [AGENTS.md](AGENTS.md) for the repository's run policy and
