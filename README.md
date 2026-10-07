@@ -64,7 +64,7 @@ and carry manifests for both Codex and Claude Code; direct skills carry only
 `SKILL.md` content.
 
 - **Testing Skill** — Focused regression checks, public-interface coverage, existing project tooling, and isolated execution; source: [testing](programming_prompt_rewritten_with_evals/prompts/programming-skills/testing/SKILL.md).
-- **Workflow Skill** — Explicit-only orchestration that plans first, coordinates only selected companion skills, always writes code, and conditionally uses worktree and documentation guidance.
+- **Workflow Skill** — Explicit-only orchestration that immediately establishes a selected editing worktree before detailed planning, coordinates only selected companion skills, and conditionally uses documentation guidance.
 - **Docs Skill** — User-facing project documentation for completed programming changes.
 - **Commit Guidelines** — Cautious Git commit workflow (inspect → plan → stage hunks → verify → compose).
 - **SSH VM** — Connect to a VM for remote software deployment or verification, with Ubuntu live USB setup guidance.
@@ -157,11 +157,19 @@ harness's skill directory.
 ### workflow
 
 An explicit-only orchestrator for programming tasks. Invoke `$workflow` to
-create a repository-local Markdown plan, apply only the companion skills
+immediately establish or verify the editing checkout when worktree isolation
+applies, then create a launch-project Markdown plan and apply only the companion skills
 enabled in the current prompt, write the code, and conditionally use worktree
 or documentation guidance when those companions are enabled. With no companion
 skills it falls back to plan-then-code. Installing or discovering the skill
 does not activate it, and other skills do not depend on it.
+
+The phase order is `Establish worktree`, `Plan`, `Write code`, then
+`Write documentation`. Read-only tasks and explicit live-checkout work skip
+isolation; an assigned existing task checkout is verified and reused. Minimal
+repository discovery precedes checkout setup, while detailed investigation and
+planning follow inside it. Retain the launch root and absolute
+`ACC_WORKFLOW_FILE` before entering the worktree.
 
 The initial plan contains both the four workflow phases and a concrete
 `## Microsteps` table with `Step`, `Phase`, `Action`, `Status`, and `Evidence`

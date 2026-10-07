@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >-
-  v1.0.10 — Edit Git projects in a sibling .worktrees project/task checkout,
+  v1.0.11 — Edit Git projects in a sibling .worktrees project/task checkout,
   commit there, merge each Feature into the live default branch, and reapply
   its consumers. Never push unless requested.
 ---
@@ -14,12 +14,20 @@ new worktree or branch for each capability sentence.
 
 ## Establish the task checkout
 
-Read the project's `AGENTS.md` and `CLAUDE.md` first. Read-only
-inspection may precede isolation; the first repository mutation is
+Read the project's `AGENTS.md` and `CLAUDE.md` first, resolve the physical
+launch repository and retain its absolute workflow path, then establish the
+task checkout immediately before detailed planning or investigation. Do not
+wait until code changes are ready. Minimal read-only discovery needed to
+identify the repository and task slug may precede isolation; the first
+repository mutation is
 `git worktree add`. Use the existing repository and history, not `git
 init` or a history rewrite. Explain the limitation if there is no Git
 repository. An explicit request to edit the current checkout overrides
-isolation.
+isolation. A read-only task does not need a new editing checkout. If the user
+or launcher explicitly assigns an existing task worktree, verify its registered
+path and branch and continue there immediately instead of creating another.
+When workflow is selected, complete this startup step before writing its
+detailed plan; the launch-project plan path remains unchanged.
 
 Resolve the **physical live checkout** first. Start with that repository's
 `git rev-parse --show-toplevel`, then resolve its symlinks with `pwd -P` from
