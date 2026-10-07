@@ -24,7 +24,7 @@ that fail constrained decode still score when the yes/no JSON is in ``text``.
 `*.py` files into the prompt for every agent and retries once on skip-inspect,
 invented paths, or an explicit no verdict contradicting its own reasoning.
 It also inlines the launch-project workflow plan for the workflow judge and
-bounded original failure logs for both debug and testing judges. Codex and Claude Code still use pinned harbor-rewardkit
+bounded original failure logs for debug, debug_logs and testing judges. Codex and Claude Code still use pinned harbor-rewardkit
 (with a writable `CLAUDE_CONFIG_DIR` / `CODEX_HOME` overlay passed into the
 `rewardkit` child, not only `os.environ`). The task image installs
 `rewardkit` onto `PATH`; the wrapper uses that binary and only falls back
@@ -76,3 +76,13 @@ not establish isolation. Missing reflog evidence is reported explicitly.
 `--python-path FILE` instead reports AST function boundaries and final statements
 to support logging judgments. It does not infer missing execution paths or score
 logging automatically; judges inspect control flow and cite any uncovered exit.
+
+Dedicated repair tasks also run `check_debug_behavior.py` against verifier-owned
+`/tests/debug-cases.json`. Each public-call sequence loads the delivered module
+in a fresh subprocess, checks independent results or exception types, and retains
+observations and captured stdout/stderr beside its reward file. All sequences
+must pass; missing/empty contracts and crashes cannot pass. This functional
+criterion is separate from semantic debugging policy and has no source markers.
+The debug/debug_logs semantic judges additionally receive chronological transcript
+excerpts from each coding harness, with startup inventories removed and large
+or missing segments explicitly identified.
