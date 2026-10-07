@@ -9,7 +9,6 @@ overrides it.
 
 from __future__ import annotations
 
-import sys
 from typing import override
 
 from harbor.agents.installed.claude_code import ClaudeCode
@@ -61,11 +60,9 @@ class BenchmarkClaudeCode(ClaudeCode):
         Parameters: self - the benchmark harness instance.
         Returns: the isolated trial registration shell command.
         """
-        print(f"self={object.__repr__(self)}", file=sys.stderr)
         command = build_clean_claude_skills_register_command(self.skills_dir, self.session_id)
         self.logger.info(
             "Resetting Claude skill discovery paths; installing skills_dir=%s",
             self.skills_dir,
         )
-        print(command, file=sys.stderr)
         return command

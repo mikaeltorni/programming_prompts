@@ -37,7 +37,6 @@ def execution_budget(event: TrialHookEvent) -> float | None:
     Parameters: event - lifecycle event containing the resolved local task path.
     Returns: effective seconds, or None for an unlimited agent phase.
     """
-    print(f"event={object.__repr__(event)}", file=sys.stderr)
     base = event.config.agent.override_timeout_sec
     if not base:
         path = event.config.task.path
@@ -46,14 +45,12 @@ def execution_budget(event: TrialHookEvent) -> float | None:
         with (path / "task.toml").open("rb") as handle:
             base = tomllib.load(handle).get("agent", {}).get("timeout_sec")
     if base is None:
-        print(None, file=sys.stderr)
         return None
     maximum = event.config.agent.max_timeout_sec or float("inf")
     multiplier = event.config.agent_timeout_multiplier
     if multiplier is None:
         multiplier = event.config.timeout_multiplier
     result = min(float(base), maximum) * multiplier
-    print(result, file=sys.stderr)
     return result
 
 
@@ -63,7 +60,6 @@ def environment_budget(event: TrialHookEvent) -> float:
     Parameters: event - lifecycle event with a resolved local task path.
     Returns: effective environment startup budget in seconds.
     """
-    print(f"event={object.__repr__(event)}", file=sys.stderr)
     path = event.config.task.path
     if path is None:
         raise ValueError("Launch guard requires a resolved local task path")
@@ -73,7 +69,6 @@ def environment_budget(event: TrialHookEvent) -> float:
     if multiplier is None:
         multiplier = event.config.timeout_multiplier
     result = float(base) * multiplier
-    print(result, file=sys.stderr)
     return result
 
 
@@ -83,7 +78,6 @@ def setup_ceiling(trial_ceiling: int) -> int:
     Parameters: trial_ceiling - configured full-job trial capacity.
     Returns: startup capacity bounded by half the available CPUs and an optional lower cap.
     """
-    print(f"trial_ceiling={trial_ceiling}", file=sys.stderr)
     cpus = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else (os.cpu_count() or 1)
     capacity = max(1, cpus // 2)
     raw = os.environ.get("EVAL_SETUP_MAX_CONCURRENT", "").strip()
@@ -93,7 +87,6 @@ def setup_ceiling(trial_ceiling: int) -> int:
             raise ValueError("EVAL_SETUP_MAX_CONCURRENT must be a positive integer")
         capacity = min(capacity, requested)
     result = min(trial_ceiling, capacity)
-    print(result, file=sys.stderr)
     return result
 
 
@@ -108,7 +101,6 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         Parameters: self - launch guard; job - Harbor job whose starts will be paced.
         Returns: None.
         """
-        print(f"self={object.__repr__(self)} job={object.__repr__(job)}", file=sys.stderr)
         self.condition = asyncio.Condition()
         self.active: dict[str, ActiveTrial] = {}
         self.ceiling = job.config.n_concurrent_trials
@@ -125,7 +117,6 @@ class DeadlineLaunchGuard(BaseJobPlugin):
             f"setup p95 + {self.poll_interval:.1f}s (queue time is excluded)",
             file=sys.stderr,
         )
-        print(None, file=sys.stderr)
 
     def deadline_headroom(self) -> float:
         """Allow observed setup cost plus a polling interval before deadlines.
@@ -133,11 +124,9 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         Parameters: self - launch guard holding the observed setup samples.
         Returns: seconds of headroom, using the latest setup durations' p95.
         """
-        print(f"self={object.__repr__(self)}", file=sys.stderr)
         samples = sorted(self.setup_durations)
         setup = samples[math.ceil(0.95 * len(samples)) - 1] if samples else 0.0
         result = setup + self.poll_interval
-        print(result, file=sys.stderr)
         return result
 
     def pressured_trials(self, now: float) -> list[tuple[ActiveTrial, float]]:
@@ -146,7 +135,6 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         Parameters: self - launch guard; now - current monotonic timestamp.
         Returns: records and remaining seconds that block additional starts.
         """
-        print(f"self={object.__repr__(self)} now={now}", file=sys.stderr)
         headroom = self.deadline_headroom()
         result = [
             (trial, trial.budget - (now - trial.started))
@@ -154,7 +142,6 @@ class DeadlineLaunchGuard(BaseJobPlugin):
             if trial.started is not None and trial.budget is not None
             and trial.budget - (now - trial.started) <= headroom
         ]
-        print(result, file=sys.stderr)
         return result
 
     def setup_pressure(self, now: float) -> tuple[int, list[str]]:
@@ -163,14 +150,12 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         Parameters: self - launch guard; now - current monotonic timestamp.
         Returns: setup slot count and names using at least half their startup budget.
         """
-        print(f"self={object.__repr__(self)} now={now}", file=sys.stderr)
         starting = [trial for trial in self.active.values() if not trial.setup_recorded]
         stalled = [
             trial.name for trial in starting
             if now - trial.admitted >= trial.setup_budget / 2
         ]
         result = (len(starting), stalled)
-        print(result, file=sys.stderr)
         return result
 
     async def admit(self, event: TrialHookEvent) -> None:
@@ -179,10 +164,8 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         Parameters: self - launch guard; event - trial START event with an attempt ID.
         Returns: None after admission; cancellation releases a pending waiter.
         """
-        print(f"self={object.__repr__(self)} event={object.__repr__(event)}", file=sys.stderr)
         key = str(event.trial_id)
         setup_budget = environment_budget(event)
-        waiting_reason: tuple[str, ...] | None = None
         async with self.condition:
             while key not in self.active:
                 now = time.monotonic()
@@ -193,29 +176,7 @@ class DeadlineLaunchGuard(BaseJobPlugin):
                     self.active[key] = ActiveTrial(
                         name=event.trial_name, admitted=now, setup_budget=setup_budget,
                     )
-                    print(
-                        f"Automatic launch guard: admitted {event.trial_name}; "
-                        f"active={len(self.active)} ceiling={self.ceiling} "
-                        f"starting={starting + 1} setup_ceiling={self.setup_ceiling}",
-                        file=sys.stderr,
-                    )
-                    print(None, file=sys.stderr)
                     return
-                reason = tuple(sorted(
-                    [trial.name for trial, _ in pressured] + stalled
-                    + [f"starting={starting}", f"active={len(self.active)}"],
-                ))
-                if reason != waiting_reason:
-                    print(
-                        f"Automatic launch guard: queued {event.trial_name} before setup; "
-                        f"active={len(self.active)} ceiling={self.ceiling} "
-                        f"starting={starting} setup_ceiling={self.setup_ceiling} "
-                        f"headroom={self.deadline_headroom():.1f}s "
-                        f"near_deadline={[(t.name, round(r, 1)) for t, r in pressured]} "
-                        f"stalled_setup={stalled}",
-                        file=sys.stderr,
-                    )
-                    waiting_reason = reason
                 # Periodic wakeups detect approaching deadlines even when no
                 # phase finishes. A Condition notification wakes us sooner.
                 try:
@@ -224,7 +185,6 @@ class DeadlineLaunchGuard(BaseJobPlugin):
                     )
                 except TimeoutError:
                     pass
-        print(None, file=sys.stderr)
 
     async def agent_started(self, event: TrialHookEvent) -> None:
         """Start tracking the phase budget after admission and setup complete.
@@ -232,7 +192,6 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         Parameters: self - launch guard; event - AGENT_START before Harbor's timer.
         Returns: None.
         """
-        print(f"self={object.__repr__(self)} event={object.__repr__(event)}", file=sys.stderr)
         budget = execution_budget(event)
         async with self.condition:
             trial = self.active[str(event.trial_id)]
@@ -240,16 +199,9 @@ class DeadlineLaunchGuard(BaseJobPlugin):
             if not trial.setup_recorded:
                 self.setup_durations.append(now - trial.admitted)
                 trial.setup_recorded = True
-                print(
-                    f"Automatic launch guard: setup {trial.name} took "
-                    f"{now - trial.admitted:.1f}s; samples={len(self.setup_durations)} "
-                    f"deadline headroom={self.deadline_headroom():.1f}s; setup slot released",
-                    file=sys.stderr,
-                )
             trial.started = now
             trial.budget = budget
             self.condition.notify_all()
-        print(None, file=sys.stderr)
 
     async def agent_ended(self, event: TrialHookEvent) -> None:
         """Clear phase deadline pressure immediately when execution ends.
@@ -257,15 +209,12 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         Parameters: self - launch guard; event - AGENT_END, including failures.
         Returns: None; admission stays held through verification and cleanup.
         """
-        print(f"self={object.__repr__(self)} event={object.__repr__(event)}", file=sys.stderr)
         async with self.condition:
             trial = self.active.get(str(event.trial_id))
             if trial is None or trial.started is None:
-                print(None, file=sys.stderr)
                 return
             trial.started = None
             self.condition.notify_all()
-        print(None, file=sys.stderr)
 
     async def finished(self, event: TrialHookEvent) -> None:
         """Release admission without permanent backoff or changing rewards.
@@ -273,14 +222,11 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         Parameters: self - launch guard; event - END after outputs have been saved.
         Returns: None.
         """
-        print(f"self={object.__repr__(self)} event={object.__repr__(event)}", file=sys.stderr)
         async with self.condition:
             trial = self.active.pop(str(event.trial_id), None)
             if trial is None:
-                print(None, file=sys.stderr)
                 return
             self.condition.notify_all()
-        print(None, file=sys.stderr)
 
     async def cancelled(self, event: TrialHookEvent) -> None:
         """Release only this attempt's permit on cancellation, once.
@@ -288,18 +234,13 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         Parameters: self - launch guard; event - CANCEL; a later END is harmless.
         Returns: None.
         """
-        print(f"self={object.__repr__(self)} event={object.__repr__(event)}", file=sys.stderr)
         async with self.condition:
             self.active.pop(str(event.trial_id), None)
             self.condition.notify_all()
-        print(None, file=sys.stderr)
 
     async def on_job_end(self, job_result) -> None:
-        """Log completion without changing Harbor's results or retry policy.
+        """Finish silently without changing Harbor's results or retry policy.
 
         Parameters: self - launch guard; job_result - original Harbor job result.
         Returns: None.
         """
-        print(f"self={object.__repr__(self)} job_result={object.__repr__(job_result)}", file=sys.stderr)
-        print(f"Automatic launch guard finished; trial ceiling={self.ceiling}", file=sys.stderr)
-        print(None, file=sys.stderr)

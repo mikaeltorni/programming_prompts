@@ -4,7 +4,6 @@ prepare_instruction_bundle() {
   # Build family documents and an explicit instruction document for each task.
   # Parameters: $1 - transport bundle path; remaining arguments - selected policies.
   # Returns: None after generating the portable bundle; propagates build errors.
-  printf 'bundle=%s skills=%s\n' "$1" "${*:2}" >&2
   local bundle="$1" task family csv skill
   shift
   local -a skills=("$@") applicable=()
@@ -26,7 +25,6 @@ prepare_instruction_bundle() {
   printf '%s\n' '---' 'name: global-instructions' \
     'description: Per-task global instructions for a shared benchmark schedule.' '---' > "$bundle/SKILL.md" || return 1
   cp "$SCRIPT_DIR/../../scripts/global_instructions.py" "$bundle/builder.py" || return 1
-  printf 'None\n' >&2
 }
 
 prepare_job_tasks() {

@@ -7,7 +7,6 @@ without loading the Harbor tool environment.
 from __future__ import annotations
 
 import shlex
-import sys
 from pathlib import Path
 
 # Fallback when pin files and the instance-start cache are missing.
@@ -195,7 +194,6 @@ def _trial_instruction_command(skills_dir: str, trial_id: str | None) -> str:
     Parameters: skills_dir - trial transport directory; trial_id - Harbor session identity.
     Returns: shell commands assigning and checking the selected document path.
     """
-    print(f"skills_dir={skills_dir} trial_id={trial_id}", file=sys.stderr)
     bundle = skills_dir.rstrip("/") + "/global-instructions"
     task_name = (trial_id or "").split("__", 1)[0]
     if task_name and (Path(task_name).name != task_name or task_name in {".", ".."}):
@@ -209,7 +207,6 @@ def _trial_instruction_command(skills_dir: str, trial_id: str | None) -> str:
         f"else benchmark_instructions={legacy_document}; fi "
         '&& test -f "$benchmark_instructions"'
     )
-    print(command, file=sys.stderr)
     return command
 
 
@@ -221,7 +218,6 @@ def _build_global_register_command(
     Parameters: skills_dir - optional transport directory; runtime - harness native format; trial_id - Harbor session identity.
     Returns: the isolated trial registration shell command.
     """
-    print(f"skills_dir={skills_dir} runtime={runtime} trial_id={trial_id}", file=sys.stderr)
     ensure = build_ensure_git_repo_command()
     if runtime == "codex":
         wipe = (
@@ -253,7 +249,6 @@ def _build_global_register_command(
             builder = shlex.quote(skills_dir.rstrip("/") + "/global-instructions/builder.py")
             budget = shlex.quote('import runpy,sys; from pathlib import Path; runpy.run_path(sys.argv[1])["ensure_codex_instruction_budget"](Path(sys.argv[2]))')
             command += f' && python3 -c {budget} {builder} "$CODEX_HOME"'
-    print(command, file=sys.stderr)
     return command
 
 
@@ -263,9 +258,7 @@ def build_clean_skills_register_command(skills_dir: str | None, trial_id: str | 
     Parameters: skills_dir - optional transport directory; trial_id - Harbor session identity.
     Returns: the Codex registration shell command.
     """
-    print(f"skills_dir={skills_dir} trial_id={trial_id}", file=sys.stderr)
     command = _build_global_register_command(skills_dir, "codex", trial_id)
-    print(command, file=sys.stderr)
     return command
 
 
@@ -275,9 +268,7 @@ def build_clean_claude_skills_register_command(skills_dir: str | None, trial_id:
     Parameters: skills_dir - optional transport directory; trial_id - Harbor session identity.
     Returns: the Claude registration shell command.
     """
-    print(f"skills_dir={skills_dir} trial_id={trial_id}", file=sys.stderr)
     command = _build_global_register_command(skills_dir, "claude", trial_id)
-    print(command, file=sys.stderr)
     return command
 
 
@@ -287,7 +278,5 @@ def build_clean_grok_skills_register_command(skills_dir: str | None, trial_id: s
     Parameters: skills_dir - optional transport directory; trial_id - Harbor session identity.
     Returns: the Grok registration shell command.
     """
-    print(f"skills_dir={skills_dir} trial_id={trial_id}", file=sys.stderr)
     command = _build_global_register_command(skills_dir, "grok", trial_id)
-    print(command, file=sys.stderr)
     return command
