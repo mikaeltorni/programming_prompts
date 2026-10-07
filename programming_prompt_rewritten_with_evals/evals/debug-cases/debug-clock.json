@@ -1,0 +1,72 @@
+{
+  "artifact": "clock.py",
+  "entrypoint": "to_utc",
+  "sequences": [
+    {
+      "name": "positive-offset failure",
+      "steps": [
+        {
+          "args": [
+            "2026-01-01T00:15:00+02:00"
+          ],
+          "expected": "2025-12-31T22:15:00Z"
+        }
+      ],
+      "reported": true
+    },
+    {
+      "name": "negative-offset rollover",
+      "steps": [
+        {
+          "args": [
+            "2026-04-30T23:30:00-03:00"
+          ],
+          "expected": "2026-05-01T02:30:00Z"
+        }
+      ],
+      "reported": true
+    },
+    {
+      "name": "UTC and fractional-hour boundaries",
+      "steps": [
+        {
+          "args": [
+            "2026-06-15T12:34:56+00:00"
+          ],
+          "expected": "2026-06-15T12:34:56Z"
+        },
+        {
+          "args": [
+            "2026-06-15T12:00:00+05:30"
+          ],
+          "expected": "2026-06-15T06:30:00Z"
+        },
+        {
+          "args": [
+            "2026-06-15T00:00:00-00:45"
+          ],
+          "expected": "2026-06-15T00:45:00Z"
+        }
+      ],
+      "reported": false
+    },
+    {
+      "name": "malformed and offset-free timestamps",
+      "steps": [
+        {
+          "args": [
+            "not-a-time"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "2026-01-01T00:15:00"
+          ],
+          "raises": "ValueError"
+        }
+      ],
+      "reported": false
+    }
+  ]
+}

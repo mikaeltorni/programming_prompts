@@ -1,0 +1,348 @@
+{
+  "artifact": "stock.py",
+  "entrypoint": "run_stock",
+  "sequences": [
+    {
+      "name": "rejected shortage must preserve stock",
+      "steps": [
+        {
+          "args": [
+            "reserve bolt 3"
+          ],
+          "expected": "reserved=3; bolt=5"
+        },
+        {
+          "args": [
+            "reserve bolt 6"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=5"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        }
+      ],
+      "reported": true
+    },
+    {
+      "name": "negative reservation must preserve stock",
+      "steps": [
+        {
+          "args": [
+            "reserve nut 2"
+          ],
+          "expected": "reserved=2; nut=3"
+        },
+        {
+          "args": [
+            "reserve nut -2"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=3"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        }
+      ],
+      "reported": true
+    },
+    {
+      "name": "exact depletion and other item",
+      "steps": [
+        {
+          "args": [
+            "reserve bolt 8"
+          ],
+          "expected": "reserved=8; bolt=0"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=0"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        },
+        {
+          "args": [
+            "reserve bolt 1"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=0"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        }
+      ],
+      "reported": false
+    },
+    {
+      "name": "shared validation preserves populated state",
+      "steps": [
+        {
+          "args": [
+            ""
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        },
+        {
+          "args": [
+            "unknown"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        },
+        {
+          "args": [
+            "show"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        },
+        {
+          "args": [
+            "show bolt extra"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        },
+        {
+          "args": [
+            "show missing"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        },
+        {
+          "args": [
+            "reserve"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        },
+        {
+          "args": [
+            "reserve bolt"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        },
+        {
+          "args": [
+            "reserve bolt 1 extra"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        },
+        {
+          "args": [
+            "reserve bolt bad"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        },
+        {
+          "args": [
+            "reserve missing 1"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        },
+        {
+          "args": [
+            "reserve bolt 0"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        },
+        {
+          "args": [
+            "reserve bolt -1"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        },
+        {
+          "args": [
+            "reserve bolt 9"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "show bolt"
+          ],
+          "expected": "bolt=8"
+        },
+        {
+          "args": [
+            "show nut"
+          ],
+          "expected": "nut=5"
+        }
+      ],
+      "reported": false
+    }
+  ]
+}

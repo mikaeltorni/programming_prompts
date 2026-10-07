@@ -1,0 +1,122 @@
+{
+  "artifact": "catalog.py",
+  "entrypoint": "lookup",
+  "sequences": [
+    {
+      "name": "same-SKU across tenants",
+      "steps": [
+        {
+          "args": [
+            "acme",
+            "tool"
+          ],
+          "expected": 12
+        },
+        {
+          "args": [
+            "beta",
+            "tool"
+          ],
+          "expected": 29
+        },
+        {
+          "args": [
+            "acme",
+            "tool"
+          ],
+          "expected": 12
+        }
+      ],
+      "reported": true
+    },
+    {
+      "name": "reverse tenant order",
+      "steps": [
+        {
+          "args": [
+            "beta",
+            "bolt"
+          ],
+          "expected": 7
+        },
+        {
+          "args": [
+            "acme",
+            "bolt"
+          ],
+          "expected": 3
+        },
+        {
+          "args": [
+            "beta",
+            "bolt"
+          ],
+          "expected": 7
+        }
+      ],
+      "reported": true
+    },
+    {
+      "name": "independent items and misses",
+      "steps": [
+        {
+          "args": [
+            "acme",
+            "tool"
+          ],
+          "expected": 12
+        },
+        {
+          "args": [
+            "beta",
+            "bolt"
+          ],
+          "expected": 7
+        },
+        {
+          "args": [
+            "missing",
+            "tool"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "acme",
+            "tool"
+          ],
+          "expected": 12
+        },
+        {
+          "args": [
+            "beta",
+            "bolt"
+          ],
+          "expected": 7
+        },
+        {
+          "args": [
+            "acme",
+            "missing"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "acme",
+            "tool"
+          ],
+          "expected": 12
+        },
+        {
+          "args": [
+            "beta",
+            "bolt"
+          ],
+          "expected": 7
+        }
+      ],
+      "reported": false
+    }
+  ]
+}

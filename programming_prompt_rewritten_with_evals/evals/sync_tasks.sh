@@ -259,6 +259,9 @@ for prompt_path in prompt_files:
     logs_src = template_dir.parent / "seeds" / name / "log"
     if logs_src.is_dir():
         shutil.copytree(logs_src, task_dir / "tests" / "task-logs")
+    cases_src = template_dir.parent / "debug-cases" / f"{name}.json"
+    if cases_src.is_file():
+        shutil.copy2(cases_src, task_dir / "tests" / "debug-cases.json")
     log(f"prepared original task context for {name}")
     shutil.copy2(oracle_src, task_dir / "solution" / "oracle.py")
     write_solve_sh(task_dir / "solution" / "solve.sh", artifact, name)
