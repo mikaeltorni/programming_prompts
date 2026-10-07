@@ -60,8 +60,11 @@ skill lists. Sources live in [../prompts/programming-skills/](../prompts/program
 `debug_logs` preserves the existing read-logs-first instruction and is evaluated
 on the coding family, including the staged greeter repair. `debug` uses the
 separate [repair scenarios](debug-prompts/README.md): `debug-clock`,
-`debug-catalog`, and `debug-stock`. Default task selection depends on the selected
-skills: `debug` alone runs repair tasks; coding skills alone run coding tasks;
+`debug-catalog`, `debug-stock`, `debug-orders`, `debug-cache`, and
+`debug-scheduler`. The first three remain simple controls; each of the latter
+three combines independent faults and preservation checks. Default task selection
+depends on the selected skills: `debug` alone runs repair tasks; coding skills
+alone run coding tasks;
 a mixed selection runs both families concurrently in one Harbor job per
 harness, from one console. The shared concurrency ceiling, Docker reservation
 and automatic launch guard apply across both families. Every trial still
