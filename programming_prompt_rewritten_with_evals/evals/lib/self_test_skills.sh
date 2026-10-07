@@ -52,6 +52,34 @@ check "explicit workflow still resolves" "workflow" \
 check "explicit logging-vague still resolves" "logging-vague" \
   "$(resolve_skills logging-vague)"
 
+
+CODING_PROMPTS_DIR="$(cd "$SCRIPT_DIR/../coding-prompts" && pwd)"
+DEBUG_PROMPTS_DIR="$(cd "$SCRIPT_DIR/../debug-prompts" && pwd)"
+SUITE_ARG=''
+SELECTED_SKILLS=(debug)
+check "debug-only default selects repair cases" $'debug-catalog\ndebug-clock\ndebug-stock' "$(resolve_tasks '')"
+SELECTED_SKILLS=(testing)
+check "testing-only default keeps coding tasks" 8 "$(resolve_tasks '' | wc -l | tr -d ' ')"
+if resolve_tasks debug-clock >"$fixture/output" 2>"$fixture/error"; then
+  echo 'FAIL unrelated skill accepted explicit debug case' >&2; exit 1
+fi
+grep -q 'requires --skills debug' "$fixture/error"
+SUITE_ARG=debug
+if resolve_tasks '' >"$fixture/output" 2>"$fixture/error"; then
+  echo 'FAIL unrelated skill accepted debug suite' >&2; exit 1
+fi
+SELECTED_SKILLS=(debug testing)
+SUITE_ARG=''
+check "mixed default includes both task families" 11 "$(resolve_tasks '' | wc -l | tr -d ' ')"
+SUITE_ARG=coding
+check "explicit coding suite excludes repairs" 8 "$(resolve_tasks '' | wc -l | tr -d ' ')"
+if resolve_tasks debug-clock >"$fixture/output" 2>"$fixture/error"; then
+  echo 'FAIL coding suite accepted debug case' >&2; exit 1
+fi
+SUITE_ARG=all
+check "explicit mixed tasks resolve across families" $'counter\ndebug-clock' "$(resolve_tasks counter,debug-clock)"
+echo 'ALL TASK FAMILY SELF-TESTS PASSED'
+
 if [[ $fails -eq 0 ]]; then
   echo "ALL SKILL DISCOVERY SELF-TESTS PASSED"
 else

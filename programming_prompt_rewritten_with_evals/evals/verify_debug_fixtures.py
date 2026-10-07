@@ -25,11 +25,13 @@ def failure_log(contract: dict, results: dict) -> str:
     return '\n'.join(lines) + '\n'
 
 
-def certify(root: Path, refresh: bool = False) -> list[dict]:
+def certify(root: Path, refresh: bool = False, names: set[str] | None = None) -> list[dict]:
     """Run and compare every fixture; originals must fail and reference repairs pass."""
     evidence = []
     for cases in sorted((root / 'debug-cases').glob('*.json')):
         name = cases.stem
+        if names is not None and name not in names:
+            continue
         contract = json.loads(cases.read_text())
         seed = root / 'seeds' / name
         original = evaluate(seed, cases)
