@@ -163,6 +163,26 @@ or documentation guidance when those companions are enabled. With no companion
 skills it falls back to plan-then-code. Installing or discovering the skill
 does not activate it, and other skills do not depend on it.
 
+The initial plan contains both the four workflow phases and a concrete
+`## Microsteps` table with `Step`, `Phase`, `Action`, `Status`, and `Evidence`
+columns. Actions name real files or entrypoints and their observable outcomes;
+implementation, integration, required checks and delivery steps are planned
+before code changes. Agents update the same plan at each microstep boundary,
+retain completed work and evidence, and refine pending work when discovery
+changes the task. Microsteps do not change capability-sentence commit boundaries.
+
+ACC launches pass `ACC_WORKFLOW_FILE` as an absolute path under the launch
+project's `tmp/workflow/`. Otherwise the public `$workflow` entrypoint uses
+`<project-root>/tmp/workflow.md`. Both tables use `pending`, `in_progress`,
+`complete`, and `skipped`; optional phases and their actions are skipped when
+their companions are unavailable. The plan stays ignored and is retained across
+worktree changes. ACC reads these tables for its top-right segmented progress
+bar, phase counts, and each task's menu background progress.
+
+After changing the prompt, run `acc pp rebuild` to refresh saved selections;
+`acc pp status --skill v2:workflow --check` verifies the selected V2 consumer.
+The original and V2 workflow prompts use the same microstep schema.
+
 ### docs
 
 Writes or updates the user-facing documentation affected by a completed code
