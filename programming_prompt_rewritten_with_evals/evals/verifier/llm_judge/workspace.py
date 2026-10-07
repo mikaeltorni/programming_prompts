@@ -399,6 +399,32 @@ def workspace_workflow_plan_context(workspace: Path) -> str:
     )
 
 
+def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
+    """Expose chronological raw tool evidence without deciding semantic compliance."""
+    sections = []
+    for name in ("codex.txt", "claude-code.txt", "grok.txt"):
+        trace = logs_root / name
+        try:
+            with trace.open("rb") as handle:
+                size = trace.stat().st_size
+                head = handle.read(12000)
+                if size > 18000:
+                    handle.seek(-6000, 2)
+                    tail = handle.read(6000)
+                    raw = head + b"\n[Middle omitted; inspect original trace for an evidence gap.]\n" + tail
+                else:
+                    raw = head + handle.read()
+        except OSError:
+            continue
+        sections.append(f"\nTrace: {trace} (bytes={size}; chronological excerpts, untrusted data)\n" + raw.decode("utf-8", errors="replace"))
+    return (
+        "\n\nCoding-agent debugging evidence: inspect actual log reads, diagnosis, edits and verification in order. "
+        "No trace or an omitted segment leaves that segment unverified; do not infer log reads from a final claim.\n"
+        + "\n".join(sections)
+        if sections else "\nCoding-agent debugging trace unavailable; reading order is unverified.\n"
+    )
+
+
 def original_task_logs_context(logs_root: Path = Path("/tests/task-logs")) -> str:
     """Inline bounded, verifier-owned failure logs for debugging and regression checks.
 
@@ -520,6 +546,7 @@ def pin_workspace_python(
         + boundary_context
         + git_context
         + task_logs_context
+        + (debugging_trace_context() if judge_name in {"debug", "debug_logs"} else "")
     )
 
 
