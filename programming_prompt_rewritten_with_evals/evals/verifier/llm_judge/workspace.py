@@ -399,6 +399,21 @@ def workspace_workflow_plan_context(workspace: Path) -> str:
     )
 
 
+def debugging_trace_value(value):
+    """Decode harness byte-buffer stdout/stderr while retaining other evidence."""
+    if isinstance(value, dict):
+        result = {}
+        for key, item in value.items():
+            if key in {"stdout", "stderr"} and isinstance(item, list) and all(type(n) is int and 0 <= n <= 255 for n in item):
+                result[key] = bytes(item).decode("utf-8", errors="replace")
+            else:
+                result[key] = debugging_trace_value(item)
+        return result
+    if isinstance(value, list):
+        return [debugging_trace_value(item) for item in value]
+    return value
+
+
 def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
     """Expose chronological raw tool evidence without deciding semantic compliance."""
     sections = []
@@ -430,7 +445,10 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
             elif event.get("type") == "text":
                 records.append("text:" + str(event.get("data", "")))
             else:
-                records.append(f"line {number}: {json.dumps(event, ensure_ascii=False)}")
+                rendered = json.dumps(debugging_trace_value(event), ensure_ascii=False)
+                if len(rendered) > 3000:
+                    rendered = rendered[:1600] + " [Event middle omitted; inspect original.] " + rendered[-1000:]
+                records.append(f"line {number}: {rendered}")
         excerpt = "\n".join(records)
         if len(excerpt) > 18000:
             excerpt = excerpt[:12000] + "\n[Middle omitted; inspect original trace for an evidence gap.]\n" + excerpt[-6000:]
