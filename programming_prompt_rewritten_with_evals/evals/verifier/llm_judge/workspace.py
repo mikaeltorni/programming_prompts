@@ -468,7 +468,7 @@ def pin_workspace_python(
     plan_context = (
         workspace_workflow_plan_context(workspace) if judge_name in {"workflow", "commits"} else ""
     )
-    task_logs_context = original_task_logs_context() if judge_name in {"debug", "testing"} else ""
+    task_logs_context = original_task_logs_context() if judge_name in {"debug", "debug_logs", "testing"} else ""
     boundaries = []
     if judge_name in {"logging", "commenting"}:
         for path in files:

@@ -123,6 +123,12 @@ for tests_dir in "$TASKS_DIR"/*/tests; do
   rm -rf "$tests_dir/llm_judge"
   mkdir -p "$tests_dir/llm_judge"
   install -m 644 "$LLM_JUDGE_SRC"/*.py "$tests_dir/llm_judge/"
+  # Functional debug checks are independent from semantic scoring and are
+  # installed only for dedicated scenarios when their debug judge is selected.
+  if [[ -f "$tests_dir/debug-cases.json" ]] && [[ " ${skills[*]} " == *" debug "* ]]; then
+    mkdir -p "$tests_dir/judges/debug_behavior"
+    cp "$JUDGES_ROOT/debug_behavior/judge.toml" "$tests_dir/judges/debug_behavior/"
+  fi
   for skill in "${skills[@]}"; do
     src="$JUDGES_ROOT/$skill"
     if is_programmatic_judge "$src"; then
