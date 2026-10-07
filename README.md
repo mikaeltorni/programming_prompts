@@ -705,3 +705,7 @@ Codex destinations receive at least a 1 MiB document budget to accommodate the
 full combined instructions. ACC installs the tool as `acc-build-instructions`.
 `instruction_path` resolves Codex's `AGENTS.md` and Claude's `CLAUDE.md`
 under an explicit instance home, or `CODEX_HOME` / `CLAUDE_CONFIG_DIR`.
+
+## Log reading and debugging
+
+The existing read-logs-first policy is now [`debug_logs`](programming_prompt_rewritten_with_evals/prompts/programming-skills/debug_logs/SKILL.md). The separate [`debug`](programming_prompt_rewritten_with_evals/prompts/programming-skills/debug/SKILL.md) skill guides evidence-based diagnosis, reproduction, focused repair and verification. Select either through `run_benchmark.sh --skills debug_logs` or `--skills debug`; they remain independently selectable global instructions.
