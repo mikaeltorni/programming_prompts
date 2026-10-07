@@ -1,0 +1,1181 @@
+{
+  "artifact": "cache.py",
+  "entrypoint": "run_catalog",
+  "sequences": [
+    {
+      "name": "expiry boundary must fetch at the deadline",
+      "steps": [
+        {
+          "args": [
+            "get acme tool 0"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": false
+          }
+        },
+        {
+          "args": [
+            "get acme tool 4"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get acme tool 5"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": false
+          }
+        },
+        {
+          "args": [
+            "get acme tool 6"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get acme tool 11"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": false
+          }
+        }
+      ],
+      "reported": true
+    },
+    {
+      "name": "creating an item invalidates its cached miss immediately",
+      "steps": [
+        {
+          "args": [
+            "get acme gear 0"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "set acme gear 17"
+          ],
+          "expected": {
+            "sku": "gear",
+            "price": 17
+          }
+        },
+        {
+          "args": [
+            "get acme gear 1"
+          ],
+          "expected": {
+            "price": 17,
+            "cached": false
+          }
+        },
+        {
+          "args": [
+            "get acme gear 2"
+          ],
+          "expected": {
+            "price": 17,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta gear 2"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3,
+            "gear": 17
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        }
+      ],
+      "reported": true
+    },
+    {
+      "name": "deletion invalidates a warm hit without touching another tenant",
+      "steps": [
+        {
+          "args": [
+            "get acme tool 0"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": false
+          }
+        },
+        {
+          "args": [
+            "get beta tool 0"
+          ],
+          "expected": {
+            "price": 29,
+            "cached": false
+          }
+        },
+        {
+          "args": [
+            "drop acme tool"
+          ],
+          "expected": {
+            "dropped": "tool"
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get beta tool 1"
+          ],
+          "expected": {
+            "price": 29,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "set acme tool 41"
+          ],
+          "expected": {
+            "sku": "tool",
+            "price": 41
+          }
+        },
+        {
+          "args": [
+            "get acme tool 2"
+          ],
+          "expected": {
+            "price": 41,
+            "cached": false
+          }
+        }
+      ],
+      "reported": true
+    },
+    {
+      "name": "positive updates scoped keys and independent deadlines",
+      "steps": [
+        {
+          "args": [
+            "get beta bolt 0"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": false
+          }
+        },
+        {
+          "args": [
+            "get acme bolt 1"
+          ],
+          "expected": {
+            "price": 3,
+            "cached": false
+          }
+        },
+        {
+          "args": [
+            "set acme bolt 9"
+          ],
+          "expected": {
+            "sku": "bolt",
+            "price": 9
+          }
+        },
+        {
+          "args": [
+            "get acme bolt 2"
+          ],
+          "expected": {
+            "price": 9,
+            "cached": false
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 2"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 6"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": false
+          }
+        },
+        {
+          "args": [
+            "get acme bolt 6"
+          ],
+          "expected": {
+            "price": 9,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get acme bolt 7"
+          ],
+          "expected": {
+            "price": 9,
+            "cached": false
+          }
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 9
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        }
+      ],
+      "reported": false
+    },
+    {
+      "name": "invalid commands preserve source catalogs and warm cache entries",
+      "steps": [
+        {
+          "args": [
+            "get acme tool 0"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": false
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 0"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": false
+          }
+        },
+        {
+          "args": [
+            ""
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "wat"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get acme tool"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1 extra"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get acme tool bad"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get acme tool -1"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get ghost tool 1"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "set acme tool"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "set acme tool 1 extra"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "set acme tool bad"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "set acme tool 0"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "set acme tool -1"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "set ghost tool 10"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "drop acme"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "drop acme bolt extra"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "drop acme missing"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "drop ghost tool"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "list"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "list acme extra"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "list ghost"
+          ],
+          "raises": "ValueError"
+        },
+        {
+          "args": [
+            "list acme"
+          ],
+          "expected": {
+            "tool": 12,
+            "bolt": 3
+          }
+        },
+        {
+          "args": [
+            "list beta"
+          ],
+          "expected": {
+            "tool": 29,
+            "bolt": 7
+          }
+        },
+        {
+          "args": [
+            "get acme tool 1"
+          ],
+          "expected": {
+            "price": 12,
+            "cached": true
+          }
+        },
+        {
+          "args": [
+            "get beta bolt 1"
+          ],
+          "expected": {
+            "price": 7,
+            "cached": true
+          }
+        }
+      ],
+      "reported": false
+    }
+  ]
+}

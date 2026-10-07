@@ -1,0 +1,76 @@
+Original failure capture; public calls in each scenario share one fresh process.
+
+Scenario: expiry boundary must fetch at the deadline
+call: run_catalog(["get acme tool 0"])
+got: {"result": {"cached": false, "price": 12}}
+want: {"result": {"cached": false, "price": 12}}
+call: run_catalog(["get acme tool 4"])
+got: {"result": {"cached": true, "price": 12}}
+want: {"result": {"cached": true, "price": 12}}
+call: run_catalog(["get acme tool 5"])
+got: {"result": {"cached": true, "price": 12}}
+want: {"result": {"cached": false, "price": 12}}
+call: run_catalog(["get acme tool 6"])
+got: {"result": {"cached": false, "price": 12}}
+want: {"result": {"cached": true, "price": 12}}
+call: run_catalog(["get acme tool 11"])
+got: {"result": {"cached": true, "price": 12}}
+want: {"result": {"cached": false, "price": 12}}
+
+Scenario: creating an item invalidates its cached miss immediately
+call: run_catalog(["get acme gear 0"])
+got: {"raises": "ValueError"}
+want: {"raises": "ValueError"}
+call: run_catalog(["list acme"])
+got: {"result": {"bolt": 3, "tool": 12}}
+want: {"result": {"bolt": 3, "tool": 12}}
+call: run_catalog(["list beta"])
+got: {"result": {"bolt": 7, "tool": 29}}
+want: {"result": {"bolt": 7, "tool": 29}}
+call: run_catalog(["set acme gear 17"])
+got: {"result": {"price": 17, "sku": "gear"}}
+want: {"result": {"price": 17, "sku": "gear"}}
+call: run_catalog(["get acme gear 1"])
+got: {"raises": "ValueError"}
+want: {"result": {"cached": false, "price": 17}}
+call: run_catalog(["get acme gear 2"])
+got: {"raises": "ValueError"}
+want: {"result": {"cached": true, "price": 17}}
+call: run_catalog(["get beta gear 2"])
+got: {"raises": "ValueError"}
+want: {"raises": "ValueError"}
+call: run_catalog(["list acme"])
+got: {"result": {"bolt": 3, "gear": 17, "tool": 12}}
+want: {"result": {"bolt": 3, "gear": 17, "tool": 12}}
+call: run_catalog(["list beta"])
+got: {"result": {"bolt": 7, "tool": 29}}
+want: {"result": {"bolt": 7, "tool": 29}}
+
+Scenario: deletion invalidates a warm hit without touching another tenant
+call: run_catalog(["get acme tool 0"])
+got: {"result": {"cached": false, "price": 12}}
+want: {"result": {"cached": false, "price": 12}}
+call: run_catalog(["get beta tool 0"])
+got: {"result": {"cached": false, "price": 29}}
+want: {"result": {"cached": false, "price": 29}}
+call: run_catalog(["drop acme tool"])
+got: {"result": {"dropped": "tool"}}
+want: {"result": {"dropped": "tool"}}
+call: run_catalog(["get acme tool 1"])
+got: {"result": {"cached": true, "price": 12}}
+want: {"raises": "ValueError"}
+call: run_catalog(["list acme"])
+got: {"result": {"bolt": 3}}
+want: {"result": {"bolt": 3}}
+call: run_catalog(["list beta"])
+got: {"result": {"bolt": 7, "tool": 29}}
+want: {"result": {"bolt": 7, "tool": 29}}
+call: run_catalog(["get beta tool 1"])
+got: {"result": {"cached": true, "price": 29}}
+want: {"result": {"cached": true, "price": 29}}
+call: run_catalog(["set acme tool 41"])
+got: {"result": {"price": 41, "sku": "tool"}}
+want: {"result": {"price": 41, "sku": "tool"}}
+call: run_catalog(["get acme tool 2"])
+got: {"result": {"cached": false, "price": 41}}
+want: {"result": {"cached": false, "price": 41}}
