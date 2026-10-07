@@ -131,21 +131,40 @@ job_scored_any_trial() {
   [[ -n "$(find "$job_dir" -mindepth 3 -maxdepth 3 -type f -path '*/verifier/reward.json' -print -quit 2>/dev/null)" ]]
 }
 
+run_task_family_for_harness() {
+  local harness="$1" family="$2"
+  shift 2
+  # Bash dynamic scope keeps every config/artifact/concurrency helper on this
+  # family's tasks and selected skills without modifying the invocation list.
+  local -a SELECTED_TASKS=() SELECTED_SKILLS_FOR_JOB=()
+  local task skill
+  for task in "$@"; do
+    [[ "$(task_family "$task")" == "$family" ]] && SELECTED_TASKS+=("$task")
+  done
+  [[ ${#SELECTED_TASKS[@]} -gt 0 ]] || return 0
+  for skill in "${SELECTED_SKILLS[@]}"; do
+    if [[ "$family" == debug && "$skill" == debug ]] || [[ "$family" == coding && "$skill" != debug ]]; then
+      SELECTED_SKILLS_FOR_JOB+=("$skill")
+    fi
+  done
+  if [[ ${#SELECTED_SKILLS_FOR_JOB[@]} -eq 0 ]]; then
+    echo "Skipping $family tasks: no applicable selected skill" >&2
+    return 0
+  fi
+  local suffix="" mode=positive
+  [[ "$family" == debug ]] && suffix="-debug"
+  if [[ "$BASELINE" -eq 1 ]]; then
+    run_one_job "$harness" "$(harbor_job_name "${harness}${suffix}-baseline")" baseline
+  else
+    run_one_job "$harness" "$(harbor_job_name "${harness}${suffix}-skills")" positive
+  fi
+}
+
 run_jobs_for_harness() {
   local harness="$1"
   if [[ "$RUN_SEPARATELY" -eq 1 ]]; then
-    echo "NOTE: --run-separately is one Harbor job (same trial count as combined)." >&2
-    echo "Skills are scored independently; Pass is not AND. Per-skill columns are the scores." >&2
+    echo "NOTE: --run-separately scores skills independently on their applicable task family." >&2
   fi
-  SELECTED_SKILLS_FOR_JOB=("${SELECTED_SKILLS[@]}")
-  if [[ "$BASELINE" -eq 1 ]]; then
-    run_one_job "$harness" "$(harbor_job_name "${harness}-baseline")" "baseline"
-  else
-    local -a skill_paths=()
-    local skill
-    for skill in "${SELECTED_SKILLS[@]}"; do
-      skill_paths+=("$SKILLS_ROOT/$skill")
-    done
-    run_one_job "$harness" "$(harbor_job_name "${harness}-skills")" "positive" "${skill_paths[@]}"
-  fi
+  run_task_family_for_harness "$harness" coding "${SELECTED_TASKS[@]}"
+  run_task_family_for_harness "$harness" debug "${SELECTED_TASKS[@]}"
 }

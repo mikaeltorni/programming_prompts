@@ -73,8 +73,32 @@ task_prompt_path() {
   return 1
 }
 
+default_task_suite() {
+  local skill has_debug=0 has_coding=0
+  for skill in "${SELECTED_SKILLS[@]:-}"; do
+    if [[ "$skill" == debug ]]; then has_debug=1; else has_coding=1; fi
+  done
+  if [[ "$has_debug" -eq 1 && "$has_coding" -eq 1 ]]; then
+    printf '%s\n' all
+  elif [[ "$has_debug" -eq 1 ]]; then
+    printf '%s\n' debug
+  else
+    printf '%s\n' coding
+  fi
+}
+
+task_family() {
+  local path
+  path="$(task_prompt_path "$1")" || return 1
+  if [[ "$(dirname "$path")" == "${DEBUG_PROMPTS_DIR:-$CODING_PROMPTS_DIR/../debug-prompts}" ]]; then
+    printf '%s\n' debug
+  else
+    printf '%s\n' coding
+  fi
+}
+
 list_available_tasks() {
-  local suite="${1:-${SUITE_ARG:-coding}}" directory prompt
+  local suite="${1:-${SUITE_ARG:-$(default_task_suite)}}" directory prompt
   local -a directories=()
   [[ "$suite" == coding || "$suite" == all ]] && directories+=("$CODING_PROMPTS_DIR")
   [[ "$suite" == debug || "$suite" == all ]] && directories+=("${DEBUG_PROMPTS_DIR:-$CODING_PROMPTS_DIR/../debug-prompts}")

@@ -38,7 +38,7 @@ Every wrapper parameter is a long, kebab-case flag followed by its value:
   --eval-agent-reasoning-effort <low|medium|high>
   --skills <a,b,c>                     skills to evaluate (default: all)
   --tasks <a,b,c>                      tasks to run (default: selected suite)
-  --suite <coding|debug|all>           task family (default: coding)
+  --suite <coding|debug|all>           task family (default: applicable selected skills)
   --concurrency <positive integer>    trial ceiling (default: all; launches paced automatically)
 
 Switches:
