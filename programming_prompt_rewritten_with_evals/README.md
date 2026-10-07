@@ -24,8 +24,10 @@ Skills live under
 - [`testing`](prompts/programming-skills/testing/SKILL.md) — meaningful regression
   and public-interface checks, existing tooling, and isolated execution
   (semantic LLM judge)
-- [`debug`](prompts/programming-skills/debug/SKILL.md) — read repo `.log/`
-  before hypothesizing; verify the log-guided fix (semantic LLM judge)
+- [`debug_logs`](prompts/programming-skills/debug_logs/SKILL.md) — preserve the
+  existing read-logs-first policy (semantic LLM judge)
+- [`debug`](prompts/programming-skills/debug/SKILL.md) — diagnose, reproduce,
+  repair and verify reported failures (semantic and public-behavior judges)
 - [`docs`](prompts/programming-skills/docs/SKILL.md) — README.md after the
   code (programmatic judge)
 - [`workflow`](prompts/programming-skills/workflow/SKILL.md) — explicit-only
@@ -56,7 +58,7 @@ assess unnecessary rewrites across stages alongside the final function structure
 See [`evals/README.md`](evals/README.md) for
 CLI parameters, which all take the same `--flag value` form (`--harness`,
 `--eval-agent`, `--eval-agent-model`, `--eval-agent-reasoning-effort`,
-`--skills`, `--tasks`). Repository test runs explicitly use `--eval-agent codex`; additional judges
+`--skills`, `--tasks`, `--suite`). Repository test runs explicitly use `--eval-agent codex`; additional judges
 require an explicit user request.
 
 Default models: Codex `openai/gpt-6-luna` @ low; Claude Code `claude-opus-5`
@@ -70,9 +72,12 @@ Committed fallbacks:
 ## Layout
 
 - `prompts/programming-skills/` — injectable skills (`srp`, `commenting`,
-  `logging`, `worktree`, `commits`, `debug`, `testing`, `docs`, explicit-only `workflow`,
+  `logging`, `worktree`, `commits`, `debug_logs`, `debug`, `testing`, `docs`, explicit-only `workflow`,
   plus `*-vague` controls)
 - `evals/coding-prompts/` — one `.md` per coding task, including the log-driven `greeter`
+- `evals/debug-prompts/` — separate broken-project repair requests selected by `debug`
+- `evals/debug-cases/` — independent public-call correctness contracts
+- `evals/verify_debug_fixtures.py` — certify failing seeds, authentic logs and passing repairs
 - `evals/seeds/` — optional planted files for a task (`log/` → image `.log/`)
 - `evals/judges/` — one `prompt.md` (+ `judge.toml`) per skill
 - `evals/verifier/run_judges.sh` — shared Harbor verifier (one LLM judge pass per eval agent)
@@ -96,3 +101,9 @@ cd programming_prompt_rewritten_with_evals/evals/testing
 ./verify_with_ca.sh  ../runs/<positive-stamp>/harbor ../runs/<baseline-stamp>/harbor
 ./verify_with_cca.sh ../runs/<positive-stamp>/harbor ../runs/<baseline-stamp>/harbor
 ```
+
+`debug` is evaluated on the dedicated repair family. Selecting it alone chooses
+only those cases; selecting it with coding skills includes both families in one
+wrapper invocation, isolated by applicable skills and judges. The original
+`greeter` remains in the coding family and uses `debug_logs`. See the
+[eval README](evals/README.md) for the isolated command and verified log lifecycle.

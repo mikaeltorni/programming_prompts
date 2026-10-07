@@ -53,8 +53,8 @@ sed -n '1,120p' programming_prompt_rewritten_with_evals/prompts/programming-skil
 ```
 
 The command prints the independent testing skill. The programming suite
-contains workflow, commits, worktree, docs, srp, commenting, logging, debug,
-and testing; see its [skill catalog](programming_prompt_rewritten_with_evals/prompts/programming-skills/README.md).
+contains workflow, commits, worktree, docs, srp, commenting, logging, debug_logs,
+debug, and testing; see its [skill catalog](programming_prompt_rewritten_with_evals/prompts/programming-skills/README.md).
 
 ## AI coding-agent prompt features
 
@@ -262,9 +262,11 @@ bounds need their excluded endpoint and a value beyond it in each independent
 path. Preservation checks concern the resources affected by that operation.
 When only aggregate state queries exist, it uses those observations and records
 their limits. Source review alone does not establish a new benchmark pass rate.
-Default benchmark skill discovery and shipped launcher presets select the eight
-companions (`commenting`, `commits`, `debug`, `docs`, `logging`, `srp`,
-`testing`, `worktree`). `workflow` stays explicit `--skills workflow`.
+Default benchmark discovery selects `commenting`, `commits`, `debug`,
+`debug_logs`, `docs`, `logging`, `srp`, `testing`, and `worktree`.
+Existing launcher presets retain their explicit skill lists. `workflow` stays
+explicit `--skills workflow`. Dedicated repair tasks receive only `debug`;
+the other selected skills retain their coding task family.
 To inject and score only testing on Codex instance 1, use the public benchmark
 entrypoint below. Omitted `--tasks` selects all coding tasks, `-k 3` requests
 three attempts per task, and omitted concurrency uses automatic capacity. The
@@ -400,11 +402,11 @@ The Harbor benchmark's public entrypoint is
 [`run_benchmark.sh`](programming_prompt_rewritten_with_evals/evals/run_benchmark.sh).
 Coding tasks live under
 [`evals/coding-prompts/`](programming_prompt_rewritten_with_evals/evals/coding-prompts/);
-`greeter` is the remaining log-driven debug task (`/app/greeter.py` →
+`greeter` remains the staged log-guided coding task (`/app/greeter.py` →
 `run_greeter` for `<name> <hour>`, `bye <name>`, and `period <hour>`).
 The runner accepts `--harness`, selects the Codex judge with
 `--eval-agent codex`, selects programming skills with `--skills`, and accepts
-`--tasks`, `--concurrency`, `--baseline`, and Harbor's `-k` attempt count.
+`--tasks`, `--suite coding|debug|all`, `--concurrency`, `--baseline`, and Harbor's `-k` attempt count.
 Without `--concurrency`, all selected tasks × attempts remain eligible, subject
 to configured LLM caps and available per-trial Docker network slots. The automatic
 [launch guard](programming_prompt_rewritten_with_evals/evals/harbor_agents/launch_guard.py)
@@ -598,7 +600,7 @@ python3 programming_prompt_rewritten_with_evals/evals/verifier/run_llm_judge.py 
 ```
 
 
-Both debug and testing judges receive verifier-owned original failure logs
+The debug, debug_logs and testing judges receive verifier-owned original failure logs
 from `tests/task-logs/`. A saved regression assertion may use a literal expected
 value that matches the original log; the test itself need not parse that log.
 The docs checker treats authored test runners as checks rather than application
@@ -728,18 +730,60 @@ under an explicit instance home, or `CODEX_HOME` / `CLAUDE_CONFIG_DIR`.
 
 ## Log reading and debugging
 
-The existing read-logs-first policy is now [`debug_logs`](programming_prompt_rewritten_with_evals/prompts/programming-skills/debug_logs/SKILL.md). The separate [`debug`](programming_prompt_rewritten_with_evals/prompts/programming-skills/debug/SKILL.md) skill guides evidence-based diagnosis, reproduction, focused repair and verification. Select either through `run_benchmark.sh --skills debug_logs` or `--skills debug`; they remain independently selectable global instructions.
+[`debug_logs`](programming_prompt_rewritten_with_evals/prompts/programming-skills/debug_logs/SKILL.md)
+preserves the existing read-logs-first policy. The separate
+[`debug`](programming_prompt_rewritten_with_evals/prompts/programming-skills/debug/SKILL.md)
+skill guides diagnosis, reproduction, focused repair and verification. Its log
+instruction names no fixture folder, scenario or answer.
 
-Dedicated debug scenarios use `verifier/check_debug_behavior.py --repo PATH --cases CONTRACT.json --output REWARD.json`. It executes immutable public-call sequences with fresh module state and a per-sequence timeout. Harbor includes this functional judge alongside the semantic `debug` judge only on dedicated cases; missing contracts and execution failures cannot silently pass.
+The [dedicated repair cases](programming_prompt_rewritten_with_evals/evals/debug-prompts/README.md)
+cover timezone/date conversion, cache results crossing tenant boundaries, and
+stock mutation after a rejected reservation. Each ships a genuinely broken
+program and a public contract. Agents discover executed original failures in
+the project-root `.log/failure.log`; judges retain an independent original in
+`tests/task-logs/`. The semantic judge checks the repair and available
+chronological evidence. A separate `debug_behavior` judge executes immutable
+public-call sequences, including varied inputs and immediate observations after
+rejections. Editing the supplied logs cannot redefine expected behavior.
 
-The benchmark accepts `--suite coding`, `--suite debug`, or `--suite all` to select task families, and `--tasks NAME[,NAME]` to narrow the selected family. Dedicated debugging prompts are maintained separately under `evals/debug-prompts/`.
+From the evaluation directory, run only these cases on Codex instance 1:
 
-The dedicated debug cases cover UTC offset/date rollover (`debug-clock`), tenant-aware cache results (`debug-catalog`), and rejected reservations preserving stock (`debug-stock`). Each has an intentionally broken seed, an independent reference repair, and cumulative public behavior sequences in `evals/debug-cases/`.
+```bash
+cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
+```
 
-Before materialization, `python3 evals/verify_debug_fixtures.py` (from the rewritten-prompt project) verifies every broken seed against saved public calls, compares its actual output byte-for-byte with the original `log/failure.log`, and checks each reference repair twice with fresh state. `--refresh-logs` explicitly regenerates captures after an intentional fixture change. Agents receive these files in the project-root `.log/` directory; judges retain an independent original under `tests/task-logs/`. The `debug` skill contains no scenario names, paths or hints.
+```bash
+ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills debug --suite debug -k 3
+```
 
-With no `--suite` or `--tasks`, selecting only `debug` runs dedicated repair cases. Selecting `debug` alongside coding skills runs both task families in one wrapper invocation; each harness uses isolated coding and debugging jobs with only the applicable skills and judges. A default all-skill run includes both families. Baselines use the identical tasks and judges while omitting skill instructions.
+`--tasks debug-clock` narrows that run to one case. Selecting only `debug`
+without `--suite` or `--tasks` also chooses the repair family. A mixed selection
+of `debug` and coding skills includes both families by default, in isolated
+jobs with only their applicable instructions and judges. Other-skill runs
+neither prepare nor execute the new debug fixtures. `--suite coding` selects
+existing tasks; `--suite all` explicitly selects both families. Incompatible
+skill/task selections fail before account preflight or Docker work. Baselines
+use the same tasks and judges while omitting skill instructions.
 
-Other-skill runs keep the existing coding task pool and do not materialize or execute the new debugging cases. Explicit debug tasks require `debug` in `--skills`; incompatible suite/task selections fail before account preflight or Docker work. `sync_tasks.sh [TASK ...]` can materialize a selected set; no arguments materializes both canonical families.
+Fixture certification runs before debug task materialization. From the project
+root it can also be invoked directly:
 
-Judge synchronization also respects task families: direct `sync_judges.sh` installs only debug and functional judges on dedicated repair cases, and partial coding-skill syncs leave those cases intact.
+```bash
+python3 programming_prompt_rewritten_with_evals/evals/verify_debug_fixtures.py
+```
+
+Accepted options are `--root PATH` for an alternative fixture tree and
+`--refresh-logs` to explicitly regenerate captures after an intentional change.
+Certification rejects passing seeds, stale captures and failing reference
+repairs. It checks each reference twice with fresh state. There are 74 public
+assertions in 11 independent sequences; no source tokens score correctness.
+`sync_tasks.sh [TASK ...]` materializes a selected set, or both families when no
+names are supplied. `sync_judges.sh [SKILL ...]` respects task families and
+leaves unrelated cases intact during a partial sync.
+
+The behavioral runner is
+`verifier/check_debug_behavior.py --repo PATH --cases CONTRACT.json --output REWARD.json`
+when run from `evals/`. `--cases` defaults to `/tests/debug-cases.json` inside
+Harbor; `--output` is optional for direct inspection. Each sequence runs in its
+own subprocess with a timeout. Results and captured function output are retained
+beside the reward file. The runner cannot pass an empty or missing contract.

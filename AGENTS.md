@@ -98,9 +98,12 @@ baselines already in `evals/runs/`. The programmatic judges (`worktree`,
 `docs`) run regardless of this flag.
 
 **Current eval policy:** Do not use marker files, feature-count/debug-token
-catalogs, or the retired commit/debug checkers. Commits and debug are scored by
+catalogs, or the retired commit/debug checkers. Commits, debug and debug_logs are scored by
 semantic LLM judges using the original task and logs; worktree and docs remain
-programmatic.
+programmatic. Dedicated debug repair scenarios additionally use immutable public
+behavior contracts through `check_debug_behavior.py`. These executable
+correctness checks must remain separate from semantic skill policy and must not
+be replaced by source tokens, Feature counts or hidden diagnosis markers.
 
 Deterministic helpers may inspect worktree registration, physical paths, Git
 history and commit contents, or Python syntax and expose that evidence to LLM

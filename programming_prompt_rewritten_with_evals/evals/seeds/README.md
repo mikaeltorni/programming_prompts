@@ -11,3 +11,10 @@ agent's own implementation commits.
 The same original logs are copied to verifier-only `tests/task-logs/` for the
 debug judge. It reads their expected behavior directly; no hidden diagnosis
 word list is maintained. The original coding request is in `tests/task.md`.
+
+`debug-clock`, `debug-catalog` and `debug-stock` are independently broken repair
+fixtures selected only with `debug`. Their logs are captured from real public
+calls, and `verify_debug_fixtures.py` certifies the failures and exact captures
+before task materialization. The reference repairs must pass all immutable
+contracts in `debug-cases/`; these checks cover behavior and immediate state
+observations without source-token catalogs.

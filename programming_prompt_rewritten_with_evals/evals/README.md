@@ -51,13 +51,21 @@ solutions cover the final API; they are not staged-history examples.
 ## Programming suite
 
 The suite contains `workflow`, `commits`, `worktree`, `docs`, `srp`,
-`commenting`, `logging`, `debug`, and `testing`. Default discovery includes
-the eight companions (`commenting`, `commits`, `debug`, `docs`, `logging`,
-`srp`, `testing`, `worktree`); `workflow` requires explicit selection.
-`logging-vague` is an opt-in control. Shipped launcher presets pass that same
-eight-skill `--skills` list on every `codex`, `cc`, and `grok` job, positive
-and baseline. Sources live in [../prompts/programming-skills/](../prompts/programming-skills/README.md);
+`commenting`, `logging`, `debug_logs`, `debug`, and `testing`. Default discovery
+includes the companions other than `workflow`, which requires explicit selection.
+`logging-vague` is an opt-in control; shipped presets retain their explicit
+skill lists. Sources live in [../prompts/programming-skills/](../prompts/programming-skills/README.md);
 [judges/README.md](judges/README.md) describes their evaluators.
+
+`debug_logs` preserves the existing read-logs-first instruction and is evaluated
+on the coding family, including the staged greeter repair. `debug` uses the
+separate [repair scenarios](debug-prompts/README.md): `debug-clock`,
+`debug-catalog`, and `debug-stock`. Default task selection depends on the selected
+skills: `debug` alone runs repair tasks; coding skills alone run coding tasks;
+a mixed selection runs both families. Each harness receives isolated jobs per
+family. Repair jobs inject and score only `debug`, plus the functional
+`debug_behavior` verifier. Other skills never run on these dedicated scenarios.
+Both baseline and positive jobs use the same family routing.
 
 [Testing](../prompts/programming-skills/testing/SKILL.md) requires meaningful
 saved checks against the requested behavior using existing project tooling.
@@ -113,19 +121,30 @@ cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals
 A focused positive check:
 
 ```bash
-ACC_CODEX_INSTANCE=2 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug --tasks greeter -k 1
+ACC_CODEX_INSTANCE=2 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug_logs --tasks greeter -k 1
 ```
 
 A baseline injects no skill bodies but keeps the selected judges:
 
 ```bash
-ACC_CODEX_INSTANCE=2 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug --tasks greeter --baseline -k 1
+ACC_CODEX_INSTANCE=2 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug_logs --tasks greeter --baseline -k 1
 ```
 
 Wait for each command to finish before starting the next. Use the account
 instance intended for the run. Account resolution honors `ACC_CODEX_INSTANCE`
 first, then the persisted ACC selection; confirm the startup account path and
 credit probe before accepting results.
+
+Only the new debugging scenarios:
+
+```bash
+ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills debug --suite debug -k 3
+```
+
+A focused repair case is selected with `--tasks debug-clock`. To combine a coding
+check with a repair check, select `--skills testing,debug --tasks counter,debug-clock`.
+Omitting both task selectors includes all tasks applicable to the selected skills.
+`--suite coding`, `--suite debug`, and `--suite all` choose a family explicitly.
 
 The full positive suite on cx1:
 
@@ -143,7 +162,8 @@ Use long kebab-case flags followed by values. Historical `harness=`,
 | `--harness codex` | Coding harness; supported alternatives include `cc` and `grok`. Omission runs Codex and Claude Code. |
 | `--eval-agent codex` | LLM judge. Repository test runs always select Codex explicitly. |
 | `--skills workflow,testing,debug` | Skills to inject and score; omission selects the default suite. |
-| `--tasks greeter` | Task subset; omission selects every coding task. |
+| `--tasks greeter` | Named task subset; omission uses the applicable selected suite. |
+| `--suite debug` | Family: `coding`, `debug`, or `all`; omission derives families from selected skills. |
 | `--baseline` | No skill injection, retaining selected judges. |
 | `--run-separately` | Independent skill scores in the same job and trial count, instead of requiring every judge to pass. |
 | `--install-only` | Prepare and verify CLI installation without an LLM coding run. |
@@ -215,3 +235,27 @@ tasks, runtime artifacts, or add pytest suites in this evaluation tree.
 Prompt-only changes use direct consistency checks and focused Harbor runs.
 Runtime wrapper or verifier changes additionally require baseline and positive
 smoke jobs for every supported coding harness under the root AGENTS.md rules.
+
+## Debug fixture verification
+
+`python3 verify_debug_fixtures.py` executes each broken seed against immutable
+public calls, compares reported failures with original `seeds/<case>/log/failure.log`,
+and verifies the reference repair twice in fresh processes. Missing/stale logs,
+non-failing reported cases, and failing references stop materialization. Use
+`--refresh-logs` only to intentionally replace a capture; `--root PATH` verifies
+an alternative fixture tree. The default never rewrites the original evidence.
+
+`sync_tasks.sh [TASK ...]` materializes only named tasks when supplied; ordinary
+coding runs do not certify or materialize repair fixtures. Original logs become
+project-root `.log/failure.log` and verifier-owned `tests/task-logs/failure.log`.
+The skill gives no scenario paths or implementation hints. Each JSON contract
+in `debug-cases/` defines public calls and independent results/exceptions; stock
+and catalog rejection sequences observe affected state before another operation.
+
+`debug_behavior` runs all contract sequences in fresh subprocesses with timeouts,
+independently of the semantic verdict. Its reward and public observations are
+archived in `reward-debug_behavior.json` and `reward-debug_behavior-details.json`.
+The semantic `debug` judge receives bounded original logs and chronological
+coding transcripts for Codex, Claude Code and Grok. Large events and omissions
+are marked; absent traces leave reading order unverified. Authentication or
+provider failures remain infrastructure exclusions rather than repair scores.

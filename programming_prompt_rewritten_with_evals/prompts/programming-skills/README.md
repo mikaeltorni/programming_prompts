@@ -37,11 +37,13 @@ that implements it. It reads diffs and complete relevant trees, excludes the
 supplied seed, allows repair commits, and rejects bundling or history padding.
 Output formatting is evaluated as behavior, not a source-spelling constraint.
 
-**Debug eval note:** pair `debug` with `greeter`. The LLM judge reads the
-original logs in `tests/task-logs/` and executes the reported failing example
-and documented boundaries against the submitted program. With no log-guided
-failure it reports not applicable. Reading order is verified only if a
-chronological tool trace is available; otherwise the verdict covers the fix.
+**Debug eval note:** select `--skills debug --suite debug` to run the independent
+broken-project cases in `evals/debug-prompts/`. The semantic judge reads original
+logs and chronological coding traces; `debug_behavior` checks immutable public
+calls against the repaired program. Selecting `debug` with coding skills includes
+both task families by default, with only applicable skills on each family.
+Unrelated-skill runs do not execute the new cases. Use `debug_logs` with `greeter`
+to evaluate the preserved read-logs-first policy on the original staged task.
 
 **Testing eval note:** the semantic judge inspects agent-authored checks against
 the original request and runs them in isolation when execution tools are
