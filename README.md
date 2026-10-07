@@ -738,7 +738,9 @@ instruction names no fixture folder, scenario or answer.
 
 The [dedicated repair cases](programming_prompt_rewritten_with_evals/evals/debug-prompts/README.md)
 cover timezone/date conversion, cache results crossing tenant boundaries, and
-stock mutation after a rejected reservation. Each ships a genuinely broken
+stock mutation after a rejected reservation. More complex cases combine atomic
+multi-item orders and retries, cache expiry and mutation invalidation, or UTC
+booking conflicts and failed-move rollback. Each ships a genuinely broken
 program and a public contract. Agents discover executed original failures in
 the project-root `.log/failure.log`; judges retain an independent original in
 `tests/task-logs/`. The semantic judge checks the repair and available
@@ -780,11 +782,18 @@ python3 programming_prompt_rewritten_with_evals/evals/verify_debug_fixtures.py
 Accepted options are `--root PATH` for an alternative fixture tree and
 `--refresh-logs` to explicitly regenerate captures after an intentional change.
 Certification rejects passing seeds, stale captures and failing reference
-repairs. It checks each reference twice with fresh state. There are 74 public
-assertions in 11 independent sequences; no source tokens score correctness.
+repairs. It checks each reference twice with fresh state. There are 539 public
+assertions in 26 independent sequences; no source tokens score correctness.
 `sync_tasks.sh [TASK ...]` materializes a selected set, or both families when no
 names are supplied. `sync_judges.sh [SKILL ...]` respects task families and
 leaves unrelated cases intact during a partial sync.
+
+The complex fixtures retain these public entrypoints and accepted commands:
+`orders.py:run_orders(command)` accepts `reserve`, `cancel`, `order`, `stock`
+and `history`; `cache.py:run_catalog(command)` accepts `get`, `set`, `drop`
+and `list`; `scheduler.py:run_schedule(command)` accepts `book`, `move`,
+`cancel` and `list`. Their [case documentation](programming_prompt_rewritten_with_evals/evals/debug-prompts/README.md)
+links the full operand and result contracts and records the calibration results.
 
 The behavioral runner is
 `verifier/check_debug_behavior.py --repo PATH --cases CONTRACT.json --output REWARD.json`
