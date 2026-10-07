@@ -81,6 +81,20 @@ skill_is_selected() {
   return 1
 }
 
+skills_for_task_family() {
+  # Select policies applicable to a task family in the shared job.
+  # Parameters: $1 - coding or debug; remaining arguments - selected policies.
+  # Returns: applicable policy names, one per stdout line.
+  printf 'family=%s skills=%s\n' "$1" "${*:2}" >&2
+  local family="$1" skill
+  shift
+  for skill in "$@"; do
+    if [[ "$family" == debug && "$skill" == debug ]] || [[ "$family" == coding && "$skill" != debug ]]; then
+      printf '%s\n' "$skill"
+    fi
+  done
+}
+
 default_task_suite() {
   local skill has_debug=0 has_coding=0
   for skill in "${SELECTED_SKILLS[@]:-}"; do

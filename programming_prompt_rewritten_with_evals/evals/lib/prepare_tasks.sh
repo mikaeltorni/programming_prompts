@@ -1,5 +1,34 @@
 # Prepare isolated generated task trees for each Harbor job.
 
+prepare_instruction_bundle() {
+  # Build family documents and an explicit instruction document for each task.
+  # Parameters: $1 - transport bundle path; remaining arguments - selected policies.
+  # Returns: None after generating the portable bundle; propagates build errors.
+  printf 'bundle=%s skills=%s\n' "$1" "${*:2}" >&2
+  local bundle="$1" task family csv skill
+  shift
+  local -a skills=("$@") applicable=()
+  mkdir -p "$bundle/task-instructions" || return 1
+  for task in "${SELECTED_TASKS[@]}"; do
+    family="$(task_family "$task")" || return 1
+    if [[ ! -f "$bundle/families/$family/instructions.md" ]]; then
+      mapfile -t applicable < <(skills_for_task_family "$family" "${skills[@]}")
+      [[ ${#applicable[@]} -gt 0 ]] || return 1
+      csv=''
+      for skill in "${applicable[@]}"; do csv+="${csv:+,}v2:$skill"; done
+      python3 "$SCRIPT_DIR/../../scripts/global_instructions.py" \
+        --source-root "$SCRIPT_DIR/../.." --skills "$csv" \
+        --bundle-dir "$bundle/families/$family" || return 1
+    fi
+    cp "$bundle/families/$family/instructions.md" "$bundle/task-instructions/$task.md" || return 1
+  done
+  # Harbor discovers one transport root; it never registers nested policy skills.
+  printf '%s\n' '---' 'name: global-instructions' \
+    'description: Per-task global instructions for a shared benchmark schedule.' '---' > "$bundle/SKILL.md" || return 1
+  cp "$SCRIPT_DIR/../../scripts/global_instructions.py" "$bundle/builder.py" || return 1
+  printf 'None\n' >&2
+}
+
 prepare_job_tasks() {
   # Copy selected coding tasks into $JOBS/task-trees/<job>/ and sync only this
   # job's judges there. Returns the absolute path on stdout.

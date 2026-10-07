@@ -4,11 +4,13 @@
 # job (same trial count); judges run independently and Pass is not AND.
 
 run_one_job() {
+  # Run and archive one shared Harbor schedule for the selected task families.
+  # Parameters: $1 - harness; $2 - job name; $3 - mode.
+  # Returns: None; records the Harbor exit code in JOB_HARBOR_RC.
+  printf 'harness=%s job_name=%s run_mode=%s\n' "$1" "$2" "$3" >&2
   local harness="$1"
   local job_name="$2"
   local run_mode="$3"
-  shift 3
-  local -a skill_paths=("$@")
 
   local skills_csv
   skills_csv="$(printf '%s,' "${SELECTED_SKILLS_FOR_JOB[@]:-}")"
@@ -24,13 +26,7 @@ run_one_job() {
   else
     config_file="$JOBS/harbor.${job_name}.yaml"
     local bundle="$JOBS/instruction-bundles/$job_name/global-instructions"
-    local bundle_skills="" selected
-    for selected in "${SELECTED_SKILLS_FOR_JOB[@]}"; do
-      bundle_skills+="${bundle_skills:+,}v2:$selected"
-    done
-    python3 "$SCRIPT_DIR/../../scripts/global_instructions.py" \
-      --source-root "$SCRIPT_DIR/../.." --skills "$bundle_skills" \
-      --bundle-dir "$bundle" || return 1
+    prepare_instruction_bundle "$bundle" "${SELECTED_SKILLS_FOR_JOB[@]}" || return 1
     write_job_config "$harness" "$config_file" "$(skills_yaml_block "$bundle")" "$tasks_root"
   fi
 
@@ -120,6 +116,7 @@ run_one_job() {
     diagnose_failed_job "$JOBS/$job_name" "$job_name" "$harbor_rc"
   fi
   JOB_HARBOR_RC="$harbor_rc"
+  printf 'None\n' >&2
 }
 
 # Whether any trial in a Harbor job wrote its aggregate reward file.
@@ -131,40 +128,42 @@ job_scored_any_trial() {
   [[ -n "$(find "$job_dir" -mindepth 3 -maxdepth 3 -type f -path '*/verifier/reward.json' -print -quit 2>/dev/null)" ]]
 }
 
-run_task_family_for_harness() {
-  local harness="$1" family="$2"
-  shift 2
-  # Bash dynamic scope keeps every config/artifact/concurrency helper on this
-  # family's tasks and selected skills without modifying the invocation list.
-  local -a SELECTED_TASKS=() SELECTED_SKILLS_FOR_JOB=()
-  local task skill
-  for task in "$@"; do
-    [[ "$(task_family "$task")" == "$family" ]] && SELECTED_TASKS+=("$task")
+run_jobs_for_harness() {
+  # Submit all selected families to one Harbor scheduler and capacity budget.
+  # Parameters: $1 - harness identifier.
+  # Returns: None after the job finishes; propagates setup failures.
+  printf 'harness=%s\n' "$1" >&2
+  local harness="$1"
+  local -a SELECTED_SKILLS_FOR_JOB=() family_skills=()
+  local family task skill known_skill selected has_coding=0 has_debug=0
+  for task in "${SELECTED_TASKS[@]}"; do
+    family="$(task_family "$task")" || return 1
+    if [[ "$family" == coding ]]; then has_coding=1; else has_debug=1; fi
   done
-  [[ ${#SELECTED_TASKS[@]} -gt 0 ]] || return 0
-  for skill in "${SELECTED_SKILLS[@]}"; do
-    if [[ "$family" == debug && "$skill" == debug ]] || [[ "$family" == coding && "$skill" != debug ]]; then
-      SELECTED_SKILLS_FOR_JOB+=("$skill")
+  for family in coding debug; do
+    if [[ "$family" == coding && "$has_coding" -eq 0 ]] || [[ "$family" == debug && "$has_debug" -eq 0 ]]; then
+      continue
     fi
+    mapfile -t family_skills < <(skills_for_task_family "$family" "${SELECTED_SKILLS[@]}")
+    for skill in "${family_skills[@]}"; do
+      selected=0
+      for known_skill in "${SELECTED_SKILLS_FOR_JOB[@]:-}"; do
+        [[ "$known_skill" == "$skill" ]] && selected=1
+      done
+      [[ "$selected" -eq 1 ]] || SELECTED_SKILLS_FOR_JOB+=("$skill")
+    done
   done
   if [[ ${#SELECTED_SKILLS_FOR_JOB[@]} -eq 0 ]]; then
-    echo "Skipping $family tasks: no applicable selected skill" >&2
-    return 0
+    echo 'No applicable skills for selected tasks' >&2
+    return 1
   fi
-  local suffix="" mode=positive
-  [[ "$family" == debug ]] && suffix="-debug"
-  if [[ "$BASELINE" -eq 1 ]]; then
-    run_one_job "$harness" "$(harbor_job_name "${harness}${suffix}-baseline")" baseline
-  else
-    run_one_job "$harness" "$(harbor_job_name "${harness}${suffix}-skills")" positive
-  fi
-}
-
-run_jobs_for_harness() {
-  local harness="$1"
   if [[ "$RUN_SEPARATELY" -eq 1 ]]; then
     echo "NOTE: --run-separately scores skills independently on their applicable task family." >&2
   fi
-  run_task_family_for_harness "$harness" coding "${SELECTED_TASKS[@]}"
-  run_task_family_for_harness "$harness" debug "${SELECTED_TASKS[@]}"
+  local suffix='' mode=positive label=skills
+  [[ "$has_coding" -eq 0 ]] && suffix=-debug
+  if [[ "$BASELINE" -eq 1 ]]; then mode=baseline; label=baseline; fi
+  echo "One Harbor job schedules coding=$has_coding debug=$has_debug together; trial policies and judges stay family-specific." >&2
+  run_one_job "$harness" "$(harbor_job_name "${harness}${suffix}-${label}")" "$mode"
+  printf 'None\n' >&2
 }
