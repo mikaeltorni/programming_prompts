@@ -45,6 +45,21 @@ Always pass `--eval-agent codex` — see *Judges: Codex only while testing* belo
 Prompt-only work still uses Harbor when a live check is needed; do not add
 pytest under `programming_prompt_rewritten_with_evals/`.
 
+Before giving a user a benchmark command that uses Codex as its harness or
+evaluator, compare the current 5-hour and weekly usage remaining on every
+configured Codex instance. Select each instance in turn and use Codex `/status`
+or that account's Settings → Usage to check its live allowances; see [OpenAI's Codex usage
+guidance](https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan).
+Choose an instance with both windows available, preferring the one with the
+most remaining headroom in its more constrained window. Do not infer
+availability from an instance number, plan name, shell alias, or an older run.
+Use that instance's verified ID as `ACC_CODEX_INSTANCE=<selected-id>` on every
+related command, and verify the ID resolves to the intended auth home with
+`ACC_CODEX_INSTANCE=<selected-id> python3 harbor_agents/codex_account.py --auth`.
+Replace `<selected-id>` with the checked ID before sharing a runnable command.
+If current usage cannot be checked, or no instance has both windows available,
+say so and ask the user for current quota status instead of guessing.
+
 Omit pin-related options from normal benchmark runs and from commands given to
 the user. Do not pass `--pin-refresh` or `--no-pin-refresh` by default: without
 either flag, the wrapper checks for the current stable CLI version. Use a pin
@@ -65,27 +80,27 @@ cd programming_prompt_rewritten_with_evals/evals
 ```
 
 ```bash
-./run_benchmark.sh --harness codex --eval-agent codex --baseline -k 1
+ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness codex --eval-agent codex --baseline -k 1
 ```
 
 ```bash
-./run_benchmark.sh --harness codex --eval-agent codex -k 1
+ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness codex --eval-agent codex -k 1
 ```
 
 ```bash
-./run_benchmark.sh --harness grok --eval-agent codex --baseline -k 1
+ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness grok --eval-agent codex --baseline -k 1
 ```
 
 ```bash
-./run_benchmark.sh --harness grok --eval-agent codex -k 1
+ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness grok --eval-agent codex -k 1
 ```
 
 ```bash
-./run_benchmark.sh --harness cc --eval-agent codex --baseline -k 1
+ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness cc --eval-agent codex --baseline -k 1
 ```
 
 ```bash
-./run_benchmark.sh --harness cc --eval-agent codex -k 1
+ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness cc --eval-agent codex -k 1
 ```
 
 ## Judges: Codex only while testing
@@ -149,6 +164,9 @@ block into a **different terminal**. Shared setup (`cd`, `export JOBS=…`) may
 sit in its own preceding block; every distinct benchmark invocation after that
 must be alone in a block.
 
+Apply the quota-selection rule above to every command that uses Codex as a
+harness or evaluator, and replace `<selected-id>` before presenting it.
+
 **Give commands for the requested model only.** When the user asks for commands
 to run the benchmark, produce exactly the harness/model they named — if they say
 "run codex", every command is `--harness codex` with `--eval-agent codex`, with no
@@ -159,18 +177,20 @@ burn a whole run on the wrong account. Vary only the axis the user asked to vary
 fixed. If the request does not name a model, ask before emitting commands.
 
 After an agent changes benchmark prompts, skills, judges, or runtime, include
-the following full-suite cx1 positive command in the final handoff, even when
-a shorter smoke run was used during development. Keep the benchmark invocation
-in its own fenced `bash` block. It selects the programming skill suite, the
-Codex harness and judge, three attempts per task, and automatic concurrency. Omit pin
-options and `--tasks` so the runner selects every coding task.
+the following full-suite positive command in the final handoff, even when a
+shorter smoke run was used during development. First select the currently
+available instance using the quota check above, then replace `<selected-id>`
+with that verified ID. Keep the benchmark invocation in its own fenced `bash`
+block. It selects the programming skill suite, the Codex harness and judge,
+three attempts per task, and automatic concurrency. Omit pin options and
+`--tasks` so the runner selects every coding task.
 
 ```bash
 cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 ```
 
 ```bash
-ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,commits,worktree,docs,srp,commenting,logging,debug,testing -k 3
+ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,commits,worktree,docs,srp,commenting,logging,debug,testing -k 3
 ```
 
 ## The benchmark testing framework (read before running an eval)
@@ -187,7 +207,7 @@ cd programming_prompt_rewritten_with_evals/evals
 ```
 
 ```bash
-./run_benchmark.sh --harness codex --eval-agent codex
+ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness codex --eval-agent codex
 ```
 
 ### One flag format: `--flag value`
@@ -258,20 +278,22 @@ misleading result rather than an obvious error.
    out-of-credits **team** plan — and produced the void all-zero run described
    in mistake 5. The resolver now honors `ACC_CODEX_INSTANCE` first, exactly
    like Agent Command Center's own `resolve_selected_instance`, and raises
-   instead of silently falling back when the id is unknown. Notes:
+   instead of silently falling back when the id is unknown. The instance and
+   plan details below describe that past incident, not a current quota choice.
+   Notes:
    - The switch is the env var `ACC_CODEX_INSTANCE` (which `ca2` exports), or
      the persisted selection. **`cat2` is not a thing** — that dispatch name
      was removed from ACC and there is a test asserting it stays gone; `caN` is
      the current surface. Do not "restore" `cat2`.
-   - Confirm the account *before* a long run:
-     `ACC_CODEX_INSTANCE=2 python3 harbor_agents/codex_account.py --auth`
+   - Confirm the selected account *before* a long run:
+     `ACC_CODEX_INSTANCE=<selected-id> python3 harbor_agents/codex_account.py --auth`
      must print the intended home, and the startup line
      `Codex Harbor auth: ACC instance <id> path=…` must match it.
-   - Instance 1 (`~/.codex`) is the team plan; instance 2
-     (`~/.codex-account-2`) is the plus plan that carries credits. Plan type is
-     in the access token's `chatgpt_plan_type` claim.
+   - Account IDs, plans, and remaining allowances can differ and change. Check
+     the current 5-hour and weekly usage for each configured instance; do not
+     use historical instance 1 or 2 values to choose an account.
    - Export the variable for the whole run
-     (`ACC_CODEX_INSTANCE=2 ./run_benchmark.sh …`); the runner does not
+     (`ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh …`); the runner does not
      sanitize env, so the host process's value reaches the agent env, the
      container auth mount, and the LLM judge alike.
 
