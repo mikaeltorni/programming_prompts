@@ -310,7 +310,6 @@ def _trial_dirs(jobs_root: Path) -> list[Path]:
     Parameters: jobs_root - one Harbor job or the directory containing jobs.
     Returns: sorted unique trial directories, including startup failures.
     """
-    print(f"jobs_root={jobs_root}", file=sys.stderr)
     dirs: set[Path] = set()
     for config_path in jobs_root.rglob("config.json"):
         trial_dir = config_path.parent
@@ -324,7 +323,6 @@ def _trial_dirs(jobs_root: Path) -> list[Path]:
         if "artifacts" not in trial_dir.relative_to(jobs_root).parts:
             dirs.add(trial_dir)
     result = sorted(dirs)
-    print(result, file=sys.stderr)
     return result
 
 
@@ -691,11 +689,9 @@ def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
 
     Returns: none.
     """
-    print(f"jobs_root={jobs_root} run_mode={run_mode} skills_csv={skills_csv}", file=sys.stderr)
     trial_dirs = _trial_dirs(jobs_root)
     if not trial_dirs:
         print("No trial records found under", jobs_root, file=sys.stderr)
-        print(None, file=sys.stderr)
         return
 
     run_stamp, runtime_text = _run_and_runtime(jobs_root)
@@ -875,7 +871,6 @@ def _print_summary(jobs_root: Path, run_mode: str, skills_csv: str) -> None:
             file=sys.stderr,
         )
     print("-" * 78, file=sys.stderr)
-    print(None, file=sys.stderr)
 
 
 def main(argv: list[str] | None = None) -> int:

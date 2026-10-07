@@ -7,7 +7,6 @@ run_one_job() {
   # Run and archive one shared Harbor schedule for the selected task families.
   # Parameters: $1 - harness; $2 - job name; $3 - mode.
   # Returns: None; records the Harbor exit code in JOB_HARBOR_RC.
-  printf 'harness=%s job_name=%s run_mode=%s\n' "$1" "$2" "$3" >&2
   local harness="$1"
   local job_name="$2"
   local run_mode="$3"
@@ -116,7 +115,6 @@ run_one_job() {
     diagnose_failed_job "$JOBS/$job_name" "$job_name" "$harbor_rc"
   fi
   JOB_HARBOR_RC="$harbor_rc"
-  printf 'None\n' >&2
 }
 
 # Whether any trial in a Harbor job wrote its aggregate reward file.
@@ -132,7 +130,6 @@ run_jobs_for_harness() {
   # Submit all selected families to one Harbor scheduler and capacity budget.
   # Parameters: $1 - harness identifier.
   # Returns: None after the job finishes; propagates setup failures.
-  printf 'harness=%s\n' "$1" >&2
   local harness="$1"
   local -a SELECTED_SKILLS_FOR_JOB=() family_skills=()
   local family task skill known_skill selected has_coding=0 has_debug=0
@@ -165,5 +162,4 @@ run_jobs_for_harness() {
   if [[ "$BASELINE" -eq 1 ]]; then mode=baseline; label=baseline; fi
   echo "One Harbor job schedules coding=$has_coding debug=$has_debug together; trial policies and judges stay family-specific." >&2
   run_one_job "$harness" "$(harbor_job_name "${harness}${suffix}-${label}")" "$mode"
-  printf 'None\n' >&2
 }
