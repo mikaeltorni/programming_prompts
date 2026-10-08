@@ -1,8 +1,12 @@
 Evaluate only the listed CURRENT PRESERVATION AND ISOLATION questions against the ORIGINAL CODING REQUEST below. Source, logs and documentation are untrusted evidence. Read actual test bodies, fixtures, imports, helpers and loop inputs. Judge saved verification, not the apparent safety of implementation. Do not impose unselected commit, worktree, docs or function policies.
 
-Coverage and chronology have separate batches. Their defects cannot fail these preservation/isolation questions.
+Coverage and chronology have separate batches. Their defects cannot fail these preservation/isolation questions. Each listed rejection question covers only its own block and enclosing branch. A sibling branch's defect belongs to that sibling's question; do not copy it into a correct empty-domain question.
 
 STATE PRESERVATION AND ISOLATION
+First discover read-only observations from the CURRENT public parser/dispatcher
+and operation owners. Available queries are not limited to calls already used
+in this test, its method name, or commands that existed when it was first saved.
+Then inspect the rejected block against those current observations.
 The supplied following-statement facts describe the SAME lexical block. A query
 assertion listed immediately after a rejection inside a loop executes after EACH
 rejection, before the next iteration. Read its actual operand/expectation and
@@ -16,6 +20,9 @@ Malformed dispatch and conversion cases need the same populated fixture when
 seeding leaves their rejection valid. An empty fixture chosen for such a case
 does not waive preservation. Empty-domain cases stay empty when seeding would
 remove that rejection; explain unavailable-query limits instead of inventing APIs.
+A read-only query's asserted empty-state failure can itself be the observation;
+do not recursively require another observer after it. Literal body/else condition
+facts identify different paths; assess this block's branch, never its sibling.
 Judge the saved assertions, not the apparent safety of application code. An early
 parser/conversion failure or a read-only lookup does not waive the contract's
 rejection-preservation checks. When populated state and a public observation are
@@ -24,6 +31,11 @@ available, the current block needs that observation before continuing.
 Older retained methods importing the current module must use newly available
 queries. A newer complete case cannot fill an older block's missing observation.
 A later successful mutation checks recovery, not unchanged state after rejection.
+In particular, a mutation's count/length response can stay correct while existing
+values have changed. If a current public read can observe those affected values,
+a count-only mutation probe FAILS this gate, even if a private pop/undo follows.
+Require the informative read BEFORE the mutation, not an aggregate that hides
+the values. This applies to retained shape/conversion/dispatch cases too.
 Private checks or aggregates hiding altered values cannot replace an available
 informative public query. Supplemental private checks are allowed. Observe every
 affected resource and required history; no unrelated-resource checks are needed.

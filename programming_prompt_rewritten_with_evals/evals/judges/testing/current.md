@@ -51,6 +51,11 @@ static-content direct checks; evaluation-repository prohibitions do not apply
 to the coding submission.
 
 STATE PRESERVATION AND ISOLATION
+Discover available read-only observations from the CURRENT public parser and
+operation owners, not just the calls or historical stage name of this test.
+A mutation's count/length response can hide changes to stored values. When a
+public read can observe the affected values, require it before that mutation;
+a private pop/undo afterward cannot make a count-only probe sufficient.
 For a mutable contract, inspect EVERY retained rejection block in current tests:
 its fixture, rejected input and actual next statement. When failure must leave
 state unchanged, seed meaningful populated state where permitted, reject once,
@@ -60,6 +65,9 @@ Malformed dispatch and conversion cases need the same populated fixture when
 seeding leaves their rejection valid. An empty fixture chosen for such a case
 does not waive preservation. Empty-domain cases stay empty when seeding would
 remove that rejection; explain unavailable-query limits instead of inventing APIs.
+A read-only query's asserted empty-state failure can itself observe preserved
+emptiness; do not recursively require another observation after that observer.
+Use literal enclosing conditions to distinguish body/else paths of a rejection.
 Judge the saved assertions, not the apparent safety of application code. An early
 parser/conversion failure or a read-only lookup does not waive the contract's
 rejection-preservation checks. When populated state and a public observation are
