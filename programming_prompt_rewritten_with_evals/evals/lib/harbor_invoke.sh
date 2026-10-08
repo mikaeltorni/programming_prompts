@@ -17,9 +17,9 @@ run_harbor_for_harness() {
   local -a env_flags=()
   local -a seen_env_keys=()
   local line oauth_harness pair key
-  # Static pairs must use "true", not "1": Harbor scrubs sensitive env VALUES
-  # from trial outputs (keys matching AUTH/TOKEN/…). Value "1" rewrites every
-  # reward 1.0 into invalid JSON ("[REDACTED].0") and breaks our summary.
+  # Keep nonsecret authentication booleans out of sensitive-key env pairs:
+  # Harbor replaces their literal values throughout every archived text file.
+  # Select auth through the explicit account path or the harness auth hook.
   add_env_pair() {
     local candidate="$1"
     local cand_key="${candidate%%=*}"

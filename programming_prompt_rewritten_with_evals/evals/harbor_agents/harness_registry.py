@@ -78,7 +78,7 @@ HARNESSES: dict[str, HarnessSpec] = {
                 target="/root/.claude/.credentials.json",
             ),
         ),
-        static_env=("CLAUDE_FORCE_OAUTH=true",),
+        static_env=(),
         oauth="claude",
     ),
     "grok": HarnessSpec(
