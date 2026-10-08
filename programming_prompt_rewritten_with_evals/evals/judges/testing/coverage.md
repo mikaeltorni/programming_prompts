@@ -3,6 +3,25 @@ Evaluate only the listed CURRENT COVERAGE questions against the ORIGINAL CODING 
 Preservation/isolation and chronology have separate batches. Their defects cannot fail these coverage questions.
 
 CURRENT CONTRACT COVERAGE
+Exact documented command forms define operand counts, including zero operands.
+Under the selected testing contract, missing/extra input needs saved rejection
+checks; another sentence forbidding extra input is unnecessary. Respect forms
+that explicitly accept optional operands or the remaining text. This is argument
+shape, not permission to invent a numeric bound or exception message.
+First resolve the FINAL rules from the complete original request. A later
+acceptance extension replaces its earlier rejection for that same input class;
+the old restriction is not an additional final obligation. Quote the applicable
+later sentence before alleging a missing retired numeric/type rejection.
+Trace the public parser and dispatcher before requiring a rejection case. A
+defensive fallback that the parser already makes unreachable has no separate
+public-input obligation; do not demand a private call or parser monkeypatch.
+One ACTUAL shared predicate, including one membership condition for several
+operations, needs coverage for its rejection reason rather than a duplicate
+case for every selector. Separate copied predicates remain independent. A
+later result-selection branch does not duplicate an earlier shared guard.
+Before alleging an absent case, expand saved loops and helpers. A public query
+that establishes an empty shared domain can observe successful reset; do not
+require every other read to repeat that same observation after reset.
 Trace the source each final runnable case loads. A case loading the current
 module follows the final contract, even if its name or original write date
 refers to an earlier stage. A case explicitly loading an old saved snapshot

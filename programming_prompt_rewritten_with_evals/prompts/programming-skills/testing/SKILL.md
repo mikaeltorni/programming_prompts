@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.1.5 — Save and run each Feature's public-interface checks before its code,
+  v1.1.8 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -19,12 +19,33 @@ When workflow/commits is selected, finish **3.1 Write tests → 3.2 Write code �
 time, but adds no Git commit or workflow-file requirement. Do not write all
 Features' tests first or add checks only after implementation.
 
+**Stop between capabilities.** After the current code edit, run the saved
+cumulative suite and record its passing result BEFORE saving any next capability's
+checks or code. A later run containing the next capability's failures cannot
+verify the previous slice retroactively. Keep unimplemented later dispatch
+branches out of the first working file, even when they seem easy to add.
+
 Before closing each checks step, open the saved runnable file. Confirm it contains
 actual success assertions AND applicable rejection assertions: empty/unknown
 dispatch, missing/extra operands, failed numeric conversion and specified domain
 or resource failures. When rejection must preserve mutable state, the same saved
 block must immediately assert informative public observations. Inventory prose,
 terminal-only probes and a passing success-only suite do not supply these checks.
+
+**Before implementing a new public query:** inspect EVERY retained
+expected-exception block in every saved file loading the current module. Read
+each fixture, rejected call and first following assertion. Upgrade each applicable
+block in the checks step, including earlier classes and argument loops: seed
+permitted nonempty state, reject once, then immediately assert independently
+expected values through the new query BEFORE another rejection or mutation.
+Do not merely add a new query test or a new class. Replace retained count-only
+recovery probes when the new read can reveal affected values. Save and run the
+upgraded cumulative suite before editing the application; the new query may fail
+in that baseline because it is not implemented yet. Do not start implementation
+until every applicable retained block has its actual public observation.
+A blank command is malformed input, not an empty-state query: it still rejects
+with populated state, so seed that fixture and observe it immediately. Only a
+valid read that must reject BECAUSE its domain is empty needs an empty fixture.
 
 ## 3.1 Save the inventory and runnable checks
 
@@ -46,12 +67,6 @@ shared validation owner. Future cases may be planned but are not executable yet.
 
 Save assertions for all currently applicable shared rules in the first dispatch
 revision: empty command, unknown operation and rejected missing/extra operands.
-When adding a public query, find EVERY retained expected-exception block loading
-the current module before the application edit. Upgrade those saved cases now:
-seed permitted nonempty state and immediately assert its independently expected
-values through the new query after each rejection. Include earlier classes and
-argument loops, even when this feature does not change their rejected commands.
-The new query may fail in this baseline because it is not implemented yet.
 Apply selected commenting/logging contracts to every authored test, helper and
 fixture from the first saved regression. An assertion-only method still has
 `self`, description/Parameters/Returns docstring parts, its own first parameter

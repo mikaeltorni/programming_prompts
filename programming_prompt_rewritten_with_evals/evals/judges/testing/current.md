@@ -6,6 +6,18 @@ chronology and recorded execution have their own batch and cannot change these
 two scores. Do not impose unselected commit, worktree, docs or function policies.
 
 CURRENT CONTRACT COVERAGE
+Exact documented command forms define argument counts, including no operands;
+their missing/extra input needs saved rejection checks under selected testing.
+An extra prohibition sentence is unnecessary. Respect explicitly optional
+operands and free remaining text; do not invent numeric bounds or error messages.
+Resolve the FINAL rules before deriving rejection classes. Later acceptance
+replaces the earlier rejection for the same input class. Trace public dispatch:
+an upstream parser can make a defensive fallback unreachable, so that fallback
+needs no invented private-call test. One actual shared predicate (including a
+membership condition) can cover its selectors for the same rejection reason;
+copied predicates remain independent. Expand loops/helpers before alleging an
+absent case. A query observing an empty shared domain can verify reset without
+repeating that observation through every other query.
 Trace the source each final runnable case loads. A case loading the current
 module follows the final contract, even if its name or original write date
 refers to an earlier stage. A case explicitly loading an old saved snapshot
