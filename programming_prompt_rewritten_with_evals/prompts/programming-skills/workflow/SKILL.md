@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.2.4 — Establish the task checkout and authoritative plan, then finish
+  v1.2.5 — Establish the task checkout and authoritative plan, then finish
   each feature's tests → code → commit cycle before documentation.
 ---
 
@@ -33,6 +33,12 @@ Read `ACC_WORKFLOW_FILE` from the shell. Use that exact absolute Markdown path
 only when it lies inside the retained LIVE launch root's `tmp/workflow/`.
 Otherwise use `<live-launch-root>/tmp/workflow.md`. Create its parent directory.
 Record this absolute path in startup evidence BEFORE entering the task checkout.
+Keep the LIVE project root, task checkout and plan path as three separate
+absolute values. The fallback appends `/tmp/workflow.md` to the LIVE project
+root itself; its parent owns the external worktree store, not the plan.
+Before checks, read the actual file at that retained path and compare it with
+the recorded path. A plan beside the project or with a different filename
+cannot substitute, even if its tables are complete.
 
 Every plan write/read uses that retained absolute path. A relative filename
 inside the task worktree is wrong, even if its tables are otherwise correct.
@@ -115,6 +121,8 @@ inspect the committed tree; record the real hash in this row and selected ledger
 When worktree is selected, finish its live-default merge, consumer reapplication
 and verification before closing 3.3. Never push unless asked.
 
+Identify each row by its unique Step, Feature and Stage cells when updating
+Status/Evidence; reread changed cells rather than trusting a successful command.
 Read back all three rows for the current feature. Each must be complete with
 its actual baseline, passing checks or commit/delivery evidence before starting
 another feature or closing the outer code row. Correct stale statuses now.

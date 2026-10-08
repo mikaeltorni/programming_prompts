@@ -240,7 +240,9 @@ for prompt_path in prompt_files:
 
     workspace_context = (
         "Benchmark workspace: /Projects/app is the writable Git project; "
-        "/app is a symlink to the same directory. An empty checkout is intentional "
+        "/app is a symlink to the same directory. The launcher sets "
+        "ACC_WORKFLOW_FILE=/Projects/app/tmp/workflow/benchmark.md. "
+        "An empty checkout is intentional "
         "for creation tasks, not a missing repository. An initial file search "
         "returning no matches or exit status 1 is expected in an empty project. "
         "Continue by creating the requested program and any checks required by "

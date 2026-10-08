@@ -287,7 +287,12 @@ def workspace_runner_context(workspace: Path) -> str:
 
 
 def workflow_plan_path(workspace: Path) -> Path:
-    """Choose the workflow skill's configured launch-project plan or fallback."""
+    """Choose the configured launch-project plan or its live-root fallback.
+
+    Parameters: workspace - physical live launch-project directory.
+    Returns: the retained authoritative Markdown plan path.
+    """
+    print(f"workspace={workspace}")
     plan = workspace / "tmp" / "workflow.md"
     configured = Path(os.environ.get("ACC_WORKFLOW_FILE", ""))
     if configured.is_absolute() and configured.suffix == ".md":
@@ -297,6 +302,7 @@ def workflow_plan_path(workspace: Path) -> Path:
             pass
         else:
             plan = configured
+    print(plan)
     return plan
 
 
@@ -308,11 +314,14 @@ def workflow_plan_structure(workspace: Path) -> dict:
     """
     print(f"workspace={workspace}")
     path = workflow_plan_path(workspace)
+    provenance = {"live_root": str(workspace.resolve()),
+                  "expected_plan_path": str(path), "plan_available": False}
     try:
         path.resolve().relative_to(workspace.resolve())
         text = path.read_text(encoding="utf-8")
     except (OSError, RuntimeError, UnicodeError, ValueError):
-        result = {"issues": ["required plan is missing or unreadable"], "ledger_rows": [], "microsteps": []}
+        result = {**provenance, "issues": [f"required plan {path} is missing or unreadable"],
+                  "tasks": [], "ledger_rows": [], "microsteps": []}
         print(result)
         return result
     section = ""
@@ -382,7 +391,8 @@ def workflow_plan_structure(workspace: Path) -> dict:
             issues.append(f"Feature {feature!r} is interleaved with another feature")
     if any(len(row) == 4 and row[1] == "Write code" and row[2] != "skipped" for row in tasks) and not code_rows:
         issues.append("Enabled Write code has no feature-cycle microsteps")
-    result = {"tasks": tasks, "microsteps": microsteps, "ledger_rows": ledger, "issues": issues,
+    result = {**provenance, "plan_available": True,
+              "tasks": tasks, "microsteps": microsteps, "ledger_rows": ledger, "issues": issues,
               "note": "Plan syntax and internal consistency only; no expected task Feature count, execution chronology or semantic score."}
     print(result)
     return result
@@ -390,32 +400,37 @@ def workflow_plan_structure(workspace: Path) -> dict:
 
 
 def workspace_workflow_plan_context(workspace: Path) -> str:
-    """Inline the target project's workflow plan without leaving the workspace.
+    """Inline the authoritative live-root plan and its provenance facts.
 
-    Args:
-        workspace: Coding-agent project root.
-
-    Returns:
-        Plan contents or explicit missing/unreadable evidence for the judge.
+    Parameters: workspace - physical live launch-project directory.
+    Returns: plan contents or missing/unreadable evidence with structural facts.
     """
+    print(f"workspace={workspace}")
     plan = workflow_plan_path(workspace)
+    structural_context = (
+        "\nPlan table structure and internal consistency evidence:\n"
+        + json.dumps(workflow_plan_structure(workspace), indent=2)
+    )
     try:
         plan.resolve().relative_to(workspace.resolve())
     except (OSError, RuntimeError, ValueError):
-        log(f"workflow plan resolves outside workspace: {plan}")
-        return f"\nWorkflow plan evidence: {plan} resolves outside the workspace."
+        result = f"\nWorkflow plan evidence: {plan} resolves outside the workspace." + structural_context
+        print(result)
+        return result
     if not plan.is_file():
-        log(f"workflow plan missing: {plan}")
-        return f"\nWorkflow plan evidence: {plan} is missing."
+        result = f"\nWorkflow plan evidence: {plan} is missing." + structural_context
+        print(result)
+        return result
     try:
         data = plan.read_bytes()
     except OSError as exc:
-        log(f"workflow plan unreadable: {plan}: {exc}")
-        return f"\nWorkflow plan evidence: {plan} is unreadable ({exc})."
+        result = f"\nWorkflow plan evidence: {plan} is unreadable ({exc})." + structural_context
+        print(result)
+        return result
     truncated = len(data) > _MAX_WORKFLOW_PLAN_BYTES
     if truncated:
         data = data[:_MAX_WORKFLOW_PLAN_BYTES]
-    log(f"inlined workflow plan path={plan} bytes={len(data)} truncated={truncated}")
+    print(f"inlined workflow plan path={plan} bytes={len(data)} truncated={truncated}")
     note = " (truncated)" if truncated else ""
     text = data.decode("utf-8", errors="replace")
     references = []
@@ -427,13 +442,14 @@ def workspace_workflow_plan_context(workspace: Path) -> str:
         "\nPlain-text full Git hashes present in the plan (not a commit-validity score):\n"
         + json.dumps(references, indent=2)
     )
-    return (
+    result = (
         f"\n\nWorkflow plan evidence from {plan}{note}:\n"
         f"```markdown\n{text}\n```"
         + reference_context
-        + "\nPlan table structure and internal consistency evidence:\n"
-        + json.dumps(workflow_plan_structure(workspace), indent=2)
+        + structural_context
     )
+    print(result)
+    return result
 
 
 def debugging_trace_value(value):
@@ -605,9 +621,9 @@ def pin_workspace_python(
             try:
                 boundaries.append(python_boundaries(path))
             except (OSError, SyntaxError, UnicodeError) as exc:
-                log(f"Python boundary evidence unavailable file={path.name}: {exc}")
+                print(f"Python boundary evidence unavailable file={path.name}: {exc}")
                 boundaries.append({"file": str(path), "error": str(exc)})
-        log(f"pinned function boundaries files={len(boundaries)}")
+        print(f"pinned function boundaries files={len(boundaries)}")
     boundary_context = (
         "\n\nRead-only Python boundary evidence (syntax, not a score):\n"
         + json.dumps(boundaries, indent=2) if boundaries else ""
@@ -616,9 +632,9 @@ def pin_workspace_python(
     if history_enabled and judge_name in {"commits", "srp", "workflow", "testing"}:
         try:
             git_context = commit_source_context(workspace)
-            log(f"pinned historical source evidence judge={judge_name}")
+            print(f"pinned historical source evidence judge={judge_name}")
         except (OSError, ValueError) as exc:
-            log(f"Git evidence unavailable judge={judge_name}: {exc}")
+            print(f"Git evidence unavailable judge={judge_name}: {exc}")
             git_context = f"\nGit evidence unavailable: {exc}; inspect with the supplied helper."
     history_label = "Historical source lookup" if judge_name == "testing" else "Git history and worktree registration"
     tools_context = (
@@ -650,7 +666,7 @@ def pin_workspace_python(
         + "\n\n"
         + (current_source if judge_name != "testing" else "")
         + runner_context
-        + plan_context
+        + (plan_context if judge_name != "workflow" else "")
         + boundary_context
         + git_context
         + task_logs_context
@@ -658,6 +674,9 @@ def pin_workspace_python(
         + ("\n\nAuthoritative CURRENT workspace source for final-suite coverage; historical bodies above apply only to their named revisions:\n"
            + current_source if judge_name == "testing" else "")
         + testing_context
+        + ("\n\nAuthoritative CURRENT plan at the retained LIVE launch root; "
+           "historical or foreign trace paths cannot replace this required file:\n"
+           + plan_context if judge_name == "workflow" else "")
     )
     print(result)
     return result
