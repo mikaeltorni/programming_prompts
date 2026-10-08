@@ -40,6 +40,9 @@ Do not infer a follow-up request when none appears in the supplied evidence.
 
 2. PER-FEATURE CYCLE
 Microsteps uses Step | Phase | Feature | Stage | Action | Status | Evidence.
+Every Tasks row has four cells and every Microsteps row has seven. A spare
+empty cell is still an extra column, not a parser artifact; verify the actual
+Markdown row and identify that cell before rejecting the table shape.
 Steps are unique positive integers in execution order; Phase names an outer row.
 Each planned code feature has its own stable identifier and consecutive rows:
 3.1 Write tests, 3.2 Write code, 3.3 Commit. Non-code rows use - for Feature/Stage.
@@ -51,7 +54,11 @@ Require concrete files/checks and observed evidence, not a generic placeholder.
 For each feature, checks are saved and run before its application implementation;
 then only its behavior is implemented and verified with retained relevant checks;
 then its working tests and code are committed together before the next feature's
-3.1 begins. All-features tests followed by all-features code/commits fails this order.
+3.1 begins. Workflow itself requires a conventional commit subject in
+`type: summary` or `type(scope): summary` form. Inspect the actual introducing
+subject; a plain `Add ...` or `Fix ...` fails this owned requirement even when
+commits is unselected. The commits companion adds sentence-ledger and history
+gates; its absence does not remove workflow's own subject rule. All-features tests followed by all-features code/commits fails this order.
 Tests added after code, all-code-first final commits, or empty cosmetic commits do
 not satisfy the cycle. Existing passing checks may cover a pure refactor; creation
 checks may initially fail for a missing entrypoint. Distinguish dependency failures.

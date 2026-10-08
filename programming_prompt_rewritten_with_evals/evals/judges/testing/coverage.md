@@ -8,6 +8,10 @@ Under the selected testing contract, missing/extra input needs saved rejection
 checks; another sentence forbidding extra input is unnecessary. Respect forms
 that explicitly accept optional operands or the remaining text. This is argument
 shape, not permission to invent a numeric bound or exception message.
+The declared input type defines the supported domain. A string command
+interface does not require tests rejecting arbitrary non-string objects unless
+the original request explicitly specifies that rejection. An extra defensive
+type guard alone cannot expand the contract to unsupported object types.
 First resolve the FINAL rules from the complete original request. A later
 acceptance extension replaces its earlier rejection for that same input class;
 the old restriction is not an additional final obligation. Quote the applicable
@@ -19,6 +23,10 @@ One ACTUAL shared predicate, including one membership condition for several
 operations, needs coverage for its rejection reason rather than a duplicate
 case for every selector. Separate copied predicates remain independent. A
 later result-selection branch does not duplicate an earlier shared guard.
+One argument-count predicate rejecting missing operands needs a representative
+shorter command, not every possible interpretation of its remaining text.
+A downstream empty-text guard made unreachable by tokenization and an upstream
+count check does not require another spelling or a private-call test.
 Before alleging an absent case, expand saved loops and helpers. A public query
 that establishes an empty shared domain can observe successful reset; do not
 require every other read to repeat that same observation after reset.

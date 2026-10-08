@@ -10,6 +10,10 @@ prompt_template = "prompt.md"
 current = "current.md"
 chronology = "chronology.md"
 
+# Limit semantic multitasking while preserving every original metric and case.
+[question_batch_sizes]
+preservation = 1
+
 [question_prompts]
 coverage = "coverage.md"
 preservation = "preservation.md"
