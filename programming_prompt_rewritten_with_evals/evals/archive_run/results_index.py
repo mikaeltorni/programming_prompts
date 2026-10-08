@@ -209,6 +209,7 @@ def collect_run_scores(run_dir: Path) -> dict[str, object]:
 
     Returns: aggregate trial, skill, and task scores.
     """
+    print(f"run_dir={run_dir}")
     trials = scored = passed = ratelimited = infrastructure = 0
     skills: dict[str, list[int]] = {}
     tasks: dict[str, list[int]] = {}
@@ -223,8 +224,11 @@ def collect_run_scores(run_dir: Path) -> dict[str, object]:
         if trial_infrastructure_failure(trial):
             infrastructure += 1
             continue
-        tasks.setdefault(task, [0, 0])
         value = _reward_float(trial / "01-reward.json")
+        if value is None:
+            infrastructure += 1
+            continue
+        tasks.setdefault(task, [0, 0])
         _record_rate(tasks, task, value)
         if value is not None:
             scored += 1
@@ -235,7 +239,7 @@ def collect_run_scores(run_dir: Path) -> dict[str, object]:
             skill = path.name[len("03-reward-") : -len(".json")]
             if "-" not in skill:
                 _record_rate(skills, skill, _reward_float(path))
-    return {
+    result = {
         "trials": trials,
         "scored": scored,
         "passed": passed,
@@ -244,6 +248,8 @@ def collect_run_scores(run_dir: Path) -> dict[str, object]:
         "skills": {name: tuple(bits) for name, bits in skills.items()},
         "tasks": {name: tuple(bits) for name, bits in tasks.items()},
     }
+    print(result)
+    return result
 
 
 def _rate_cell(rate: object | None) -> str:
