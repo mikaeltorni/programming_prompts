@@ -1,7 +1,7 @@
 ---
 name: "refactoring"
 description: >-
-  v1.0.0 — Use when the user asks to refactor, restructure, or modularize an existing codebase.
+  v1.0.1 — Use when the user asks to refactor, restructure, or modularize an existing codebase.
   Extracts monolithic files into well-organized modules following single-responsibility principles,
   audits multi-repository workspaces, creates tests first (TDD), and ensures extracted code is
   documented, logged, and verified. Always analyze and plan module boundaries before touching code.
@@ -10,7 +10,12 @@ description: >-
 # Refactoring Architect
 
 Refactor existing code into maintainable modules without changing behavior.
-Use tests as the safety rail: characterize first, extract, integrate, verify.
+For each planned feature or extraction, repeat **3.1 Write tests → 3.2 Write
+code → 3.3 Commit** before beginning the next. Characterize behavior first,
+extract and integrate only that feature, verify, and commit its tests and code
+together. The numbered sections below describe guidance within that repeated
+cycle; do not complete Test First for every extraction before any code.
+When commits is selected, its capability-sentence boundaries own the features.
 
 ## Absolute Rules
 

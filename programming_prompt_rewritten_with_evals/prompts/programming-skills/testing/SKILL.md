@@ -1,18 +1,28 @@
 ---
 name: testing
 description: >-
-  v1.0.24 — Executable code creation and behavior changes require saved,
+  v1.1.0 — Executable code creation and behavior changes require saved,
   runnable public-interface checks in each working revision. Run them with
   fresh state; honor static-content and project verification exceptions.
 ---
 
 # Test the changed behavior
 
-Own verification during implementation and before delivery. These rules apply
-without workflow. With workflow selected, perform them inside `Write code`;
-with commits selected, finish the current capability's checks and commit before
-starting the next capability. Follow repository AGENTS.md and CLAUDE.md for
-verification commands and restrictions on creating tests.
+For **each planned feature**, save its runnable public-interface tests before
+writing or changing its application code. Run those checks against the current
+implementation and record the baseline: new behavior should fail for the
+intended missing behavior, while existing checks for a pure refactor may pass.
+An absent entrypoint in a creation task may fail to import; distinguish that
+from unrelated dependency failures. Then implement only that feature, run its
+checks and retained earlier checks, and close the feature before advancing.
+Never write all features' tests first or add tests only after implementation.
+
+With workflow selected, use **3.1 Write tests → 3.2 Write code → 3.3 Commit**
+inside Write code. With commits selected, commit that feature's checks and
+working code together before the next feature starts. Testing alone does not
+require Git commits or another unselected companion's conventions. Follow
+project AGENTS.md/CLAUDE.md verification paths and test prohibitions; use the
+static-content/direct-check exception below when applicable.
 
 An empty creation-task checkout or absent test framework is not a blocker.
 Create the requested program and saved stdlib assertions or unittest checks
@@ -65,10 +75,11 @@ These are coverage checks, not a request for duplicate cases or extra tools.
    validation owner. A shared helper's case can cover its callers; repeated
    conversions or argument checks in separate handlers cannot. Resolve every
    applicable gap before committing, including commands with operands.
-3. **Write or extend the saved assertions.** Preserve every unaffected case.
+3. **Save and run the assertions before implementation.** Preserve every unaffected case.
    Save executable cases for the current capability and retained behavior;
    later capabilities may be planned in the inventory, but their executable
-   expectations wait for their own revision.
+   expectations wait for their own revision. Run this feature's saved assertions
+   now, record the actual baseline, then implement this feature only.
    Before replacing a method or file, transfer its still-required assertions;
    never reduce the suite to the latest examples. Retire an expectation only
    when the request explicitly replaces it. Do not assert both an old rule and

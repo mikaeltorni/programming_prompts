@@ -1,6 +1,6 @@
 ---
 name: setup-repository-guidelines
-description: v1.0.0 — Use only when the user requests repository initialization or explicitly invokes this skill by name or tag. Missing repository guidelines, a new directory, and ordinary coding or installer work do not authorize invocation. Detects membership from scripts/repository_manifest.sh and enforces owner routing, selectable installer integration, clean-install compatibility, safe deployment, and prompt-free keyring handling.
+description: v1.0.1 — Use only when the user requests repository initialization or explicitly invokes this skill by name or tag. Missing repository guidelines, a new directory, and ordinary coding or installer work do not authorize invocation. Detects membership from scripts/repository_manifest.sh and enforces owner routing, selectable installer integration, clean-install compatibility, safe deployment, and prompt-free keyring handling.
 ---
 
 # Setup Repository Guidelines
@@ -52,7 +52,9 @@ the invocation gate passes; it is not an invocation trigger.
 - Keep listing side-effect free and support `--list-components`, `--select`,
   `--default`, and `--all` through the shared framework.
 - Add focused tests for source behavior, installer idempotence, and clean-home
-  installation before deployment.
+  installation before implementing that feature. Run the baseline, implement
+  only that feature, verify, and finish any selected commit/delivery closeout
+  before beginning the next feature.
 - Run only the narrow owning installer or selected component; never run the
   master installer merely to deploy one child change.
 
