@@ -12,6 +12,7 @@ so the next job reuses layers.
 from __future__ import annotations
 
 import subprocess
+import sys
 from typing import Any
 
 from .log import log
@@ -167,22 +168,36 @@ def prune_unused_harbor_images() -> list[str]:
     return removed
 
 
-def prune_unused_builder_cache() -> bool:
-    """Drop dangling BuildKit cache not referenced by current images.
+def prune_unused_builder_cache(*, min_free_space: int | None = None,
+                               reserved_space: int | None = None,
+                               max_used_space: int | None = None) -> bool:
+    """Reclaim unused BuildKit cache with optional free-space and retention targets.
 
-    Parameters: none.
+    Parameters: min_free_space - optional free-space target in bytes;
+        reserved_space - optional warm-cache retention floor in bytes;
+        max_used_space - optional maximum retained unused-cache bytes.
 
     Returns: true when Docker accepted the prune command.
     """
-    proc = _docker(["builder", "prune", "-f"])
+    print(f"min_free_space={min_free_space} reserved_space={reserved_space} max_used_space={max_used_space}", file=sys.stderr)
+    command = ["builder", "prune", "-f"]
+    if min_free_space is not None:
+        command.extend(["--min-free-space", str(min_free_space)])
+    if reserved_space is not None:
+        command.extend(["--reserved-space", str(reserved_space)])
+    if max_used_space is not None:
+        command.extend(["--max-used-space", str(max_used_space)])
+    proc = _docker(command)
     if proc.returncode != 0:
-        log(f"builder prune failed: {(proc.stderr or proc.stdout or '').strip()}")
+        print(f"builder prune failed: {(proc.stderr or proc.stdout or '').strip()}", file=sys.stderr)
+        print(False, file=sys.stderr)
         return False
     summary = (proc.stdout or "").strip().splitlines()
     if summary:
-        log(f"builder prune: {summary[-1]}")
+        print(f"builder prune: {summary[-1]}", file=sys.stderr)
     else:
-        log("builder prune: no unused cache")
+        print("builder prune: no unused cache", file=sys.stderr)
+    print(True, file=sys.stderr)
     return True
 
 
