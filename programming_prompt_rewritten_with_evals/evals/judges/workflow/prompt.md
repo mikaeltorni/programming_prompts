@@ -20,6 +20,17 @@ at normal handoff applicable phases must be complete, others justified skipped.
 Planning follows required worktree startup and precedes feature tests/application
 edits. The plan must reflect the original behavior and concrete feature deliverables.
 
+When the supplied conversation includes a later implementation request, require
+a fresh plan for that request before its feature checks or application edits.
+The agent may verify and reuse its existing task worktree and assigned plan path.
+After a completed task, archive the old plan and reset the current goal, feature
+cycles and code/documentation statuses for the new request. During unfinished
+work, revise the current plan while retaining completed evidence and unfinished
+feature boundaries; finish the active cycle before another feature starts.
+An unchanged completed plan or a stale prior-feature status does not cover new
+implementation. A read-only explanation or status question needs no new plan.
+Do not infer a follow-up request when none appears in the supplied evidence.
+
 2. PER-FEATURE CYCLE
 Microsteps uses Step | Phase | Feature | Stage | Action | Status | Evidence.
 Steps are unique positive integers in execution order; Phase names an outer row.

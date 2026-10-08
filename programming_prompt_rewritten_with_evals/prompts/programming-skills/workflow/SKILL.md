@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.2.0 — Plan programming work, then repeat tests → code → commit for each
+  v1.2.1 — Plan programming work, then repeat tests → code → commit for each
   planned feature before writing documentation. Activated by explicit selection.
 ---
 
@@ -26,6 +26,29 @@ Keep these four outer stages in order:
 4. **Write documentation.** After all feature cycles finish, document the
    delivered interface in the project-root README when docs is selected.
    Commit and deliver documentation through the same task checkout.
+
+## Implementation follow-ups
+
+Every later user message that requires implementation needs a fresh plan for
+that request before its feature checks or application edits. This includes
+small follow-ups and requests received after an earlier task is complete.
+Verify and reuse the current task worktree and branch when they still fit;
+a new message does not require another checkout.
+
+Use the same authoritative plan path. After a completed task, preserve its
+plan in an ignored archive beside that file, then write and read back a new
+plan with the new goal, feature ledger and pending cycles. Mark worktree
+startup complete after verifying the reused checkout; reset code and applicable
+documentation to pending. An old completed plan must not describe new work as
+complete or leave the display on a previous feature.
+
+When earlier work is unfinished, revise and read back the current plan for the
+new request while preserving completed evidence, unfinished features and their
+original sentence boundaries. Add the new feature cycles without discarding
+the existing queue. Finish the active feature's 3.1 → 3.2 → 3.3 cycle before
+starting another. Each new feature repeats that same cycle; documentation
+follows all applicable cycles. A status update or an explanation that needs no
+implementation does not start a new plan.
 
 ## Selected companions
 

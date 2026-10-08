@@ -9,7 +9,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "workflow_sequence"
-description = "the explicit workflow establishes its selected worktree before planning, records exactly four outer stages and consecutive 3.1 tests, 3.2 code, 3.3 commit rows for each planned feature, closes each cycle before the next, and writes selected documentation afterward"
+description = "the explicit workflow establishes or verifies its selected worktree before planning, makes a fresh plan for each supplied implementation follow-up while preserving unfinished work, records exactly four outer stages and consecutive 3.1 tests, 3.2 code, 3.3 commit rows for each planned feature, closes each cycle before the next, and writes selected documentation afterward"
 type = "binary"
 
 [scoring]
