@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >-
-  v1.0.11 — Edit Git projects in a sibling .worktrees project/task checkout,
+  v1.0.12 — Edit Git projects in a sibling .worktrees project/task checkout,
   commit there, merge each Feature into the live default branch, and reapply
   its consumers. Never push unless requested.
 ---
@@ -117,7 +117,8 @@ preserve other tasks and user work.
 The commits skill owns Feature boundaries. For each completed Feature
 or focused repair:
 
-1. Verify and commit in the task worktree. Confirm its `HEAD` advanced
+1. After the current feature's tests-before-code cycle passes, commit its tests
+   and implementation together in the task worktree. Confirm its `HEAD` advanced
    and the worktree is clean.
 2. Confirm the live checkout is on its actual default branch from
    repository metadata or project instructions; preserve unrelated

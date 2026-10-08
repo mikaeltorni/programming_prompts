@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.1.16 — Give each complete capability sentence its own Feature and working
+  v1.2.0 — Give each complete capability sentence its own Feature and working
   commit. Every separate "It should also" sentence gets a new ledger row;
   an optional "and may" clause inside one sentence stays in that row.
 ---
@@ -13,12 +13,16 @@ implement and verify all required commands in that sentence before its first
 introducing commit. Finishing one command does not finish the sentence; do not
 make a partial Feature commit and continue its remaining commands afterward.
 
-Apply this skill at each source write, not only when reviewing finished history.
-When workflow is selected, its `Write code` phase contains the entire Feature
-queue; a small program, one module, or a focused repair does not combine
-separate sentences.
+For each original capability sentence, finish **3.1 Write tests → 3.2 Write
+code → 3.3 Commit** before the next sentence. Save and run only the current
+feature's public checks before its first application implementation edit;
+then implement, run the cumulative relevant checks, and commit tests and code
+together. Do not write all features' tests or code in advance. Static content
+and project test prohibitions use their direct verification exception.
+These ordering rules apply without workflow; when workflow is selected, record
+the cycle under its Write code phase. A small file does not combine features.
 
-Before each implementation edit, read the first uncommitted ledger row from
+Before each feature cycle and application implementation edit, read the first uncommitted ledger row from
 the original request and state its exact sentence, planned conventional commit
 subject, commands allowed now, and commands deferred to later rows. Compare
 that allowed set with the original sentence, not a previous summary of the
@@ -81,7 +85,7 @@ a merge or verification step, resume the first uncommitted original row; do not
 replace the remaining rows with a new combined summary. A shared dispatcher must expose only capabilities
 implemented so far, even when adding all remaining cases seems easy.
 
-The first source file you write is already an implementation edit: it may
+The first application source file you write is already an implementation edit: it may
 implement only ledger row 1. Do not draft the complete multi-Feature program in
 one file write and plan to separate it with later commits. Before each new
 Feature commit, inspect the full source tree you are about to commit, not just
@@ -99,7 +103,7 @@ commits with the ledger entries and inspect the first Feature's committed tree.
 
 Treat the ledger as a queue. Work on only its first uncommitted entry:
 
-- Implement its commands, helpers, validation, and required output. Preserve
+- First save and run its checks; then implement its commands, helpers, validation, and required output. Preserve
   earlier Features; keep the program working at every commit.
 - Preserve the requested output and public API. Judge completion by what the
   implementation does; labels may be assembled at runtime when appropriate.

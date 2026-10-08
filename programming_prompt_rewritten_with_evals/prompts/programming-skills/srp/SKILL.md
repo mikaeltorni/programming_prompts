@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.17 — Keep raw-command parsing and operation logic in separate helpers
+  v1.0.18 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
@@ -15,7 +15,7 @@ parameter print → shared parse call → dispatch to operation helpers → resu
 print → return. "Parse first" means before dispatch, after the entry trace;
 extracting parsing must never move its call above that parameter print.
 
-Before the first source write, identify the raw-command parser, the operation
+After saving the current feature's public checks and before the first application source write, identify the raw-command parser, the operation
 owner(s) for the current capability, and the public dispatcher. Implement that
 separation in the initial working slice. Write the parser and current operation
 owner before writing the public dispatcher that calls them. Its first saved
@@ -189,6 +189,11 @@ integration points; preserve working behavior outside the request.
   and whether the resulting responsibilities remain clear.
 
 ### Start simple, then grow through edits
+
+For each capability, save and run its public checks before its application
+edit, implement and verify that capability, then perform any selected commit
+closeout before the next capability. Tests-first ordering does not waive the
+initial parser/operation/dispatcher separation.
 
 For a new program, implement only the current requested capability as a small
 working slice: one parsing path, the operation helpers it needs, and a thin

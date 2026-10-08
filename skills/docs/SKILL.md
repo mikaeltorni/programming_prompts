@@ -1,11 +1,16 @@
 ---
 name: docs
 description: >-
-  v0.1.0 — Write or update user-facing project documentation after a
+  v0.1.1 — Write or update user-facing project documentation after a
   programming change when documentation is part of the requested workflow.
 ---
 
 # Project documentation
+
+When feature cycles are selected, start the final README phase only after
+every feature has finished tests, implementation, verification and commit.
+Function docstrings and required feature-local notes still belong in that
+feature's working revision; final user documentation follows afterward.
 
 Document the behavior delivered by the programming task after its code-writing
 phase is complete. Update the existing documentation surface that owns the

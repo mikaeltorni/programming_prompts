@@ -1,11 +1,16 @@
 ---
 name: docs
 description: >-
-  v1.0.3 — After writing or fixing a program, document its purpose, public
+  v1.0.4 — After writing or fixing a program, document its purpose, public
   entrypoint, and accepted commands in the project-root README.md.
 ---
 
 # Document the program
+
+When feature cycles are selected, start the final README phase only after
+every feature has finished tests, implementation, verification and commit.
+Function docstrings and required feature-local notes still belong in that
+feature's working revision; final user documentation follows afterward.
 
 After the code works, write or update the project-root `README.md`. State what
 the program does, name its public entrypoint, and list the commands it accepts.

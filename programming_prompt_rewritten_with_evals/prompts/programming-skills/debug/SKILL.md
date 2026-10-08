@@ -1,7 +1,7 @@
 ---
 name: debug
 description: >-
-  v1.1.0 — Diagnose and repair reported software failures from logs and a
+  v1.1.1 — Diagnose and repair reported software failures from logs and a
   reproducible public behavior; verify the cause and preserve related behavior.
 ---
 
@@ -22,6 +22,11 @@ actual execution path from the logged input to the incorrect result. Test a
 specific causal hypothesis before accepting it; a plausible explanation alone
 is insufficient. Distinguish environment or dependency failures from defects in
 the program.
+
+Before the repair, save and run the exact public-interface regression with
+its independently expected result; confirm it exposes the reported failure.
+Then repair only this behavior, rerun the regression and relevant earlier
+checks, and finish any selected feature commit before the next repair.
 
 Make the smallest coherent repair to the responsible behavior. Preserve related
 behavior and address the general rule, rather than hardcoding one log example
