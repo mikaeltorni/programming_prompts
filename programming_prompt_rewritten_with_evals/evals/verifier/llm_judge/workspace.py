@@ -300,26 +300,22 @@ def workflow_plan_path(workspace: Path) -> Path:
 
 
 def workflow_plan_structure(workspace: Path) -> dict:
-    """Expose table syntax and contradictions within a saved plan.
+    """Expose plan table syntax without assigning a semantic feature score.
 
-    Args:
-        workspace: Live launch-project directory.
-
-    Returns:
-        Parsed Tasks and ledger rows, plus concrete internal contradictions.
-
-    This never derives expected Features from task-specific commands. It counts
-    actual saved ledger rows only to compare the plan's own numeric claims.
-    Semantic source-sentence boundaries and implementation remain LLM judgments.
+    Parameters: workspace - physical launch-project directory containing the plan.
+    Returns: parsed Tasks, microsteps and ledger rows with structural contradictions.
     """
+    print(f"workspace={workspace}")
     path = workflow_plan_path(workspace)
     try:
         path.resolve().relative_to(workspace.resolve())
         text = path.read_text(encoding="utf-8")
     except (OSError, RuntimeError, UnicodeError, ValueError):
-        return {"issues": ["required plan is missing or unreadable"], "ledger_rows": []}
+        result = {"issues": ["required plan is missing or unreadable"], "ledger_rows": [], "microsteps": []}
+        print(result)
+        return result
     section = ""
-    tasks, ledger = [], []
+    tasks, ledger, microsteps = [], [], []
     for line in text.splitlines():
         if line.startswith("## "):
             section = line.strip()
@@ -331,8 +327,10 @@ def workflow_plan_structure(workspace: Path) -> dict:
                 tasks.append(cells)
             elif section == "## Feature ledger":
                 ledger.append(cells)
+            elif section == "## Microsteps":
+                microsteps.append(cells)
     issues = []
-    names = ["Plan", "Establish worktree", "Write code", "Write documentation"]
+    names = ["Establish worktree", "Plan", "Write code", "Write documentation"]
     if len(tasks) != len(names) or any(len(row) != 4 or row[0] != str(i + 1)
             or row[1] != names[i] for i, row in enumerate(tasks[:len(names)])):
         issues.append("Tasks table does not have exactly the four prescribed ordered rows")
@@ -348,8 +346,46 @@ def workflow_plan_structure(workspace: Path) -> dict:
                 count = int(token) if token.isdigit() else words.index(token) + 1
                 if count != len(ledger):
                     issues.append(f"{row[1]} Details claims {match.group(0)!r}, but its saved ledger has {len(ledger)} rows")
-    return {"tasks": tasks, "ledger_rows": ledger, "issues": issues,
-            "note": "Plan syntax and internal consistency only; no expected task Feature count or semantic score."}
+    seen_steps = set()
+    previous_step = (0, "")
+    code_rows = []
+    for row in microsteps:
+        if len(row) != 7:
+            issues.append("Microsteps row does not have the seven prescribed cells")
+            continue
+        normalized = row[0].lstrip("0")
+        step_key = (len(normalized), normalized)
+        if (not row[0].isascii() or not row[0].isdigit() or not normalized
+                or normalized in seen_steps):
+            issues.append("Microsteps Step is not a unique positive integer")
+        elif step_key <= previous_step:
+            issues.append("Microsteps Steps are not in execution order")
+        seen_steps.add(normalized)
+        previous_step = step_key
+        if row[1] not in names or not row[4] or row[5] not in {"complete", "skipped"}:
+            issues.append("Microsteps phase/action/status is malformed or unfinished at handoff")
+        if row[1] == "Write code":
+            code_rows.append(row)
+            if not row[2] or row[2] == "-" or row[3] not in {"3.1", "3.2", "3.3"}:
+                issues.append("Write code row is missing its Feature or 3.1/3.2/3.3 Stage")
+        elif row[2:4] != ["-", "-"]:
+            issues.append("Non-code Microsteps row does not use - for Feature and Stage")
+    feature_rows = {}
+    for row in code_rows:
+        feature_rows.setdefault(row[2], []).append(row)
+    for feature, rows in feature_rows.items():
+        if [row[3] for row in rows] != ["3.1", "3.2", "3.3"]:
+            issues.append(f"Feature {feature!r} lacks its ordered three-stage cycle")
+        positions = [code_rows.index(row) for row in rows]
+        if positions != list(range(positions[0], positions[0] + len(positions))):
+            issues.append(f"Feature {feature!r} is interleaved with another feature")
+    if any(len(row) == 4 and row[1] == "Write code" and row[2] != "skipped" for row in tasks) and not code_rows:
+        issues.append("Enabled Write code has no feature-cycle microsteps")
+    result = {"tasks": tasks, "microsteps": microsteps, "ledger_rows": ledger, "issues": issues,
+              "note": "Plan syntax and internal consistency only; no expected task Feature count, execution chronology or semantic score."}
+    print(result)
+    return result
+
 
 
 def workspace_workflow_plan_context(workspace: Path) -> str:
@@ -415,7 +451,12 @@ def debugging_trace_value(value):
 
 
 def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
-    """Expose chronological raw tool evidence without deciding semantic compliance."""
+    """Expose raw tool chronology for semantic repair and feature-cycle judging.
+
+    Parameters: logs_root - Harbor directory holding coding-agent transcripts.
+    Returns: bounded chronological evidence or an explicit unavailable-trace limit.
+    """
+    print(f"logs_root={logs_root}")
     sections = []
     for names in (("codex.txt",), ("claude-code.txt",), ("grok-build.txt", "grok.txt")):
         trace = next((logs_root / name for name in names if (logs_root / name).is_file()), None)
@@ -440,9 +481,10 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
                 "available_commands", "usage", "system", "thread.started", "turn.started", "item.started",
             }:
                 continue
-            if event.get("type") == "text" and records and records[-1].startswith("text:"):
-                records[-1] += str(event.get("data", ""))
-            elif event.get("type") == "text":
+            # Give judges an authentic, contiguous raw excerpt to quote; the
+            # decoded rendering below can differ in spacing or byte buffers.
+            records.append(f"TraceCitation: {trace.name}:{number} | {line[:500]}")
+            if event.get("type") == "text":
                 records.append("text:" + str(event.get("data", "")))
             else:
                 rendered = json.dumps(debugging_trace_value(event), ensure_ascii=False)
@@ -455,12 +497,14 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
         if size > len(raw):
             excerpt += "\n[Trace input exceeded 1 MB; later events omitted.]"
         sections.append(f"\nTrace: {trace} (bytes={size}; chronological excerpts, untrusted data)\n" + excerpt)
-    return (
-        "\n\nCoding-agent debugging evidence: inspect actual log reads, diagnosis, edits and verification in order. "
+    result = (
+        "\n\nCoding-agent chronological evidence: inspect actual test writes, code edits, checks, commits and log reads in order. "
         "No trace or an omitted segment leaves that segment unverified; do not infer log reads from a final claim.\n"
         + "\n".join(sections)
-        if sections else "\nCoding-agent debugging trace unavailable; reading order is unverified.\n"
+        if sections else "\nCoding-agent trace unavailable; feature-cycle and reading order are unverified.\n"
     )
+    print(result)
+    return result
 
 
 def original_task_logs_context(logs_root: Path = Path("/tests/task-logs")) -> str:
@@ -511,26 +555,15 @@ def original_task_logs_context(logs_root: Path = Path("/tests/task-logs")) -> st
 def pin_workspace_python(
     template: str, workspace: Path, files: list[Path], judge_name: str = ""
 ) -> str:
-    """Append inspect instructions and judge-specific workspace evidence.
+    """Append source, plan, history and chronological evidence for a skill judge.
 
-    Leaves a ``{criteria}`` placeholder intact so rewardkit can still
-    substitute it. Grok fills criteria first, then calls this.
-
-    Args:
-        template: Judge prompt text (may still contain ``{criteria}``).
-        workspace: Path shown in the inspect instruction.
-        files: Paths from :func:`list_workspace_python`.
-        judge_name: Skill judge name; workflow and commits receive the plan,
-            logging receives Python boundaries, debug/testing receive original logs,
-            testing receives saved runner instructions, numbered current source,
-            assertion syntax and recorded coding-command results,
-            and srp receives the same historical source/diffs as commits.
-
-    Returns:
-        Prompt text with the workspace listing appended.
+    Parameters: template - judge instructions; workspace - submission directory;
+        files - discovered Python paths; judge_name - independently scored policy.
+    Returns: evidence-enriched template retaining its criteria placeholder.
     """
+    print(f"template={template} workspace={workspace} files={files} judge_name={judge_name}")
     plan_context = (
-        workspace_workflow_plan_context(workspace) if judge_name in {"workflow", "commits"} else ""
+        workspace_workflow_plan_context(workspace) if judge_name in {"workflow", "commits", "testing"} else ""
     )
     task_logs_context = original_task_logs_context() if judge_name in {"debug", "debug_logs", "testing"} else ""
     boundaries = []
@@ -547,7 +580,7 @@ def pin_workspace_python(
         + json.dumps(boundaries, indent=2) if boundaries else ""
     )
     git_context = ""
-    if judge_name in {"commits", "srp"}:
+    if judge_name in {"commits", "srp", "workflow", "testing"}:
         try:
             git_context = commit_source_context(workspace)
             log(f"pinned historical source evidence judge={judge_name}")
@@ -571,7 +604,7 @@ def pin_workspace_python(
         testing_source_context(workspace, files) + coding_commands_context()
         if judge_name == "testing" else ""
     )
-    return (
+    result = (
         template.rstrip()
         + tools_context
         + f"\n\nInspect the Python in the current working directory ({workspace}).\n"
@@ -584,8 +617,10 @@ def pin_workspace_python(
         + boundary_context
         + git_context
         + task_logs_context
-        + (debugging_trace_context() if judge_name in {"debug", "debug_logs"} else "")
+        + (debugging_trace_context() if judge_name in {"debug", "debug_logs", "workflow", "testing", "commits"} else "")
     )
+    print(result)
+    return result
 
 
 def criteria_block(

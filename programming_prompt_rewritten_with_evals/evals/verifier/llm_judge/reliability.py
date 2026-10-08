@@ -239,19 +239,67 @@ def _contradicted_testing_literal(reasoning: str, python_files: list[Path]) -> b
     return False
 
 
-def _testing_citation_issue(reasoning: str, python_files: list[Path]) -> str | None:
-    """Check the judge's quoted source lines without deciding their semantics.
+def _trace_citation_issue(reasoning: str, logs_root: Path) -> str | None:
+    """Validate quoted raw transcript excerpts without judging execution order.
 
-    A testing no with submitted source must quote its decisive evidence. A quote
-    may describe a missing check's closest existing case or validation owner.
-    Historical saved snapshots use their actual listed path. Git quotes use a
-    named commit's blob; the claim still needs semantic inspection of that revision.
+    Parameters: reasoning - semantic judge finding; logs_root - allowed transcript directory.
+    Returns: missing/unavailable/mismatch/excess issue, or None for valid quotes.
     """
-    citations = list(_TESTING_CITATION.finditer(reasoning))
+    print(f"reasoning={reasoning} logs_root={logs_root}")
+    citations = list(re.finditer(
+        r'\bTraceCitation:\s*(?P<path>[a-zA-Z0-9_-]+\.txt):(?P<line>[0-9]+)\s*\|\s*(?P<excerpt>[^\n]+)', reasoning))
     if not citations:
+        print("missing")
         return "missing"
     if len(citations) > 3:
+        print("excess")
         return "excess"
+    for match in citations:
+        if match.group("path") not in {"codex.txt", "claude-code.txt", "grok-build.txt", "grok.txt"}:
+            print("unavailable")
+            return "unavailable"
+        token = match.group("line")
+        if len(token) > 10:
+            print("mismatch")
+            return "mismatch"
+        number = int(token)
+        excerpt = match.group("excerpt").strip()
+        found = False
+        try:
+            with (logs_root / match.group("path")).open("rb") as handle:
+                for position, line in enumerate(handle, 1):
+                    if position == number:
+                        found = bool(excerpt) and excerpt in line.decode("utf-8", errors="replace")
+                        break
+        except OSError:
+            print("unavailable")
+            return "unavailable"
+        if not found:
+            print("mismatch")
+            return "mismatch"
+    print(None)
+    return None
+
+
+def _testing_citation_issue(
+    reasoning: str, python_files: list[Path], *, logs_root: Path = Path("/logs/agent")
+) -> str | None:
+    """Validate Python quotes or raw trace quotes for a testing finding.
+
+    Parameters: reasoning - judge finding; python_files - submitted Python paths;
+        logs_root - allowed chronological transcript root.
+    Returns: a quotation issue, or None when the cited evidence is authentic.
+    """
+    print(f"reasoning={reasoning} python_files={python_files} logs_root={logs_root}")
+    citations = list(_TESTING_CITATION.finditer(reasoning))
+    if not citations:
+        result = _trace_citation_issue(reasoning, logs_root)
+        print(result)
+        return result
+    if len(citations) > 3:
+        result = "excess"
+        print(result)
+        return result
     root = None
     for match in citations:
         name = match.group("path").strip("`")
@@ -261,34 +309,53 @@ def _testing_citation_issue(reasoning: str, python_files: list[Path]) -> str | N
                 if root is None:
                     root = Path(git(python_files[0].parent, "rev-parse", "--show-toplevel").strip())
                 if Path(name).is_absolute() or ".." in Path(name).parts:
-                    return "path"
+                    result = "path"
+                    print(result)
+                    return result
                 text = git(root, "show", f"{commit}:{name}")
                 if len(text.encode("utf-8")) > MAX_SOURCE_BYTES:
-                    return "unavailable"
+                    result = "unavailable"
+                    print(result)
+                    return result
                 lines = text.splitlines()
             except (OSError, ValueError, UnicodeError, subprocess.TimeoutExpired):
-                return "unavailable"
+                result = "unavailable"
+                print(result)
+                return result
         else:
             paths = [path for path in python_files if path.as_posix() == name
                      or path.as_posix().endswith("/" + name)]
             if len(paths) != 1:
-                return "path"
+                result = "path"
+                print(result)
+                return result
             try:
                 with paths[0].open("rb") as handle:
                     data = handle.read(MAX_SOURCE_BYTES + 1)
                 if len(data) > MAX_SOURCE_BYTES:
-                    return "unavailable"
+                    result = "unavailable"
+                    print(result)
+                    return result
                 lines = data.decode("utf-8").splitlines()
             except (OSError, UnicodeError):
-                return "unavailable"
+                result = "unavailable"
+                print(result)
+                return result
         line_number = match.group("line")
         if len(line_number) > 10:
-            return "mismatch"
+            result = "mismatch"
+            print(result)
+            return result
         number = int(line_number)
         quoted = match.group("source").strip().strip("`")
         if number < 1 or number > len(lines) or lines[number - 1].strip() != quoted:
-            return "mismatch"
-    return None
+            result = "mismatch"
+            print(result)
+            return result
+    result = _trace_citation_issue(reasoning, logs_root) if re.search(
+        r"\bTraceCitation:", reasoning) else None
+    print(result)
+    return result
 
 
 def unreliable_score_reason(
@@ -365,26 +432,23 @@ def unreliable_score_reason(
 
 
 def retry_prompt(prompt: str, reason: str) -> str:
-    """Append a one-shot correction after an unusable first score.
+    """Request reinspection after a score contradicts evidence or omits a quote.
 
-    Args:
-        prompt: Original judge prompt (files already listed).
-        reason: Short token from :func:`unreliable_score_reason` (no secrets).
-
-    Returns:
-        Prompt text for the retry attempt.
+    Parameters: prompt - original evidence-enriched judge instructions; reason - validation issue.
+    Returns: the same prompt with one focused correction request appended.
     """
+    print(f"prompt={prompt} reason={reason}")
     if reason.startswith(("contradictory_no:", "contradictory_yes:")):
-        return (
-            prompt
+        result = (prompt
             + "\n\nRETRY: the previous JSON score was unusable because its "
             + "verdict contradicted its own reasoning. Re-evaluate the supplied "
             + "evidence and make the score agree with the concrete reason. "
             + "Do not change a genuine no merely to match prior wording.\n"
         )
+        print(result)
+        return result
     if reason.startswith("testing_literal_conflict:"):
-        return (
-            prompt
+        result = (prompt
             + "\n\nRETRY: the previous no cited a quoted expected value absent "
             + "from the current literal equality assertions in its cited files. "
             + "Re-read the current assertion and its preceding fixture calls; "
@@ -393,11 +457,18 @@ def retry_prompt(prompt: str, reason: str) -> str:
             + "a supported material failure or score yes; absence of a literal "
             + "alone is not a semantic failure or an automatic pass.\n"
         )
+        print(result)
+        return result
     if reason.startswith("testing_citation_"):
-        return (
-            prompt
+        result = (prompt
             + "\n\nRETRY: the previous testing no omitted or misstated its exact "
-            + "current-source citation. Reinspect the decisive claim and include "
+            + "source or chronological trace citation. For a chronology failure use "
+            + "TraceCitation: codex.txt:LINE | exact contiguous raw-line excerpt "
+            + "(or the actual claude-code.txt/grok-build.txt/grok.txt). Raw trace "
+            + "quotations establish text only; explain the file-write/run order. "
+            + "Alternatively cite an exact Python source/check line with Citation "
+            + "and identify the decisive raw transcript positions in reasoning. "
+            + "For source failures reinspect the decisive claim and include "
             + "a separate reasoning line: Citation: relative/path.py:LINE | "
             + "the exact source line, without a line-number prefix. Quote the "
             + "line without wrapping backticks or trailing prose. For a Git "
@@ -410,46 +481,53 @@ def retry_prompt(prompt: str, reason: str) -> str:
             + "and later successful executions. Keep a supported failure, or "
             + "score yes when no material testing failure remains.\n"
         )
+        print(result)
+        return result
     if reason.startswith("plan_conflict:"):
-        return (
-            prompt
+        result = (prompt
             + "\n\nRETRY: the previous yes contradicted concrete issues in the supplied "
             + "plan table structure/internal consistency evidence. Reconcile those "
             + "issues with the workflow rules before scoring. Do not infer the "
             + "source request's sentence boundaries from a plan's claims.\n"
         )
+        print(result)
+        return result
     if reason.startswith("exit_trace_conflict:"):
-        return (
-            prompt
+        result = (prompt
             + "\n\nRETRY: the previous no denied a final exit trace, but the cited "
             + "function ends with print(value) immediately followed by return value "
             + "in the actual source. Reinspect all actual returns and entry prints. "
             + "Identify a different concrete uncovered path or score yes.\n"
         )
+        print(result)
+        return result
     if reason.startswith("request_boundary_conflict:"):
-        return (
-            prompt
+        result = (prompt
             + "\n\nRETRY: the previous no claimed a period after a quoted request "
             + "fragment, but that period is absent from the supplied original text. "
             + "Copy the exact source characters around the alleged boundary. "
             + "Re-enumerate complete sentences without inserting punctuation, "
             + "then judge the actual ledger and history.\n"
         )
+        print(result)
+        return result
     if reason.startswith("source_conflict:"):
-        return (
-            prompt
+        result = (prompt
             + "\n\nRETRY: the previous no verdict claimed an implicit fallthrough "
             + "for a function whose final top-level statement is an explicit "
             + "return in the supplied source. Reinspect its function boundary "
             + "and every actual exit path. Score the source, not the prior claim.\n"
         )
-    return (
-        prompt
+        print(result)
+        return result
+    result = (prompt
         + "\n\nRETRY: the previous JSON score was unusable "
         + f"({reason}). Score ONLY the Python files listed above. "
         + "Do not invent app.py. Do not answer no because you have not "
         + "inspected — the source is in this prompt.\n"
     )
+    print(result)
+    return result
 
 
 def run_until_reliable(

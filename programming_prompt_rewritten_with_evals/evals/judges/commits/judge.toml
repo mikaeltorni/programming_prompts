@@ -9,7 +9,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "feature_commits"
-description = "each complete original capability sentence has its own faithful ledger entry when ledger evidence is supplied and is implemented in its own working commit before later capabilities, and that Feature commit subject uses a conventional feat/fix/etc type"
+description = "each complete original capability sentence has its own faithful ledger entry when supplied, follows tests before implementation, and closes with its own working conventional commit including checks and code before the next capability"
 type = "binary"
 
 [scoring]
