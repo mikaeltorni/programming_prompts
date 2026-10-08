@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.2.8 — Establish the task checkout and authoritative plan, then finish
+  v1.2.9 — Establish the task checkout and authoritative plan, then finish
   each feature's tests → code → commit cycle before documentation.
 ---
 
@@ -90,6 +90,14 @@ table and records real introducing hashes, never guessed counts.
 
 ## Repeat for the first unfinished feature only
 
+**Close each checkpoint in the actual file.** After 3.1 and after 3.2, set
+that exact row's Status to complete and Evidence to the observed result, then
+read both cells back. Identify the row by its unique Step, Feature and Stage;
+changing Evidence alone does not close it. After 3.3, read all three current
+rows: each must say complete with its baseline, passing checks or real
+commit/delivery evidence. A committed feature with stale 3.1/3.2 cells is still
+unfinished workflow; repair those cells BEFORE starting another feature.
+
 Announce its behavior, planned conventional commit subject and deferred work.
 Mark outer Write code in_progress; only the current microstep is in_progress.
 
@@ -126,12 +134,6 @@ inspect the committed tree; record the real hash in this row and selected ledger
 When worktree is selected, finish its live-default merge, consumer reapplication
 and verification before closing 3.3. Never push unless asked.
 
-Identify each row by its unique Step, Feature and Stage cells when updating
-Status/Evidence; reread changed cells rather than trusting a successful command.
-Read back all three rows for the current feature. Each must be complete with
-its actual baseline, passing checks or commit/delivery evidence before starting
-another feature or closing the outer code row. Correct stale statuses now.
-
 If no Git repository exists or the user forbids committing, record the specific
 limit and skip only 3.3; finish permitted tests/code. Repair a completed feature
 with a focused working commit before the next feature. Only after this cycle
@@ -160,6 +162,10 @@ row and final feature's 3.3 row. Read back both tables: complete microsteps do n
 close the outer row automatically. Only then start docs, or hand off if skipped.
 Selected docs owns the README; feature-local notes and function docstrings
 belong with their feature. Deliver docs through the same task checkout too.
+
+After delivering documentation, close its Microsteps and existing Tasks row 4
+in the same file; a README commit does not close an in_progress documentation
+row. Read those changed Status and Evidence cells before handoff.
 
 Before handoff, read the authoritative plan again: four outer rows in order;
 applicable tasks/microsteps complete or justified skipped; every feature has its
