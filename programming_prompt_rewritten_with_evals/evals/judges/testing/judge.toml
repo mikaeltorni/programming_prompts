@@ -17,7 +17,7 @@ preservation = "preservation.md"
 [[criterion]]
 name = "tests_before_implementation"
 evidence_scope = "chronology"
-description = "each feature's public checks are saved and run before its application edit, then rerun with relevant retained checks; a saved baseline failing to import an absent creation-task entrypoint satisfies the required pre-implementation run; an earlier mistaken run does not invalidate a later correct baseline before the edit; use complete commands and disclose chronology limits"
+description = "identify every complete capability sentence in the original request; for each in order require saved checks, baseline, only that capability's implementation and cumulative rerun before starting the next capability's checks; one all-features baseline followed by an implementation exposing every capability FAILS; absent-entrypoint import failure is a valid creation baseline but does not waive feature separation; earlier mistaken runs corrected before the edit do not invalidate that baseline; require no unselected Git commits or plan; use complete commands and disclose chronology limits"
 type = "binary"
 
 [[criterion]]

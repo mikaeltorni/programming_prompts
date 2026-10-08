@@ -1,17 +1,30 @@
 ---
 name: testing
 description: >-
-  v1.1.1 — Save and run each Feature's public-interface checks before its code,
+  v1.1.5 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
 # Test each working Feature
 
-For executable creation or behavior changes, repeat **3.1 Write tests → 3.2 Write
-code → 3.3 Commit** for the current Feature when workflow/commits is selected.
-Testing alone requires the checks-before-code sequence, not Git commits or a
-workflow file. Work on one Feature at a time; do not write all Features' tests
-first or add checks only after implementation.
+Read the whole request and identify its complete capability sentences before
+saving checks. Work only on the first unfinished capability: save and run its
+checks, implement only that capability, then run the cumulative checks. Only
+then start the next capability's checks. The first implementation must not
+already expose later requested commands; one baseline followed by a file that
+implements every capability does not satisfy this sequence.
+
+When workflow/commits is selected, finish **3.1 Write tests → 3.2 Write code →
+3.3 Commit** before advancing. Testing alone still requires one capability at a
+time, but adds no Git commit or workflow-file requirement. Do not write all
+Features' tests first or add checks only after implementation.
+
+Before closing each checks step, open the saved runnable file. Confirm it contains
+actual success assertions AND applicable rejection assertions: empty/unknown
+dispatch, missing/extra operands, failed numeric conversion and specified domain
+or resource failures. When rejection must preserve mutable state, the same saved
+block must immediately assert informative public observations. Inventory prose,
+terminal-only probes and a passing success-only suite do not supply these checks.
 
 ## 3.1 Save the inventory and runnable checks
 
@@ -33,6 +46,12 @@ shared validation owner. Future cases may be planned but are not executable yet.
 
 Save assertions for all currently applicable shared rules in the first dispatch
 revision: empty command, unknown operation and rejected missing/extra operands.
+When adding a public query, find EVERY retained expected-exception block loading
+the current module before the application edit. Upgrade those saved cases now:
+seed permitted nonempty state and immediately assert its independently expected
+values through the new query after each rejection. Include earlier classes and
+argument loops, even when this feature does not change their rejected commands.
+The new query may fail in this baseline because it is not implemented yet.
 Apply selected commenting/logging contracts to every authored test, helper and
 fixture from the first saved regression. An assertion-only method still has
 `self`, description/Parameters/Returns docstring parts, its own first parameter
@@ -81,11 +100,18 @@ rejections need the same review. Check affected resources/history, not unrelated
 resources. When only history/aggregates exist, use the strongest available public
 observation and record its limit. Empty-domain cases remain empty when seeding
 would change their required rejection; do not invent future query/reset APIs.
+A read-only query's asserted empty-state error can itself observe preserved
+emptiness. Do not require another observer after that observation. This exception
+does not exempt blank-command or malformed-input cases that permit populated state.
 
 When a new query or history interface becomes available, upgrade EVERY retained
 applicable rejection block in the current suite immediately. Seed populated state
 for shared dispatch/argument loops too. One new complete case does not repair
 older exception-only blocks. Review all rejection blocks before each closeout.
+For each block, read its preceding fixture, rejected call and first following
+public observation. A count returned by a recovery mutation can hide changed
+stored values; once a public read can observe them, assert those values BEFORE
+the mutation. Undoing a probe through private state does not repair that gap.
 
 ### Explicit rule replacements
 

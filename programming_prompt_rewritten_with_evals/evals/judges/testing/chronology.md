@@ -5,6 +5,12 @@ batch. A coverage omission cannot make the order or execution criterion fail.
 Do not impose unselected commit, worktree, documentation or function contracts.
 
 TESTS BEFORE EACH FEATURE
+Read the complete original request and identify its capability sentences first.
+For each sentence in order, require saved checks → baseline → that capability's
+implementation → cumulative rerun BEFORE the next capability's checks. A single
+all-features baseline followed by one implementation exposing every requested
+command FAILS this criterion, even when its final suite passes. This order also
+applies with testing alone; do not require unselected Git commits or a plan.
 For each complete requested capability, follow actual saved check writes,
 baseline runs, application edits and cumulative reruns in recorded order.
 Public checks for that capability must be saved and run before its application

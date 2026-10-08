@@ -12,6 +12,14 @@ coverage, preservation/isolation and recorded execution separately; all must pas
 For each finding, identify its applicable rule and the actual evidence resolving
 it. A passing chronology or final run leaves coverage and preservation to inspect.
 Stateless submissions pass the inapplicable preservation/isolation requirement.
+Discover current read-only observations from the public parser and operation
+owners, not only calls already present in an older retained test. When those
+reads can observe affected values, a mutation's count/length result is too weak:
+values can change without changing their count. Require the informative public
+read before recovery, even when a private pop/undo later removes the probe.
+A read-only query's asserted empty-state failure can itself observe emptiness;
+do not recursively demand another observation after that observer. Follow the
+actual enclosing conditions: body and else cases are different rejection paths.
 
 TESTS BEFORE EACH FEATURE'S IMPLEMENTATION
 For each feature required by the original request, inspect actual chronological

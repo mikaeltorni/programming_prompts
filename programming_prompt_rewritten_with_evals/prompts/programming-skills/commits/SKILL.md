@@ -1,11 +1,17 @@
 ---
 name: commits
 description: >-
-  v1.2.1 — Give each complete capability sentence its own Feature and finish
+  v1.2.2 — Give each complete capability sentence its own Feature and finish
   tests → code → commit before starting the next sentence.
 ---
 
 # Feature commits
+
+Read the ENTIRE original request before making the ledger. Do not stop after the first capability sentence.
+Every later `It should also` sentence is another queued Feature, even when short
+or sharing the earlier state. Compare that full queue with the ledger before the
+first source write; a missing later row makes the plan unfinished, never permission
+to implement its commands inside the first Feature.
 
 Use one Feature for each complete capability sentence in the original request.
 Keep its required commands, cases and optional "and may" clauses together.
