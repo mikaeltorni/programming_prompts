@@ -23,7 +23,7 @@ from harbor.trial.hooks import TrialEvent, TrialHookEvent
 
 
 DOCKER_STORAGE_RESERVE = 2 * 1024**3
-TRIAL_STORAGE_ALLOWANCE = 4 * 1024**3
+TRIAL_STORAGE_ALLOWANCE = 8 * 1024**3
 
 
 def docker_storage_root() -> Path | None:
@@ -59,6 +59,28 @@ def storage_trial_ceiling(trial_ceiling: int, storage_root: Path | None) -> int:
     else:
         available = shutil.disk_usage(storage_root).free
         result = min(trial_ceiling, max(0, (available - DOCKER_STORAGE_RESERVE) // TRIAL_STORAGE_ALLOWANCE))
+    print(result)
+    return result
+
+
+async def storage_capacity_after_reclaim(trial_ceiling: int, storage_root: Path | None,
+                                         reclaim_unused: bool) -> int:
+    """Recheck storage after reclaiming unused cache while setup builds are idle.
+
+    Parameters: trial_ceiling - requested admission capacity; storage_root - local
+        Docker backing filesystem; reclaim_unused - whether no setup build is active.
+    Returns: measured capacity after any permitted unused-cache reclamation.
+    """
+    print(f"trial_ceiling={trial_ceiling} storage_root={storage_root} reclaim_unused={reclaim_unused}")
+    result = storage_trial_ceiling(trial_ceiling, storage_root)
+    if result == 0 and storage_root is not None and reclaim_unused:
+        from docker_ipam.hygiene import prune_unused_builder_cache
+        await asyncio.to_thread(
+            prune_unused_builder_cache,
+            min_free_space=16 * 1024**3, reserved_space=8 * 1024**3,
+            max_used_space=8 * 1024**3,
+        )
+        result = storage_trial_ceiling(trial_ceiling, storage_root)
     print(result)
     return result
 
@@ -150,7 +172,9 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         self.active: dict[str, ActiveTrial] = {}
         self.requested_ceiling = job.config.n_concurrent_trials
         self.storage_root = docker_storage_root()
-        self.ceiling = storage_trial_ceiling(self.requested_ceiling, self.storage_root)
+        self.ceiling = await storage_capacity_after_reclaim(
+            self.requested_ceiling, self.storage_root, reclaim_unused=True,
+        )
         if self.ceiling == 0:
             raise RuntimeError("Docker storage has insufficient free space for one trial plus its reserve")
         self.setup_ceiling = setup_ceiling(self.ceiling)
@@ -223,7 +247,9 @@ class DeadlineLaunchGuard(BaseJobPlugin):
                 now = time.monotonic()
                 pressured = self.pressured_trials(now)
                 starting, stalled = self.setup_pressure(now)
-                storage_capacity = storage_trial_ceiling(self.ceiling, self.storage_root)
+                storage_capacity = await storage_capacity_after_reclaim(
+                    self.ceiling, self.storage_root, reclaim_unused=not starting,
+                )
                 if storage_capacity == 0 and not self.active:
                     raise RuntimeError("Docker storage has insufficient free space for another trial plus its reserve")
                 if (not pressured and not stalled and len(self.active) < self.ceiling
