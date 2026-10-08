@@ -12,6 +12,13 @@ companions. Do not impose those companions' extra docstring, logging or layout r
 Read the supplied plan at the exact configured absolute ACC_WORKFLOW_FILE Markdown
 path under the launch project's tmp/workflow/, or its tmp/workflow.md fallback.
 Ignored/unlisted temporary files can exist: source-only listings do not prove absence.
+Use the supplied structural facts to identify the physical LIVE root and exact
+expected plan path. Compare that path with the actual file and trace writes.
+The project parent that stores worktrees is not the live-root plan directory.
+A foreign plan shown in the trace cannot replace a missing required file;
+report the real missing path. Current authoritative plan facts follow history
+and remain decisive for file availability and handoff status. These are
+read-only filesystem/structure facts, not an automatic semantic verdict.
 Require # Workflow, ## Goal, ## Enabled skills, ## Tasks and ## Microsteps in order.
 The one Tasks table uses Order | Task | Status | Details and exactly four numbered
 rows: Establish worktree, Plan, Write code, Write documentation. No extra outer

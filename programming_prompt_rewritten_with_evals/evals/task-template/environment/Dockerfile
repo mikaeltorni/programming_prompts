@@ -40,6 +40,9 @@ RUN apt-get update \
 RUN mkdir -p /Projects/app /Projects/.worktrees \
     && ln -sfn /Projects/app /app
 WORKDIR /Projects/app
+# Match the native launcher's explicit, nonsecret live-project plan assignment.
+# The coding agent and verifier inherit the same path in this trial image.
+ENV ACC_WORKFLOW_FILE=/Projects/app/tmp/workflow/benchmark.md
 # Fresh trial image starts as a git repo with only an empty initial commit.
 # Agents must add a sibling /Projects/.worktrees/app/<dir> worktree (never push).
 RUN git init -b master \
