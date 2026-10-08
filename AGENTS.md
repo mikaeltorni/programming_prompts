@@ -68,6 +68,22 @@ Include `workflow` only when the evaluation needs it, because benchmark default
 discovery excludes opt-in skills. Omit `--skills` when the runner's default
 selection already contains every skill the requested evaluation needs.
 
+## Efficient low-reasoning acceptance
+
+Prompts, skills, judges and benchmark runtime must pass with the most efficient
+models available. As of October 2026, use **`gpt-6-luna` with `low` reasoning
+for both the Codex coding model and the Codex semantic judge**. Verify the actual
+archived model and reasoning settings; a default or command label alone is not
+evidence that the run used them.
+
+Keep all acceptance runs on low reasoning. Do not raise reasoning to medium or
+higher, or switch to a stronger model, to obtain a pass. Diagnose original logs,
+saved source, history and judge findings; repair the responsible prompt, judge or
+runtime, then rerun on the efficient model at low reasoning. Preserve genuine
+failure verdicts and required behavior. A stronger-model or higher-effort result
+cannot establish acceptance. Authentication, quota and infrastructure failures
+remain excluded limits, never passing trials or evidence of prompt quality.
+
 ## Harness smoke tests when the agent verifies evals code
 
 When an agent changes Harbor wrappers, verifier code, `run_benchmark.sh`,
