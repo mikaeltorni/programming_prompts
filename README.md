@@ -194,6 +194,15 @@ After changing the prompt, run `acc pp rebuild` to refresh saved selections;
 `acc pp status --skill v2:workflow --check` verifies native instruction delivery.
 Original and V2 workflow prompts use the same seven-column schema.
 
+Every implementation follow-up needs a fresh plan before its feature checks
+or edits, including small requests in the same conversation. Reuse the verified
+task worktree and the same assigned plan path. After a completed task, archive
+its plan beside that file and write a new goal, feature ledger and pending
+cycles. During unfinished work, revise the plan while retaining completed
+evidence and the remaining feature queue. Each feature still finishes
+3.1 tests → 3.2 code → 3.3 commit before the next; documentation follows.
+Status questions and explanations that require no implementation need no new plan.
+
 ### docs
 
 Writes or updates the user-facing documentation affected by a completed code
