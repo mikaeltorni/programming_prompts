@@ -1,11 +1,23 @@
 ---
 name: testing
 description: >-
-  v1.1.8 — Save and run each Feature's public-interface checks before its code,
+  v1.1.12 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
 # Test each working Feature
+
+Keep the whole capability queue visible before the first checks. At the top of
+the saved coverage inventory, put each complete capability sentence in its own
+row with its commands and current checkpoint. If the selected workflow plan
+already holds that queue, reference its authoritative ledger instead. Setup
+text is not a capability; a later separate `It should also` sentence is another
+row. All commands and an `and may` clause inside ONE sentence stay in that
+same row; a comma or `and` does not create another capability. Do not split
+that sentence or combine separate sentences.
+Before each checks or application write, name the first unfinished row and its
+allowed commands; keep every later row deferred. Mark that row verified only
+after its code and cumulative passing run, plus selected commit/delivery gates.
 
 Read the whole request and identify its complete capability sentences before
 saving checks. Work only on the first unfinished capability: save and run its
@@ -43,6 +55,10 @@ recovery probes when the new read can reveal affected values. Save and run the
 upgraded cumulative suite before editing the application; the new query may fail
 in that baseline because it is not implemented yet. Do not start implementation
 until every applicable retained block has its actual public observation.
+Map current public reads to the affected stored components. History alone
+does not observe independent stored values when a value read is available.
+Use an aggregate when it is the strongest available value read and state its
+limit; private assertions supplement that public observation, never replace it.
 A blank command is malformed input, not an empty-state query: it still rejects
 with populated state, so seed that fixture and observe it immediately. Only a
 valid read that must reject BECAUSE its domain is empty needs an empty fixture.
@@ -86,6 +102,14 @@ Derive expectations from the request and each case's own fixture/preceding calls
 not application output or another case. Cover meaningful successes, boundaries,
 accepted defaults/flags and multi-word/quoted input where required. Do not invent
 error messages, numeric limits, object-type restrictions or unsupported inputs.
+
+If an agent-authored check has an incorrect fixture or expected sequence,
+recompute it independently from the original contract and its actual preceding
+calls. Correct that check, explain the calculation, and rerun before committing;
+do not preserve a known-wrong expectation or stop with unfinished capabilities.
+A state-changing observation also advances the fixture: account for that change
+before the next loop input, or reset each independent case. Never change a
+contract-derived expectation merely to fit the program's output.
 
 Distinguish dispatch/argument shape, token conversion, operation domain and
 resource lookup failures. For each independent operand parser cover missing and

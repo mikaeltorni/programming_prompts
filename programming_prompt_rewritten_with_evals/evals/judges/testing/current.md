@@ -91,7 +91,24 @@ A later successful mutation checks recovery, not unchanged state after rejection
 Private checks or aggregates hiding altered values cannot replace an available
 informative public query. Supplemental private checks are allowed. Observe every
 affected resource and required history; no unrelated-resource checks are needed.
+An available history read and an available value/total read may observe
+different stored components. Require the strongest PUBLIC observation of each
+affected component; history alone cannot replace an available value read, nor
+a private value assertion replace it. When only an aggregate reveals values,
+assert that aggregate and state its limit; do not invent a per-resource getter.
+Absence of a direct getter does not excuse omitting the available total.
+Identify these available reads once from the CURRENT source, then use that
+map for EVERY retained block. A history-only assertion passes the value gate
+only when NO public read can observe the affected stored values.
+For a mixed rejection loop, inspect every input separately. An empty-domain
+lookup does not excuse unseeded blank, unknown, or malformed-shape inputs in
+that same loop; those inputs still permit populated state and observations.
 When only history or aggregates exist, use the strongest available observation.
+Before claiming fixture leakage, trace setup AND its public creation/reset
+calls. A creation may reinitialize the touched resource even if another private
+container is not globally cleared. Unreachable leftover entries do not leak
+into a later case; identify an actual reachable stale value under that case's
+fixture and calls, not a hypothetical leak based only on an uncleared container.
 Every independent mutable case starts fresh via its actual setup/reload/reset
 lifecycle; preserve state inside a multi-call sequence. unittest.setUp runs for
 each case. Stateless contracts pass this inapplicable criterion.

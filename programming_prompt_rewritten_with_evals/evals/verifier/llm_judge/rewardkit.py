@@ -479,16 +479,24 @@ def score_with_rewardkit(
     groups: dict[tuple[str, str], list[dict[str, str]]] = {}
     for entry in criteria:
         groups.setdefault((entry.get("evidence_scope", ""), entry.get("question_family", "")), []).append(entry)
-    if len(groups) > 1:
+    batch_sizes = tomllib.loads((judge_dir / "judge.toml").read_text()).get("question_batch_sizes", {})
+    question_batches = []
+    for (scope, family), entries in groups.items():
+        limit = batch_sizes.get(family, len(entries))
+        if not isinstance(limit, int) or isinstance(limit, bool) or limit < 1:
+            raise ValueError("Question batch size must be a positive integer")
+        for offset in range(0, len(entries), limit):
+            question_batches.append((scope, family, offset // limit, entries[offset:offset + limit]))
+    if len(question_batches) > 1:
         started = time.monotonic()
         batches = []
         combined = []
-        for (scope, family), entries in groups.items():
+        for scope, family, part, entries in question_batches:
             remaining = int(timeout - (time.monotonic() - started))
             if remaining <= 0:
                 raise TimeoutError("Judge evidence batches exhausted their shared wall budget")
             parent, scoped = scoped_judge_directory(judge_dir, entries)
-            suffix = scope + ("-" + family if family else "")
+            suffix = scope + ("-" + family if family else "") + (f"-part-{part + 1}" if part else "")
             prefix = evidence_prefix.with_name(evidence_prefix.name + "-" + suffix) if evidence_prefix else None
             try:
                 raw, rows = score_with_rewardkit(
@@ -496,7 +504,7 @@ def score_with_rewardkit(
                     model=model, effort=effort, timeout=remaining, criteria=entries,
                     invoke=invoke, evidence_prefix=prefix,
                 )
-                batches.append({"scope": scope, "family": family, "raw": raw})
+                batches.append({"scope": scope, "family": family, "part": part, "raw": raw})
                 combined.extend(rows)
             finally:
                 shutil.rmtree(parent, ignore_errors=True)

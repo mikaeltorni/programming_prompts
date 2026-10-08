@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.2.5 — Establish the task checkout and authoritative plan, then finish
+  v1.2.8 — Establish the task checkout and authoritative plan, then finish
   each feature's tests → code → commit cycle before documentation.
 ---
 
@@ -72,6 +72,8 @@ Selected companions, or none.
 | --- | --- | --- | --- | --- | --- | --- |
 ```
 
+Every Tasks row has four cells and every Microsteps row has seven, exactly
+as shown. Do not add an extra empty cell after the final Evidence cell.
 Tasks has exactly those four unique names/numbers in that order. Statuses in
 both tables are only `pending`, `in_progress`, `complete`, `skipped`; skip
 optional stages immediately when inapplicable. Keep deliverables in Details,
@@ -116,7 +118,10 @@ diff against current/pending features. Record actual passing commands/results
 before 3.3. Checks saved only after code do not satisfy 3.1.
 
 **3.3 Commit.** Review and stage only this feature's working code/checks.
-Run its conventional `git commit` as its own command. Verify HEAD advanced and
+Run `git commit` as its own command with a conventional subject in
+`type: summary` or `type(scope): summary` form, even when commits is unselected.
+A plain `Add ...` or `Fix ...` subject does not close this workflow stage.
+Verify HEAD advanced and
 inspect the committed tree; record the real hash in this row and selected ledger.
 When worktree is selected, finish its live-default merge, consumer reapplication
 and verification before closing 3.3. Never push unless asked.
@@ -148,7 +153,10 @@ cannot gate a plan update or required commit: if rejected, leave generated
 output untracked and finish the authorized work.
 
 After the last feature's verified 3.3, reconcile ledger/commits/delivery and mark
-outer Write code COMPLETE. Read back both tables: complete microsteps do not
+the EXISTING Tasks row 3 (Write code) COMPLETE in place. Do not append a
+Write code closure microstep with Feature/Stage `-`: code microsteps are only
+the feature's 3.1/3.2/3.3 rows. Record wrap-up evidence in the existing outer
+row and final feature's 3.3 row. Read back both tables: complete microsteps do not
 close the outer row automatically. Only then start docs, or hand off if skipped.
 Selected docs owns the README; feature-local notes and function docstrings
 belong with their feature. Deliver docs through the same task checkout too.

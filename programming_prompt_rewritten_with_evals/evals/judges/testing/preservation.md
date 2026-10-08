@@ -3,49 +3,41 @@ Evaluate only the listed CURRENT PRESERVATION AND ISOLATION questions against th
 Coverage and chronology have separate batches. Their defects cannot fail these preservation/isolation questions. Each listed rejection question covers only its own block and enclosing branch. A sibling branch's defect belongs to that sibling's question; do not copy it into a correct empty-domain question.
 
 STATE PRESERVATION AND ISOLATION
-First discover read-only observations from the CURRENT public parser/dispatcher
-and operation owners. Available queries are not limited to calls already used
-in this test, its method name, or commands that existed when it was first saved.
-Then inspect the rejected block against those current observations.
-The supplied following-statement facts describe the SAME lexical block. A query
-assertion listed immediately after a rejection inside a loop executes after EACH
-rejection, before the next iteration. Read its actual operand/expectation and
-helper calls; do not claim that listed assertion occurs only after the loop.
-For a mutable contract, inspect EVERY retained rejection block in current tests:
-its fixture, rejected input and actual next statement. When failure must leave
-state unchanged, seed meaningful populated state where permitted, reject once,
-then immediately observe independently expected affected values and required
-history through CURRENT public queries, before another rejection/mutation/reset.
-Malformed dispatch and conversion cases need the same populated fixture when
-seeding leaves their rejection valid. An empty fixture chosen for such a case
-does not waive preservation. Empty-domain cases stay empty when seeding would
-remove that rejection; explain unavailable-query limits instead of inventing APIs.
-A read-only query's asserted empty-state failure can itself be the observation;
-do not recursively require another observer after it. Literal body/else condition
-facts identify different paths; assess this block's branch, never its sibling.
-Judge the saved assertions, not the apparent safety of application code. An early
-parser/conversion failure or a read-only lookup does not waive the contract's
-rejection-preservation checks. When populated state and a public observation are
-available, the current block needs that observation before continuing.
+Resolve the CURRENT loaded module and its public read-only queries first.
+Map each query to the stored components it observes: values, totals, history,
+items, or other state required by the original contract. Use that same current
+map for every retained block, including tests authored before a query existed.
 
-Older retained methods importing the current module must use newly available
-queries. A newer complete case cannot fill an older block's missing observation.
-A later successful mutation checks recovery, not unchanged state after rejection.
-In particular, a mutation's count/length response can stay correct while existing
-values have changed. If a current public read can observe those affected values,
-a count-only mutation probe FAILS this gate, even if a private pop/undo follows.
-Require the informative read BEFORE the mutation, not an aggregate that hides
-the values. This applies to retained shape/conversion/dispatch cases too.
-Private checks or aggregates hiding altered values cannot replace an available
-informative public query. Supplemental private checks are allowed. Observe every
-affected resource and required history; no unrelated-resource checks are needed.
-When only history or aggregates exist, use the strongest available observation.
-That observation satisfies this gate, with its scope stated honestly. An absent
-direct value query is a verification limit, not a missing assertion or a reason
-to fail correct immediate history assertions. Do not demand a new API.
-Every independent mutable case starts fresh via its actual setup/reload/reset
-lifecycle; preserve state inside a multi-call sequence. unittest.setUp runs for
-each case. Stateless contracts pass this inapplicable criterion.
+For EACH listed rejection block, follow its actual fixture and inputs:
+1. For mutable state, seed meaningful populated state when the rejection still
+   applies. Blank, unknown, shape and conversion failures permit such seeding.
+   A query that rejects BECAUSE its domain is empty must remain empty instead;
+   that read-only query's asserted failure itself observes emptiness. Do not
+   require another observation after that observer. In a mixed loop, this
+   empty-domain exception applies only to those inputs, never to the others.
+2. Reject once. Before another rejection, mutation, reset or reload, assert
+   independently expected affected values AND required history using the map.
+   History and stored values can change independently. When a PUBLIC total is
+   the only value read, that total assertion is REQUIRED; no direct getter is
+   needed. Its limited precision does not excuse omitting it. History alone
+   suffices for values only when NO public query can observe them at all.
+   Private assertions are supplemental. A successful mutation, count/length
+   response, or later private undo does not replace an available read-only
+   observation. Do not invent an unavailable API or observe unrelated resources.
+3. Read the assertion immediately following this rejected input and any helper
+   it calls. Facts inside a loop execute after EACH rejection, not after the
+   loop. Literal enclosing body/else conditions describe separate input paths;
+   judge only this block's branch. A sibling or newer complete test cannot fill
+   this block's missing observation. Early parse failure and read-only lookup
+   safety do not waive the saved-check requirement.
+
+For the ISOLATION question, trace actual setup/reload/reset and public creation
+calls. unittest.setUp runs per case. Creation may reinitialize every touched
+resource without clearing an entire private container; unreachable leftovers
+are not leakage. A no needs an actual reachable stale value under the fixture
+and tested calls. Preserve state within each required multi-call sequence.
+Stateless contracts pass preservation/isolation without invented state.
+Coverage, chronology and unselected companion rules cannot fail this batch.
 
 FINDINGS AND AUTHENTIC REFERENCES
 Each criterion is independent. Every no needs a concrete applicable defect AND
