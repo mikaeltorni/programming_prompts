@@ -23,6 +23,17 @@ from harbor_agents.clean_skills import (
 class BenchmarkClaudeCode(ClaudeCode):
     """Claude Code agent that pins a CLI version and keeps skills job-local."""
 
+    @override
+    def _should_force_oauth(self) -> bool:
+        """Select subscription authentication without a scrubbed env boolean.
+
+        Parameters: self - the benchmark harness instance.
+        Returns: True so Harbor drops API-key auth and uses the supplied OAuth token.
+        """
+        print(f"self={object.__repr__(self)}")
+        print(True)
+        return True
+
     def __init__(
         self,
         *args,

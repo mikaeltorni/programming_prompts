@@ -431,23 +431,24 @@ def selected_codex_auth_parts(home: Path | None = None) -> tuple[str, ...]:
 def harbor_codex_auth_env(home: Path | None = None) -> tuple[str, ...]:
     """Return Harbor env pairs so trials upload the ACC-selected ``auth.json``.
 
-    Harbor's Codex agent honors ``CODEX_AUTH_JSON_PATH`` first. ``CODEX_FORCE_AUTH_JSON``
-    alone always copies the host ``~/.codex/auth.json``, which ignores ``ca2``.
+    Harbor honors the explicit auth path without ``CODEX_FORCE_AUTH_JSON``.
+    Omitting that redundant sensitive-key boolean also prevents its archive
+    scrubber from replacing unrelated literal ``true`` values in evidence.
 
     Parameters: home - optional user home; defaults to ``Path.home()``.
 
-    Returns: Env lines for ``--ae``, including the selected auth path.
+    Returns: Env lines for ``--ae`` containing only the selected auth path.
     """
+    print(f"home={home}", file=sys.stderr)
     auth = selected_codex_auth(home)
     instance_id = selected_instance_id(home)
     print(
         f"Codex Harbor auth: ACC instance {instance_id} path={auth}",
         file=sys.stderr,
     )
-    return (
-        "CODEX_FORCE_AUTH_JSON=true",
-        f"CODEX_AUTH_JSON_PATH={auth}",
-    )
+    result = (f"CODEX_AUTH_JSON_PATH={auth}",)
+    print(result, file=sys.stderr)
+    return result
 
 
 # Stand-in for the ``codex`` CLI used by :func:`self_test`. It mimics the ACC
