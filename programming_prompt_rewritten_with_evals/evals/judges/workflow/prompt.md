@@ -36,6 +36,10 @@ Microsteps uses Step | Phase | Feature | Stage | Action | Status | Evidence.
 Steps are unique positive integers in execution order; Phase names an outer row.
 Each planned code feature has its own stable identifier and consecutive rows:
 3.1 Write tests, 3.2 Write code, 3.3 Commit. Non-code rows use - for Feature/Stage.
+Microsteps is a separate table from the four outer Tasks rows. It may include
+one or more documentation actions after the code cycles. A row whose Phase is
+Write documentation and whose Feature and Stage are both - is VALID; it is not
+an extra outer stage or an extra code feature. Its Step continues the sequence.
 Require concrete files/checks and observed evidence, not a generic placeholder.
 For each feature, checks are saved and run before its application implementation;
 then only its behavior is implemented and verified with retained relevant checks;
@@ -73,7 +77,10 @@ Unavailable companions are skipped without installing or inventing their policie
 Score yes when required plan, order and repeated cycles are supported without a
 concrete violation. A no must identify the actual missing/malformed row or feature
 and contradictory evidence. Functional correctness and companion details belong to
-their own judges. Missing trace, cosmetic ledger punctuation or unselected conventions
+their own judges. Before alleging a malformed row, quote the actual row and
+identify the specific cell that contradicts the schema. An additional permitted
+documentation microstep is not a formatting defect.
+Missing trace, cosmetic ledger punctuation or unselected conventions
 alone cannot justify no. Use local read-only tools only; never modify a submission,
 install dependencies, contact external services or perform destructive actions.
 Resolve allegations before answering; a finding that retracts all failures must
