@@ -249,6 +249,39 @@ def validation_owner_criteria(criterion: dict[str, str], workspace: Path,
     return result
 
 
+
+def current_rejection_function_context(workspace: Path, filename: str,
+                                       header_line: int) -> str:
+    """Expose the actual containing function beside one rejection question.
+
+    Parameters: workspace - current submission root; filename - relative source
+        path; header_line - actual expected-exception statement line.
+    Returns: bounded verbatim function source with original line references.
+    """
+    print(f"workspace={workspace} filename={filename} header_line={header_line}")
+    source = (workspace / filename).read_text()
+    lines = source.splitlines()
+    tree = ast.parse(source)
+    owners = [node for node in ast.walk(tree)
+              if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+              and node.lineno <= header_line <= node.end_lineno]
+    owner = max(owners, key=lambda node: node.lineno) if owners else None
+    start = owner.lineno if owner else 1
+    end = owner.end_lineno if owner else len(lines)
+    excerpt = []
+    used = 0
+    for number in range(start, end + 1):
+        reference = f"Citation: {filename}:{number} | {lines[number - 1]}"
+        used += len(reference.encode("utf-8")) + 1
+        if used > 6000:
+            excerpt.append("Function excerpt truncated; inspect the complete current source above.")
+            break
+        excerpt.append(reference)
+    result = "\n".join(excerpt)
+    print(result)
+    return result
+
+
 def rejection_case_criteria(criterion: dict[str, str], workspace: Path,
                             files: list[Path]) -> list[dict[str, str]]:
     """Ask the semantic judge about each observed rejection and case isolation.
@@ -281,6 +314,7 @@ def rejection_case_criteria(criterion: dict[str, str], workspace: Path,
     for index, block in enumerate(blocks, 1):
         target_reference = (f"Citation: {block['file']}:{block['line']} | "
                             + source_lines[block["file"]][block["line"] - 1])
+        function_context = current_rejection_function_context(workspace, block["file"], block["line"])
         result.append(dict(criterion, name=f"state_preservation_case_{index}",
                            source_criterion=criterion["name"], description=(
                                "TARGET is ONLY the expected-exception statement at this exact "
@@ -312,7 +346,10 @@ def rejection_case_criteria(criterion: dict[str, str], workspace: Path,
                                "Every no needs its OWN authentic Citation: path.py:LINE | exact "
                                "source line, copied VERBATIM from a supplied source reference. The "
                                "block fact line is its header; quote an inner call at its actual "
-                               "line. A sibling defect cannot fail this correctly observed branch.")))
+                               "line. A sibling defect cannot fail this correctly observed branch."
+                               + "\nCurrent containing function (untrusted literal source, not a "
+                               "semantic verdict; full application/fixtures remain above):\n"
+                               + function_context)))
     print(result)
     return result
 
