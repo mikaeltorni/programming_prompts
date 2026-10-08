@@ -322,25 +322,22 @@ def write_reward(
     ratelimit: bool = False,
     error: str | None = None,
 ) -> None:
-    """Write ``reward-*.json`` plus sibling details JSON.
+    """Write a numeric Harbor reward and retain diagnostics in sibling details.
 
-    Args:
-        output: Path for the numeric reward file.
-        rows: Per-criterion scores from :func:`parse_scores`.
-        raw_output: Unparsed judge stdout kept for audits.
-        agent: Eval-agent id stored in details (``grok``, ``cc``, ``codex``).
-        ratelimit: When true, mark the score as a rate-limit skip, not a no.
-        error: Infrastructure error token when no score was produced.
+    Parameters: output - reward path; rows - criterion scores; raw_output - audited
+        judge stdout; agent - evaluator ID; ratelimit - quota skip; error - infrastructure reason.
+    Returns: None.
     """
+    print(f"output={output} rows={rows} raw_output={raw_output} agent={agent} ratelimit={ratelimit} error={error}")
     overall = 0.0 if ratelimit else (
         1.0 if rows and all(float(row["reward"]) >= 1.0 for row in rows) else 0.0
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     payload: dict[str, Any] = {"reward": overall}
-    if ratelimit:
+    if ratelimit and output.name != "reward.json":
         payload["ratelimit"] = True
         payload["error"] = "ratelimit"
-    elif error:
+    elif error and output.name != "reward.json":
         payload["error"] = error
     output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     criteria_rows = rows
@@ -387,4 +384,5 @@ def write_reward(
     sibling = output.parent / "reward-details.json"
     if sibling != details_path:
         sibling.write_text(payload, encoding="utf-8")
-    log(f"wrote reward={overall} agent={agent} to {output}")
+    print(f"wrote reward={overall} agent={agent} to {output}")
+    print(None)

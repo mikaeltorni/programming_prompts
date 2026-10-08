@@ -24,9 +24,9 @@ Use complete shell commands in written order, not timestamps or final claims alo
 A missing/truncated trace leaves chronology unverified, not automatically violated;
 inspect full referenced evidence for a material question and report limits honestly.
 
-A no finding MUST include its exact Citation or TraceCitation line inside the
-reasoning string as specified under FINAL FINDING. Merely naming log positions
-is not a quotation. Quote the actual available evidence before choosing no.
+A no finding MUST include its source Citation or transcript TraceCitation inside
+the reasoning string as specified under FINAL FINDING. Inspect the referenced
+evidence before choosing no; a locator alone does not prove a semantic failure.
 
 Resolve these facts before choosing a verdict:
 
@@ -137,16 +137,16 @@ expectations before yes; passing executions alone do not prove coverage.
 For a tests-before-code chronology no, name the decisive raw transcript
 positions and explain which tests/code writes and runs establish the order.
 Include either an exact Python Citation identifying the affected source/check,
-or one to three authentic contiguous raw-line excerpts in this form:
-TraceCitation: codex.txt:LINE | exact contiguous excerpt of that raw line
-Use claude-code.txt, grok-build.txt or grok.txt for the actual trace. Copy a
-supplied TraceCitation excerpt exactly; a short raw record prefix is sufficient
-when your reasoning explains the decoded command. Do not quote the rendered
-"line N:" prefix or add shell/JSON escaping to the excerpt's text. Quotes
-verify authentic evidence only; chronology remains a semantic judgment.
+or one to three positions in the actual available transcript:
+TraceCitation: codex.txt:LINE
+Use claude-code.txt, grok-build.txt or grok.txt for the actual trace. Read the
+referenced records and explain their commands and observed order. Copying large
+escaped JSON records is unnecessary. An optional | excerpt must match that raw
+line exactly. Locators verify availability only; chronology remains a semantic
+judgment. A truncated excerpt requires reading the decisive original records.
 For source/coverage/expectation no
-findings with submitted Python source, include one to three separate lines inside
-the reasoning string in this exact form:
+findings with submitted Python source, include one to three citations inside
+the reasoning string in this form, inline or on separate lines:
 Citation: relative/path.py:LINE | exact source line
 For a named historical Git source, use:
 Citation: HASH:relative/path.py:LINE | exact source line at that commit

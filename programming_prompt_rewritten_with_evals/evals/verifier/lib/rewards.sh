@@ -184,6 +184,9 @@ print(f"Judge {skill}: raw={raw or '?'} reasoning={reasoning or '(none)'}", flus
 PY
 }
 
+# Write the Harbor score separately from diagnostic metadata.
+# Parameters: $1 - skill-name array; $2 - corresponding reward array.
+# Returns: zero after writing reward.json and reward-details.json.
 write_overall_reward() {
   local -n names_ref="$1"
   local -n rewards_ref="$2"
@@ -259,11 +262,8 @@ for name in names:
 if ratelimited or inconsistent:
     overall = 0.0
 reward_payload = {"reward": overall}
-if ratelimited:
-    # Harbor accepts numeric rewards only; diagnostics belong in details.
-    reward_payload["ratelimit"] = True
-elif inconsistent:
-    reward_payload["error"] = "judge_inconsistent"
+# Harbor treats every reward.json field as a numeric reward. Diagnostic
+# strings and flags belong exclusively in the companion details document.
 (out_dir / "reward.json").write_text(
     json.dumps(reward_payload, indent=2) + "\n", encoding="utf-8"
 )
