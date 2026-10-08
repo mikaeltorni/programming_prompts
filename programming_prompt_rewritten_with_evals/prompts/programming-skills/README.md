@@ -16,10 +16,10 @@ Current skills:
 | [`worktree`](worktree/SKILL.md) | Project-prefixed sibling `.worktrees/<project>/<project>_<type-feature>` worktree, merge back, never push |
 | [`commits`](commits/SKILL.md) | One working commit per capability sentence in the original request |
 | [`testing`](testing/SKILL.md) | Contract-based regression checks, existing tooling, isolated execution, and honest verification evidence |
-| [`debug_logs`](debug_logs/SKILL.md) | Existing read-logs-first policy |
+| [`debug_logs`](debug_logs/SKILL.md) | Explicit-only read-logs-first policy, pending numeric positive evidence |
 | [`debug`](debug/SKILL.md) | Diagnose, reproduce, repair and verify logged failures |
 | [`docs`](docs/SKILL.md) | README.md after the code: program, entrypoint, commands |
-| [`workflow`](workflow/SKILL.md) | Explicit-only plan → optional worktree → code → optional docs orchestration |
+| [`workflow`](workflow/SKILL.md) | Explicit-only worktree → plan → per-feature tests/code/commit → docs |
 
 **Logging eval note:** pair `logging` (or `logging-vague`) with `srp` so the
 agent writes several helpers — otherwise a one-function script may not give
@@ -74,3 +74,12 @@ Judges emit a short `reasoning` string per criterion; the verifier stores it
 in `reward-<skill>-details.json` / `reward-details.json`, and the runner
 prints it after each job. To double-check a positive vs baseline pair under
 `evals/runs/`, use [`../../evals/testing/`](../../evals/testing/).
+
+Workflow plans retain four outer stages and seven microstep columns:
+`Step | Phase | Feature | Stage | Action | Status | Evidence`. Each feature
+finishes 3.1 saved checks and baseline, 3.2 implementation and cumulative checks,
+then 3.3 working commit and required delivery before the next feature starts.
+Documentation follows all feature cycles. The workflow prompt owns the cycle
+with or without companions; those companions add their detailed requirements.
+Default discovery excludes both `workflow` and `debug_logs`; either remains
+explicitly selectable with `--skills`.

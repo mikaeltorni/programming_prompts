@@ -23,8 +23,16 @@ that fail constrained decode still score when the yes/no JSON is in ``text``.
 [`run_llm_judge.py`](run_llm_judge.py) pins the real workspace
 `*.py` files into the prompt for every agent and retries once on skip-inspect,
 invented paths, or an explicit no verdict contradicting its own reasoning.
-It also inlines the launch-project workflow plan for the workflow judge and
-bounded original failure logs for debug, debug_logs and testing judges. Codex and Claude Code still use pinned harbor-rewardkit
+It also inlines the launch-project plan for workflow, commits and testing,
+Git source history for their feature claims, and bounded chronological tool
+evidence for workflow, commits, testing, debug and debug_logs. The plan helper
+exposes four ordered outer rows and seven-column per-feature 3.1/3.2/3.3 cycles;
+it does not assign semantic Feature counts. Exact raw transcript excerpts are
+supplied alongside decoded commands so quotations preserve their original
+spacing and escaping. Testing findings can cite authentic source or trace
+quotes; the reliability gate verifies their text and retries unsupported
+quotations once. It never decides semantic execution order. Original failure
+logs remain bounded evidence for debug, debug_logs and testing. Codex and Claude Code still use pinned harbor-rewardkit
 (with a writable `CLAUDE_CONFIG_DIR` / `CODEX_HOME` overlay passed into the
 `rewardkit` child, not only `os.environ`). The task image installs
 `rewardkit` onto `PATH`; the wrapper uses that binary and only falls back
