@@ -156,40 +156,43 @@ harness's skill directory.
 
 ### workflow
 
-An explicit-only orchestrator for programming tasks. Invoke `$workflow` to
-immediately establish or verify the editing checkout when worktree isolation
-applies, then create a launch-project Markdown plan and apply only the companion skills
-enabled in the current prompt, write the code, and conditionally use worktree
-or documentation guidance when those companions are enabled. With no companion
-skills it falls back to plan-then-code. Installing or discovering the skill
-does not activate it, and other skills do not depend on it.
+Invoke `$workflow`, or select `v2:workflow` in native global instructions, to
+run these stages in order:
 
-The phase order is `Establish worktree`, `Plan`, `Write code`, then
-`Write documentation`. Read-only tasks and explicit live-checkout work skip
-isolation; an assigned existing task checkout is verified and reused. Minimal
-repository discovery precedes checkout setup, while detailed investigation and
-planning follow inside it. Retain the launch root and absolute
-`ACC_WORKFLOW_FILE` before entering the worktree.
+1. **Establish worktree** — verify the task checkout before detailed planning.
+2. **Plan** — define concrete features, files, checks and expected results.
+3. **Write code** — finish **3.1 Write tests → 3.2 Write code → 3.3 Commit**
+   for each feature before starting the next feature.
+4. **Write documentation** — document the delivered interface after every
+   feature cycle closes, then commit and deliver the documentation.
 
-The initial plan contains both the four workflow phases and a concrete
-`## Microsteps` table with `Step`, `Phase`, `Action`, `Status`, and `Evidence`
-columns. Actions name real files or entrypoints and their observable outcomes;
-implementation, integration, required checks and delivery steps are planned
-before code changes. Agents update the same plan at each microstep boundary,
-retain completed work and evidence, and refine pending work when discovery
-changes the task. Microsteps do not change capability-sentence commit boundaries.
+In 3.1, save and run the current feature's public checks before its application
+edit. In 3.2, implement that feature and run its checks plus retained relevant
+checks. In 3.3, commit checks and working code together; selected worktree
+merges and consumer reapplication finish this substep. Static content and
+project test prohibitions use recorded direct checks. Existing passing checks
+can protect a refactor. No Git or an explicit no-commit request can justify
+skipping 3.3. The cycle remains required without companion skills; companions
+add their own detailed contracts. Installing a skill alone does not activate it.
 
-ACC launches pass `ACC_WORKFLOW_FILE` as an absolute path under the launch
-project's `tmp/workflow/`. Otherwise the public `$workflow` entrypoint uses
-`<project-root>/tmp/workflow.md`. Both tables use `pending`, `in_progress`,
-`complete`, and `skipped`; optional phases and their actions are skipped when
-their companions are unavailable. The plan stays ignored and is retained across
-worktree changes. ACC reads these tables for its top-right segmented progress
-bar, phase counts, and each task's menu background progress.
+The authoritative launch-project plan has exactly four `## Tasks` rows and a
+`## Microsteps` table with `Step`, `Phase`, `Feature`, `Stage`, `Action`,
+`Status`, and `Evidence` columns. Each code feature has consecutive 3.1, 3.2,
+3.3 rows with one stable feature identifier. Other phases use `-` for Feature
+and Stage. Actions identify actual files or public checks; evidence records
+observed runs, commits and delivery. Keep completed and pending work in this
+same plan. Selected commits guidance still owns capability-sentence boundaries.
+
+ACC provides an absolute `ACC_WORKFLOW_FILE` under the launch project's
+`tmp/workflow/`; otherwise use `<launch-project-root>/tmp/workflow.md`.
+Retain this path when entering the worktree. Statuses are `pending`,
+`in_progress`, `complete`, or `skipped`. The plan stays ignored. ACC displays
+numbered captions such as `3.2 Write code · parser · 1 out of 6` and separates
+each feature's three bar cells. Legacy five-column plans remain readable.
 
 After changing the prompt, run `acc pp rebuild` to refresh saved selections;
-`acc pp status --skill v2:workflow --check` verifies the selected V2 consumer.
-The original and V2 workflow prompts use the same microstep schema.
+`acc pp status --skill v2:workflow --check` verifies native instruction delivery.
+Original and V2 workflow prompts use the same seven-column schema.
 
 ### docs
 

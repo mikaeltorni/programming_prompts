@@ -31,12 +31,15 @@ Skills live under
 - [`docs`](prompts/programming-skills/docs/SKILL.md) — README.md after the
   code (programmatic judge)
 - [`workflow`](prompts/programming-skills/workflow/SKILL.md) — explicit-only
-  plan → optional worktree → code → optional docs orchestration (semantic LLM judge)
+  worktree → plan → per-feature 3.1 tests / 3.2 code / 3.3 commit → docs (semantic LLM judge)
 
 Each real skill has a matching judge in
 [`evals/judges/<skill>/`](evals/judges/). Vague controls reuse the base judge.
-The `workflow` skill carries a `.opt-in` marker, so omitted `--skills` arguments
-retain the legacy default set; select `workflow` by name to evaluate it.
+`workflow` and `debug_logs` carry `.opt-in` markers. Omitted `--skills` selects
+the verified default policies: commenting, commits, debug, docs, logging, srp,
+testing and worktree. Select workflow explicitly alongside these defaults to
+verify the per-feature cycle. `debug_logs` stays available for focused explicit
+evaluation while its numeric positive score is pending.
 Pair `logging` / `logging-vague` with `srp` when benchmarking so there are
 enough functions to print. Pair `worktree` with `srp`. Pair `commits` with
 `worktree` and a multi-Feature task such as `shop`, `todo`, `bank`, or `stats`.

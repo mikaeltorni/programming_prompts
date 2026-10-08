@@ -10,8 +10,8 @@ All LLM judges receive the original coding request through the shared sync path.
 | `commenting` | LLM `prompt.md` | the selected docstring contract |
 | `logging` | LLM `prompt.md` | the selected entry/exit tracing contract |
 | `commits` | LLM `prompt.md` | capability sentences mapped to distinct working commits, using diffs and source trees |
-| `workflow` | LLM `prompt.md` | one current four-row plan and routing of independently selected companions |
-| `testing` | LLM `prompt.md` | agent-authored checks against the original contract, isolated execution when available, and explicit evidence limits |
+| `workflow` | LLM `prompt.md` | worktree-before-plan startup, four outer rows and consecutive tests/code/commit cycles |
+| `testing` | LLM `prompt.md` | checks saved/run before each feature, contract coverage, isolated execution and explicit evidence limits |
 | `debug_logs` | LLM `prompt.md` | preserved log-first policy on coding tasks, including greeter |
 | `debug` | LLM `prompt.md` | original failures, causal repair and chronological coding evidence on dedicated scenarios |
 | `debug_behavior` | programmatic public calls | immutable results/exceptions, boundaries and preserved state across rejection sequences |
@@ -51,3 +51,19 @@ It is installed only on dedicated debug scenarios and requires every immutable
 public-call sequence to pass. It neither matches source tokens nor counts Features.
 Direct judge synchronization filters task families; partial coding-skill syncs
 leave repair-case judges intact.
+
+Workflow, commits and testing receive plan, Git source snapshots and bounded
+coding-agent chronology. They inspect actual writes and commands, including
+multiple steps in one shell command; subjects, timestamps and final green runs
+alone cannot prove tests-before-code. Missing excerpts are explicit evidence
+limits. Helpers expose syntax and authentic quotations, never task-specific
+Feature counts or semantic replacement scores.
+
+For a testing rejection, an exact `Citation: path.py:LINE | source line` verifies
+submitted source; an authentic `TraceCitation: codex.txt:LINE | raw excerpt`
+can verify chronological evidence. Claude and Grok use their actual transcript
+filenames. A chronology finding may use a source quote plus decisive raw trace
+positions. Quotes verify text, while the LLM judges execution order. Unsupported
+quotations retry once and remain infrastructure exclusions if unresolved.
+The debug judge separately requires a saved public regression before repair;
+a terminal-only reproduction does not meet that selected policy.
