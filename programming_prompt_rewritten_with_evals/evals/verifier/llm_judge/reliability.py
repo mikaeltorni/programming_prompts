@@ -81,7 +81,7 @@ _EXPECTED_LITERAL_CLAIM = re.compile(
     re.IGNORECASE,
 )
 _TESTING_CITATION = re.compile(
-    r"(?:^|\n)Citation:\s*(?:(?P<commit>[0-9a-f]{7,40}):)?"
+    r"\bCitation:\s*(?:(?P<commit>[0-9a-f]{7,40}):)?"
     r"(?P<path>[^\s|:]+\.py):(?P<line>\d+)\s*\|\s*(?P<source>[^\n]+)"
 )
 
@@ -240,14 +240,15 @@ def _contradicted_testing_literal(reasoning: str, python_files: list[Path]) -> b
 
 
 def _trace_citation_issue(reasoning: str, logs_root: Path) -> str | None:
-    """Validate quoted raw transcript excerpts without judging execution order.
+    """Validate transcript positions and optional exact quotes without judging order.
 
     Parameters: reasoning - semantic judge finding; logs_root - allowed transcript directory.
-    Returns: missing/unavailable/mismatch/excess issue, or None for valid quotes.
+    Returns: missing/unavailable/mismatch/excess issue, or None for valid references.
     """
     print(f"reasoning={reasoning} logs_root={logs_root}")
     citations = list(re.finditer(
-        r'\bTraceCitation:\s*(?P<path>[a-zA-Z0-9_-]+\.txt):(?P<line>[0-9]+)\s*\|\s*(?P<excerpt>[^\n]+)', reasoning))
+        r'\bTraceCitation:\s*(?P<path>[a-zA-Z0-9_-]+\.txt):(?P<line>[0-9]+)'
+        r'(?:[ \t]*\|[ \t]*(?P<excerpt>[^\n]+))?', reasoning))
     if not citations:
         print("missing")
         return "missing"
@@ -263,13 +264,16 @@ def _trace_citation_issue(reasoning: str, logs_root: Path) -> str | None:
             print("mismatch")
             return "mismatch"
         number = int(token)
-        excerpt = match.group("excerpt").strip()
+        excerpt = match.group("excerpt")
+        excerpt = excerpt.strip() if excerpt is not None else None
         found = False
         try:
             with (logs_root / match.group("path")).open("rb") as handle:
                 for position, line in enumerate(handle, 1):
                     if position == number:
-                        found = bool(excerpt) and excerpt in line.decode("utf-8", errors="replace")
+                        # A locator proves availability, not the semantic allegation.
+                        # Supplied quotations still have to match the actual raw line.
+                        found = excerpt is None or (bool(excerpt) and excerpt in line.decode("utf-8", errors="replace"))
                         break
         except OSError:
             print("unavailable")
@@ -284,7 +288,7 @@ def _trace_citation_issue(reasoning: str, logs_root: Path) -> str | None:
 def _testing_citation_issue(
     reasoning: str, python_files: list[Path], *, logs_root: Path = Path("/logs/agent")
 ) -> str | None:
-    """Validate Python quotes or raw trace quotes for a testing finding.
+    """Validate Python quotes or available transcript references for a testing finding.
 
     Parameters: reasoning - judge finding; python_files - submitted Python paths;
         logs_root - allowed chronological transcript root.
@@ -463,9 +467,11 @@ def retry_prompt(prompt: str, reason: str) -> str:
         result = (prompt
             + "\n\nRETRY: the previous testing no omitted or misstated its exact "
             + "source or chronological trace citation. For a chronology failure use "
-            + "TraceCitation: codex.txt:LINE | exact contiguous raw-line excerpt "
+            + "TraceCitation: codex.txt:LINE with the actual line number, without "
+            + "copying or re-escaping the JSON record "
             + "(or the actual claude-code.txt/grok-build.txt/grok.txt). Raw trace "
-            + "quotations establish text only; explain the file-write/run order. "
+            + "positions establish availability only; inspect those actual records "
+            + "and explain the file-write/run order. "
             + "Alternatively cite an exact Python source/check line with Citation "
             + "and identify the decisive raw transcript positions in reasoning. "
             + "For source failures reinspect the decisive claim and include "

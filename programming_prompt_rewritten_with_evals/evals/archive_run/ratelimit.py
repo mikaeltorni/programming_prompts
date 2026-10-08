@@ -89,8 +89,10 @@ def trial_is_ratelimited(trial_dir: Path) -> bool:
         A trial that already scored 1.0 is never a skip — Harbor may log
         ApiRateLimitError on a command it then retried successfully.
     """
+    print(f"trial_dir={trial_dir}")
     completed = False
-    for relative in ("01-reward.json", "verifier/reward.json"):
+    for relative in ("01-reward.json", "verifier/reward.json",
+                     "02-reward-details.json", "verifier/reward-details.json"):
         payload = load_json_lenient(trial_dir / relative) or {}
         reward = payload.get("reward")
         try:
@@ -98,12 +100,16 @@ def trial_is_ratelimited(trial_dir: Path) -> bool:
                 completed = True
         except (TypeError, ValueError):
             pass
-        if payload.get("ratelimit") is True:
+        details = reward if isinstance(reward, dict) else payload
+        if details.get("ratelimit") is True:
+            print(True)
             return True
-        error = str(payload.get("error") or "").lower()
+        error = str(details.get("error") or "").lower()
         if "ratelimit" in error or error in {"rate_limit", "rate-limit"}:
+            print(True)
             return True
     if completed:
+        print(False)
         return False
     for relative in (
         "10-test-stdout.txt",
@@ -119,6 +125,7 @@ def trial_is_ratelimited(trial_dir: Path) -> bool:
         except OSError:
             continue
         if looks_like_judge_rate_limit(text):
+            print(True)
             return True
     for relative in (
         "exception.txt",
@@ -135,5 +142,7 @@ def trial_is_ratelimited(trial_dir: Path) -> bool:
         except OSError:
             continue
         if "ApiRateLimitError" in text or looks_like_coding_agent_quota(text):
+            print(True)
             return True
+    print(False)
     return False
