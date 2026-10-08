@@ -11,12 +11,56 @@ from collections import deque
 from dataclasses import dataclass
 import math
 import os
+from pathlib import Path
+import shutil
+import subprocess
 import sys
 import time
 import tomllib
 
 from harbor.models.job.plugin import BaseJobPlugin
 from harbor.trial.hooks import TrialEvent, TrialHookEvent
+
+
+DOCKER_STORAGE_RESERVE = 2 * 1024**3
+TRIAL_STORAGE_ALLOWANCE = 4 * 1024**3
+
+
+def docker_storage_root() -> Path | None:
+    """Locate the local filesystem backing Docker's image and container data.
+
+    Parameters: none.
+    Returns: the locally accessible Docker root, or None if it cannot be measured.
+    """
+    print("parameters=none")
+    try:
+        probe = subprocess.run(
+            ["docker", "info", "--format", "{{.DockerRootDir}}"],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+        root = Path(probe.stdout.strip())
+        result = root if probe.returncode == 0 and root.is_absolute() and root.is_dir() else None
+    except (OSError, subprocess.TimeoutExpired):
+        result = None
+    print(result)
+    return result
+
+
+def storage_trial_ceiling(trial_ceiling: int, storage_root: Path | None) -> int:
+    """Reserve build and writable-layer headroom before admitting trials.
+
+    Parameters: trial_ceiling - requested job capacity; storage_root - measured
+        local Docker data filesystem, or None when unavailable.
+    Returns: storage-bounded capacity; zero when even one trial lacks headroom.
+    """
+    print(f"trial_ceiling={trial_ceiling} storage_root={storage_root}")
+    if storage_root is None:
+        result = trial_ceiling
+    else:
+        available = shutil.disk_usage(storage_root).free
+        result = min(trial_ceiling, max(0, (available - DOCKER_STORAGE_RESERVE) // TRIAL_STORAGE_ALLOWANCE))
+    print(result)
+    return result
 
 
 @dataclass
@@ -101,9 +145,14 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         Parameters: self - launch guard; job - Harbor job whose starts will be paced.
         Returns: None.
         """
+        print(f"self={object.__repr__(self)} job={object.__repr__(job)}")
         self.condition = asyncio.Condition()
         self.active: dict[str, ActiveTrial] = {}
-        self.ceiling = job.config.n_concurrent_trials
+        self.requested_ceiling = job.config.n_concurrent_trials
+        self.storage_root = docker_storage_root()
+        self.ceiling = storage_trial_ceiling(self.requested_ceiling, self.storage_root)
+        if self.ceiling == 0:
+            raise RuntimeError("Docker storage has insufficient free space for one trial plus its reserve")
         self.setup_ceiling = setup_ceiling(self.ceiling)
         self.setup_durations: deque[float] = deque(maxlen=64)
         job.add_hook(TrialEvent.START, self.admit)
@@ -112,11 +161,13 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         job.add_hook(TrialEvent.END, self.finished)
         job.add_hook(TrialEvent.CANCEL, self.cancelled)
         print(
-            f"Automatic launch guard: full trial ceiling={self.ceiling}; "
+            f"Automatic launch guard: requested trial ceiling={self.requested_ceiling}; "
+            f"storage-bounded full trial ceiling={self.ceiling}; "
             f"setup ceiling={self.setup_ceiling}; deadline headroom uses measured "
             f"setup p95 + {self.poll_interval:.1f}s (queue time is excluded)",
             file=sys.stderr,
         )
+        print(None)
 
     def deadline_headroom(self) -> float:
         """Allow observed setup cost plus a polling interval before deadlines.
@@ -164,6 +215,7 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         Parameters: self - launch guard; event - trial START event with an attempt ID.
         Returns: None after admission; cancellation releases a pending waiter.
         """
+        print(f"self={object.__repr__(self)} event={object.__repr__(event)}")
         key = str(event.trial_id)
         setup_budget = environment_budget(event)
         async with self.condition:
@@ -171,11 +223,15 @@ class DeadlineLaunchGuard(BaseJobPlugin):
                 now = time.monotonic()
                 pressured = self.pressured_trials(now)
                 starting, stalled = self.setup_pressure(now)
+                storage_capacity = storage_trial_ceiling(self.ceiling, self.storage_root)
+                if storage_capacity == 0 and not self.active:
+                    raise RuntimeError("Docker storage has insufficient free space for another trial plus its reserve")
                 if (not pressured and not stalled and len(self.active) < self.ceiling
-                        and starting < self.setup_ceiling):
+                        and len(self.active) < storage_capacity and starting < self.setup_ceiling):
                     self.active[key] = ActiveTrial(
                         name=event.trial_name, admitted=now, setup_budget=setup_budget,
                     )
+                    print(None)
                     return
                 # Periodic wakeups detect approaching deadlines even when no
                 # phase finishes. A Condition notification wakes us sooner.
@@ -185,6 +241,7 @@ class DeadlineLaunchGuard(BaseJobPlugin):
                     )
                 except TimeoutError:
                     pass
+        print(None)
 
     async def agent_started(self, event: TrialHookEvent) -> None:
         """Start tracking the phase budget after admission and setup complete.
