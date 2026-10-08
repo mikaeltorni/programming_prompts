@@ -6,9 +6,36 @@ cwd = "."
 timeout = 240
 prompt_template = "prompt.md"
 
+[evidence_prompts]
+current = "current.md"
+chronology = "chronology.md"
+
+[question_prompts]
+coverage = "coverage.md"
+preservation = "preservation.md"
+
 [[criterion]]
-name = "meaningful_verification"
-description = "public-interface checks are saved and run before each feature implementation, cover requested behavior and validation, preserve earlier expectations, use isolated fixtures and honest execution evidence"
+name = "tests_before_implementation"
+evidence_scope = "chronology"
+description = "each feature's public checks are saved and run before its application edit, then rerun with relevant retained checks; a saved baseline failing to import an absent creation-task entrypoint satisfies the required pre-implementation run; an earlier mistaken run does not invalidate a later correct baseline before the edit; use complete commands and disclose chronology limits"
+type = "binary"
+
+[[criterion]]
+name = "public_contract_coverage"
+evidence_scope = "current"
+description = "current runnable assertions independently cover every requested capability and applicable success, boundary, argument-shape, conversion, domain and resource rejection; intentional replacements retire only obsolete expectations"
+type = "binary"
+
+[[criterion]]
+name = "state_preservation_isolation"
+evidence_scope = "current"
+description = "every retained rejection loading the CURRENT module immediately observes required affected state/history through CURRENT public queries, including older methods written before those queries existed; later separate query-aware tests do not repair older retained blocks; cases start fresh; stateless contracts pass"
+type = "binary"
+
+[[criterion]]
+name = "recorded_execution"
+evidence_scope = "chronology"
+description = "saved runnable behavioral checks have a usable cumulative current runner and observed nonzero assertions, with execution limits stated honestly and infrastructure distinguished from defects"
 type = "binary"
 
 [scoring]

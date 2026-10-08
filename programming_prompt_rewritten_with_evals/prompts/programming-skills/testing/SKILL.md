@@ -1,333 +1,165 @@
 ---
 name: testing
 description: >-
-  v1.1.0 — Executable code creation and behavior changes require saved,
-  runnable public-interface checks in each working revision. Run them with
-  fresh state; honor static-content and project verification exceptions.
+  v1.1.1 — Save and run each Feature's public-interface checks before its code,
+  then verify the working revision with fresh state and retained regressions.
 ---
 
-# Test the changed behavior
+# Test each working Feature
 
-For **each planned feature**, save its runnable public-interface tests before
-writing or changing its application code. Run those checks against the current
-implementation and record the baseline: new behavior should fail for the
-intended missing behavior, while existing checks for a pure refactor may pass.
-An absent entrypoint in a creation task may fail to import; distinguish that
-from unrelated dependency failures. Then implement only that feature, run its
-checks and retained earlier checks, and close the feature before advancing.
-Never write all features' tests first or add tests only after implementation.
+For executable creation or behavior changes, repeat **3.1 Write tests → 3.2 Write
+code → 3.3 Commit** for the current Feature when workflow/commits is selected.
+Testing alone requires the checks-before-code sequence, not Git commits or a
+workflow file. Work on one Feature at a time; do not write all Features' tests
+first or add checks only after implementation.
 
-With workflow selected, use **3.1 Write tests → 3.2 Write code → 3.3 Commit**
-inside Write code. With commits selected, commit that feature's checks and
-working code together before the next feature starts. Testing alone does not
-require Git commits or another unselected companion's conventions. Follow
-project AGENTS.md/CLAUDE.md verification paths and test prohibitions; use the
-static-content/direct-check exception below when applicable.
+## 3.1 Save the inventory and runnable checks
 
-An empty creation-task checkout or absent test framework is not a blocker.
-Create the requested program and saved stdlib assertions or unittest checks
-when no framework exists; no framework installation is needed. Finish the
-implementation and applicable checks before ending the turn. Read back the
-delivered files before claiming they were saved or changed; inspection and
-promises to implement do not complete the request.
-File discovery returning no matches or status 1 only means that search found
-nothing. Continue the authorized creation task with the known writable checkout.
+Read the whole request, setup/shared rules, original logs and existing checks.
+Identify the current capability and earlier behavior that still applies. Keep
+later capabilities and observation APIs deferred. Reuse the project's test
+location, framework and fixture lifecycle. An empty creation checkout or
+missing framework is not a blocker: saved stdlib assertions or unittest checks
+suffice, without installing a framework.
 
-Before finishing a revision, resolve these concrete checks in the saved suite:
+Save a coverage inventory beside the runnable checks before the application
+edit. Map each applicable success, boundary, rejection and unchanged-state rule
+to a named executable case and independently expected result, including actual
+assertion locations. A list of stages or test titles is not coverage. Keep
+shared input rules separate from capability examples. For each operation record
+operands, missing/extra input, numeric conversion, domain/resource checks and
+public observations; explain inapplicable classes from the contract or actual
+shared validation owner. Future cases may be planned but are not executable yet.
 
-- For each independent operand parser: missing input, extra input and failed
-  token conversion where applicable. A no-operand command needs only its
-  applicable extra-input check. Successful examples alone are incomplete.
-- For each still-required rejection: its fixture, rejected input and strongest
-  available public observation immediately afterward. Review older cases too.
-  Check rejected clear/reset forms while meaningful state is still populated,
-  before a successful clear/reset. For resource lookups, identify each actual
-  shared or independent lookup path as well as numeric and operand validation.
-- For each changed rule: every retained expectation using that rule, recomputed
-  from that case's actual preceding calls.
-- For the final runner: its exact directory, flags and environment, a nonzero
-  executed assertion count and coverage of all delivered capabilities.
+Save assertions for all currently applicable shared rules in the first dispatch
+revision: empty command, unknown operation and rejected missing/extra operands.
+Apply selected commenting/logging contracts to every authored test, helper and
+fixture from the first saved regression. An assertion-only method still has
+`self`, description/Parameters/Returns docstring parts, its own first parameter
+print and normal `None` exit print when those companions are selected.
 
-These are coverage checks, not a request for duplicate cases or extra tools.
+Run the current Feature's saved checks before its application edit. Record the
+actual baseline: new behavior fails for its intended missing behavior; an
+absent entrypoint may fail to import. Existing passing checks may protect a pure
+refactor. Distinguish setup/dependency failure from an assertion failure.
+Terminal-only assertions supplement saved checks; they cannot replace them.
 
-## Follow these gates for every working revision
+## Coverage obligations in every working revision
 
-1. **Read the contract and existing checks.** Include setup paragraphs, original
-   failure logs and shared validation rules, not only the newest stage examples.
-   Identify the current capability and earlier behavior that still applies.
-   Keep later commands and observation APIs deferred to their own revision.
-2. **Save the coverage inventory before the application edit.** Choose the
-   normal test location and runner. Beside the runnable checks, map each
-   applicable success, boundary, rejection reason and unchanged-state rule to
-   an actual executable case and its independently expected result. Name the
-   case; a list of stages or test method titles alone is not coverage. Keep
-   shared input-validation rules in their own inventory section, apart from
-   capability examples. Before editing the application, save the assertions
-   for currently applicable shared rules: empty input, unknown operation and
-   missing/extra arguments when the contract rejects them. These checks belong
-   to the first dispatch revision even if its capability sentence mentions only
-   successful commands. For rejection without mutation, name the required
-   public observations too; add them when the public query becomes available.
-   Use a table of operations and rejection reasons, not just a stage list. For each
-   supported public command, record its operands, applicable missing/extra
-   argument cases, numeric-conversion case, domain cases, and saved assertion
-   locations. Mark a class inapplicable only with its contract or actual shared
-   validation owner. A shared helper's case can cover its callers; repeated
-   conversions or argument checks in separate handlers cannot. Resolve every
-   applicable gap before committing, including commands with operands.
-3. **Save and run the assertions before implementation.** Preserve every unaffected case.
-   Save executable cases for the current capability and retained behavior;
-   later capabilities may be planned in the inventory, but their executable
-   expectations wait for their own revision. Run this feature's saved assertions
-   now, record the actual baseline, then implement this feature only.
-   Before replacing a method or file, transfer its still-required assertions;
-   never reduce the suite to the latest examples. Retire an expectation only
-   when the request explicitly replaces it. Do not assert both an old rule and
-   its replacement in the final suite; history retains the earlier checks.
-   When a command becomes supported, replace its earlier unknown-command
-   rejection with the required success in the current-module suite. A failure
-   caused by that expected stage transition needs an assertion repair; continue
-   the remaining implementation rather than ending the turn or building a new
-   historical runner solely to preserve the superseded expectation.
-   Record the superseded rule's last valid commit and its replacement case in
-   the inventory. Rename or revise affected case names and docstrings to match
-   their current assertions; a historical stage label does not preserve an
-   obsolete expectation or prove that it was checked in that earlier revision.
-   When replacing an expected result, reconstruct that case's state from its
-   own fixture and preceding public calls, then compute the expected result
-   from the request. Do not copy a value from another case with different
-   inputs. Inspect every retained assertion affected by the revised rule,
-   including earlier test classes, before running the accumulated suite.
-   Trace the saved runner and each supported stage selector to the source it
-   imports. Checks loading the current module must follow the current contract,
-   even if their names refer to earlier stages. Keep a cumulative current suite;
-   replay an obsolete assertion only with its matching historical source.
-   Selecting just the latest stage cannot verify retained earlier assertions.
-   Make the documented final invocation select the cumulative final suite.
-   Development-only selectors may target earlier commits; label that source
-   requirement rather than advertising them as current-module verification.
-4. **Revisit all rejection cases when adding a query.** If this revision first
-   exposes a public observation of stored state, add that observation to every
-   earlier applicable rejection test now. Older stage classes are part of the
-   current suite. Apply the same review when adding more state/history queries
-   or changing their output contract. Review every retained rejection block,
-   including shared empty/unknown/argument-shape loops and older test classes.
-   A new complete reject-and-observe case does not repair another retained case
-   that still skips its observations. Seed populated state for those shared
-   loops too; checking only an empty result cannot expose accidental clearing.
-   A reusable rejection helper can take independently expected observations
-   and check them immediately after each rejection. Route retained cases
-   through it too, and extend its observations when new queries appear.
-   Retained inline rejection blocks still need the same review.
-5. **Run and inspect the accumulated suite before committing.** Confirm the
-   runner discovers and executes assertions. Follow every inventory entry to
-   its actual assertions, including the shared-validation section and the
-   statement immediately after each rejected operation. Check both missing and
-   extra operands where rejected: covering one side of a shared length predicate
-   does not cover the other rejection class. Inspect the saved inputs:
-   implementation branches, docstrings and successful recovery calls
-   do not count as rejection assertions. Resolve missing coverage even when
-   the runner passes.
-   Inspect complete added or changed test/helper/fixture bodies for independently
-   selected commenting/logging rules. Commit the saved checks with this
-   capability; do not advance merely because its tests passed.
+### Contract and validation owners
 
-### Rejection without mutation: observe before doing anything else
+Derive expectations from the request and each case's own fixture/preceding calls,
+not application output or another case. Cover meaningful successes, boundaries,
+accepted defaults/flags and multi-word/quoted input where required. Do not invent
+error messages, numeric limits, object-type restrictions or unsupported inputs.
 
-For every required rejection class, seed known nonempty state through the
-public interface. Attempt one rejected input, then assert independently
-expected state through the currently available public queries **before** the
-next rejected input, successful mutation, reset or fixture reload. Keep that
-sequence in one executable case; a shared reject-and-observe helper may serve
-several inputs. Malformed dispatch, token conversion and domain errors all need
-this sequence when the contract requires unchanged state.
+Distinguish dispatch/argument shape, token conversion, operation domain and
+resource lookup failures. For each independent operand parser cover missing and
+extra input and failed numeric conversion where applicable. A no-operand command
+needs only its applicable extra-input case; text/name operands are not numeric.
+One actual shared validation owner may cover its callers for that rejection
+reason; identical copied guards remain independent. Separate domain constraints
+still need their applicable cases. A numeric negative/zero/fraction does not
+cover a nonnumeric token. A specified strict bound needs its excluded endpoint
+and a value beyond it in each independent owner; no unspecified numeric policy
+is added. Do not enumerate every invalid spelling or duplicate shared cases.
 
-Task examples may show a rejection followed by a successful mutation. That
-checks recovery; insert the query before continuing the example. A later
-successful update's count, a private-state assertion, or a comment saying
-“unchanged” cannot replace the public observation. Supplemental private checks
-do not replace public checks, and their presence does not invalidate adequate
-public checks. Use observations that expose the affected values,
-not just a count or aggregate that can stay constant while values change.
-Check every affected resource and stored history when the contract requires it
-and the current revision exposes it.
+### Rejection without mutation
 
-Adapt this pattern to the actual contract and existing runner. These placeholders
-are not commands to add or a reason to install a new framework:
+When the contract requires unchanged state, seed meaningful nonempty state through
+the public API where permitted. Attempt one rejected input, then immediately
+assert independently expected affected values and required history through the
+currently available public queries. Do this before another rejection, mutation,
+reset or reload. Cover malformed dispatch, conversion and domain rejection;
+check rejected clear/reset forms while the state is populated.
 
-```python
-# Seed known state and independently expected results first.
-with self.assertRaises(EXPECTED_EXCEPTION):
-    PUBLIC_ENTRYPOINT(REJECTED_INPUT)
-self.assertEqual(PUBLIC_ENTRYPOINT(STATE_QUERY), EXPECTED_STATE_RESULT)
-# Assert any other required resource/history observations here.
-# Only then continue to another rejection, mutation, reset or reload.
-```
+A recovery mutation, private-state assertion, comment or aggregate that hides
+changed values cannot replace an available informative public observation.
+Supplemental private checks are allowed alongside adequate public checks. A
+shared reject-and-observe helper may cover several inputs, but retained inline
+rejections need the same review. Check affected resources/history, not unrelated
+resources. When only history/aggregates exist, use the strongest available public
+observation and record its limit. Empty-domain cases remain empty when seeding
+would change their required rejection; do not invent future query/reset APIs.
 
-When no public query exists yet, use the strongest observation the current
-interface supports and record that limit in the inventory. A public history or
-aggregate may be the strongest available observation; do not invent a balance
-or item query. An empty-state domain case must remain empty when seeding would
-change the required rejection. Do not demand an unavailable successful query
-in that case. Do not introduce a future query or reset API just for testing.
-Gate 4 requires upgrading those
-checks as soon as a suitable query exists. Before each commit, review **all**
-saved rejection blocks, not only this revision's new tests: an exception-only
-block or one followed by a mutation remains incomplete when the contract
-requires a now-observable state guarantee.
+When a new query or history interface becomes available, upgrade EVERY retained
+applicable rejection block in the current suite immediately. Seed populated state
+for shared dispatch/argument loops too. One new complete case does not repair
+older exception-only blocks. Review all rejection blocks before each closeout.
 
-### Cover each required validation class
+### Explicit rule replacements
 
-Use concrete public inputs and expected results from the request. Do not copy
-the implementation's answer or invent error strings, unsupported inputs or
-extra restrictions. A numeric range added by an implementation is not itself
-a requested domain rule; distinguish it from the request and supplied logs.
-Exercise meaningful success and boundary cases, nontrivial arguments, the
-default/no-argument path when supported, each changed flag, and
-accepted multi-word or quoted inputs.
-Use the public input type declared by the request. A defensive guard against
-objects outside that type does not create a required rejection class.
-For a specified strict numeric bound, check the excluded endpoint and a value
-beyond it in each independent validation path. A negative-value check alone
-does not check a required zero rejection; share these cases only when their
-actual validation owner is shared.
-A shared predicate covers all of its callers for that rejection reason; do not
-mistake different operation names for independent copies of the same guard.
-Text/name operands have no numeric-conversion requirement unless the contract
-requires numeric input for those operands.
+Preserve every unaffected assertion. When a Feature replaces an earlier rule,
+update only its superseded expectations, recomputing results from each case's
+actual preceding calls. A formerly unknown command becomes its acceptance case;
+retire only obsolete numeric rejection, retaining still-required dispatch, shape,
+conversion, domain and preservation checks. Inspect older classes too. Rename
+case descriptions to match current assertions. Never leave an empty negative
+loop, no-op test or before/after read with no rejected operation.
 
-Map failures by operation, validation path and rejection reason. Separate
-argument-count/dispatch shape, token conversion and operation domain rules in
-the inventory. A missing-resource or out-of-range failure does not cover a
-malformed numeric token or missing/extra arguments. When the interface requires
-a numeric token and rejects invalid arguments, save a representative nonnumeric
-input for each independently implemented conversion path, in the revision that
-introduces it. Do not infer this coverage from zero, negative, fractional or
-otherwise numeric domain inputs, and do not invent unspecified numeric policies.
+Checks loading the current module always follow its current contract, regardless
+of historical stage/method names. Keep the final suite cumulative. Replay obsolete
+expectations only with their matching saved snapshot or named historical source.
+Record the replaced rule's last valid commit and replacement case in the inventory
+when that history exists. Do not require incompatible old/new rules together.
+A stage selector must not skip still-required assertions when retiring one rule.
 
-When specified, save empty-command, unknown-operation and malformed-argument
-assertions in the first revision supporting dispatch; preserve them through
-later revisions. Cover missing and extra arguments where rejected. Each new
-no-argument operation with a separate validation path needs an extra-argument
-assertion; similar conditions in separate branches are separate paths. Operations
-that actually delegate to the same validation path may share representative
-coverage for that reason. Distinct operation-specific domain checks still need
-their own applicable cases. A similar command spelling or repeated condition
-in separate branches does not establish a shared path. Do not enumerate every
-invalid spelling.
+### Fresh state and external effects
 
-When formerly invalid inputs become valid, replace their obsolete rejection
-assertions with acceptance checks and retain inputs that are still invalid.
-Do not leave an empty negative loop, a no-op test, or a before/after read with
-no rejected operation. Changing numeric acceptance does not retire empty and
-unknown commands or other shared rules. Broader numeric acceptance replaces
-only the superseded numeric restriction: retain the contract's other domain
-rejections in each independently implemented validation path. For example,
-allowing fractions does not retire a required zero/negative-value rejection.
-New history/state checks extend earlier coverage; they do not replace earlier
-rejection classes. A test name or green runner is not evidence that its required
-input or observation was asserted.
+Every independent mutable case gets fresh state through setup, a fresh module
+instance or a consistent per-case reset, including retained cases. Preserve state
+within required multi-call sequences. A case may leave state if the next fixture
+resets it. Repeat a mutable suite in the same process or another order through
+those fixtures to check isolation; do not weaken unexplained failing expectations.
 
-## Choose the project's verification path
+Mock/inject unnecessary network clients, launches, clocks and external systems
+where the defining module resolves them. Check captured arguments, environment
+and results. Use temporary homes/repos for configuration or installation checks.
+Nonvisual tests never open GUI windows/dialogs; no test may reboot, power off,
+log out or kill the session. Preserve user data and desktop state. Capture
+permitted diagnostic prints without treating them as return-value mismatches.
 
-For executable code creation or behavior changes, save runnable checks before
-executing them. Reuse the project's framework and fixtures; use a small stdlib
-assertion script if there is no framework. Record the exact runner with the
-checks or existing test documentation. Use explicit discovery when necessary;
-a zero-test success is not verification. Terminal-only `python -c` or heredoc
-assertions may supplement saved checks but cannot replace them. A small local
-program with observable results still needs useful regression assertions.
-Document the actual discovery flags and required environment with the runner.
-If stages use an environment selector, the final documented command must enable
-all current checks; prefer that as the default too. A shorter development
-selection must not silently skip delivered behavior in the final invocation.
-When a selector retires a numeric expectation, preserve unaffected assertions
-from that same method in active cases. Skipping the whole method may silently
-lose empty/unknown/argument-shape checks that still apply.
+## 3.2 Implement, run and inspect the cumulative checks
 
-For a reported defect, save its exact public-interface reproducer and the
-independently specified expected result before editing the broken behavior.
-Copy the expected result accurately from original logs when supplied. Confirm
-that saved regression fails for the defect and passes after the fix; separate
-setup/dependency failures. Nearby boundaries supplement the reproducer. For
-refactors, run relevant existing tests before and after the extraction.
+Implement only the current Feature, then run its saved checks and relevant
+retained checks with fresh state. Use the project's configured lint/type/build
+checks and dependency policy. After shared parsing/dispatch changes, exercise
+representative earlier public behavior. Resolve failures before closeout.
 
-Prompt, documentation and static-data changes use syntax, links, consistency or
-their documented evaluation mechanism. Honor a project prohibition on new test
-suites. For reversible low-impact changes without useful regression assertions,
-use direct verification. Do not install a new framework or hosted CI without a
-request. These exceptions do not turn executable program creation into static
-content or waive an applicable saved-check requirement.
+Trace the exact final runner: directory, flags, environment, discovery and source
+imports. Verify a nonzero assertion count and all delivered capabilities; a zero-
+test success is not verification. Document the actual invocation. A final/default
+selector runs the cumulative current suite; label development selectors needing
+historical source. Successful recovery calls, source branches and docstrings do
+not count as rejected-input assertions. Follow every inventory row to its actual
+saved assertion and immediate observation, including shared validation cases.
 
-## Isolate cases and external effects
+If adding installed modules/assets, verify installer manifests/copy lists and
+exercise the installed public entrypoint in an isolated target where feasible.
+Checkout imports or syntax alone do not prove installation/runtime behavior.
+Inspect complete changed test/helper/fixture bodies for independently selected
+function contracts. Passing tests do not complete those separate obligations.
 
-Establish fresh state before **every** independent case through the runner's
-fixture lifecycle: a setup hook, fresh module instance or consistent per-case
-reset. Preserve state within requested multi-call sequences. Resetting only new
-tests leaves older cases dependent on order. A case may leave state behind when
-the next case establishes fresh state. In addition to the normal run, repeat a
-mutable suite in the same process or another order through those fixtures;
-a script may explicitly reload/reset between sequences. Check representative
-earlier capabilities after shared parsing, dispatch or helper changes. Do not
-weaken expectations to hide unexplained failures.
+## 3.3 Close the revision and report observed evidence
 
-Mock or inject network clients, launches, clocks and external systems when real
-effects are unnecessary. Patch where the defining module resolves the dependency;
-a re-export patch may leave a real launcher active. Keep stubs consistent with
-the production import path. Assert captured arguments, environment and results;
-capture permitted diagnostic logging without treating it as a return mismatch.
-Use temporary homes and fixture repositories for deployment/configuration checks.
-Nonvisual tests must not open GUI windows, terminals or dialogs. Deliberate
-visual checks may do so when required. Preserve user data and the desktop;
-never let a test reboot, power off, log out or kill the session.
+With workflow or commits selected, commit this Feature's saved checks and working
+code together before the next Feature starts. Testing alone adds no commit requirement.
+Keep generated output/caches out of staged source with existing ignores or exact-
+path staging. Incidental cleanup refusal is not a reason to abandon verified work
+or leave a required commit unfinished. Read back saved files and review actual
+coverage before handoff; inspection/promises are not delivered implementation.
 
-## Apply independently selected function contracts
+Report exact commands run, observed results and checks not run with concrete
+reasons. Distinguish infrastructure/pre-existing failures from new defects. Broaden
+or repeat checks only for changes, failures or unresolved concerns. If execution
+is unavailable, state the strongest evidence and its limit; do not claim a run.
 
-Before the first test write, check which function skills are enabled. With
-commenting selected, document purpose, actual parameters and returns inline
-for every authored test, helper and fixture. An assertion-only method documents
-`Parameters: self - the test instance.` and `Returns: None.` With logging
-selected, print the method's parameters first and `None` after its final normal
-assertion. Revisions must preserve those docstrings and final traces. The
-application's documentation/prints do not satisfy its caller's obligations.
-Apply this to the initial failing regression and every changed method body.
-Testing does not enable an unselected companion.
+## Direct-verification exceptions
 
-With both companions selected, adapt this generic shape to the request:
-
-```python
-def test_requested_behavior(self):
-    """Check the requested public behavior.
-
-    Parameters: self - the test instance.
-    Returns: None.
-    """
-    print(f"self={object.__repr__(self)}")
-    self.assertEqual(PUBLIC_ENTRYPOINT(REQUESTED_INPUT), EXPECTED_RESULT)
-    print(None)
-```
-
-## Verify tooling, installation and delivery
-
-Keep interpreter caches and other generated runner output out of staged source
-changes using existing ignores or exact-path staging. Removing these files is
-not a prerequisite to committing working code and saved checks. If incidental
-cleanup is refused, preserve the files and continue the authorized work; do not
-abandon the capability or leave a verified revision uncommitted for that reason.
-
-Run relevant tests and configured lint, type or build checks using the existing
-environment and dependency policy; do not resolve dependencies ad hoc. When
-adding/extracting installed modules, check installer copy lists or manifests
-include imports and assets. Exercise the installed entrypoint in an isolated
-target when feasible; checkout-only imports do not prove installation works.
-For sourced shell modules, exercise the real shared dependency shape; check
-shell syntax and target-system paths/conventions where relevant.
-
-Investigate relevant logs and distinguish pre-existing failures, infrastructure
-limits and new defects. Broaden or repeat checks only for changes, failures or
-unresolved concerns. Syntax alone does not establish runtime behavior. Review
-the final diff and actual coverage before committing or handing off. Report
-commands actually run, observed results, and checks not run with their concrete
-reason. Written tests, inspection and planned commands are not execution. If
-execution is unavailable, state the strongest evidence and its limit; do not
-claim full runtime verification.
+Honor project test prohibitions and documented verification paths. Prompts,
+documentation and static data use syntax, links, consistency or their evaluation
+mechanism. Reversible low-impact changes without useful regression assertions
+use direct checks. Record the specific exception and actual check instead of
+pretending a test was saved. These exceptions do not make executable program
+creation static content or waive its saved-check requirement. Do not install a
+new framework or hosted CI without a request.

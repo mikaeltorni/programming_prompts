@@ -1,175 +1,108 @@
 ---
 name: commits
 description: >-
-  v1.2.0 — Give each complete capability sentence its own Feature and working
-  commit. Every separate "It should also" sentence gets a new ledger row;
-  an optional "and may" clause inside one sentence stays in that row.
+  v1.2.1 — Give each complete capability sentence its own Feature and finish
+  tests → code → commit before starting the next sentence.
 ---
 
 # Feature commits
 
-The commit unit is the complete source sentence. When it names several commands,
-implement and verify all required commands in that sentence before its first
-introducing commit. Finishing one command does not finish the sentence; do not
-make a partial Feature commit and continue its remaining commands afterward.
+Use one Feature for each complete capability sentence in the original request.
+Keep its required commands, cases and optional "and may" clauses together.
+Every separate "It should also" sentence starts another Feature, even in one
+paragraph. Setup naming only an artifact or signature is not a Feature.
+Never choose a preferred Feature count or combine sentences because a program
+is small. A repair sentence is a capability; several commands inside that same
+sentence still belong to one Feature.
 
-For each original capability sentence, finish **3.1 Write tests → 3.2 Write
-code → 3.3 Commit** before the next sentence. Save and run only the current
-feature's public checks before its first application implementation edit;
-then implement, run the cumulative relevant checks, and commit tests and code
-together. Do not write all features' tests or code in advance. Static content
-and project test prohibitions use their direct verification exception.
-These ordering rules apply without workflow; when workflow is selected, record
-the cycle under its Write code phase. A small file does not combine features.
+## Preserve the original queue
 
-Before each feature cycle and application implementation edit, read the first uncommitted ledger row from
-the original request and state its exact sentence, planned conventional commit
-subject, commands allowed now, and commands deferred to later rows. Compare
-that allowed set with the original sentence, not a previous summary of the
-program. Write only the current row's implementation, then verify and commit
-it before writing the next row. This also applies to the first file creation.
+Before any application edit, copy each complete capability sentence verbatim
+into one numbered ledger row. Preserve every word, backtick, parenthesis,
+optional clause and final period; compare it character by character with the
+request. Keep explanatory/setup text outside the quoted sentence. Check for
+merged sentences, duplicate rows and extracted "and may" fragments now.
+Each row lists its commands, required behavior, planned conventional commit
+subject and, after verification, its real introducing commit hash.
 
-Before writing code, extract the capability sentences from the original
-request before grouping commands or choosing a commit count. Copy one complete
-sentence per numbered row; a row containing a period followed by another
-"It should also" capability must be split before any implementation. Related
-behavior cannot remove that sentence boundary.
-**Copy each complete capability sentence verbatim into its own row**, then
-read it back against the source request character by character before code:
-copy the complete capability sentence rather than retyping it from memory.
-If explanatory/setup sentences share its source line, leave them outside the
-quoted capability. A row that quotes context plus the repair sentence is not
-the requested verbatim capability sentence. Preserve
-inline backticks around terms such as `ValueError`, the closing parenthesis,
-any "and may" clause, and the final period; a nearly identical paraphrase is
-not a verbatim ledger sentence. Then list that row's commands, required
-behavior, and planned conventional commit subject. Setup text naming only an
-artifact, signature, or skill is not a Feature. Never create a ledger row
-for a public function signature or duplicate an existing capability sentence
-to match a guessed count. A duplicate sentence cannot be a later Feature.
-Count the source sentences,
-not commands or a preferred number of commits. Match every capability
-sentence to exactly one row and every row to exactly one sentence before
-editing; abbreviated quotes, merged sentences, and duplicate rows quoting
-the same sentence are invalid.
-An optional clause is not a complete sentence on its own. Before the first
-implementation edit, check that no row starts with an extracted "and may"
-clause and that no earlier row stops before that clause or its final period.
-If either occurs, restore the whole source sentence in one row now. A later
-optional-command commit belongs beside that same row; a new row for it fails
-the ledger even when its implementation is a valid focused follow-up.
+Keep this ledger visible throughout the task. Use the authoritative workflow
+plan when workflow is selected; otherwise retain the ledger in the task's
+recorded evidence. Commits alone does not require a workflow file. Preserve
+original boundaries when updating progress, merging or recovering from a
+failure. Work only on the first uncommitted row.
 
-Cross-check each row's command list against its own quoted sentence. Commands
-named only in a later source sentence stay deferred to that later row; do not
-attach them to the current row merely because they are convenient to implement
-together. A missing row must be restored before writing its commands, not
-folded into an earlier Feature.
+Before each Feature cycle and application implementation edit, read that row
+and state its exact sentence, planned subject, allowed commands and deferred
+commands from later rows. Compare the allowed commands with the original
+sentence. Recount the request-to-row mapping before the first source write and
+each commit: every source capability has one row, and every row has one source
+capability. A mismatch must be repaired before implementation or commit.
 
+## Repeat this complete cycle for each row
 
-Each later "It should also …" sentence starts a new row, even when related
-to the preceding sentence. Commands and optional "and may" clauses before
-the same sentence's final period remain in that row; do not split them into
-another Feature. A comma does not end a sentence or create a new Feature.
-Sentence boundaries apply whether capabilities occupy separate lines or share
-one paragraph or line. Related commands in separate sentences still need
-separate rows; commands within one sentence stay together. Keep dependency
-order where possible, without changing these boundaries.
-Before the first source edit, scan the ledger for a row that contains a
-second complete capability sentence, especially another "It should also".
-If one exists, stop and split that row. Do not call the whole paragraph or
-the whole program one Feature.
+### 3.1 Write tests
 
-Keep the original ledger visible and preserve its boundaries through the whole
-task. Record the verified commit beside the active row before advancing. After
-a merge or verification step, resume the first uncommitted original row; do not
-replace the remaining rows with a new combined summary. A shared dispatcher must expose only capabilities
-implemented so far, even when adding all remaining cases seems easy.
+Save and run runnable public-interface checks for the current Feature before
+its application edit. Preserve earlier checks; do not save later Features'
+executable expectations yet. Record the actual baseline. Missing behavior
+should fail for the intended reason; an absent entrypoint may fail to import,
+and existing passing checks can protect a pure refactor. Static content and
+project test prohibitions use their documented direct-verification exception.
+Apply independently selected test, function and logging contracts from the
+first draft.
 
-The first application source file you write is already an implementation edit: it may
-implement only ledger row 1. Do not draft the complete multi-Feature program in
-one file write and plan to separate it with later commits. Before each new
-Feature commit, inspect the full source tree you are about to commit, not just
-the diff: if the public entrypoint can already execute a later row's capability,
-remove that capability from this edit and implement it after this commit.
-Recount the original capability sentences against ledger rows before this
-first write and before each commit; a count mismatch means the current
-Feature is not ready to implement or commit.
-If the first source draft already dispatches every command, reduce it to row 1
-before committing; later commits that add duplicate handlers do not repair an
-early bundle. At handoff, compare the number of distinct introducing Feature
-commits with the ledger entries and inspect the first Feature's committed tree.
+### 3.2 Write code
 
-## Complete and commit the current entry before starting the next
+Implement only the current sentence and necessary integration. The first
+application file is already an implementation edit: never draft all Features
+and split them into commits afterward. Shared helpers needed now are allowed;
+the public dispatcher exposes only implemented capabilities.
 
-Treat the ledger as a queue. Work on only its first uncommitted entry:
+Run the current and retained earlier public checks with fresh state. After
+parsing or dispatch changes, exercise a representative earlier capability.
+Preserve requested output, signatures and all earlier rules except those the
+current sentence explicitly replaces. Resolve failures before closeout.
+Inspect the full source tree and diff against the current and pending rows:
+no later capability may already execute through the public entrypoint.
 
-- First save and run its checks; then implement its commands, helpers, validation, and required output. Preserve
-  earlier Features; keep the program working at every commit.
-- Preserve the requested output and public API. Judge completion by what the
-  implementation does; labels may be assembled at runtime when appropriate.
-- The staged implementation contains earlier Features plus the current Feature,
-  with no later capability implemented in advance. Shared helpers needed now
-  are fine. Check the executable behavior and diff against the next ledger
-  entry before committing; descriptions of future work are not implementation.
-- Include that Feature's applicable tests, logging, comments, and documentation
-  in its commit. Do not postpone those obligations into planned cleanup commits.
+### 3.3 Commit
 
-Close each entry with this gate:
+1. Review the current Feature's complete implementation and applicable checks,
+   selected docstrings/logging/structure requirements, and necessary local
+   documentation. Final README documentation belongs after all Feature cycles
+   when docs is selected; it does not replace function contracts.
+2. Stage only this Feature's changes in the applicable task worktree.
+3. Run `git commit` as its own command. Use the row's planned conventional
+   subject in `type:` or `type(scope):` form: `feat`, `fix`, `refactor`, `chore`,
+   `docs`, `style`, `test` or `perf`. A plain "Add ..."/"Fix ..." is invalid.
+   A failed search/check must not silently skip a chained commit.
+4. Read the new HEAD, confirm it advanced and contains the working code and
+   checks, and inspect its full source. Record the actual hash beside this row;
+   it must differ from every earlier row's introducing hash. One hash for
+   several rows exposes bundled implementation.
+5. Complete separately selected worktree delivery and consumer verification
+   before advancing. A "tested" or "complete" claim is not a verified commit.
+   If committing is explicitly prohibited or no Git repository exists, record
+   that concrete exception; finish permitted checks and implementation.
 
-1. Compare the diff with the active row and every pending row: any later row's
-   command handler or working capability means this change is not ready to
-   commit. If the proposed commit subject or staged source names a capability
-   from the next source sentence, split the change before committing, even
-   when both capabilities live in one file. Defer that implementation before
-   staging. Verify the current behavior
-   and rerun a representative public-entrypoint example for every earlier
-   Feature, especially after changing parsing or dispatch. Resolve failures
-   before staging.
-2. Stage only its changes in the worktree.
-3. Use the current row's planned subject: `feat: <current capability>` or
-   another applicable conventional type; a plain `Add ...` or `Fix ...`
-   subject is invalid.
-   Run `git commit` as its own command, not chained behind a search or check
-   that could fail and silently skip the commit. The Feature commit subject
-   uses a conventional-commit type (`feat`, `fix`, `refactor`, `chore`,
-   `docs`, `style`, `test`, `perf`) in `type:` or `type(scope):` form. A
-   subject that omits that type is not a completed Feature commit.
-4. Read the new `HEAD`, confirm it advanced and contains this entry's Python
-   implementation, and record that commit beside the ledger entry. Its
-   introducing hash must differ from every earlier row's introducing hash;
-   assigning one hash to several rows exposes bundled implementation, not
-   completed entries. Inspect that commit's full source to confirm no later
-   row already works, even if a later commit claims to add it. If the
-   commit failed, resolve it and commit before editing the next Feature. If
-   the first file was written outside the intended worktree, move that work
-   into the worktree and complete the first Feature commit before advancing.
+Only then start the next row's 3.1. Do not write every Feature's tests first,
+implement later Features before the current commit, or add empty/cosmetic
+commits to simulate cycles. If the first draft already contains later working
+capabilities, remove them before its introducing commit. Later duplicate
+handlers cannot repair early bundling.
 
-A statement that a Feature is tested or complete is not a commit. Only an
-entry with a verified commit may be removed from the queue.
+## Repairs and delivery audit
 
-## Verify delivery against the ledger
+If a completed Feature has a defect, finish a focused repair commit before the
+next Feature, preserving earlier behavior. Record it beside the same original
+row. Optional extras may likewise land in a focused follow-up before advancing;
+an optional clause never becomes another ledger row. Never rewrite history to
+repair the ledger or commit order. A repair cannot rescue bundled Features.
 
-Each entry must map to a distinct commit in order; inspect what each mapped
-commit actually introduced, not just its subject or the total commit count.
-The mapped Feature commit subject must still use a conventional-commit type
-in `type:` / `type(scope):` form.
-A later Feature must not already exist in an earlier Feature's Python tree.
-Do not batch missing entries into one final commit or split already-written
-Features into cosmetic commits after the fact.
-
-If a defect is discovered after a Feature was committed, commit a focused repair
-before adding the next Feature. Verify the repaired tree preserves all earlier
-Features. The original Feature commit plus its immediate repair is a valid
-completed entry; a repair cannot rescue bundled Features. Optional extras may
-land in a focused follow-up before advancing to the next entry. Record that
-follow-up beside the same original sentence, never as an extra ledger row.
-Compare the saved ledger against the original request, including punctuation,
-rather than reconstructing sentences from command names. Never rewrite
-history to repair a commit.
-
-A request with only one complete capability sentence needs one Feature commit.
-"Undivided change" never overrides the source-sentence boundaries: a task with
-separate capability sentences is not one Feature because it describes a tiny
-program, one file, or one public entrypoint. Its ledger and separate introducing
-commits remain required. Commits happen in the worktree; worktree location and
-merge policy belong to the applicable project instructions.
+At handoff, compare the saved ledger with the original request, including
+punctuation, and map each row to its distinct introducing commit in order.
+Inspect what those commits actually introduced, including the first Feature's
+full tree, rather than trusting subjects or a total commit count. Verify no
+later Feature already worked at an earlier boundary and every applicable
+commit/delivery gate is complete. Documentation and repairs are allowed extra
+commits; they cannot substitute for missing introducing Feature commits.
