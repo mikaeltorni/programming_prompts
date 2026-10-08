@@ -47,13 +47,15 @@ check "mixed explicit selection preserves order" $'standard\nworkflow' \
 
 SKILLS_ROOT="$(cd "$SCRIPT_DIR/../../prompts/programming-skills" && pwd)"
 JUDGES_ROOT="$(cd "$SCRIPT_DIR/../judges" && pwd)"
-eight=$'commenting\ncommits\ndebug\ndebug_logs\ndocs\nlogging\nsrp\ntesting\nworktree'
+eight=$'commenting\ncommits\ndebug\ndocs\nlogging\nsrp\ntesting\nworktree'
 check "real default discovery is the available companions" "$eight" \
   "$(list_available_skills)"
 check "omitting --skills resolves the available companions" "$eight" \
   "$(resolve_skills '')"
 check "explicit workflow still resolves" "workflow" \
   "$(resolve_skills workflow)"
+check "explicit debug_logs still resolves" "debug_logs" \
+  "$(resolve_skills debug_logs)"
 check "explicit logging-vague still resolves" "logging-vague" \
   "$(resolve_skills logging-vague)"
 
@@ -62,7 +64,7 @@ CODING_PROMPTS_DIR="$(cd "$SCRIPT_DIR/../coding-prompts" && pwd)"
 DEBUG_PROMPTS_DIR="$(cd "$SCRIPT_DIR/../debug-prompts" && pwd)"
 SUITE_ARG=''
 SELECTED_SKILLS=(debug)
-check "debug-only default selects repair cases" $'debug-catalog\ndebug-clock\ndebug-stock' "$(resolve_tasks '')"
+check "debug-only default selects repair cases" $'debug-cache\ndebug-catalog\ndebug-clock\ndebug-orders\ndebug-scheduler\ndebug-stock' "$(resolve_tasks '')"
 SELECTED_SKILLS=(testing)
 check "testing-only default keeps coding tasks" 8 "$(resolve_tasks '' | wc -l | tr -d ' ')"
 if resolve_tasks debug-clock >"$fixture/output" 2>"$fixture/error"; then
@@ -75,7 +77,7 @@ if resolve_tasks '' >"$fixture/output" 2>"$fixture/error"; then
 fi
 SELECTED_SKILLS=(debug testing)
 SUITE_ARG=''
-check "mixed default includes both task families" 11 "$(resolve_tasks '' | wc -l | tr -d ' ')"
+check "mixed default includes both task families" 14 "$(resolve_tasks '' | wc -l | tr -d ' ')"
 SUITE_ARG=coding
 check "explicit coding suite excludes repairs" 8 "$(resolve_tasks '' | wc -l | tr -d ' ')"
 if resolve_tasks debug-clock >"$fixture/output" 2>"$fixture/error"; then
@@ -190,9 +192,10 @@ assert '## Policy: v2:testing' in coding and '## Policy: v2:debug' not in coding
 assert '## Policy: v2:debug' in debug and '## Policy: v2:testing' not in debug
 all_coding = (all_bundle / 'task-instructions/counter.md').read_text()
 all_debug = (all_bundle / 'task-instructions/debug-clock.md').read_text()
-for name in ('workflow','commits','worktree','docs','srp','commenting','logging','debug_logs','testing'):
+for name in ('workflow','commits','worktree','docs','srp','commenting','logging','testing'):
     assert f'## Policy: v2:{name}\n' in all_coding, name
     assert f'## Policy: v2:{name}\n' not in all_debug, name
+assert '## Policy: v2:debug_logs\n' not in all_coding
 assert '## Policy: v2:debug\n' not in all_coding
 assert '## Policy: v2:debug\n' in all_debug
 

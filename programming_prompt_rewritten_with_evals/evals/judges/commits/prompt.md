@@ -1,6 +1,20 @@
 Evaluate whether the agent implemented the original coding request one Feature
 at a time, committing each Feature before implementing the next.
 
+Each Feature follows **3.1 Write tests → 3.2 Write code → 3.3 Commit**:
+save and run its public checks before changing that Feature's application code,
+implement only that Feature, run current and retained checks, then commit tests
+and working code together before starting the next Feature's tests. Applicable
+static-content/project test prohibitions use recorded direct checks. Existing
+passing checks may protect a refactor; a creation check can fail for an absent
+entrypoint. No separate tests-only commit is required. Evaluate actual tool and
+shell-write order, including multiple operations inside one complete command.
+Final green tests, plan claims or Git timestamps alone do not prove this order.
+Missing/truncated chronology is an evidence limit, not proof of a violation;
+inspect full local evidence when material and report what remains unverified.
+Do not accept implementation first, all-features tests/code first, or empty
+commits added afterward to simulate the cycle.
+
 Use the original coding request appended below as the specification. Derive
 one Feature from each capability sentence, keeping that sentence's commands,
 cases, and optional extras together. A following "It should also" sentence

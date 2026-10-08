@@ -9,7 +9,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "workflow_sequence"
-description = "the explicit workflow records one current, four-row task table at project-root tmp/workflow.md or its valid configured ACC_WORKFLOW_FILE path, conditionally follows enabled worktree and docs phases around code writing, skips unavailable or unselected companions, and adds no workflow-owned verification step"
+description = "the explicit workflow establishes its selected worktree before planning, records exactly four outer stages and consecutive 3.1 tests, 3.2 code, 3.3 commit rows for each planned feature, closes each cycle before the next, and writes selected documentation afterward"
 type = "binary"
 
 [scoring]

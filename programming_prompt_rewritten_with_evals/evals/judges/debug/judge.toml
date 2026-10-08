@@ -9,7 +9,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "read_logs_first"
-description = "when the original request reports a failure, verify its log-guided fix; otherwise pass as not applicable"
+description = "when the original request reports a failure, verify its log-guided fix and observed logs/regression before repair; otherwise pass as not applicable"
 type = "binary"
 
 [scoring]
