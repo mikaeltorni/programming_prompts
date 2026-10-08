@@ -21,15 +21,18 @@ inside that Feature. The commits LLM judge derives the Features from the
 request and inspects the actual Git history, diffs, and source at each commit.
 No separate Feature-count field or source-token catalog is needed.
 
-`todo`, `bank`, and `stats` exercise repeated codebase evolution. Each starts
-with a minimal working slice, then alternates extensions with explicit changes
-to earlier input or operation rules. Implement and check each stage before its
-working commit and the next stage; later capabilities must remain unavailable
-in earlier revisions. Stage checks are examples, not additional Features.
-Rerun retained behavior and replace expectations only when the next sentence
-intentionally changes a rule. A sequence starts from a fresh module import,
-with state retained between its calls; it does not require migrating in-memory
-state across source revisions. The existing oracles implement the final APIs.
+`todo`, `bank`, and `stats` exercise repeated codebase evolution through
+separate capability sentences and a shared public contract. Later sentences
+explicitly replace an earlier input or operation rule while preserving the
+remaining behavior. The requests describe behavior; selected programming
+policies supply planning and each feature's tests → code → commit cycle.
+They do not duplicate that process in task-specific stage instructions.
+
+Checks loading the current module follow its current contract. A fresh import
+starts a new independent case; state persists between calls in that case, without
+requiring in-memory migration across source revisions. The existing oracles
+implement the final APIs. Optional clauses stay with their complete capability
+sentence; setup/shared invariants do not introduce extra command features.
 
 SRP scores function responsibilities and focused evolution from the actual
 historical source and diffs. Commits scores the ordered capability boundaries,
