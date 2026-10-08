@@ -7,6 +7,11 @@ evidence-supported failure, not an unavailable execution or historical trace.
 Do not impose unselected worktree, commits, docs, commenting or logging rules.
 Runner documentation is evidence; a missing README or commit is not by itself
 a testing failure.
+Score each listed criterion independently. Resolve chronology, current contract
+coverage, preservation/isolation and recorded execution separately; all must pass.
+For each finding, identify its applicable rule and the actual evidence resolving
+it. A passing chronology or final run leaves coverage and preservation to inspect.
+Stateless submissions pass the inapplicable preservation/isolation requirement.
 
 TESTS BEFORE EACH FEATURE'S IMPLEMENTATION
 For each feature required by the original request, inspect actual chronological
@@ -23,6 +28,11 @@ A commit can contain tests and code together; no separate test commit is require
 Use complete shell commands in written order, not timestamps or final claims alone.
 A missing/truncated trace leaves chronology unverified, not automatically violated;
 inspect full referenced evidence for a material question and report limits honestly.
+Use the complete literal action inputs and every position in the supplied index.
+An event excerpt can shorten output while its full shell command remains indexed.
+Read operations inside that command in written order. Tests/code in one commit
+do not establish simultaneous or reversed writes. A runner after the application
+write in that same command is a post-implementation run, not a missing run.
 
 A no finding MUST include its source Citation or transcript TraceCitation inside
 the reasoning string as specified under FINAL FINDING. Inspect the referenced
@@ -44,6 +54,12 @@ input from the loaded file. A previous failing run or historical assertion
 does not refute corrected current source.
 An expected-exception assertion for a retired spelling can be correct under
 the final rule; its historical name does not make it an obsolete success case.
+Before alleging an earlier revision's assertion or implementation violated its
+then-current rule, obtain the test AND application source at that exact commit.
+Do not project final decimal acceptance, changed output or a renamed method
+back onto a whole-number or otherwise superseded revision. When the final
+loader imports the current module, intentional acceptance replaces its old
+rejection; require compatible retained checks, not incompatible old expectations.
 
 2. EXPECTATIONS AND REGRESSIONS
 Reconstruct each case's fixture and preceding public calls in saved order.
@@ -77,11 +93,17 @@ Expand loops, subtests and rejection helpers; inputs inside expected-exception
 blocks assert rejection. Locate all saved cases before alleging an omission.
 Compare the closest existing case with the cited independent owner. Require
 meaningful success, boundaries and applicable rejections, not every spelling.
+Require a particular numeric category, precision or formatting case only when
+the original request specifies that rule. A float conversion in application
+code alone does not mandate a separate fractional input or nonintegral result
+case. Do not invent a numeric requirement to reject otherwise adequate checks.
 
 4. PRESERVATION AND FIXTURES
 When rejection must preserve mutable state, seed meaningful populated state
 where permitted, reject one input, then immediately assert independently
 expected affected values and required history through available public queries.
+Malformed dispatch/conversion checks also need populated fixtures when seeding
+does not change the rejection; choosing an empty fixture does not waive that rule.
 Do this before another rejection, mutation, reset or reload. Review retained
 cases when new queries appear; a new complete case does not fix old incomplete
 blocks. A rejected clear/reset needs a populated fixture before successful
@@ -95,6 +117,13 @@ balance API. A stateless contract needs no invented state. Empty-domain cases
 stay empty when seeding would remove the required rejection. If all public
 queries reject for that fixture, disclose the observation limit; absence of
 a successful empty-state query is not a preservation failure.
+Determine the source the final runner actually loads for EVERY retained case.
+An older method loading the current module has the current query interface,
+even if it was first written before a query existed. Apply immediate observations
+to that actual retained block; a separate later query-aware case cannot cover it.
+Exempt earlier query availability only for a case demonstrably loading its
+matching historical snapshot/revision. Method names and original write dates
+cannot establish that exemption.
 Every independent mutable case starts fresh through the saved runner's fixtures
 or reload/reset lifecycle. Preserve state inside multi-call sequences.
 unittest.setUp runs for each case, including repeated/reordered suite runs.
@@ -109,6 +138,10 @@ Prints/existence checks/no-op cases add no behavior coverage; they do not erase
 adequate assertions elsewhere. Terminal-only checks cannot replace saved
 checks for executable changes. Honor a test prohibition only when the coding
 request applies it to this submission, not the evaluation repository.
+If the complete supplied source/file listing has no saved runnable behavioral
+assertions, that absence is a concrete verification failure even when chronology
+is unavailable. A trace limit does not turn an empty submission into adequate
+checks. Distinguish that failure from uncertainty about the order of real checks.
 Use the documented final command and its directory, flags, environment and
 imports. Zero tests from a different discovery command do not refute a saved
 explicit runner. A package initializer is unnecessary if that runner works.
@@ -133,6 +166,13 @@ FINAL FINDING
 Give a short resolved finding. Discard refuted allegations; do not narrate
 internal debate or keep no by inventing another defect. Check both coverage and
 expectations before yes; passing executions alone do not prove coverage.
+For stateful submissions, resolve EVERY retained rejection block in the current
+suite before yes, including older test classes. Name its actual rejected input,
+the next statement and the currently available required public observations.
+A new complete history/state case cannot fill another retained block's missing
+observation. A previously adequate exception-only block must be upgraded when
+the current interface exposes the affected state. Current assertion-syntax
+evidence follows historical chronology to make this distinction explicit.
 
 For a tests-before-code chronology no, name the decisive raw transcript
 positions and explain which tests/code writes and runs establish the order.
@@ -150,8 +190,9 @@ the reasoning string in this form, inline or on separate lines:
 Citation: relative/path.py:LINE | exact source line
 For a named historical Git source, use:
 Citation: HASH:relative/path.py:LINE | exact source line at that commit
-Copy the line verbatim, omitting indentation and the displayed line-number
-prefix; no wrapping backticks or trailing prose. For wrong expectations cite
+The current source supplies ready-to-copy `Citation: path:LINE | source` lines.
+Copy the complete reference verbatim; no wrapping backticks or trailing prose.
+For wrong expectations cite
 the actual assertion. For coverage cite the actual owner and closest saved
 case. For preservation cite the rejected call and following observation.
 A missing-submission no with no listed Python requires only its evidence gap.
@@ -159,6 +200,10 @@ Citation matching validates text, not semantics: explain the original rule,
 loaded revision and concrete defect. Unsupported or mismatched evidence is
 retried once; persistent inconsistency is a judge infrastructure exclusion,
 never an automatic pass. Do not claim an execution that did not occur.
+Every no criterion includes its own applicable Citation/TraceCitation in its
+own reasoning. For absence of saved checks or a usable runner, cite the available
+file-listing, file-write or execution record; do not quote a nonexistent test.
+Another criterion's reference cannot cover the unresolved finding.
 
 Criteria to score:
 {criteria}

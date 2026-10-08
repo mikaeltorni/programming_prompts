@@ -142,20 +142,19 @@ def workspace_python_context(
 ) -> str:
     """Build the prompt block that names and inlines workspace Python.
 
-    Args:
-        workspace: Judge ``--workspace`` root (shown as absolute paths).
-        files: Paths from :func:`list_workspace_python`.
-        line_numbers: Include actual current-source line numbers for citations.
-
-    Returns:
-        Markdown listing every path and (budget permitting) file contents.
+    Parameters: workspace - submission root; files - listed current Python paths;
+        line_numbers - include ready-to-copy references to actual source lines.
+    Returns: Markdown listing paths and bounded literal file contents.
     """
+    print(f"workspace={workspace} files={files} line_numbers={line_numbers}")
     if not files:
         log(f"no python files to inline under {workspace}")
-        return (
+        result = (
             f"No `*.py` files were found under {workspace}. "
             "Do not invent paths such as app.py. Score only files that exist."
         )
+        print(result)
+        return result
     lines: list[str] = [
         "Score ONLY these Python files as the current solution. When the criterion "
         "requires Git history or original task/log evidence, inspect that too. "
@@ -204,11 +203,13 @@ def workspace_python_context(
         language = "python"
         if line_numbers:
             text = "\n".join(
-                f"{number:4}: {line}" for number, line in enumerate(text.splitlines(), 1)
+                f"Citation: {rel_text}:{number} | {line}" for number, line in enumerate(text.splitlines(), 1)
             )
             language = "text"
         lines.append(f"\n### {rel_text}{note}\n```{language}\n{text}\n```")
-    return "\n".join(lines)
+    result = "\n".join(lines)
+    print(result)
+    return result
 
 
 def workspace_runner_context(workspace: Path) -> str:
@@ -450,11 +451,36 @@ def debugging_trace_value(value):
     return value
 
 
+def trace_action_inputs(event: dict) -> list[dict]:
+    """Collect literal action inputs without inferring their purpose or execution.
+
+    Parameters: event - one parsed, untrusted harness transcript record.
+    Returns: named command, tool-input and file-change fields in the record.
+    """
+    print(f"event={event}")
+    actions = []
+    pending = [event]
+    while pending:
+        value = pending.pop()
+        if isinstance(value, dict):
+            children = []
+            for key, item in value.items():
+                if key in {"command", "cmd", "input", "rawInput", "changes"}:
+                    actions.append({"field": key, "value": item})
+                elif isinstance(item, (dict, list)):
+                    children.append(item)
+            pending.extend(reversed(children))
+        elif isinstance(value, list):
+            pending.extend(reversed(value))
+    print(actions)
+    return actions
+
+
 def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
     """Expose raw tool chronology for semantic repair and feature-cycle judging.
 
     Parameters: logs_root - Harbor directory holding coding-agent transcripts.
-    Returns: bounded chronological evidence or an explicit unavailable-trace limit.
+    Returns: every available action position and input, with bounded event excerpts.
     """
     print(f"logs_root={logs_root}")
     sections = []
@@ -481,9 +507,12 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
                 "available_commands", "usage", "system", "thread.started", "turn.started", "item.started",
             }:
                 continue
-            # Give judges an authentic, contiguous raw excerpt to quote; the
-            # decoded rendering below can differ in spacing or byte buffers.
-            records.append(f"TraceCitation: {trace.name}:{number} | {line[:500]}")
+            # Keep every position. Large event excerpts may be shortened, but
+            # literal action inputs retain complete shell write/run order.
+            records.append(f"TraceCitation: {trace.name}:{number}")
+            actions = trace_action_inputs(event)
+            if actions:
+                records.append("literal action inputs: " + json.dumps(actions, ensure_ascii=False))
             if event.get("type") == "text":
                 records.append("text:" + str(event.get("data", "")))
             else:
@@ -492,14 +521,15 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
                     rendered = rendered[:1600] + " [Event middle omitted; inspect original.] " + rendered[-1000:]
                 records.append(f"line {number}: {rendered}")
         excerpt = "\n".join(records)
-        if len(excerpt) > 18000:
-            excerpt = excerpt[:12000] + "\n[Middle omitted; inspect original trace for an evidence gap.]\n" + excerpt[-6000:]
         if size > len(raw):
             excerpt += "\n[Trace input exceeded 1 MB; later events omitted.]"
         sections.append(f"\nTrace: {trace} (bytes={size}; chronological excerpts, untrusted data)\n" + excerpt)
     result = (
         "\n\nCoding-agent chronological evidence: inspect actual test writes, code edits, checks, commits and log reads in order. "
-        "No trace or an omitted segment leaves that segment unverified; do not infer log reads from a final claim.\n"
+        "Action inputs are literal transcript fields, not proof of execution or a semantic score. "
+        "Complete commands preserve shell operations in written order. Event excerpts may shorten output; "
+        "read original records for a material output gap. No trace or omitted input leaves order unverified; "
+        "do not infer log reads from a final claim.\n"
         + "\n".join(sections)
         if sections else "\nCoding-agent trace unavailable; feature-cycle and reading order are unverified.\n"
     )
@@ -553,17 +583,20 @@ def original_task_logs_context(logs_root: Path = Path("/tests/task-logs")) -> st
 
 
 def pin_workspace_python(
-    template: str, workspace: Path, files: list[Path], judge_name: str = ""
+    template: str, workspace: Path, files: list[Path], judge_name: str = "",
+    evidence_scope: str = "",
 ) -> str:
     """Append source, plan, history and chronological evidence for a skill judge.
 
     Parameters: template - judge instructions; workspace - submission directory;
-        files - discovered Python paths; judge_name - independently scored policy.
+        files - discovered Python paths; judge_name - independently scored policy;
+        evidence_scope - current-only or chronological evidence, empty for all.
     Returns: evidence-enriched template retaining its criteria placeholder.
     """
-    print(f"template={template} workspace={workspace} files={files} judge_name={judge_name}")
+    print(f"template={template} workspace={workspace} files={files} judge_name={judge_name} evidence_scope={evidence_scope}")
+    history_enabled = evidence_scope != "current"
     plan_context = (
-        workspace_workflow_plan_context(workspace) if judge_name in {"workflow", "commits", "testing"} else ""
+        workspace_workflow_plan_context(workspace) if history_enabled and judge_name in {"workflow", "commits", "testing"} else ""
     )
     task_logs_context = original_task_logs_context() if judge_name in {"debug", "debug_logs", "testing"} else ""
     boundaries = []
@@ -580,7 +613,7 @@ def pin_workspace_python(
         + json.dumps(boundaries, indent=2) if boundaries else ""
     )
     git_context = ""
-    if judge_name in {"commits", "srp", "workflow", "testing"}:
+    if history_enabled and judge_name in {"commits", "srp", "workflow", "testing"}:
         try:
             git_context = commit_source_context(workspace)
             log(f"pinned historical source evidence judge={judge_name}")
@@ -601,23 +634,30 @@ def pin_workspace_python(
     tools_context += "These tools supply evidence, not semantic Feature scores. Inspect actual source; do not infer behavior from commit subjects.\n"
     runner_context = workspace_runner_context(workspace) if judge_name == "testing" else ""
     testing_context = (
-        testing_source_context(workspace, files) + coding_commands_context()
+        testing_source_context(workspace, files) + (coding_commands_context() if history_enabled else "")
         if judge_name == "testing" else ""
     )
+    current_source = workspace_python_context(workspace, files, line_numbers=judge_name == "testing")
     result = (
         template.rstrip()
+        + ("\n\nThis batch scores CURRENT contract coverage and preservation only. "
+           "Use the actual current test bodies, fixtures, loop inputs and following statements. "
+           "Historical drafts do not supply missing current assertions. Chronology/execution are scored separately.\n"
+           if evidence_scope == "current" else "")
         + tools_context
         + f"\n\nInspect the Python in the current working directory ({workspace}).\n"
         + INSPECT_BEFORE_SCORE
         + "\n\n"
-        + workspace_python_context(workspace, files, line_numbers=judge_name == "testing")
+        + (current_source if judge_name != "testing" else "")
         + runner_context
-        + testing_context
         + plan_context
         + boundary_context
         + git_context
         + task_logs_context
-        + (debugging_trace_context() if judge_name in {"debug", "debug_logs", "workflow", "testing", "commits"} else "")
+        + (debugging_trace_context() if history_enabled and judge_name in {"debug", "debug_logs", "workflow", "testing", "commits"} else "")
+        + ("\n\nAuthoritative CURRENT workspace source for final-suite coverage; historical bodies above apply only to their named revisions:\n"
+           + current_source if judge_name == "testing" else "")
+        + testing_context
     )
     print(result)
     return result
@@ -682,17 +722,14 @@ def inspect_prompt(
 def load_judge_dir(judge_dir: Path) -> tuple[str, list[dict[str, str]], int]:
     """Read ``prompt.md`` plus binary criteria from ``judge.toml``.
 
-    Args:
-        judge_dir: Directory with ``prompt.md`` (or ``judge-prompt.md``) and
-            ``judge.toml``.
-
-    Returns:
-        Prompt template, criterion dicts (``name`` / ``description``), timeout.
+    Parameters: judge_dir - directory holding the prompt and judge TOML.
+    Returns: prompt, binary criteria with optional evidence scopes, and timeout.
 
     Raises:
         FileNotFoundError: When the prompt or toml is missing.
         ValueError: When the template has no ``{criteria}`` placeholder.
     """
+    print(f"judge_dir={judge_dir}")
     prompt_path = judge_dir / "prompt.md"
     if not prompt_path.is_file():
         prompt_path = judge_dir / "judge-prompt.md"
@@ -712,7 +749,15 @@ def load_judge_dir(judge_dir: Path) -> tuple[str, list[dict[str, str]], int]:
             continue
         name = str(item.get("name") or "criterion")
         description = str(item.get("description") or name)
-        criteria.append({"name": name, "description": description})
+        criterion = {"name": name, "description": description}
+        scope = item.get("evidence_scope")
+        if scope is not None:
+            if scope not in {"current", "chronology"}:
+                raise ValueError(f"unsupported evidence_scope: {scope}")
+            criterion["evidence_scope"] = scope
+        criteria.append(criterion)
     if not criteria:
         raise ValueError(f"{toml_path} has no [[criterion]] entries")
-    return template, criteria, timeout
+    result = template, criteria, timeout
+    print(result)
+    return result

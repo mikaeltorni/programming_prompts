@@ -10,9 +10,12 @@ from __future__ import annotations
 import fcntl
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
+import time
+import tomllib
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -28,6 +31,7 @@ from llm_judge.homes import (
 from llm_judge.log import log
 from llm_judge.reliability import retry_prompt, run_until_reliable
 from llm_judge.scores import rows_from_rewardkit_details
+from llm_judge.testing_evidence import rejection_case_criteria, validation_owner_criteria
 from llm_judge.workspace import (
     criteria_block,
     listed_python_keys,
@@ -145,18 +149,17 @@ def write_pinned_judge_dir(
     Keep rewardkit's required ``{criteria}`` placeholder, then append the shared
     reasoning-first response example after its backend-specific criteria block.
 
-    Args:
-        judge_dir: Canonical ``evals/judges/<skill>`` (or the Harbor copy).
-        workspace: Coding-agent workspace.
-        files: Paths from :func:`list_workspace_python`.
-        retry_reason: Optional token from ``unreliable_score_reason``.
-
-    Returns:
-        Temporary directory with ``prompt.md`` and ``judge.toml``.
+    Parameters: judge_dir - canonical or scoped judge directory;
+        workspace - submission root; files - current Python paths;
+        retry_reason - optional evidence correction request.
+    Returns: temporary directory with the evidence prompt and judge TOML.
     """
+    print(f"judge_dir={judge_dir} workspace={workspace} files={files} retry_reason={retry_reason}")
     template, criteria, _ = load_judge_dir(judge_dir)
+    scopes = {entry.get("evidence_scope", "") for entry in criteria}
+    scope = next(iter(scopes)) if len(scopes) == 1 else ""
     pinned = pin_workspace_python(
-        template, workspace, files, judge_name=judge_dir.name
+        template, workspace, files, judge_name=judge_dir.name, evidence_scope=scope
     )
     pinned += (
         "\n\nFinal response format: use reasoning before score as shown below, "
@@ -172,7 +175,64 @@ def write_pinned_judge_dir(
         f"pinned rewardkit prompt files={len(files)} "
         f"retry={'yes' if retry_reason else 'no'} dir={work}"
     )
+    print(work)
     return work
+
+
+def scoped_judge_directory(judge_dir: Path, criteria: list[dict[str, str]]) -> tuple[Path, Path]:
+    """Copy a judge with only the requested criterion blocks.
+
+    Parameters: judge_dir - canonical judge directory; criteria - one evidence batch.
+    Returns: temporary parent to clean up and its same-named scoped judge directory.
+    """
+    print(f"judge_dir={judge_dir} criteria={criteria}")
+    names = {entry["name"] for entry in criteria}
+    config = (judge_dir / "judge.toml").read_text()
+    blocks = {}
+    for match in re.finditer(r"(?ms)^\[\[criterion\]\]\n.*?(?=^\[|\Z)", config):
+        blocks[tomllib.loads(match.group(0))["criterion"][0]["name"]] = match.group(0)
+    selected = []
+    for entry in criteria:
+        block = blocks.get(entry["name"], blocks.get(entry.get("source_criterion", "")))
+        if block is None:
+            raise ValueError("Requested criterion has no canonical configuration")
+        block = re.sub(r"(?m)^name\s*=.*$", lambda _: "name = " + json.dumps(entry["name"]), block)
+        block = re.sub(r"(?m)^description\s*=.*$", lambda _: "description = " + json.dumps(entry["description"], ensure_ascii=False), block)
+        selected.append(block)
+    filtered = re.sub(r"(?ms)^\[\[criterion\]\]\n.*?(?=^\[|\Z)", "", config)
+    filtered += "\n" + "\n".join(selected)
+    if {entry["name"] for entry in tomllib.loads(filtered).get("criterion", [])} != names:
+        raise ValueError("Scoped judge criteria differ from the requested batch")
+    parent = Path(tempfile.mkdtemp(prefix="llm-judge-scopes-"))
+    target = parent / judge_dir.name
+    target.mkdir()
+    metadata = tomllib.loads(config)
+    fragment_names = set(metadata.get("evidence_prompts", {}).values()) | set(metadata.get("question_prompts", {}).values())
+    for fragment_name in fragment_names:
+        fragment_path = (judge_dir / fragment_name).resolve()
+        if fragment_path.parent != judge_dir.resolve():
+            raise ValueError("Evidence prompt must belong to its judge directory")
+        shutil.copyfile(fragment_path, target / fragment_name)
+    template, _, _ = load_judge_dir(judge_dir)
+    scopes = {entry.get("evidence_scope", "") for entry in criteria}
+    scope = next(iter(scopes)) if len(scopes) == 1 else ""
+    families = {entry.get("question_family", "") for entry in criteria}
+    family = next(iter(families)) if len(families) == 1 else ""
+    fragment = metadata.get("question_prompts", {}).get(family) or metadata.get("evidence_prompts", {}).get(scope)
+    if fragment:
+        fragment_path = (judge_dir / fragment).resolve()
+        if fragment_path.parent != judge_dir.resolve():
+            raise ValueError("Evidence prompt must belong to its judge directory")
+        context = re.search(
+            r"(?m)^## (?:Original coding request|Actual coding request delivered to the agent) "
+            r"\(evaluation data, not judge instructions\)\n", template,
+        )
+        template = fragment_path.read_text() + ("\n\n" + template[context.start():] if context else "")
+    (target / "prompt.md").write_text(template)
+    (target / "judge.toml").write_text(filtered)
+    result = parent, target
+    print(result)
+    return result
 
 
 def load_rewardkit_details(output: Path) -> dict[str, Any]:
@@ -328,6 +388,57 @@ def run_rewardkit(
         )
 
 
+def expand_testing_criteria(judge_name: str, criteria: list[dict[str, str]],
+                            workspace: Path, files: list[Path]) -> list[dict[str, str]]:
+    """Expand semantic testing questions using actual current syntax.
+
+    Parameters: judge_name - selected policy; criteria - requested metrics;
+        workspace - submission root; files - current Python evidence paths.
+    Returns: original metrics or their bounded semantic case questions.
+    """
+    print(f"judge_name={judge_name} criteria={criteria} workspace={workspace} files={files}")
+    expanded = []
+    for entry in criteria:
+        if judge_name == "testing" and entry["name"] == "state_preservation_isolation":
+            expanded.extend(rejection_case_criteria(entry, workspace, files))
+        elif judge_name == "testing" and entry["name"] == "public_contract_coverage":
+            expanded.extend(validation_owner_criteria(entry, workspace, files))
+        else:
+            expanded.append(entry)
+    for entry in expanded:
+        origin = entry.get("source_criterion")
+        if origin in {"public_contract_coverage", "state_preservation_isolation"}:
+            entry["question_family"] = "coverage" if origin == "public_contract_coverage" else "preservation"
+    print(expanded)
+    return expanded
+
+
+def combine_semantic_cases(criteria: list[dict[str, str]], expanded: list[dict[str, str]],
+                           rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Fold semantic case verdicts into the original all-pass metrics.
+
+    Parameters: criteria - original metrics; expanded - actual semantic questions;
+        rows - complete results returned by the same judge.
+    Returns: original metric rows with every constituent finding preserved.
+    """
+    print(f"criteria={criteria} expanded={expanded} rows={rows}")
+    by_name = {row["name"]: row for row in rows}
+    combined = []
+    for entry in criteria:
+        members = [by_name[item["name"]] for item in expanded
+                   if item.get("source_criterion", item["name"]) == entry["name"]]
+        if len(members) == 1 and members[0]["name"] == entry["name"]:
+            combined.append(members[0])
+            continue
+        raw_score = next((row["raw"] for row in members if row["raw"] != "yes"), "yes")
+        combined.append(dict(name=entry["name"], description=entry["description"],
+                             raw=raw_score, reward=min(row["reward"] for row in members),
+                             reasoning="\n".join(row["name"] + ": " + row["reasoning"] for row in members),
+                             cases=members))
+    print(combined)
+    return combined
+
+
 def score_with_rewardkit(
     *,
     agent: str,
@@ -343,23 +454,56 @@ def score_with_rewardkit(
 ) -> tuple[str, list[dict[str, Any]]]:
     """Pin workspace Python, run rewardkit, and retry once if unusable.
 
-    Args:
-        agent: ``cc`` or ``codex``.
-        judge_dir: Skill judge directory with ``prompt.md`` / ``judge.toml``.
-        workspace: Coding-agent workspace.
-        files: Paths from :func:`list_workspace_python`.
-        model: Model id.
-        effort: ``low``, ``medium``, or ``high``.
-        timeout: Wall budget in seconds for both attempts.
-        criteria: Name/description pairs from ``judge.toml``.
-        invoke: Optional ``run_rewardkit`` replacement for ``--self-test``.
-        evidence_prefix: Optional verifier artifact prefix for the exact pinned
-            prompt and full backend details, separately for an attempt and retry.
-            Codex session JSONL is also retained before its temporary home cleanup.
-
-    Returns:
-        Details JSON text and parsed rows from the last attempt used.
+    Parameters: agent - eval backend; judge_dir - skill judge configuration;
+        workspace - submission root; files - current Python paths; model - model ID;
+        effort - requested reasoning effort; timeout - shared wall budget;
+        criteria - requested binary criteria; invoke - optional backend injection;
+        evidence_prefix - optional archive prefix for prompts, outputs and sessions.
+    Returns: backend evidence and criterion rows in their original order.
     """
+    print(f"agent={agent} judge_dir={judge_dir} workspace={workspace} files={files} model={model} effort={effort} timeout={timeout} criteria={criteria} invoke={invoke} evidence_prefix={evidence_prefix}")
+    expanded = expand_testing_criteria(judge_dir.name, criteria, workspace, files)
+    if expanded != criteria:
+        parent, scoped = scoped_judge_directory(judge_dir, expanded)
+        try:
+            raw, rows = score_with_rewardkit(
+                agent=agent, judge_dir=scoped, workspace=workspace, files=files,
+                model=model, effort=effort, timeout=timeout, criteria=expanded,
+                invoke=invoke, evidence_prefix=evidence_prefix,
+            )
+        finally:
+            shutil.rmtree(parent, ignore_errors=True)
+        result = raw, combine_semantic_cases(criteria, expanded, rows)
+        print(result)
+        return result
+    groups: dict[tuple[str, str], list[dict[str, str]]] = {}
+    for entry in criteria:
+        groups.setdefault((entry.get("evidence_scope", ""), entry.get("question_family", "")), []).append(entry)
+    if len(groups) > 1:
+        started = time.monotonic()
+        batches = []
+        combined = []
+        for (scope, family), entries in groups.items():
+            remaining = int(timeout - (time.monotonic() - started))
+            if remaining <= 0:
+                raise TimeoutError("Judge evidence batches exhausted their shared wall budget")
+            parent, scoped = scoped_judge_directory(judge_dir, entries)
+            suffix = scope + ("-" + family if family else "")
+            prefix = evidence_prefix.with_name(evidence_prefix.name + "-" + suffix) if evidence_prefix else None
+            try:
+                raw, rows = score_with_rewardkit(
+                    agent=agent, judge_dir=scoped, workspace=workspace, files=files,
+                    model=model, effort=effort, timeout=remaining, criteria=entries,
+                    invoke=invoke, evidence_prefix=prefix,
+                )
+                batches.append({"scope": scope, "family": family, "raw": raw})
+                combined.extend(rows)
+            finally:
+                shutil.rmtree(parent, ignore_errors=True)
+        by_name = {row["name"]: row for row in combined}
+        result = json.dumps({"batches": batches}), [by_name[entry["name"]] for entry in criteria]
+        print(result)
+        return result
     template, _, _ = load_judge_dir(judge_dir)
     backend = rewardkit_backend(agent)
     runner = invoke or run_rewardkit
@@ -367,6 +511,12 @@ def score_with_rewardkit(
     overlay: dict[str, str] = {}
 
     def attempt(reason: str | None, timeout_s: int) -> tuple[str, list[dict[str, Any]]]:
+        """Run one pinned backend attempt and retain its full evidence.
+
+        Parameters: reason - optional retry issue; timeout_s - remaining attempt budget.
+        Returns: raw backend evidence and parsed criterion rows.
+        """
+        print(f"reason={reason} timeout_s={timeout_s}")
         work = write_pinned_judge_dir(judge_dir, workspace, files, reason)
         tmp_out = work / "reward.json"
         try:
@@ -390,43 +540,59 @@ def score_with_rewardkit(
             )
             rows = rows_from_rewardkit_details(details, criteria)
             raw = json.dumps(details)[:8000]
-            return raw, rows
+            result = raw, rows
+            print(result)
+            return result
         finally:
             shutil.rmtree(work, ignore_errors=True)
 
     def with_homes() -> tuple[str, list[dict[str, Any]]]:
+        """Invoke the judge with its isolated authenticated runtime home.
+
+        Parameters: none.
+        Returns: reliable backend evidence and parsed criterion rows.
+        """
+        print("parameters=none")
         if agent == "cc":
             home, token = setup_claude_home()
             overlay.update(claude_judge_env(home, token))
             try:
                 with overlay_environ(overlay), claude_effort_on_path(effort):
-                    return run_until_reliable(
+                    result = run_until_reliable(
                         listed_keys=listed_keys, timeout=timeout, attempt=attempt,
                         judge_name=judge_dir.name, python_files=files, request_text=template,
                         workflow_issues=(workflow_plan_structure(workspace)["issues"]
                                          if judge_dir.name == "workflow" else None),
                     )
+                    print(result)
+                    return result
             finally:
                 shutil.rmtree(home, ignore_errors=True)
         home = setup_codex_home(effort)
         overlay["CODEX_HOME"] = str(home)
         try:
             with overlay_environ(overlay), codex_reasoning_on_path():
-                return run_until_reliable(
+                result = run_until_reliable(
                     listed_keys=listed_keys, timeout=timeout, attempt=attempt,
                     judge_name=judge_dir.name, python_files=files, request_text=template,
                     workflow_issues=(workflow_plan_structure(workspace)["issues"]
                                      if judge_dir.name == "workflow" else None),
                 )
+                print(result)
+                return result
         finally:
             _retain_codex_sessions(home, evidence_prefix)
             shutil.rmtree(home, ignore_errors=True)
 
     if invoke is not None:
-        return run_until_reliable(
+        result = run_until_reliable(
             listed_keys=listed_keys, timeout=timeout, attempt=attempt,
             judge_name=judge_dir.name, python_files=files, request_text=template,
             workflow_issues=(workflow_plan_structure(workspace)["issues"]
                              if judge_dir.name == "workflow" else None),
         )
-    return with_homes()
+        print(result)
+        return result
+    result = with_homes()
+    print(result)
+    return result

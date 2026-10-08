@@ -82,7 +82,9 @@ _EXPECTED_LITERAL_CLAIM = re.compile(
 )
 _TESTING_CITATION = re.compile(
     r"\bCitation:\s*(?:(?P<commit>[0-9a-f]{7,40}):)?"
-    r"(?P<path>[^\s|:]+\.py):(?P<line>\d+)\s*\|\s*(?P<source>[^\n]+)"
+    r"(?P<path>[^\s|:]+\.py):(?P<line>\d+)\s*\|\s*(?P<source>[^\n]+?)"
+    r"(?=[ \t]+(?:Citation:\s*(?:[0-9a-f]{7,40}:)?[^\s|:]+\.py:\d+\s*\|"
+    r"|TraceCitation:\s*[a-zA-Z0-9_-]+\.txt:\d+)|\n|$)"
 )
 
 
@@ -247,12 +249,12 @@ def _trace_citation_issue(reasoning: str, logs_root: Path) -> str | None:
     """
     print(f"reasoning={reasoning} logs_root={logs_root}")
     citations = list(re.finditer(
-        r'\bTraceCitation:\s*(?P<path>[a-zA-Z0-9_-]+\.txt):(?P<line>[0-9]+)'
+        r'\b(?:TraceCitation:\s*)?(?P<path>[a-zA-Z0-9_-]+\.txt):(?P<line>[0-9]+)'
         r'(?:[ \t]*\|[ \t]*(?P<excerpt>[^\n]+))?', reasoning))
     if not citations:
         print("missing")
         return "missing"
-    if len(citations) > 3:
+    if len(citations) > 16:
         print("excess")
         return "excess"
     for match in citations:
@@ -285,6 +287,36 @@ def _trace_citation_issue(reasoning: str, logs_root: Path) -> str | None:
     return None
 
 
+def _assertion_syntax_present(python_files: list[Path]) -> bool:
+    """Detect literal assertion syntax conservatively without scoring verification.
+
+    Parameters: python_files - current submitted Python files.
+    Returns: True for observed assertion syntax or incomplete/unreadable evidence.
+    """
+    print(f"python_files={python_files}")
+    if len(python_files) >= 40:
+        print(True)
+        return True
+    for path in python_files:
+        try:
+            with path.open("rb") as handle:
+                data = handle.read(MAX_SOURCE_BYTES + 1)
+            if len(data) > MAX_SOURCE_BYTES:
+                print(True)
+                return True
+            tree = ast.parse(data.decode("utf-8"))
+        except (OSError, UnicodeError, SyntaxError, ValueError):
+            print(True)
+            return True
+        for node in ast.walk(tree):
+            name = node.func.attr if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) else ""
+            if isinstance(node, ast.Assert) or name.startswith("assert") or name == "raises":
+                print(True)
+                return True
+    print(False)
+    return False
+
+
 def _testing_citation_issue(
     reasoning: str, python_files: list[Path], *, logs_root: Path = Path("/logs/agent")
 ) -> str | None:
@@ -297,10 +329,19 @@ def _testing_citation_issue(
     print(f"reasoning={reasoning} python_files={python_files} logs_root={logs_root}")
     citations = list(_TESTING_CITATION.finditer(reasoning))
     if not citations:
+        trace_reference = re.search(r"\bTraceCitation:|\b[a-zA-Z0-9_-]+\.txt:\d+", reasoning)
+        if not trace_reference and not _assertion_syntax_present(python_files):
+            mentioned = mentioned_python_paths(reasoning)
+            result = "path" if any(
+                not any(path.as_posix() == name or path.as_posix().endswith("/" + name) for path in python_files)
+                for name in mentioned
+            ) else None
+            print(result)
+            return result
         result = _trace_citation_issue(reasoning, logs_root)
         print(result)
         return result
-    if len(citations) > 3:
+    if len(citations) > 16:
         result = "excess"
         print(result)
         return result
@@ -357,7 +398,7 @@ def _testing_citation_issue(
             print(result)
             return result
     result = _trace_citation_issue(reasoning, logs_root) if re.search(
-        r"\bTraceCitation:", reasoning) else None
+        r"\b(?:TraceCitation:\s*)?(?:codex|claude-code|grok-build|grok)\.txt:\d+", reasoning) else None
     print(result)
     return result
 
@@ -464,7 +505,9 @@ def retry_prompt(prompt: str, reason: str) -> str:
         print(result)
         return result
     if reason.startswith("testing_citation_"):
+        criterion = reason.split(":", 1)[-1]
         result = (prompt
+            + f"\n\nRETRY unresolved criterion: {criterion}. Include a verified reference inside each no criterion's own reasoning; another criterion's citation does not cover it. "
             + "\n\nRETRY: the previous testing no omitted or misstated its exact "
             + "source or chronological trace citation. For a chronology failure use "
             + "TraceCitation: codex.txt:LINE with the actual line number, without "
@@ -472,6 +515,7 @@ def retry_prompt(prompt: str, reason: str) -> str:
             + "(or the actual claude-code.txt/grok-build.txt/grok.txt). Raw trace "
             + "positions establish availability only; inspect those actual records "
             + "and explain the file-write/run order. "
+            + "For absence of saved checks or a runner, cite the actual available file-listing, file-write or execution TraceCitation; do not quote a nonexistent test. "
             + "Alternatively cite an exact Python source/check line with Citation "
             + "and identify the decisive raw transcript positions in reasoning. "
             + "For source failures reinspect the decisive claim and include "

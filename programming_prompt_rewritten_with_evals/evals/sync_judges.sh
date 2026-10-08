@@ -154,6 +154,11 @@ for tests_dir in "$TASKS_DIR"/*/tests; do
     mkdir -p "$tests_dir/judges/$skill"
     # Always install as prompt.md so judge.toml prompt_template stays stable.
     cp "$prompt_src" "$tests_dir/judges/$skill/prompt.md"
+    for fragment in "$src"/*.md; do
+      [[ -f "$fragment" ]] || continue
+      [[ "$fragment" == "$prompt_src" ]] && continue
+      cp "$fragment" "$tests_dir/judges/$skill/"
+    done
     if [[ ! -f "$tests_dir/task.md" ]]; then
       echo "Missing original task context: $tests_dir/task.md; run sync_tasks.sh" >&2
       exit 1
