@@ -81,6 +81,14 @@ async def storage_capacity_after_reclaim(trial_ceiling: int, storage_root: Path 
             max_used_space=8 * 1024**3,
         )
         result = storage_trial_ceiling(trial_ceiling, storage_root)
+        if result == 0:
+            # Use explicit positive bounds rather than zero's special handling.
+            await asyncio.to_thread(
+                prune_unused_builder_cache,
+                min_free_space=16 * 1024**3, reserved_space=1,
+                max_used_space=1, all_unused=True,
+            )
+            result = storage_trial_ceiling(trial_ceiling, storage_root)
     print(result)
     return result
 
