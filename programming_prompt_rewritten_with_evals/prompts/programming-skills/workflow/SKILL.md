@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.2.18 — Establish the task checkout and authoritative plan, then finish
+  v1.2.19 — Establish the task checkout and authoritative plan, then finish
   each feature's tests → code → commit cycle before documentation.
 ---
 
@@ -16,6 +16,11 @@ and selected local merges, so their authorization is already supplied. Do not
 ask again at 3.3 because of a general "commit only when requested" default:
 this selection is the request. An explicit user prohibition still overrides
 and uses the documented 3.3 exception. Pushing needs a separate request.
+
+Before committing ANY feature, close and read back its 3.1 AND 3.2 Status
+cells in the actual plan. Evidence text is not Status. After commit/delivery,
+close 3.3 and put the actual hash in its original ledger row. Never start the
+next feature or docs while any earlier cycle cell or ledger hash is pending.
 
 Keep exactly four outer stages, in this order:
 
@@ -174,7 +179,29 @@ relevant retained checks with fresh state. Resolve failures; inspect code and
 diff against current/pending features. Record actual passing commands/results
 before 3.3. Checks saved only after code do not satisfy 3.1.
 
-**3.3 Commit.** Review only this feature's working code/checks before staging.
+**3.3 Commit.** FIRST read the retained plan and assert this feature's 3.1 and
+3.2 Status cells are both `complete`. If either is `pending`/`in_progress`,
+close that actual row with the observed baseline/passing run, save, and read
+it back BEFORE staging. With `plan_text` freshly read from the retained path
+and `feature_name` the current Microsteps Feature cell, this guard checks the
+table's actual Status field rather than completion prose:
+
+```python
+import re
+microsteps_text = plan_text.split("## Microsteps\n", 1)[1].split("\n## ", 1)[0]
+current_rows = {}
+for line in microsteps_text.splitlines():
+    if not line.startswith("|"):
+        continue
+    cells = [value.strip() for value in re.split(r"(?<!\\)\|", line)[1:-1]]
+    assert len(cells) == 7, line
+    if cells[2] == feature_name and cells[3] in ("3.1", "3.2"):
+        assert cells[3] not in current_rows, line
+        current_rows[cells[3]] = cells[5]
+assert current_rows == {"3.1": "complete", "3.2": "complete"}, current_rows
+```
+
+Review only this feature's working code/checks before staging.
 When commenting/logging is selected, enumerate every changed application and
 test function and inspect its actual body: complete docstring labels, first
 named-parameter print, and every normal return/fallthrough print as applicable.
@@ -186,7 +213,9 @@ Run `git commit` as its own command with a conventional subject in
 `type: summary` or `type(scope): summary` form, even when commits is unselected.
 A plain `Add ...` or `Fix ...` subject does not close this workflow stage.
 Verify HEAD advanced and
-inspect the committed tree; record the real hash in this row and selected ledger.
+inspect the committed tree; record the real hash in this row AND replace
+`pending` in that feature's introducing-hash ledger cell. Read the ledger cell
+back; hashes elsewhere in Evidence or an inventory do not close this cell.
 When worktree is selected, finish its live-default merge, consumer reapplication
 and verification before closing 3.3. Never push unless asked.
 
