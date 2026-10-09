@@ -1,9 +1,16 @@
-Before deciding, write a short operation-to-case mapping in the reasoning:
-for each applicable operand shape, name its actual rejected input and saved test
-location, or say MISSING. Expand the concrete loop values; do not infer a case
-from a test name, an operation's successful call, or another operation's input.
-If reusing a case, identify the actual shared predicate and its member selectors.
-Check the resulting map for omissions before returning yes.
+Before deciding, group operations by their ACTUAL validation owners FIRST.
+Also map blank/unknown dispatch rejections: selected testing requires both
+from the first dispatcher; operation-shape cases cannot replace them.
+For each owner, find its saved representative rejection input and assertion.
+Mark EVERY member COVERED by that input/location; never mark a member MISSING
+merely because its own duplicate case is absent. For a shared shape, MISSING
+means NO member has a saved representative case. Separate copied predicates
+remain independent owners. Then map each operation's success and applicable
+rejection classes to their actual cases, expanding loop values and helpers.
+Test names or successful calls do not establish a rejection. Resolve any
+provisional omission against shared ownership before scoring. If the resulting
+coverage map has no applicable missing case, return yes for coverage; a missing
+duplicate under a shared owner is never a defect. Other metrics are separate.
 
 SELECTED TESTING REQUIREMENT: documented command forms establish operand shapes.
 Apply this requirement even when the coding request does not state error semantics:
@@ -26,6 +33,22 @@ missing operands are INAPPLICABLE to it. Empty or unknown dispatch cannot cover
 extra operands. Several malformed paths ending
 at the same fallback raise do not share their acceptance/shape predicates by
 that fact alone: separate exact-token comparisons are independent shapes.
+A single membership branch grouping complete token sequences of the SAME
+arity also shares that shape, for example `tokens in (["read"], ["size"])`.
+The membership predicate implicitly checks the common operand count; do not
+require an explicit len() call or duplicate extra-input cases for its members.
+This differs from separate per-operation if/elif branches with independent
+exact-token conditions. Confirm equal arity and the one grouped acceptance
+branch from the actual source before reusing a representative case.
+
+For that grouped same-arity membership, the membership itself OWNS the
+shared operand shape. Its false branch may fall through to a later raising
+statement; it need not contain its own raise. A representative extra-input
+case reaching that later rejection covers the shape for every grouped member.
+Do not reclassify the members as independent merely because rejection is later.
+The common-fallback exception applies when acceptance predicates are genuinely
+separate per-operation branches, not to this one grouped shape predicate.
+
 One actual shared argument-count predicate can still share a representative
 case across its selectors. Inspect that predicate and the concrete tested input.
 A single argument-count condition combined with operation membership, such as
@@ -107,6 +130,10 @@ static-content direct checks; evaluation-repository prohibitions do not apply
 to the coding submission.
 
 FINDINGS AND AUTHENTIC REFERENCES
+Put each Citation on its OWN complete line inside the reasoning. Copy the
+ready-to-copy source reference verbatim; never embed it in a sentence or append
+a period/comment. A normalized predicate is not the literal reference.
+
 Syntax metadata may normalize conditions and omit punctuation such as a colon.
 It is evidence of structure, NOT a literal source quotation. For a Citation,
 copy the provided full source line/ready-to-copy reference, including its colon,
