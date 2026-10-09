@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.2.13 — Establish the task checkout and authoritative plan, then finish
+  v1.2.18 — Establish the task checkout and authoritative plan, then finish
   each feature's tests → code → commit cycle before documentation.
 ---
 
@@ -78,7 +78,35 @@ Selected companions, or none.
 ```
 
 Every Tasks row has four cells and every Microsteps row has seven, exactly
-as shown. Do not add an extra empty cell after the final Evidence cell.
+as shown.
+The tables are DIFFERENT: Tasks has only Order/Task/Status/Details. Never copy
+Microsteps' Feature/Stage/Action/Evidence fields into a Tasks row. Locate the
+table by its heading before editing: a prefix such as `3 / Write code` can
+appear in both tables, so that prefix alone cannot identify the outer row.
+Close an outer row by editing ONLY the section between `## Tasks` and
+`## Microsteps`, never by replacing matching prefixes across the whole file.
+A full-file `startswith` update can corrupt the first feature's 3.1 row even
+when the new outer row itself has the right width. With `plan_text` read from
+the retained path and `old_row`/`new_row` containing the full four-cell outer
+row, this bounded replacement leaves all microsteps untouched:
+
+```python
+before_tasks, remainder = plan_text.split("## Tasks\n", 1)
+tasks_text, after_tasks = remainder.split("## Microsteps\n", 1)
+assert tasks_text.count(old_row) == 1
+updated_tasks = tasks_text.replace(old_row, new_row, 1)
+plan_text = before_tasks + "## Tasks\n" + updated_tasks + "## Microsteps\n" + after_tasks
+```
+
+For microsteps, restrict edits to their table and match Step/Feature/Stage,
+not a bare number or phase. Validate the candidate before writing: all Tasks
+rows still have four cells and all Microsteps rows seven. A loop whose body
+merely says `pass`, or a printout without checking widths, is not validation.
+ Do not add an extra empty cell after the final Evidence cell.
+Keep later notes, exact sentences, commit subjects and deferred commands INSIDE
+the existing Action/Evidence cells or in the ledger below, never in an eighth
+cell appended to a row. Before saving, count each row against the header. Use
+semicolons within Evidence; escape any literal table pipe as `\|`.
 Tasks has exactly those four unique names/numbers in that order. Statuses in
 both tables are only `pending`, `in_progress`, `complete`, `skipped`; skip
 optional stages immediately when inapplicable. Keep deliverables in Details,
@@ -113,36 +141,28 @@ its intended reason; creation may fail to import an absent entrypoint. Existing
 passing checks may protect a pure refactor. Separate dependency failures.
 Apply selected test/function/logging rules from the first saved draft.
 
-When testing is selected, 3.1 closes only after these source gates:
-- The new operation's saved tests contain success AND each applicable rejection
-  class, including documented operand shapes; a success-only new command is
-  unfinished even when an older command has rejection tests.
-- If adding a read, every applicable old rejection block has its immediate
-  expected read BEFORE any recovery mutation. A mutation returning the stored
-  value is still a mutation. Adding a new read-aware class alone is insufficient.
-Record actual test/loop locations for both gates and inspect their source.
-
-When testing is selected, open all saved checks and check its inventory for EACH
-operation introduced or changed now: successes, documented operand-shape,
-conversion/domain rejections and immediate unchanged-state observations. Exact
-zero-operand forms need extra-input rejection; blank/unknown dispatch does not
-cover that shape. Share a case only through an actual shared validation predicate.
-
-**A new read changes the old checks in this 3.1 step.** When this Feature adds a
-public read, getter, aggregate or history interface, find EVERY retained
-expected-exception block loading the current module. Edit those actual old
-blocks now: seed permitted populated state, reject once, then immediately
-assert required affected values/history through the new read before another
-rejection or mutation, retaining informative existing public reads. Also apply this to new rejection blocks for the read
-itself. A later new test class cannot repair older exception-only blocks.
-Read back each block's fixture, rejected call and first public assertion;
-record their actual file/test locations in the saved coverage inventory and
-this 3.1 Evidence before closing it. Run the upgraded cumulative suite before
-query code; missing-query failures are a valid baseline. Do not close 3.1 or
-start 3.2 while an applicable retained block still lacks its observation.
-Historical snapshot loaders and true empty-domain query failures retain the
-selected testing policy's narrow exceptions. Do this audit again at 3.3 using
-the actual saved source; a green runner alone does not establish these checks.
+When testing is selected, finish its two source gates before closing 3.1.
+Do Gate B FIRST: edit the actual retained rejection bodies before adding new
+query tests. Then save Gate A cases for this feature.
+**A:** each operation introduced/changed now has saved success and every
+applicable rejection class, including its own documented operand shapes.
+**B:** if adding a read, EVERY applicable retained current-module rejection
+block is updated in place with immediate independently expected read-only
+observations BEFORE any recovery mutation.
+This includes the FIRST read: put its not-yet-implemented calls in the old blocks
+now and expect missing-read baseline failures. Map values and history separately;
+use an available total for values even without individual getters, and assert
+required history too. First-read status never exempts older current-module tests. Include older classes/shared loops
+and new query rejections; a later read-aware class alone does not repair them.
+Keep informative earlier views and add the new read. Historical-source loaders
+and true empty-domain reads retain testing's narrow exceptions.
+Read the actual saved source and record each operation's cases plus every old
+block's file/test location, fixture, rejected inputs and first public assertion
+in the inventory and this 3.1 Evidence. Run that upgraded cumulative suite
+before query code; missing-query failures are valid baseline evidence.
+A prose completion claim or green success-only suite cannot close either gate.
+At 3.3 read all current checks again and verify both gates against actual owners
+and blocks before staging; new read assertions belong in those old blocks.
 
 Static content and project test prohibitions use recorded direct verification;
 name the exact exception, check and baseline without claiming a test was saved.
