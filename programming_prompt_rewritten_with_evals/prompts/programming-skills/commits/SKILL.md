@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.2.3 — Give each complete capability sentence its own Feature and finish
+  v1.2.4 — Give each complete capability sentence its own Feature and finish
   tests → code → commit before starting the next sentence.
 ---
 
@@ -23,6 +23,10 @@ Use one Feature for each complete capability sentence in the original request.
 Keep its required commands, cases and optional "and may" clauses together.
 Every separate "It should also" sentence starts another Feature, even in one
 paragraph. Setup naming only an artifact or signature is not a Feature.
+Instructions to follow skills, use a model, or obey delivery stages are execution
+policies, not program capabilities; keep them outside the capability ledger.
+Do not introduce a later sentence's public query as an earlier Feature's test
+observer. Required integration must not expose a queued public capability.
 Never choose a preferred Feature count or combine sentences because a program
 is small. A repair sentence is a capability; several commands inside that same
 sentence still belong to one Feature.

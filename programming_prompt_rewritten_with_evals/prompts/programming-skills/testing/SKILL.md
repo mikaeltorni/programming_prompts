@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.1.27 — Save and run each Feature's public-interface checks before its code,
+  v1.1.28 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -32,6 +32,13 @@ starting the next. Testing alone adds no Git requirement. Never save all Feature
 checks first, expose later commands early, or use a later baseline to close an
 earlier missing passing run. After each code edit, record a passing cumulative
 run BEFORE writing any next Feature's checks. The final suite remains cumulative.
+
+A planned read means a read introduced by the CURRENT Feature, not a later
+queued sentence. Do not pull a future query into earlier checks or code merely
+to observe rejection state. Until its Feature starts, use only existing public
+views and record their limits; when no read exists, retain the permitted weaker
+probe. Upgrade those same retained bodies in the query Feature's 3.1 before its
+implementation. A read is a public capability, not an integration helper.
 
 Before EVERY application edit, inspect the actual saved checks. First update
 each old rejection body for a planned new read; then save success AND rejection

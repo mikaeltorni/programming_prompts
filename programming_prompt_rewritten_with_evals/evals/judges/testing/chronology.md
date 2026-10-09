@@ -11,6 +11,15 @@ implementation → PASSING cumulative rerun BEFORE the next capability's checks.
 all-features baseline followed by one implementation exposing every requested
 command FAILS this criterion, even when its final suite passes. This order also
 applies with testing alone; do not require unselected Git commits or a plan.
+Map each requested public command/query to its ORIGINAL capability sentence.
+At each first application edit, compare the exposed commands with the current
+sentence and earlier completed sentences. A command from a later sentence
+exposed now FAILS ORDER even if the agent calls it a test observer or integration
+helper. A future public query cannot be pulled forward to satisfy preservation:
+use existing views until the query's own Feature, then upgrade retained blocks
+in that Feature's checks-before-code step. "Planned read" means CURRENT Feature.
+Execution-policy/setup directives do not create additional capability Features.
+
 For EVERY transition to another capability, locate the preceding capability's
 application edit AND its subsequent PASSING cumulative run BEFORE the next
 checks write. If later checks are saved while that earlier behavior is still

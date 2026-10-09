@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.2.1 — Plan programming work, then repeat tests → code → commit for each
+  v1.2.2 — Plan programming work, then repeat tests → code → commit for each
   planned feature before writing documentation. Activated by explicit selection.
 ---
 
@@ -26,6 +26,14 @@ Keep these four outer stages in order:
 4. **Write documentation.** After all feature cycles finish, document the
    delivered interface in the project-root README when docs is selected.
    Commit and deliver documentation through the same task checkout.
+
+Establish or verify the selected checkout before writing the detailed plan.
+Execution policies such as following skills are not public capability Features.
+Every Write code microstep belongs to a feature's 3.1/3.2/3.3 triplet; never add
+a generic code row with Feature/Stage `-`. Keep later public commands deferred,
+including a future query that would be convenient for earlier rejection tests.
+When the query's own Feature starts, update the actual retained checks before
+its code; use only already available views until then.
 
 ## Implementation follow-ups
 
