@@ -1,11 +1,17 @@
 ---
 name: commits
 description: >-
-  v1.2.2 — Give each complete capability sentence its own Feature and finish
+  v1.2.3 — Give each complete capability sentence its own Feature and finish
   tests → code → commit before starting the next sentence.
 ---
 
 # Feature commits
+
+Explicit selection of this policy in the user's global instructions is a
+request to perform its required Git commits and selected local delivery. That
+selection supplies commit authorization; do not stop to ask for it again at
+3.3. An installed catalog entry alone supplies none. Honor any explicit user
+prohibition on committing and do not push without a separate request.
 
 Read the ENTIRE original request before making the ledger. Do not stop after the first capability sentence.
 Every later `It should also` sentence is another queued Feature, even when short

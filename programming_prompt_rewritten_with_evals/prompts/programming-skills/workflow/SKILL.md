@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.2.9 — Establish the task checkout and authoritative plan, then finish
+  v1.2.13 — Establish the task checkout and authoritative plan, then finish
   each feature's tests → code → commit cycle before documentation.
 ---
 
@@ -11,6 +11,11 @@ Run when `$workflow` is invoked or explicitly selected in global instructions.
 An installed catalog entry alone does not activate it. Use only selected
 companions; skip unavailable ones and mark inapplicable ones accordingly.
 Do not install missing skills or invent unselected rules.
+Explicit user/global selection requests this workflow's required Git commits
+and selected local merges, so their authorization is already supplied. Do not
+ask again at 3.3 because of a general "commit only when requested" default:
+this selection is the request. An explicit user prohibition still overrides
+and uses the documented 3.3 exception. Pushing needs a separate request.
 
 Keep exactly four outer stages, in this order:
 
@@ -108,12 +113,36 @@ its intended reason; creation may fail to import an absent entrypoint. Existing
 passing checks may protect a pure refactor. Separate dependency failures.
 Apply selected test/function/logging rules from the first saved draft.
 
-When testing is selected, check its saved inventory for EACH operation introduced
-or changed now: applicable successes, missing/extra operands, conversion/domain
-rejections and immediate unchanged-state observations. A new no-operand command
-needs its own extra-operand rejection when the contract rejects extras; a case
-for another command covers it only through an actual shared validation owner.
-Do this before implementation, not after discovering a green runner's gaps.
+When testing is selected, 3.1 closes only after these source gates:
+- The new operation's saved tests contain success AND each applicable rejection
+  class, including documented operand shapes; a success-only new command is
+  unfinished even when an older command has rejection tests.
+- If adding a read, every applicable old rejection block has its immediate
+  expected read BEFORE any recovery mutation. A mutation returning the stored
+  value is still a mutation. Adding a new read-aware class alone is insufficient.
+Record actual test/loop locations for both gates and inspect their source.
+
+When testing is selected, open all saved checks and check its inventory for EACH
+operation introduced or changed now: successes, documented operand-shape,
+conversion/domain rejections and immediate unchanged-state observations. Exact
+zero-operand forms need extra-input rejection; blank/unknown dispatch does not
+cover that shape. Share a case only through an actual shared validation predicate.
+
+**A new read changes the old checks in this 3.1 step.** When this Feature adds a
+public read, getter, aggregate or history interface, find EVERY retained
+expected-exception block loading the current module. Edit those actual old
+blocks now: seed permitted populated state, reject once, then immediately
+assert required affected values/history through the new read before another
+rejection or mutation, retaining informative existing public reads. Also apply this to new rejection blocks for the read
+itself. A later new test class cannot repair older exception-only blocks.
+Read back each block's fixture, rejected call and first public assertion;
+record their actual file/test locations in the saved coverage inventory and
+this 3.1 Evidence before closing it. Run the upgraded cumulative suite before
+query code; missing-query failures are a valid baseline. Do not close 3.1 or
+start 3.2 while an applicable retained block still lacks its observation.
+Historical snapshot loaders and true empty-domain query failures retain the
+selected testing policy's narrow exceptions. Do this audit again at 3.3 using
+the actual saved source; a green runner alone does not establish these checks.
 
 Static content and project test prohibitions use recorded direct verification;
 name the exact exception, check and baseline without claiming a test was saved.
@@ -125,7 +154,14 @@ relevant retained checks with fresh state. Resolve failures; inspect code and
 diff against current/pending features. Record actual passing commands/results
 before 3.3. Checks saved only after code do not satisfy 3.1.
 
-**3.3 Commit.** Review and stage only this feature's working code/checks.
+**3.3 Commit.** Review only this feature's working code/checks before staging.
+When commenting/logging is selected, enumerate every changed application and
+test function and inspect its actual body: complete docstring labels, first
+named-parameter print, and every normal return/fallthrough print as applicable.
+After adding test assertions or query observations, the selected None exit print
+must remain AFTER the final assertion; an earlier print no longer covers the
+fallthrough. Finish this source review before staging; green tests do not prove
+these separately selected function contracts.
 Run `git commit` as its own command with a conventional subject in
 `type: summary` or `type(scope): summary` form, even when commits is unselected.
 A plain `Add ...` or `Fix ...` subject does not close this workflow stage.
