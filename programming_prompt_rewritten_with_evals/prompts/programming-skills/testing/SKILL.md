@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.1.28 — Save and run each Feature's public-interface checks before its code,
+  v1.1.29 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -17,6 +17,16 @@ its cumulative checks before the next Feature's checks. Finish selected commit
 and delivery gates too. This order applies when workflow is unselected or its
 plan file is absent: the plan is output, not the source of these testing rules.
 Use the saved coverage inventory for the queue when no workflow plan is required.
+
+Selected testing supplies an input-rejection contract even when the task says
+nothing about errors. Save assertions for blank dispatch, applicable unknown
+operations, and missing/extra operands of each exact documented command form.
+A zero-operand command has an EXTRA-input case; only its missing-operand case
+is inapplicable. Do not mark those checks optional or inapplicable because the
+original request omits invalid-input prose. Respect free-form/remaining-text
+operands and genuinely shared shape predicates; do not invent error messages
+or numeric domain restrictions. These checks belong in the CURRENT Feature's
+3.1, with the required public seed and immediate available observations.
 
 Read the ENTIRE request and preserve one queue row per complete capability
 sentence. A separate `It should also` sentence is a new row; commands and an
