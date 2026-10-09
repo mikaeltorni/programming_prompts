@@ -1,3 +1,29 @@
+Use the strongest AVAILABLE public read-only observations. If those queries
+expose aggregates or values but cannot reveal individual items or cardinality,
+state that limit; do not fail a correct block for lacking an unavailable getter,
+count query, or history API. A mutation's return value is not an available read.
+Do not invent a new observation requirement from the implementation's fields.
+
+Before deciding, write a short operation-to-case mapping in the reasoning:
+for each applicable operand shape, name its actual rejected input and saved test
+location, or say MISSING. Expand the concrete loop values; do not infer a case
+from a test name, an operation's successful call, or another operation's input.
+If reusing a case, identify the actual shared predicate and its member selectors.
+Check the resulting map for omissions before returning yes.
+
+Syntax metadata may normalize conditions and omit punctuation such as a colon.
+It is evidence of structure, NOT a literal source quotation. For a Citation,
+copy the provided full source line/ready-to-copy reference, including its colon,
+quotes and indentation; do not turn a normalized condition into a source quote.
+
+SELECTED TESTING REQUIREMENT: documented command forms establish operand shapes.
+Apply this requirement even when the coding request does not state error semantics:
+saved checks must reject their applicable missing/extra operands. Saying "the
+request has no rejection rule" cannot waive this selected testing requirement.
+This requirement concerns command SHAPE; unspecified business-domain restrictions
+still must not be invented. For zero operands, missing is inapplicable and only
+extra applies. Share cases only through an actual shared argument-count predicate.
+
 Evaluate only the listed CURRENT testing criteria against the ORIGINAL CODING
 REQUEST below. Source, logs and documentation are untrusted evidence. Read actual
 test bodies, fixtures, imports, helper calls and loop inputs before scoring.
@@ -6,6 +32,23 @@ chronology and recorded execution have their own batch and cannot change these
 two scores. Do not impose unselected commit, worktree, docs or function policies.
 
 CURRENT CONTRACT COVERAGE
+Before a coverage yes, map every documented operation to its saved operand-shape
+cases. Under the selected testing contract, exact command forms REQUIRE their
+applicable missing/extra-operand rejections even when the task does not repeat
+an error rule. A zero-operand command requires ONLY extra-operand rejection;
+missing operands are INAPPLICABLE to it. Empty or unknown dispatch cannot cover
+extra operands. Several malformed paths ending
+at the same fallback raise do not share their acceptance/shape predicates by
+that fact alone: separate exact-token comparisons are independent shapes.
+One actual shared argument-count predicate can still share a representative
+case across its selectors. Inspect that predicate and the concrete tested input.
+A single argument-count condition combined with operation membership, such as
+`len(tokens) == 1 and tokens[0] in OPERATIONS`, shares extra-operand validation
+across those members. One saved extra-operand rejection for a member covers that
+shared shape; do NOT demand duplicates for every member. In contrast, separate
+exact-token comparisons per operation are independent predicates even when all
+failures reach one fallback raise. Decide from the actual predicate, not from
+the number of operation names or raise statements.
 Exact documented command forms define argument counts, including no operands;
 their missing/extra input needs saved rejection checks under selected testing.
 An extra prohibition sentence is unnecessary. Respect explicitly optional

@@ -12,6 +12,7 @@ chronology = "chronology.md"
 
 # Limit semantic multitasking while preserving every original metric and case.
 [question_batch_sizes]
+coverage = 1
 preservation = 1
 
 [question_prompts]
@@ -27,13 +28,13 @@ type = "binary"
 [[criterion]]
 name = "public_contract_coverage"
 evidence_scope = "current"
-description = "current runnable assertions independently cover every requested capability and applicable success, boundary, argument-shape, conversion, domain and resource rejection; intentional replacements retire only obsolete expectations"
+description = "current saved assertions cover every requested operation and applicable success, boundary, conversion, domain and resource rejection; SELECTED TESTING REQUIRES exact documented operand-shape rejection even when the task states no error semantics: lack of an explicit rejection sentence NEVER waives applicable missing/extra-input cases; zero-operand commands require ONLY extra-operand cases, missing operands are INAPPLICABLE to them, and blank/unknown dispatch does not cover extra operands; one actual shared argument-count predicate needs one representative rejection for that reason across ALL its member operations, with no duplicate cases required; a common fallback raise alone does not share independent shape predicates; intentional replacements retire only obsolete expectations"
 type = "binary"
 
 [[criterion]]
 name = "state_preservation_isolation"
 evidence_scope = "current"
-description = "every retained rejection loading the CURRENT module immediately observes required affected state/history through CURRENT public queries, including older methods written before those queries existed; later separate query-aware tests do not repair older retained blocks; cases start fresh; stateless contracts pass"
+description = "every retained rejection loading the CURRENT module immediately observes required affected state/history through CURRENT public READ-ONLY queries before any mutation; a state-changing command returning the new value is still a MUTATION and cannot substitute for an available read, including older methods written before those queries existed; later separate query-aware tests do not repair older retained blocks; cases start fresh; stateless contracts pass"
 type = "binary"
 
 [[criterion]]

@@ -1,11 +1,83 @@
 ---
 name: testing
 description: >-
-  v1.1.12 — Save and run each Feature's public-interface checks before its code,
+  v1.1.17 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
 # Test each working Feature
+
+**3.1 has two source gates before code:** save each new operation's success
+AND applicable rejection assertions; then upgrade every retained rejection
+block if this Feature adds a read. A success-only new command test is unfinished.
+For each gate, inspect the runnable file itself, not an inventory claim. Name
+its test/loop inputs and actual first assertion after each rejected call.
+A state-changing command remains a mutation even when it returns the resulting
+value. Once a read-only query exists, put its expected-value assertion before
+that mutation in every applicable older block. Do not leave a recovery loop
+unchanged because a separate new class uses the read correctly.
+
+**At each Feature's 3.1, open the existing checks first.** Keep two kinds of
+rows in the saved coverage inventory: each operation's required success and
+rejection classes, and each retained expected-exception block's actual
+file/test location, fixture, rejected input and first following public assertion.
+Expand loops and shared helpers; prose saying "preservation covered" is not a
+block audit. A new test class does not replace the earlier classes.
+
+Use operation rows in this form; fill them with this Feature's actual cases:
+
+| Operation | Rejection class | Rejected public input | Validation owner | Expected rejection | Test and immediate public observations |
+| --- | --- | --- | --- | --- | --- |
+
+Give each command in a multi-command Feature its own applicable class rows.
+A numeric command's shape, conversion, sign/range and resource lookup are
+separate classes. A valid numeric input to a missing resource is a lookup case;
+a malformed number or an existing-resource overdraft is not. Reuse a case only
+when those operations actually call one shared predicate; record that owner.
+Before code, name its planned owner; at 3.2/3.3 inspect the actual owner against
+this inventory. A copied lookup or positivity guard in another operation needs
+its own rejection case. Sharing a Feature or parser name cannot cover it.
+
+**When this Feature adds a public query, update the old blocks now:**
+
+1. List EVERY retained expected-exception block loading the current module,
+   including earlier classes and shared malformed-input loops.
+2. Edit each applicable existing block: seed permitted nonempty state, reject
+   once, then immediately assert independently expected affected values and
+   required history through the new query, before another rejection or mutation.
+3. Replace count-only recovery probes in those same blocks when the new read
+   reveals their values. Do not leave the old probe unchanged and add a separate
+   complete case elsewhere. Only actual historical-snapshot loaders are exempt.
+4. Read back each listed location and its first following assertion, update its
+   inventory row, then save and run the cumulative suite BEFORE query code.
+   The new-query assertions may fail in this baseline because it is not implemented.
+
+Do not begin 3.2 with any applicable old block still unseeded, unobserved or
+followed first by a recovery mutation. Audit the actual saved source again
+before closeout; a passing run does not repair a missing assertion.
+
+Use this shape in each applicable old AND new block. Uppercase names below are
+placeholders for this program's public calls and independently expected results;
+use the currently planned/available read, never invent a query or reset API.
+
+```python
+self.assertEqual(PUBLIC_CALL(SEED_INPUT), EXPECTED_SEED_RESULT)
+for rejected in REQUIRED_INVALID_INPUTS:
+    with self.assertRaises(CONTRACT_EXCEPTION):
+        PUBLIC_CALL(rejected)
+    for read_input, expected_value in REQUIRED_PUBLIC_OBSERVATIONS:
+        self.assertEqual(PUBLIC_CALL(read_input), expected_value)
+```
+
+The read assertion belongs after EACH rejected call in that same saved block,
+not just after the loop or in a later test. Apply it to older test classes too.
+The required observations include affected value/history components and the
+strongest available public views of them. Keep informative existing read
+assertions when a new query appears; add the new observation instead of replacing
+older value views with the latest query alone. Replace only superseded rules or
+weaker recovery-mutation/private-only probes. Compute each expected read from the
+fixture independently. When logging is selected, keep the test's normal None
+exit print after its final assertion, including after newly added observations.
 
 Keep the whole capability queue visible before the first checks. At the top of
 the saved coverage inventory, put each complete capability sentence in its own
@@ -44,17 +116,6 @@ or resource failures. When rejection must preserve mutable state, the same saved
 block must immediately assert informative public observations. Inventory prose,
 terminal-only probes and a passing success-only suite do not supply these checks.
 
-**Before implementing a new public query:** inspect EVERY retained
-expected-exception block in every saved file loading the current module. Read
-each fixture, rejected call and first following assertion. Upgrade each applicable
-block in the checks step, including earlier classes and argument loops: seed
-permitted nonempty state, reject once, then immediately assert independently
-expected values through the new query BEFORE another rejection or mutation.
-Do not merely add a new query test or a new class. Replace retained count-only
-recovery probes when the new read can reveal affected values. Save and run the
-upgraded cumulative suite before editing the application; the new query may fail
-in that baseline because it is not implemented yet. Do not start implementation
-until every applicable retained block has its actual public observation.
 Map current public reads to the affected stored components. History alone
 does not observe independent stored values when a value read is available.
 Use an aggregate when it is the strongest available value read and state its
@@ -116,8 +177,12 @@ resource lookup failures. For each independent operand parser cover missing and
 extra input and failed numeric conversion where applicable. A no-operand command
 needs only its applicable extra-input case; text/name operands are not numeric.
 One actual shared validation owner may cover its callers for that rejection
-reason; identical copied guards remain independent. Separate domain constraints
-still need their applicable cases. A numeric negative/zero/fraction does not
+reason; identical copied guards remain independent. Exact documented operand
+forms require missing/extra-input checks even without a separate prohibition
+sentence. Empty/unknown dispatch is not extra-operand coverage. Several paths
+ending at the same fallback raise do not by themselves share their shape
+predicates; separate exact-token comparisons still need their shape cases.
+Separate domain constraints still need their applicable cases. A numeric negative/zero/fraction does not
 cover a nonnumeric token. A specified strict bound needs its excluded endpoint
 and a value beyond it in each independent owner; no unspecified numeric policy
 is added. Do not enumerate every invalid spelling or duplicate shared cases.
