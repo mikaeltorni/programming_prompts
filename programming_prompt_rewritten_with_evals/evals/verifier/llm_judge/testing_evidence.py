@@ -211,12 +211,28 @@ def validation_owner_criteria(criterion: dict[str, str], workspace: Path,
     result = [dict(criterion, name="public_contract_overview",
                    source_criterion=criterion["name"], description=(
                        "Any no MUST include its OWN Citation: path.py:LINE | exact current "
-                       "source line. Assess COVERAGE ONLY: " + criterion["description"]
-                       + ". One actual shared missing-operand count predicate needs a "
-                       "representative shorter input, not every interpretation or spelling. "
-                       "Downstream guards unreachable through the public parser add no cases. "
-                       "State observations, isolation and chronology have separate metrics; "
-                       "do not score their defects here."))]
+                       "source line. Assess ONLY saved SUCCESS and specified-boundary "
+                       "assertions AND operand-shape coverage for EVERY requested operation, plus blank dispatch "
+                       "and applicable unknown-operation rejection. SELECTED TESTING "
+                       "requires these dispatch checks even without an original error "
+                       "sentence; only unknown operations are inapplicable when the "
+                       "requested grammar has no operation selectors. For EACH requested "
+                       "operation, list its applicable missing/extra input and saved "
+                       "rejection assertion; zero operands need only extra rejection. "
+                       "Quote each operation's ACTUAL acceptance/count predicate before "
+                       "sharing a case. Equal operand counts do not share copied guards: "
+                       "separate tokens==[selector] comparisons are independent owners. "
+                       "Share only one actual grouped membership/count predicate, "
+                       "never merely because independent branches fall through to the "
+                       "same raise. Conversion, domain and lookup rejections have "
+                       "separate validation_owner questions; do not score them here. "
+                       "List each requested operation's concrete successful input, "
+                       "independent expected output and saved assertion location, "
+                       "expanding all current loops and helpers. A successful boundary "
+                       "assertion counts as success; no extra interior-value example "
+                       "is required unless specified. Unrequested aliases create no "
+                       "operation obligation. State observations, isolation and "
+                       "chronology have separate metrics."))]
     for index, ((filename, owner, line), facts) in enumerate(owners.items(), 1):
         result.append(dict(criterion, name=f"validation_owner_{index}",
                            source_criterion=criterion["name"], description=(
@@ -230,7 +246,11 @@ def validation_owner_criteria(criterion: dict[str, str], workspace: Path,
                                "against unsupported object types needs no rejection case unless "
                                "the ORIGINAL request explicitly requires that behavior. "
                                "Different raises inside one function have different questions; sharing "
-                               "a parser/function does NOT make their predicates shared. Follow the "
+                               "a parser/function does NOT make their predicates shared. If THIS "
+                               "raise is a shared FALLBACK, map EVERY operation's independent "
+                               "acceptance/shape predicate and its saved missing/extra cases; "
+                               "one operation's extra-input case cannot cover separate predicates. "
+                               "Follow the "
                                "literal enclosing conditions and actual public route to THIS raise. "
                                "An upstream parser can make a defensive fallback unreachable; such "
                                "a fallback has no independent public-input rejection obligation. "

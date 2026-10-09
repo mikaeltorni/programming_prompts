@@ -1,25 +1,22 @@
 ---
 name: testing
 description: >-
-  v1.1.24 — Save and run each Feature's public-interface checks before its code,
+  v1.1.27 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
 # Test each working Feature
 
-Before EVERY application edit, inspect the actual saved checks. First update
-each old rejection body for a planned new read; then save success AND rejection
-cases for EACH new command, including EACH query. Zero-operand queries need
-extra-input rejection. The first dispatcher also needs blank/unknown rejection.
-For each applicable rejection body, use PUBLIC SEED → REJECT → PUBLIC READ.
-Older Feature classes still test the CURRENT module. Update their actual bodies
-whenever a read becomes available: a private `len`, field assertion, or later
-mutation cannot replace that read. Before each code edit, read back the first
-assertion after EVERY retained rejection; it must call the available public view.
-A private assignment or an unseeded initial value does not supply public seeding.
-Blank input is malformed dispatch, never an empty-domain read.
-Run that saved suite now. A success-only command or an old block still followed
-by a recovery mutation cannot close 3.1 when a read is available/planned.
+Split Features by complete CAPABILITY SENTENCES, never by file, function or
+entrypoint. Every separate `It should also` sentence starts another Feature;
+sharing one function does not combine them. Artifact/signature setup is not a
+capability. One capability sentence is one Feature cycle.
+Save checks for ONLY the first
+unfinished Feature, run its baseline, implement ONLY that Feature, and verify
+its cumulative checks before the next Feature's checks. Finish selected commit
+and delivery gates too. This order applies when workflow is unselected or its
+plan file is absent: the plan is output, not the source of these testing rules.
+Use the saved coverage inventory for the queue when no workflow plan is required.
 
 Read the ENTIRE request and preserve one queue row per complete capability
 sentence. A separate `It should also` sentence is a new row; commands and an
@@ -35,6 +32,21 @@ starting the next. Testing alone adds no Git requirement. Never save all Feature
 checks first, expose later commands early, or use a later baseline to close an
 earlier missing passing run. After each code edit, record a passing cumulative
 run BEFORE writing any next Feature's checks. The final suite remains cumulative.
+
+Before EVERY application edit, inspect the actual saved checks. First update
+each old rejection body for a planned new read; then save success AND rejection
+cases for EACH new command, including EACH query. Zero-operand queries need
+extra-input rejection. The first dispatcher needs blank rejection and applicable unknown-operation rejection.
+For each applicable rejection body, use PUBLIC SEED → REJECT → PUBLIC READ.
+Older Feature classes still test the CURRENT module. Update their actual bodies
+whenever a read becomes available: a private `len`, field assertion, or later
+mutation cannot replace that read. Before each code edit, read back the first
+assertion after EVERY retained rejection; it must call the available public view.
+A private assignment or an unseeded initial value does not supply public seeding.
+Blank input is malformed dispatch, never an empty-domain read.
+Run that saved suite now. A success-only command or an old block still followed
+by a recovery mutation cannot close 3.1 when a read is available/planned.
+
 
 ## 3.1 Save checks and run the baseline
 
@@ -84,8 +96,14 @@ For every applicable old AND new block:
 1. Seed meaningful nonempty state through the public API where the rejection
    still applies. A private reset may initialize an independent case, but the
    preservation seed itself must be a successful public call, not a private
-   assignment. Choose observable state so an unintended clear/reset would change
-   the expected public result. Blank, unknown, shape, conversion and domain
+   assignment. One public seed before a nonmutating rejection loop can cover all
+   iterations when each immediate public read verifies the unchanged seed.
+   Choose observable state so an unintended clear/reset would change
+   the expected public result. A public resource-creation call can seed meaningful
+   state even when its numeric value or history starts empty: an immediate public
+   lookup/read must detect loss of that resource. A nonzero value is not mandatory
+   when the available query already observes resource existence.
+   Blank, unknown, shape, conversion and domain
    failures usually permit it; blank input is never an empty-state query.
    If funding/populating the fixture changes a required rejection, recompute the
    rejected operand from the contract (for example, make it exceed the new
@@ -143,7 +161,11 @@ Use a row for each applicable class; mark inapplicable classes with a reason.
 Include these applicable classes:
 - Meaningful success, specified boundaries, accepted defaults/flags, and required
   quoted or multi-word input.
-- Empty/unknown dispatch in the first dispatch revision; missing and extra
+- Blank dispatch and unknown-operation rejection when the requested grammar has
+  operation selectors. A free-form first operand is not an unknown operation.
+  Test the requested forms; extra implementation aliases do not create required
+  command variants. Respect operands accepting remaining text or optional input.
+  Missing and extra
   operands for each independent operand parser. Exact documented command forms
   require these shape checks without another prohibition sentence. Zero-operand
   commands need ONLY extra-input rejection; missing is inapplicable. Blank or
