@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.1.23 — Save and run each Feature's public-interface checks before its code,
+  v1.1.24 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -12,6 +12,10 @@ each old rejection body for a planned new read; then save success AND rejection
 cases for EACH new command, including EACH query. Zero-operand queries need
 extra-input rejection. The first dispatcher also needs blank/unknown rejection.
 For each applicable rejection body, use PUBLIC SEED → REJECT → PUBLIC READ.
+Older Feature classes still test the CURRENT module. Update their actual bodies
+whenever a read becomes available: a private `len`, field assertion, or later
+mutation cannot replace that read. Before each code edit, read back the first
+assertion after EVERY retained rejection; it must call the available public view.
 A private assignment or an unseeded initial value does not supply public seeding.
 Blank input is malformed dispatch, never an empty-domain read.
 Run that saved suite now. A success-only command or an old block still followed
@@ -49,7 +53,11 @@ examples. Future Features may be planned in the queue but are not executable yet
 aggregate or history interface changes old checks in THIS 3.1, before its code.
 Do this existing-source pass FIRST, before writing a new query class/test. Open
 each old exception block and edit that actual body; a plan claim is insufficient.
-Do not leave an old malformed-command loop empty or followed by recovery mutation.
+Do not leave an old malformed-command loop empty, privately observed, or followed
+by recovery mutation. Replace its actual post-rejection assertion with the
+planned public view before running the baseline. Repeat this in older classes,
+even when their names describe earlier Features. Retain any still-useful private
+assertion only after the required public observation.
 Keep the block list visible until every applicable body has its immediate reads.
 This includes the FIRST public read: old rejection tests previously lacking an
 observer MUST call that not-yet-implemented read now. Their missing-read baseline
