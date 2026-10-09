@@ -188,11 +188,17 @@ ACC provides an absolute `ACC_WORKFLOW_FILE` under the launch project's
 Retain this path when entering the worktree. Statuses are `pending`,
 `in_progress`, `complete`, or `skipped`. The plan stays ignored. ACC displays
 numbered captions such as `3.2 Write code · parser · 1 out of 6` and separates
-each feature's three bar cells. Legacy five-column plans remain readable.
+each feature's three bar cells. The next feature uses `4.1`, `4.2`, `4.3` in
+the display; plan Stage cells remain `3.1`, `3.2`, `3.3`. Documentation follows
+all feature cells. Legacy five-column plans remain readable.
 
 After changing the prompt, run `acc pp rebuild` to refresh saved selections;
 `acc pp status --skill v2:workflow --check` verifies native instruction delivery.
-Original and V2 workflow prompts use the same seven-column schema.
+Original and V2 workflow prompts use the same seven-column schema. At each
+transition, read the saved plan and choose its first unfinished microstep. Close
+the actual tests/code Status cells before committing; record the verified commit
+hash and delivery before starting the next feature's checks. Before handoff,
+verify both the outer rows and microsteps are complete.
 
 Every implementation follow-up needs a fresh plan before its feature checks
 or edits, including small requests in the same conversation. Reuse the verified
@@ -228,9 +234,15 @@ Different operation names do not create independent copies of one shared
 predicate. Text/name operands require no numeric-conversion case unless their
 contract makes them numeric. Resource lookup cases follow their actual owners.
 
-The coverage inventory maps public commands and operands to saved assertions
-for argument shape, conversion and requested domain rules. Missing and extra
-operands are separate rejection classes. Current-source runners retain only
+Before application edits, save and read the coverage inventory beside the
+checks. It maps every current command, including queries, to concrete success,
+missing/extra-input, conversion and requested-domain assertions. A zero-operand
+command still needs extra-input rejection, even when the request has no error
+prose. Enumerate the actual retained exception bodies; upgrade those bodies
+with public seeds and immediate available/planned value and history reads before
+the current query's implementation. A later feature's query stays deferred.
+Trace shared coverage to the first reachable predicate; copied guards are
+independent owners. Missing and extra operands are separate rejection classes. Current-source runners retain only
 current-contract expectations; historical stage checks require matching source.
 Add executable future-capability cases only at their implementing revision.
 When a new command replaces its former unknown-command rejection, update that
@@ -251,15 +263,15 @@ before successfully clearing it. When all public queries reject the required
 empty fixture, document that observation limit rather than inventing a query.
 
 Agent Command Center's default installation enables V2 `commits`, `worktree`,
-`workflow`, `docs`, and `testing`. Other skills remain independently selectable;
-manual selections are preserved. Apply this baseline across every harness with:
+`workflow`, `docs`, `testing`, `srp`, `commenting`, `logging`, and `debug`.
+Other skills remain independently selectable; manual selections are preserved. Apply this baseline across every harness with:
 
 ```bash
-acc pp enable --both --skill v2:commits,v2:worktree,v2:workflow,v2:docs,v2:testing
+acc pp enable -v2 --skill commits,worktree,workflow,docs,testing,srp,commenting,logging,debug
 ```
 
 ```bash
-acc pp status --both --skill v2:commits,v2:worktree,v2:workflow,v2:docs,v2:testing --check
+acc pp status --skill v2:commits,v2:worktree,v2:workflow,v2:docs,v2:testing,v2:srp,v2:commenting,v2:logging,v2:debug --check
 ```
 
 The generic programming guidelines and their global bootstrap are retired and
@@ -282,14 +294,25 @@ bounds need their excluded endpoint and a value beyond it in each independent
 path. Preservation checks concern the resources affected by that operation.
 When only aggregate state queries exist, it uses those observations and records
 their limits. Source review alone does not establish a new benchmark pass rate.
-Default benchmark discovery selects `commenting`, `commits`, `debug`,
-`debug_logs`, `docs`, `logging`, `srp`, `testing`, and `worktree`.
-Existing launcher presets retain their explicit skill lists. `workflow` stays
-explicit `--skills workflow`. Dedicated repair tasks receive only `debug`;
-the other selected skills retain their coding task family.
-To inject and score only testing on Codex instance 1, use the public benchmark
-entrypoint below. Omitted `--tasks` selects all coding tasks, `-k 3` requests
-three attempts per task, and omitted concurrency uses automatic capacity. The
+Default benchmark discovery selects `commenting`, `commits`, `debug`, `docs`,
+`logging`, `srp`, `testing`, and `worktree`. Both `workflow` and `debug_logs`
+require explicit selection; `logging-vague` remains a control. Existing launcher
+presets retain their explicit skill lists. Dedicated repair tasks receive only
+`debug`; the other selected skills retain their coding task family.
+Acceptance uses `gpt-6-luna` with `low` reasoning for both the coding model and
+Codex semantic judge, as specified in [AGENTS.md](AGENTS.md). Verify their actual
+archived turn settings; stronger models or higher reasoning do not establish
+acceptance. Preserve genuine failures and exclude authentication, quota and
+infrastructure failures from prompt-quality scores.
+
+Before a run, check the current 5-hour and weekly allowances on every configured
+Codex instance, choose the eligible instance with the most constrained-window
+headroom, and verify its auth home from `evals/` using the same selected ID:
+`ACC_CODEX_INSTANCE=1 python3 harbor_agents/codex_account.py --auth`.
+The examples below use instance 1, verified for this handoff; recheck availability
+and replace the ID for each later run. To inject and score only testing, use the
+public benchmark entrypoint below. Omitted `--tasks` selects all coding tasks;
+`-k 3` requests three attempts per task, and omitted concurrency uses automatic capacity. The
 runner copies the authoritative testing skill and judge into the new job.
 
 ```bash
@@ -442,8 +465,7 @@ finish, without permanently reducing capacity. Waiting happens before setup
 and agent timers, so queued trials retain their full budgets.
 The guard applies to Codex, Claude Code and Grok in positive and baseline runs.
 The generated job configuration gives each agent up to 1200 seconds (20 minutes)
-of execution, replacing the task's 600-second allowance. Multi-stage agents in
-the latest archive were still progressing at that cutoff. Successful agents
+of execution, replacing the task's 600-second allowance. Successful agents
 return immediately; this allowance does not add a wait or change concurrency,
 setup limits or verifier budgets. The launch guard uses the effective execution
 deadline, including Harbor's configured timeout maximum and multiplier.

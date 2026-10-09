@@ -11,11 +11,11 @@ marker or count file:
 | [`coding-prompts/calculator.md`](coding-prompts/calculator.md) | `/app/calculator.py` → `run_calculator` (`add`, `sub`, `mul`, `div`) |
 | [`coding-prompts/todo.md`](coding-prompts/todo.md) | `/app/todo.py` → `run_todo` (`add`, `list`, `done <n>`, `clear`) |
 | [`coding-prompts/counter.md`](coding-prompts/counter.md) | `/app/counter.py` → `run_counter` (`inc`, `dec`, `get`, `set`) |
-| [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` (fix from `.log/`, `bye`, `period`) |
-| [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` (`c2f`, `f2c`, Kelvin conversion) |
-| [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (`add`, `total`, `remove`) |
-| [`coding-prompts/bank.md`](coding-prompts/bank.md) | `/app/bank.py` → `run_bank` (`open`, `deposit`/`withdraw`, `transfer`, `history`) |
-| [`coding-prompts/stats.md`](coding-prompts/stats.md) | `/app/stats.py` → `run_stats` (`add`, `mean`, `low`/`high`, `median`) |
+| [`coding-prompts/greeter.md`](coding-prompts/greeter.md) | `/app/greeter.py` → `run_greeter` (`<name> <hour>` repair from `.log/`, `bye <name>`, `period <hour>`) |
+| [`coding-prompts/temperature.md`](coding-prompts/temperature.md) | `/app/temperature.py` → `run_temperature` (`c2f`, `f2c`, `c2k`, `k2c`) |
+| [`coding-prompts/shop.md`](coding-prompts/shop.md) | `/app/shop.py` → `run_shop` (`add`, `total`, `remove`, optional `count`) |
+| [`coding-prompts/bank.md`](coding-prompts/bank.md) | `/app/bank.py` → `run_bank` (`open`, `deposit`/`withdraw`, `transfer`, `history`, optional `assets`) |
+| [`coding-prompts/stats.md`](coding-prompts/stats.md) | `/app/stats.py` → `run_stats` (`add`, `mean`, `low`/`high`, `median`, optional `reset`) |
 
 Each coding prompt is the product instruction (what to build) plus “Follow the
 provided programming skill.” Skills under
@@ -52,8 +52,9 @@ solutions cover the final API; they are not staged-history examples.
 
 The suite contains `workflow`, `commits`, `worktree`, `docs`, `srp`,
 `commenting`, `logging`, `debug_logs`, `debug`, and `testing`. Default discovery
-includes the companions other than `workflow`, which requires explicit selection.
-`logging-vague` is an opt-in control; shipped presets retain their explicit
+selects `commenting,commits,debug,docs,logging,srp,testing,worktree`. Both
+`workflow` and `debug_logs` require explicit selection. `logging-vague` is an
+opt-in control; shipped presets retain their explicit
 skill lists. Sources live in [../prompts/programming-skills/](../prompts/programming-skills/README.md);
 [judges/README.md](judges/README.md) describes their evaluators.
 
@@ -104,12 +105,30 @@ receive the same selection context, while baselines do not install the selected
 skill bodies. The workflow judge receives the delivered task prompt, so its
 optional-companion decision uses the selection the agent saw.
 
-Workflow is invoked explicitly when selected. It coordinates independently
-selected companions and keeps one four-row `## Tasks` table in the launch
-project's `tmp/workflow.md`: `Plan`, `Establish worktree`, `Write code`, and
-`Write documentation`. Testing runs inside implementation rather than adding
-a workflow phase. If commits is selected, its original capability ledger
-keeps distinct introducing commit references beside the source sentences.
+Workflow is invoked explicitly when selected. Its four outer stages are
+**Establish worktree → Plan → Write code → Write documentation**. During code,
+finish each capability sentence's **3.1 Write tests → 3.2 Write code → 3.3 Commit**
+cycle, including delivery, before the next feature's tests. Read the actual saved
+plan at transitions; a passing suite does not close the commit stage.
+
+Keep a four-column `## Tasks` table and seven-column `## Microsteps` table at the
+retained absolute LIVE launch-project plan path. Use `ACC_WORKFLOW_FILE` when it
+lies inside that root's `tmp/workflow/`; otherwise use `<live-root>/tmp/workflow.md`.
+The launcher assigns `/Projects/app/tmp/workflow/benchmark.md` in coding trials.
+The plan stays in the live root; source and final README belong to the task
+worktree. Record actual Status cells, baselines, passing runs and introducing
+hashes before advancing; close the outer code row before documentation.
+
+Every implementation follow-up needs a fresh plan; the verified workspace,
+branch and assigned plan path may be reused. During unfinished work, preserve
+completed evidence and the remaining queue. Status-only replies need no new plan.
+Selected testing requires saved command coverage and old-rejection-body
+inventories before code, including extra-input rejection for zero-operand queries.
+Mutable rejection cases use public seed → reject → immediate public value/history
+reads; a valid empty-domain query's asserted failure itself observes emptiness.
+Companion requirements are reviewed together at each checkpoint.
+If commits is selected, its original capability ledger keeps distinct introducing
+commit references beside the verbatim source sentences.
 
 Worktree and docs judges are programmatic. Commits, debugging, testing, and
 the other skill judges use semantic evidence from the original request,
@@ -123,6 +142,15 @@ stable CLI versions, prepares tasks, runs Harbor, summarizes the results,
 and archives jobs under `runs/`. Docker and the installed Harbor environment
 are required. Run only one benchmark at a time on this machine.
 
+Acceptance uses `gpt-6-luna` with `low` reasoning for both the Codex coding model
+and Codex semantic judge. Check actual archived turn settings, not only defaults.
+Do not raise effort or switch to a stronger model to pass. Authentication, quota
+and infrastructure failures are limits, never passing prompt trials.
+Before copying a command, compare current 5-hour and weekly allowances on every
+configured Codex instance and verify the chosen auth home. These examples use
+instance 1, verified at this handoff; replace it with the eligible ID you verify
+for each later run.
+
 ```bash
 cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 ```
@@ -130,13 +158,13 @@ cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals
 A focused positive check:
 
 ```bash
-ACC_CODEX_INSTANCE=2 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug_logs --tasks greeter -k 1
+ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug_logs --tasks greeter -k 1
 ```
 
 A baseline injects no skill bodies but keeps the selected judges:
 
 ```bash
-ACC_CODEX_INSTANCE=2 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug_logs --tasks greeter --baseline -k 1
+ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug_logs --tasks greeter --baseline -k 1
 ```
 
 Wait for each command to finish before starting the next. Use the account
@@ -155,7 +183,7 @@ check with a repair check, select `--skills testing,debug --tasks counter,debug-
 Omitting both task selectors includes all tasks applicable to the selected skills.
 `--suite coding`, `--suite debug`, and `--suite all` choose a family explicitly.
 
-The full positive suite on cx1:
+The full positive suite, including opt-in workflow:
 
 ```bash
 ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,commits,worktree,docs,srp,commenting,logging,debug,testing -k 3
@@ -189,13 +217,11 @@ Do not add a second judge unless the user explicitly requests it.
 [`lib/job_config.sh`](lib/job_config.sh) sets Harbor's agent
 `override_timeout_sec` to 1200 seconds (20 minutes) for every harness in positive
 and baseline jobs. This replaces the generated task's 600-second execution
-allowance: six agents in the latest archive reached that cutoff while still
-progressing through multi-stage tasks. Completed agents return immediately, so
-the larger allowance adds no fixed delay. Setup and verifier budgets, parallel
-capacity and retry policy stay independent; timeouts are not automatically
+allowance. Completed agents return immediately, so this allowance adds no fixed
+delay. Setup and verifier budgets, parallel capacity and retry policy stay independent; timeouts are not automatically
 retried. Harbor's explicit timeout maximum and multipliers still apply, and the
 launch guard reads the resulting execution deadline. This change does not
-guarantee completion; a longer benchmark has not been run to verify it.
+guarantee completion; timed-out trials remain excluded execution limits.
 
 ## Automatic launch pacing
 
