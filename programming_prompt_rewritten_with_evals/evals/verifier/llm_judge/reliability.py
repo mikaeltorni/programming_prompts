@@ -206,7 +206,11 @@ def _contradicted_testing_literal(reasoning: str, python_files: list[Path]) -> b
 
     Dynamic expected expressions and historical/corrective claims are left to
     the semantic judge. This only requests reinspection; it never awards yes.
+
+    Parameters: reasoning - judge finding; python_files - current solution sources.
+    Returns: whether a concrete claimed expectation contradicts the assertions.
     """
+    print(f"reasoning={reasoning} python_files={python_files}")
     cited = {Path(item).name for item in mentioned_python_paths(reasoning)}
     literals: set[str] = set()
     found = False
@@ -217,15 +221,19 @@ def _contradicted_testing_literal(reasoning: str, python_files: list[Path]) -> b
             with path.open("rb") as handle:
                 data = handle.read(MAX_SOURCE_BYTES + 1)
             if len(data) > MAX_SOURCE_BYTES:
+                print(False)
                 return False
             values, dynamic = equality_expectations(ast.parse(data.decode("utf-8")))
         except (OSError, UnicodeError, SyntaxError):
+            print(False)
             return False
         if dynamic:
+            print(False)
             return False
         literals.update(values)
         found = found or bool(values)
     if not found:
+        print(False)
         return False
     for match in _EXPECTED_LITERAL_CLAIM.finditer(reasoning):
         prefix = reasoning[max(0, match.start() - 180):match.start()]
@@ -237,7 +245,16 @@ def _contradicted_testing_literal(reasoning: str, python_files: list[Path]) -> b
             continue
         value = match.group("backtick") or match.group("quoted")
         if value not in literals:
+            # Backticks may contain a Python string literal rather than its value.
+            try:
+                decoded = ast.literal_eval(value)
+            except (ValueError, SyntaxError):
+                decoded = None
+            if isinstance(decoded, str) and decoded in literals:
+                continue
+            print(True)
             return True
+    print(False)
     return False
 
 

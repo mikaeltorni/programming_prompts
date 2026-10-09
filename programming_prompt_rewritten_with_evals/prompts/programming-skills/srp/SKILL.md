@@ -1,229 +1,115 @@
 ---
 name: srp
 description: >-
-  v1.0.20 — Keep raw-command parsing and operation logic in separate helpers
+  v1.0.23 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
 
 # Single responsibility
 
-Write code as single-responsibility functions/methods.
+For each current capability, identify THREE owners BEFORE its first application
+edit: raw-command parser, operation helper(s), and public dispatcher. Write the
+parser and operation owners first; the dispatcher's FIRST saved working body
+already delegates. Small scripts, new programs and one-command slices obey the
+same rule. Do not implement everything in the entrypoint and extract later.
+When repairing existing code, inspect and locally extract its mixed entrypoint
+in THIS repair too, preserving its public signature and earlier behavior.
 
-Before writing a new operation helper, compare its planned decisions with the
-existing operation owners. If both operations need the same classification,
-range decision, calculation or validation, extract that decision once and make
-both owners call it. Keep each operation's output label and effects in its own
-owner; separate owners do not justify copying the shared decision tree. Do this
-in the current capability, before its introducing commit. At the commit gate,
-compare the actual helper bodies: repeated conditions assigning the same result
-are still duplicated logic even when the public dispatcher is thin. Remove the
-old inlined decision after extraction so there is only one owner to revise.
+## One boundary for every command
 
+- The shared parser receives the raw command in ONE call and returns operation
+  selector plus already-parsed arguments. It covers EVERY command variant,
+  including zero-argument/special commands. A single-operation parser may return
+  only its arguments. Smaller parsing helpers may compose inside it.
+- Every strip/split/startswith/partition/slice/regex on the raw command belongs
+  to parsing. Command shape and token conversion belong there too. Do not use
+  a kind-only classifier followed by separate raw parsers in dispatch branches.
+  Route only on parsed data; never inspect raw text for a special early branch.
+- Share genuinely identical token conversion/validation once inside parsing.
+  Keep command-specific shape rules separate. If a shape guard moves into the
+  parser, remove its dispatch copy in the SAME edit. Pass converted arguments
+  unchanged: no number→text→number round trip to retain an obsolete annotation.
+- Arithmetic, result-category selection, business conversions, state updates
+  and domain validation belong to the operation helper. Resource existence,
+  uniqueness, funds/capacity, sign, finite-only, magnitude and integral-value
+  acceptance are operation rules. Neither the dispatcher NOR parser owns them.
+  Numeric conversion establishes representation, not operation acceptance.
+- The public body is parse → dispatch to operation owners → return/format.
+  With logging selected it is docstring → its OWN named-parameter print → parse
+  → dispatch → result print → return. Parse never precedes that entry print.
+  A parser's trace or operation's exit does not cover its caller.
 
-When logging is independently selected, the public body is docstring → its own
-parameter print → shared parse call → dispatch to operation helpers → result
-print → return. "Parse first" means before dispatch, after the entry trace;
-extracting parsing must never move its call above that parameter print.
+Keep typed values across this boundary. `helper(int(token))` or conversion
+followed by passing that value unchanged is thin. `index = int(token) - 1`,
+assigning converted input into state, choosing a sign/delta or deciding an
+acceptable business range is core work: pass the value to its operation owner.
+A public type test enforcing one operation's integral-only policy is also
+business validation. Keep it with that operation in the revision requiring it,
+even if a later capability will accept decimals.
 
-After saving the current feature's public checks and before the first application source write, identify the raw-command parser, the operation
-owner(s) for the current capability, and the public dispatcher. Implement that
-separation in the initial working slice. Write the parser and current operation
-owner before writing the public dispatcher that calls them. Its first saved
-body must already delegate, even for a single simple command. When command
-variants require branching, the shared parser returns the operation selector
-and its parsed arguments in that one call. A single-operation slice with no
-variant dispatch can return only that operation's arguments.
-After branching, the public dispatcher passes those returned values to operation
-helpers; it must not pass the raw command to another parser. A kind-only
-classifier followed by raw-command parsers in dispatch branches is an unfinished
-extraction. The shared parser may compose smaller parsing helpers internally. When command
-variants accept the same token type and range, reuse one conversion/validation
-helper inside that parser rather than copying its conversion, exception handling
-and range checks into each branch. Keep command-specific shape checks in their
-own branches; share only the rules that are actually identical.
-Keep already-converted arguments in their parsed types across this boundary.
-Do not convert a parsed number back to text just to fit an old annotation and
-then reconvert it in dispatch. Update the parser result type when a new variant
-needs it; pass the parsed value unchanged to its operation owner in this slice.
-Give each command-shape rule one owner. If the shared parser already validates
-an operation's arguments, the dispatcher routes those parsed values without
-repeating that guard. When moving a guard into the parser, remove its old
-dispatch copy in the same edit.
-Do not first draft a complete operation in the entrypoint and plan to extract
-it after testing or in a later commit.
-A helper that only formats output, converts one token, or records history does
-not extract the operation that computes or mutates the value.
+The dispatcher may contain ordinary if/elif dispatch, unknown-operation or
+missing/extra-shape errors, and universal input-format guards on parsed values
+(e.g. a clock representation's hour range). It may simply read/format existing
+state (`str(state)`, `f"value={state}"`); no pass-through getter wrapper is
+required. A narrower operation-specific range is NOT a format guard. Domain
+positivity/finite-only/integral-only rules remain in operation helpers.
+Computed output such as a greeting belongs with the operation that computes it;
+a formatting-only helper does not extract core decisions still in dispatch.
 
+## Share decisions before introducing the new operation
 
-Before each commit, read the public entrypoint itself and locate its call to
-the raw-command parser and its calls to the current operation owners. Move any
-remaining raw-string manipulation, aggregate calculation, state mutation or
-state-dependent validation into its responsible helper before committing.
-Adding a later helper elsewhere in the file does not repair work still left
-in the entrypoint. Apply this gate to every subsequent capability: write or
-edit its operation helper first, then add only its helper call to dispatch.
-Extend the shared parser for every new command variant, including commands
-with no arguments. Compare each new dispatch condition with the parsed data;
-never inspect the original raw command to route a special case ahead of the
-parser. Keep this boundary when growing a single-command parser into a
-multi-command program.
-A parser helper plus a formatting helper is insufficient while calculations,
-collection updates or result selection still happen in the public body.
-Simple state reads and format guards retain the narrow allowances below; this check does not require pass-through wrappers. If the
-public body still contains `command.split()` / `command.strip()`, classification
-of a result from an input range, or a mutation of application state, stop and
-extract that work before staging. Passing behavioral tests does not complete
-this separate structural obligation.
+Read EVERY existing operation body before adding or extending one. Save a small
+owner inventory of the decisions the current operation will use:
 
+| Decision | Existing owner(s)/source lines | Current owner | Shared owner called by every affected operation, or concrete difference |
+| --- | --- | --- | --- |
 
-- **Parsing lives in its own helper(s).** Every `strip()`, `split()`,
-  `startswith()`, `partition()`, slice, or regex on the raw command belongs
-  there, and one parse helper covers **every** command variant — never parse
-  most commands in the helper and one special case (`bye`, `period`) inline.
-- **Core logic lives in its own helper(s).** Arithmetic, state updates, and
-  business conversions, and domain validation belong to helpers, which may
-  return a one-line formatted result. For a bank, checking whether an amount
-  is negative is part of the deposit/withdraw/transfer operation: do that in
-  its operation helper, after dispatch. `int()` / `float()` of an
-  already-split token is not a business conversion.
-- **State-dependent validation is operation logic.** Resource existence,
-  uniqueness, available balance, and other domain constraints belong inside
-  the helper that owns the operation. Do not check them in the entrypoint
-  before calling the helper; dispatch may check only command/argument shape
-  and the format guards below.
-- **The public entrypoint stays thin: parse → call helpers → return/format.**
-  It hands the raw command to the parse helper in a single call before it
-  branches on anything, then dispatches only on what the helper returned. It
-  never takes the raw string apart, never increments or updates state, and
-  never builds a computed result literal (`f"hello={name}"`) — that string
-  belongs to the helper that owns the value.
-- **A converted token is passed on, never worked on.** `helper(int(token))` is
-  thin; so is `value = int(token); helper(value)` when the local value is passed
-  unchanged. Arithmetic or state-dependent work on that value in the entrypoint
-  is core logic and belongs in
-  the helper: no offset or other arithmetic on it
-  (`index = int(token) - 1`), no comparison against current state to validate
-  it, and above all no assignment into state
-  (`_total = int(token)`). Hand the raw converted value over
-  (`helper(int(token))`) and let the helper apply the offset, check its domain range,
-  and store the result — a command that replaces state needs its own helper
-  exactly like one that increments it.
-- **These belong in the entrypoint or a core helper, not a new function:**
-  if/elif dispatch, raises for an unknown operation or extra/missing
-  arguments, and simple input-shape or format guards on an already-parsed
-  value (for example, a clock hour outside 0..23),
-  `helper(int(token))`, and a one-line format or read of existing state
-  (`str(state)`, `f"value={state}"`, `state if operation == "get" else
-  helper(...)`). Do not require `get` to go through a helper. A format guard
-  checks whether input is representable, not whether the operation accepts it:
-  a narrower business interval within a valid format range belongs in the
-  operation helper. Do not reject an operation's disallowed hours or other
-  domain values in the entrypoint under the format-guard allowance.
-  Successful numeric conversion only establishes that the token can be
-  represented. Whether that value is acceptable to an operation, including
-  finite-only, sign, magnitude, or an operation's integral-value requirement,
-  is domain validation in the operation helper. A public-body type check such
-  as `isinstance(value, int)` still enforces that domain rule when it rejects
-  fractional amounts for one operation; it is not a format guard. Keep it in
-  that operation's helper at the revision where the rule applies, even if a
-  later requirement will accept decimals. Pass the converted value unchanged.
-- **Each command owns its own helper, amount, and label.** Do not collapse two
-  commands into one parameterized helper by computing the difference in the
-  entrypoint. Branching on the parsed command to call `_deposit(...)` or
-  `_withdraw(...)` is ordinary dispatch; choosing `+1`/`-1` or `up`/`down`
-  in the entrypoint as arguments to one shared helper is core work:
+Include classification/ranges, calculation, numeric-domain acceptance and
+state/resource validation, not just parsing. Compare actual predicates and
+results; equivalent conditions with different variable names still share a
+rule. If two operations need the SAME classification/calculation/validation,
+extract that decision ONCE and make BOTH call it in THIS Feature. Remove the
+old inline rule immediately. A new shared helper plus an unchanged old owner
+still duplicates the decision. Separate function names do not prove separation.
 
-  ```python
-  amount = 1 if operation == "inc" else -1          # arithmetic mapping, and
-  prefix = "up" if operation == "inc" else "down"   # label, both left in
-  result = _change_counter(amount, prefix)          # the entrypoint
-  ```
+Different arithmetic operations or genuinely different domain rules need no
+forced common helper. Each command keeps its own effects and output label.
+Two owners may call a small shared updater, but dispatch must not map an
+operation into its core amount or label before calling a parameterized helper.
+For example, choosing `+1`/`-1` or `up`/`down` in dispatch leaves the command's
+work there; dedicated increment/decrement owners choose their own values.
 
-  Instead `_increment()` returns `f"up={_counter}"`, `_decrement()` returns
-  `f"down={_counter}"`, and the entrypoint only dispatches:
-  `result = _increment() if operation == "inc" else _decrement()`. Two helpers
-  sharing a private one-line updater are fine.
-- Do not leave parsing and core logic mixed in one monolithic function body.
-- Before committing, inspect each entrypoint comparison or raise involving a
-  parsed value. Command shape and universal format validity may stay there;
-  choosing a result category or rejecting a narrower operation-specific
-  range belongs in the operation helper. A helper that only formats a category
-  already chosen by the entrypoint has not extracted that core logic.
-- Logging prints are a separate skill; they never merge responsibilities.
-  When a logging skill applies, the entry `print(...)` is still the first
-  statement and the parse-helper call comes after it — printing is not
-  parsing, so both rules hold.
+## Grow through focused edits
 
-## Establish responsibilities in the current slice
+Save/run the current capability's public checks before implementation. Identify
+its existing owner and dependent callers/checks. Extend that owner through the
+existing parsing/dispatch path; split a newly mixed responsibility locally.
+Keep working names, signatures, locations and conventions unless the request
+requires a change. No parallel parser, copied implementation or speculative
+framework. Avoid unrelated renaming, reordering and wholesale rewrites.
 
-The first capability already needs a parse helper, its operation helper(s), and
-an entrypoint that delegates to them. A single command, a short function, or a
-simple greeting/conversion does not exempt raw-command parsing or computed
-output from these boundaries. When fixing an existing program, inspect its
-entrypoint too: extract existing mixed parsing and core work as part of the
-current repair, preserving the public signature and earlier behavior. Do not
-leave the original command monolithic while giving only new commands helpers,
-or defer the extraction to a later capability or final cleanup.
+Implement only the CURRENT sentence, not later capabilities or scaffolding.
+After each edit, exercise new behavior and representative earlier public
+behavior with retained checks. Replace only explicitly superseded expectations.
+Remove dead branches/helpers created by this change; retain useful old owners.
+Resolve failures before selected commit/delivery, then start the next sentence.
+Tests-first does not waive parser/operation/dispatcher separation in that first
+working slice. A simple final file does not excuse implementing all Features
+up front or replacing earlier implementations at every stage.
 
-## Reduce churn while modifying code
+## Read actual source before EVERY code commit
 
-Before editing, identify the requested behavior, its current owner, and the
-callers and checks that depend on it. Change that owner and its necessary
-integration points; preserve working behavior outside the request.
+Open the parser, public entrypoint and ALL operation helpers in the current
+working revision. Locate the entrypoint's SINGLE raw-parse call, dispatch calls
+and final result return. Move remaining raw manipulation, aggregate calculations,
+state mutation, domain rejection and computed result selection into their
+responsible owners NOW. A parser plus formatting helper is insufficient while
+operation work stays in dispatch. Adding unused helpers proves nothing.
 
-- Keep existing names, signatures, file locations, and conventions when they
-  still fit. Avoid unrelated renaming, reordering, formatting, or rewriting
-  working functions merely to make the new code look uniform.
-- Extend the existing parsing and dispatch path for a new command variant.
-  Do not add a parallel parser or copy a working operation into a second
-  implementation that will drift from the original.
-- When a function acquires a second responsibility, extract that responsibility
-  and update its callers. A local extraction may touch several files; prefer
-  that justified change over a tiny patch that leaves mixed responsibilities,
-  duplicated logic, or another special case.
-- Add helpers for a clear responsibility or actual reuse. Avoid speculative
-  frameworks, pass-through layers, and broad reorganizations for hypothetical
-  future requirements. Simple functions may share a small private helper.
-- Check changed behavior and representative earlier behavior through the public
-  entrypoint. Update expectations only for behavior the request intentionally
-  changes; preserve the remaining contracts and state on failed operations.
-- Review the diff before committing. Each changed block should serve the
-  requested behavior, its necessary extraction, or its checks/documentation.
-  Remove unrelated edits and explain any broader refactor that is necessary.
-  Diff size alone is not proof of churn: judge whether the edits were needed
-  and whether the resulting responsibilities remain clear.
-
-### Start simple, then grow through edits
-
-For each capability, save and run its public checks before its application
-edit, implement and verify that capability, then perform any selected commit
-closeout before the next capability. Tests-first ordering does not waive the
-initial parser/operation/dispatcher separation.
-
-For a new program, implement only the current requested capability as a small
-working slice: one parsing path, the operation helpers it needs, and a thin
-public entrypoint. Avoid scaffolding later capabilities. Follow the selected
-commits skill or the request's stage order when either defines the next slice;
-this section does not create a separate commit policy.
-
-At each subsequent change:
-
-1. Run the current slice through its public entrypoint and identify the helper
-   that owns the behavior being extended or revised.
-2. Edit that helper or add a focused operation helper through the existing
-   parsing/dispatch path. Keep each function's purpose clear; split a newly
-   mixed responsibility locally instead of rebuilding the program around it.
-3. Exercise the new behavior and retained earlier behavior before advancing.
-   If a requirement changes an earlier rule, replace only the affected
-   expectations and keep the remaining regression examples.
-4. Inspect the working code and diff now, rather than deferring simplicity to
-   a final rewrite. Remove dead branches and obsolete helpers created by this
-   change; keep helpers that still serve earlier capabilities. Avoid needless
-   one-line wrappers and abstractions whose only purpose is a possible later
-   stage.
-
-Repeat this cycle as the program grows. Prefer a clear, cohesive helper over
-arbitrary function-size limits, and preserve existing interfaces unless the
-request changes them. A simple final file does not justify building every
-capability up front or repeatedly replacing earlier working implementations.
+Compare EVERY owner body's classification/calculation/validation predicates with
+the inventory. Repeated conditions selecting the same category or accepting
+amounts/resources need ONE called owner. Check both old and new implementations;
+remove obsolete inline rules before staging. Successful tests are not this
+structural review. Explain any necessary local extraction and remove unrelated
+churn from the diff. Logging contracts are independent and never merge owners.

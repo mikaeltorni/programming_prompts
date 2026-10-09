@@ -1,12 +1,21 @@
 ---
 name: worktree
 description: >-
-  v1.0.12 — Edit Git projects in a sibling .worktrees project/task checkout,
+  v1.0.13 — Edit Git projects in a sibling .worktrees project/task checkout,
   commit there, merge each Feature into the live default branch, and reapply
   its consumers. Never push unless requested.
 ---
 
 # Git worktree isolation and delivery
+
+Resolve the LIVE repository physically BEFORE deriving the store: its immediate
+PARENT owns `.worktrees/`, never the live repository itself. For live root
+`/Projects/app`, the store is `/Projects/.worktrees/app/`, NOT
+`/Projects/app/.worktrees/`. This illustrates the parent rule, not a fixed path.
+Derive the actual task path and matching branch from your actual LIVE/PARENT/
+PROJECT/TYPE/FEATURE values. Before every edit/commit, compare registration,
+physical checkout path and branch with those originally derived values; merely
+being in some `.worktrees` directory is insufficient.
 
 When isolation applies, use one linked worktree and one matching branch per
 project for every Feature, repair, and documentation commit. Do not create a

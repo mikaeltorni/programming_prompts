@@ -1,3 +1,12 @@
+First classify each rejected input before applying preservation requirements.
+A VALID read rejected because the public domain is EMPTY is exempt: its asserted
+exception itself observes emptiness. It needs neither a public seed nor a second
+read after that exception. A later successful public mutation does not invalidate
+this exemption. Apply seed and immediate value/history reads to the separate
+malformed inputs in the same test or loop; blank/unknown/shape/conversion failures
+remain fully subject to those requirements. Never fail the valid empty-domain
+block merely because its next statement creates populated state.
+
 FIRST resolve whether the requested public interface stores mutable state.
 A stateless formatter/converter PASSES every preservation/isolation question:
 it needs no public seed or observation, even for blank, malformed or conversion

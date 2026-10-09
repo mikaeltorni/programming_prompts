@@ -1,3 +1,12 @@
+First classify each rejected input before applying preservation requirements.
+A VALID read rejected because the public domain is EMPTY is exempt: its asserted
+exception itself observes emptiness. It needs neither a public seed nor a second
+read after that exception. A later successful public mutation does not invalidate
+this exemption. Apply seed and immediate value/history reads to the separate
+malformed inputs in the same test or loop; blank/unknown/shape/conversion failures
+remain fully subject to those requirements. Never fail the valid empty-domain
+block merely because its next statement creates populated state.
+
 A successful public seed before a nonmutating rejection loop can cover all its
 iterations when the immediate public reads prove that seeded state stays unchanged.
 Do not require a fresh mutation to seed each iteration. A redundant assignment

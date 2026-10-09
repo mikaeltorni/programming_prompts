@@ -1,72 +1,77 @@
 ---
 name: workflow
 description: >-
-  v1.2.20 — Establish the task checkout and authoritative plan, then finish
+  v1.2.25 — Establish the task checkout and authoritative plan, then finish
   each feature's tests → code → commit cycle before documentation.
 ---
 
 # Programming workflow
 
-Run when `$workflow` is invoked or explicitly selected in global instructions.
-An installed catalog entry alone does not activate it. Use only selected
-companions; skip unavailable ones and mark inapplicable ones accordingly.
-Do not install missing skills or invent unselected rules.
-Explicit user/global selection requests this workflow's required Git commits
-and selected local merges, so their authorization is already supplied. Do not
-ask again at 3.3 because of a general "commit only when requested" default:
-this selection is the request. An explicit user prohibition still overrides
-and uses the documented 3.3 exception. Pushing needs a separate request.
+At EVERY transition, reread the retained plan and choose its FIRST unfinished
+microstep. This saved state is the next-action selector. Never start the next
+feature's 3.1 while an earlier feature's 3.3 or ledger hash is pending, even if
+the code tests pass. Close that actual commit/delivery row and record its hash
+NOW. Do not batch ledger updates at handoff, infer a missing commit from a later
+merge, or mark an uncommitted feature complete. Before saving next-feature tests,
+assert all previous cycle Status cells are complete and their introducing hashes
+exist in Git. A mismatch means finish the previous cycle first.
 
-Before committing ANY feature, close and read back its 3.1 AND 3.2 Status
-cells in the actual plan. Evidence text is not Status. After commit/delivery,
-close 3.3 and put the actual hash in its original ledger row. Never start the
-next feature or docs while any earlier cycle cell or ledger hash is pending.
 
-Keep exactly four outer stages, in this order:
+Run only when explicitly invoked or selected. Use only selected, available
+companions; do not install missing skills. Selection authorizes this workflow's
+Git commits and selected local merges. An explicit prohibition overrides that
+authorization; pushing requires a separate request.
 
-1. **Establish worktree.** Read project guidance and resolve the physical live
-   launch-project root. Establish or verify the task checkout now when worktree
-   isolation is selected, before detailed investigation/planning. Follow its
-   read-only/live-checkout exceptions. Retain the live root and plan path below;
-   use this same task checkout and branch for all later work.
-2. **Plan.** Record concrete features, public behavior, files and checks. When
-   commits is selected, preserve its verbatim capability-sentence ledger and
-   boundaries. Every feature gets its own ordered 3.1 → 3.2 → 3.3 cycle.
-3. **Write code.** Finish one complete feature cycle before the next starts.
-   After the final cycle, close the outer code row as well as its microsteps.
-4. **Write documentation.** Only after all cycles close, finish selected docs
-   in the task checkout, commit and deliver it. Skip this row when unselected.
+**Work on the first unfinished capability sentence only.** Its next action is
+3.1 checks, then 3.2 implementation, then 3.3 commit/delivery. A passing code
+run advances to this Feature's commit, NEVER another Feature's tests or code.
+Do not implement the remaining queue together, even when the program is small.
+Later commands must remain absent from the public entrypoint. A combined commit
+cannot be repaired by filling plan cells, duplicate commits or rewriting history.
 
-Establish/verify the selected task checkout BEFORE writing the detailed plan.
-Resolving and retaining the live plan path is startup discovery; writing its
-feature tables is planning and must follow checkout establishment.
-In Microsteps, every Write code row belongs to one feature's 3.1/3.2/3.3 triplet.
-Never add a generic Write code row with Feature or Stage `-`; the outer Tasks
-row already represents that phase. Put investigation and wrap-up in the owning
-feature row or outer Details. Execution-policy directives are not capabilities.
+Keep execution efficient: do ONE combined source/coverage review per checkpoint
+for all selected companions, updating the same inventories. An unchanged,
+already verified revision needs no repeated AST audit, source dump or baseline.
+Run the required fresh cumulative checks after the last edit; repeat or expand
+only for changes, failures, isolation requirements or unresolved evidence.
+Record each observed baseline when it happens BEFORE code. A later replay with
+historical source cannot reconstruct missing chronology and is unnecessary when
+the actual baseline is already recorded. Do not add extra ceremonies or phases.
 
-## Resolve one authoritative plan path at startup
+## Exactly four outer stages
+
+1. **Establish worktree.** Read project guidance, resolve the physical LIVE
+   launch-project root and retain the plan path below. Establish/verify selected
+   isolation immediately, before detailed investigation or planning. Reuse the
+   same verified task checkout and branch throughout. Read-only work and the
+   selected worktree policy's explicit exceptions retain their scope.
+2. **Plan.** Read the entire request. Record concrete behavior, files and checks,
+   with one ordered 3.1 → 3.2 → 3.3 triplet for every Feature. With commits
+   selected, quote each original complete capability sentence verbatim in its
+   ledger; commands and optional clauses stay with that sentence. Execution
+   policies are not capabilities. Keep pending Features visible.
+3. **Write code.** Finish one entire Feature triplet, including selected delivery,
+   before starting the next. Close the outer code row after the final triplet.
+4. **Write documentation.** After every applicable cycle closes, write selected
+   docs in the task checkout, commit and deliver them. Skip when unselected.
+
+## Retain one authoritative plan path
 
 Read `ACC_WORKFLOW_FILE` from the shell. Use that exact absolute Markdown path
-only when it lies inside the retained LIVE launch root's `tmp/workflow/`.
-Otherwise use `<live-launch-root>/tmp/workflow.md`. Create its parent directory.
-Record this absolute path in startup evidence BEFORE entering the task checkout.
-Keep the LIVE project root, task checkout and plan path as three separate
-absolute values. The fallback appends `/tmp/workflow.md` to the LIVE project
-root itself; its parent owns the external worktree store, not the plan.
-Before checks, read the actual file at that retained path and compare it with
-the recorded path. A plan beside the project or with a different filename
-cannot substitute, even if its tables are complete.
+ONLY if inside the retained LIVE root's `tmp/workflow/`; otherwise use
+`<live-launch-root>/tmp/workflow.md`. Create its parent. Record the absolute LIVE
+root, task checkout and plan path as THREE separate values during startup,
+BEFORE entering the task checkout. Verify isolation before writing the plan.
 
-Every plan write/read uses that retained absolute path. A relative filename
-inside the task worktree is wrong, even if its tables are otherwise correct.
-Never put the plan in a linked worktree, skill directory, agent home or system
-`/tmp/`. Do not commit it unless asked. Worktree README ownership is different:
-selected docs belongs in the task checkout; the plan belongs at the live root.
+Every plan read/write uses that retained absolute path. Before checks, reread
+that actual file and compare its path with the retained value. Never substitute
+an adjacent plan, a relative worktree path, a skill/home directory or system
+`/tmp/`. Do not commit the plan unless asked. The README belongs in the task
+checkout; the plan belongs at the live root.
 
-## Write and read back the plan before feature checks or implementation
+## Save and read back the plan before Feature checks
 
-Use these headings and tables:
+Use these exact headings, tables and column counts:
 
 ```markdown
 # Workflow
@@ -80,9 +85,9 @@ Selected companions, or none.
 ## Tasks
 | Order | Task | Status | Details |
 | --- | --- | --- | --- |
-| 1 | Establish worktree | complete | Verified task checkout or justified exception. |
-| 2 | Plan | complete | Concrete features and ordered cycles recorded. |
-| 3 | Write code | pending | Finish each feature through tests, code and commit. |
+| 1 | Establish worktree | complete | Verified checkout or concrete exception. |
+| 2 | Plan | complete | Concrete Features and ordered cycles recorded. |
+| 3 | Write code | pending | Complete each Feature's tests, code and commit. |
 | 4 | Write documentation | pending | Finish selected docs; otherwise skipped. |
 
 ## Microsteps
@@ -90,196 +95,165 @@ Selected companions, or none.
 | --- | --- | --- | --- | --- | --- | --- |
 ```
 
-Every Tasks row has four cells and every Microsteps row has seven, exactly
-as shown.
-The tables are DIFFERENT: Tasks has only Order/Task/Status/Details. Never copy
-Microsteps' Feature/Stage/Action/Evidence fields into a Tasks row. Locate the
-table by its heading before editing: a prefix such as `3 / Write code` can
-appear in both tables, so that prefix alone cannot identify the outer row.
-Close an outer row by editing ONLY the section between `## Tasks` and
-`## Microsteps`, never by replacing matching prefixes across the whole file.
-A full-file `startswith` update can corrupt the first feature's 3.1 row even
-when the new outer row itself has the right width. With `plan_text` read from
-the retained path and `old_row`/`new_row` containing the full four-cell outer
-row, this bounded replacement leaves all microsteps untouched:
+Tasks has exactly those FOUR unique names/numbers in order, with FOUR cells
+per row. Microsteps has SEVEN cells per row. Status is only `pending`,
+`in_progress`, `complete` or `skipped`; skip inapplicable optional stages now.
+Populate actual actions before implementation. Step is a unique positive
+integer in execution order. Phase names an outer task. Every Write code row
+has a stable descriptive Feature identifier and Stage exactly `3.1`, `3.2` or
+`3.3`, in consecutive triplets. Other phases use `-` for Feature/Stage.
+No generic code/investigation/wrap-up row with Feature/Stage `-` is permitted;
+use the owning Feature or outer Details. Action names files/checks and expected
+public behavior. Evidence holds observed results, not future completion claims.
 
-```python
-before_tasks, remainder = plan_text.split("## Tasks\n", 1)
-tasks_text, after_tasks = remainder.split("## Microsteps\n", 1)
-assert tasks_text.count(old_row) == 1
-updated_tasks = tasks_text.replace(old_row, new_row, 1)
-plan_text = before_tasks + "## Tasks\n" + updated_tasks + "## Microsteps\n" + after_tasks
-```
+Keep notes inside Action/Evidence or the following capability ledger, NEVER
+an eighth cell. Escape literal pipes as `\|`; do not append an empty final cell.
+Ledger rows retain original sentence boundaries, commands, planned conventional
+subject and actual distinct introducing hash. Feature-local repairs remain
+beside their original row; documentation/repair commits are not substitute
+introducing commits.
 
-For microsteps, restrict edits to their table and match Step/Feature/Stage,
-not a bare number or phase. Validate the candidate before writing: all Tasks
-rows still have four cells and all Microsteps rows seven. A loop whose body
-merely says `pass`, or a printout without checking widths, is not validation.
- Do not add an extra empty cell after the final Evidence cell.
-Keep later notes, exact sentences, commit subjects and deferred commands INSIDE
-the existing Action/Evidence cells or in the ledger below, never in an eighth
-cell appended to a row. Before saving, count each row against the header. Use
-semicolons within Evidence; escape any literal table pipe as `\|`.
-Tasks has exactly those four unique names/numbers in that order. Statuses in
-both tables are only `pending`, `in_progress`, `complete`, `skipped`; skip
-optional stages immediately when inapplicable. Keep deliverables in Details,
-feature boundaries/counts in the ledger.
+## Repeat only the first unfinished Feature
 
-Populate Microsteps with real actions before implementation. Step is a unique
-positive integer in execution order; Phase is an outer task name. Each code
-feature has a stable descriptive Feature identifier and three consecutive rows
-with Stage exactly `3.1`, `3.2`, `3.3`. Action names its actual files/checks and
-expected public result. Other phases use `-` for Feature/Stage. Investigations,
-repairs, verification and delivery stay within their owning row, never another
-outer stage. Keep future cycles visible. Selected commits' ledger follows this
-table and records real introducing hashes, never guessed counts.
+Announce its exact sentence, allowed commands, planned conventional subject and
+deferred work. Mark outer Write code `in_progress`; only the active microstep
+is `in_progress`. Before source edits, compare the queue with the whole request.
 
-## Repeat for the first unfinished feature only
+### 3.1 Save checks and run the baseline
 
-**Close each checkpoint in the actual file.** After 3.1 and after 3.2, set
-that exact row's Status to complete and Evidence to the observed result, then
-read both cells back. Identify the row by its unique Step, Feature and Stage;
-changing Evidence alone does not close it. After 3.3, read all three current
-rows: each must say complete with its baseline, passing checks or real
-commit/delivery evidence. A committed feature with stale 3.1/3.2 cells is still
-unfinished workflow; repair those cells BEFORE starting another feature.
+Save THIS Feature's runnable public checks before application edits. Preserve
+retained checks; defer later executable expectations and commands. Run the
+saved suite now. Record exact runner and actual baseline: intended missing
+behavior, valid absent-entrypoint import failure, existing passing refactor
+checks, or distinct infrastructure/dependency failure. Do not invent execution.
 
-Announce its behavior, planned conventional commit subject and deferred work.
-Mark outer Write code in_progress; only the current microstep is in_progress.
+With testing selected, inspect ALL current-module test files and complete its
+source gates before code: **Gate B first**, edit every applicable OLD rejection
+body in place with public seed → reject → immediate affected value/history
+read-only assertions when reads are currently available/planned, including the
+FIRST read; then **Gate A**, save success AND applicable blank/unknown, command
+shape, conversion, domain/resource cases for EVERY current command/query.
+Zero-operand commands need extra-input rejection. A new complete class cannot
+repair an old body. Use actual assertion locations/fixtures in the inventory.
+No future query may be introduced for an earlier observer. Stateless and genuine
+empty-domain exceptions retain testing's narrow scope. Apply selected function
+contracts from the first saved test. Green success-only tests are insufficient.
 
-**3.1 Write tests.** Save this feature's runnable public checks before its
-application edit, preserving earlier checks and deferring later capabilities.
-Run them now and record the actual baseline. Missing behavior should fail for
-its intended reason; creation may fail to import an absent entrypoint. Existing
-passing checks may protect a pure refactor. Separate dependency failures.
-Apply selected test/function/logging rules from the first saved draft.
+Static prompts/content and project test prohibitions use their documented
+DIRECT verification exception: record exact baseline/check and limit rather
+than claiming a saved executable test.
 
-When testing is selected, finish its two source gates before closing 3.1.
-Do Gate B FIRST: edit the actual retained rejection bodies before adding new
-query tests. Then save Gate A cases for this feature.
-**A:** each operation introduced/changed now has saved success and every
-applicable rejection class, including its own documented operand shapes.
-**B:** if adding a read, EVERY applicable retained current-module rejection
-block is updated in place with immediate independently expected read-only
-observations BEFORE any recovery mutation.
-This includes the FIRST read: put its not-yet-implemented calls in the old blocks
-now and expect missing-read baseline failures. Map values and history separately;
-use an available total for values even without individual getters, and assert
-required history too. First-read status never exempts older current-module tests. Include older classes/shared loops
-and new query rejections; a later read-aware class alone does not repair them.
-Keep informative earlier views and add the new read. Historical-source loaders
-and true empty-domain reads retain testing's narrow exceptions.
-Read the actual saved source and record each operation's cases plus every old
-block's file/test location, fixture, rejected inputs and first public assertion
-in the inventory and this 3.1 Evidence. Run that upgraded cumulative suite
-before query code; missing-query failures are valid baseline evidence.
-A prose completion claim or green success-only suite cannot close either gate.
-At 3.3 read all current checks again and verify both gates against actual owners
-and blocks before staging; new read assertions belong in those old blocks.
+Set THIS 3.1 Status to `complete` with actual evidence, save and READ IT BACK
+before implementation. Changing only Evidence does not close the row.
 
-Static content and project test prohibitions use recorded direct verification;
-name the exact exception, check and baseline without claiming a test was saved.
-Finish this 3.1 row before starting 3.2. Never write all features' tests first.
+### 3.2 Implement this Feature, then verify
 
-**3.2 Write code.** Implement only this feature and necessary integration.
-Apply selected commenting, logging, SRP and debug rules. Run its saved checks and
-relevant retained checks with fresh state. Resolve failures; inspect code and
-diff against current/pending features. Record actual passing commands/results
-before 3.3. Checks saved only after code do not satisfy 3.1.
+Implement only its allowed behavior and necessary integration. Apply selected
+commenting, logging, SRP and debug contracts. Keep later commands absent.
+Run current and retained public checks with fresh state; after shared parsing
+changes exercise earlier behavior. Resolve failures; inspect actual source and
+diff against current/pending Features. Record the passing cumulative invocation
+BEFORE another Feature's checks. Tests saved only after code cannot close 3.1.
 
-**3.3 Commit.** FIRST read the retained plan and assert this feature's 3.1 and
-3.2 Status cells are both `complete`. If either is `pending`/`in_progress`,
-close that actual row with the observed baseline/passing run, save, and read
-it back BEFORE staging. With `plan_text` freshly read from the retained path
-and `feature_name` the current Microsteps Feature cell, this guard checks the
-table's actual Status field rather than completion prose:
+Set THIS 3.2 Status to `complete` with passing evidence, save and read BOTH
+3.1/3.2 Status cells back. The next action is 3.3, not queued implementation.
 
-```python
-import re
-microsteps_text = plan_text.split("## Microsteps\n", 1)[1].split("\n## ", 1)[0]
-current_rows = {}
-for line in microsteps_text.splitlines():
-    if not line.startswith("|"):
-        continue
-    cells = [value.strip() for value in re.split(r"(?<!\\)\|", line)[1:-1]]
-    assert len(cells) == 7, line
-    if cells[2] == feature_name and cells[3] in ("3.1", "3.2"):
-        assert cells[3] not in current_rows, line
-        current_rows[cells[3]] = cells[5]
-assert current_rows == {"3.1": "complete", "3.2": "complete"}, current_rows
-```
+### 3.3 Commit and deliver before advancing
 
-Review only this feature's working code/checks before staging.
-When commenting/logging is selected, enumerate every changed application and
-test function and inspect its actual body: complete docstring labels, first
-named-parameter print, and every normal return/fallthrough print as applicable.
-After adding test assertions or query observations, the selected None exit print
-must remain AFTER the final assertion; an earlier print no longer covers the
-fallthrough. Finish this source review before staging; green tests do not prove
-these separately selected function contracts.
-Run `git commit` as its own command with a conventional subject in
-`type: summary` or `type(scope): summary` form, even when commits is unselected.
-A plain `Add ...` or `Fix ...` subject does not close this workflow stage.
-Verify HEAD advanced and
-inspect the committed tree; record the real hash in this row AND replace
-`pending` in that feature's introducing-hash ledger cell. Read the ledger cell
-back; hashes elsewhere in Evidence or an inventory do not close this cell.
-When worktree is selected, finish its live-default merge, consumer reapplication
-and verification before closing 3.3. Never push unless asked.
+FIRST freshly read the retained plan. Parse the actual current Feature rows:
+assert exactly one 3.1 and one 3.2, BOTH Status cells `complete`, with observed
+baseline/passing evidence. Assert every Tasks/Microsteps row has four/seven
+cells respectively. Repair stale or malformed cells BEFORE staging.
 
-If no Git repository exists or the user forbids committing, record the specific
-limit and skip only 3.3; finish permitted tests/code. Repair a completed feature
-with a focused working commit before the next feature. Only after this cycle
-closes may the next feature's 3.1 start. No final batch or cosmetic empty commits.
+Review this Feature's actual code/checks. With testing selected, reopen ALL
+current checks and verify Gate A's actual owners/cases and Gate B's EVERY old
+and new rejection body. With commenting/logging selected, enumerate EVERY
+changed application/test/helper/fixture function: description, same-line
+Parameters/Returns meanings, first named-parameter print and each normal exit
+print. An assertion-only test's None print belongs AFTER its final assertion.
+Green tests do not prove these source contracts. Apply SRP's actual shared-owner
+and thin-dispatch review, not a promise to extract after committing.
 
-## Update, recover and close the plan
+Stage exact current Feature paths in the selected task checkout. Run
+`git commit` as its OWN command with a conventional `type: summary` or
+`type(scope): summary` subject, even when commits is unselected. A failed
+search/check must not short-circuit a chained commit. Confirm HEAD advanced;
+inspect the committed tree. Record its REAL hash in 3.3 Evidence AND replace
+the original introducing-ledger `pending` cell. Read that ledger cell back.
 
-At every transition update the SAME absolute plan path, record evidence and
-read it back. Rewrite affected rows in place; never append duplicate tables.
-If using text replacement, verify each replacement matches exactly one current row
-before writing; a zero-match replacement is a failed update, even with exit 0.
-Preserve completed evidence, pending features and original sentence boundaries.
-Escape literal table pipes as `\|`. Recover damage in a separate checked
-candidate before replacing the plan; never truncate it with a failing command.
+Complete selected live-default merge, consumer reapplication and verification
+before setting 3.3 `complete`. Read ALL THREE current Status/Evidence cells;
+only now may the next Feature's 3.1 start. If no Git repository exists or commits
+are explicitly forbidden, record that concrete exception and skip ONLY 3.3;
+finish permitted checks/code. Focused repairs close before the next Feature.
+Never substitute empty/cosmetic commits, a final batch or history rewrites.
 
-A failed plan edit is unfinished work. Read the actual file and correct its
-current rows; do not retry guessed old text or hand off. Optional cache cleanup
-cannot gate a plan update or required commit: if rejected, leave generated
-output untracked and finish the authorized work.
+## Update and close the SAME plan
 
-After the last feature's verified 3.3, reconcile ledger/commits/delivery and mark
-the EXISTING Tasks row 3 (Write code) COMPLETE in place. Do not append a
-Write code closure microstep with Feature/Stage `-`: code microsteps are only
-the feature's 3.1/3.2/3.3 rows. Record wrap-up evidence in the existing outer
-row and final feature's 3.3 row. Read back both tables: complete microsteps do not
-close the outer row automatically. Only then start docs, or hand off if skipped.
-Selected docs owns the README; feature-local notes and function docstrings
-belong with their feature. Deliver docs through the same task checkout too.
+At every transition edit existing rows in place, preserving completed evidence
+and unfinished queue. Match a microstep by unique Step/Feature/Stage. For an
+outer row, restrict replacement to the section BETWEEN `## Tasks` and
+`## Microsteps`; its number may also occur in Microsteps. Never replace prefixes
+across the entire file. Require exactly ONE match for each intended replacement;
+zero matches are failure even with exit 0. Validate all row widths and statuses
+in a candidate BEFORE writing, then reread changed cells. A `pass` loop or mere
+printout is not validation. Recover damaged plans without truncating them.
 
-After delivering documentation, close its Microsteps and existing Tasks row 4
-in the same file; a README commit does not close an in_progress documentation
-row. Read those changed Status and Evidence cells before handoff.
+A failed plan update is unfinished work: inspect the actual file and repair it,
+not guessed prior text. Optional cache cleanup cannot block authorized updates
+or commits; preserve untracked output if cleanup is refused.
 
-Before handoff, read the authoritative plan again: four outer rows in order;
-applicable tasks/microsteps complete or justified skipped; every feature has its
-ordered cycle and actual evidence/hash; no pending ledger hash, stale Details
-or future-tense completion claim. Verify delivered live files/consumers when
-worktree is selected. Report actual checks and concrete limits honestly.
+After the last verified 3.3, reconcile ledger with full request and actual
+introducing trees/history/delivery. Close the EXISTING outer Write code row
+inside Tasks; no extra closure microstep. Read both tables back. Only THEN
+start selected docs. Write/read project-root README in the task checkout,
+commit/merge/reapply it through the same branch and read delivered docs. Close
+both its documentation microstep and EXISTING outer row 4 in the same plan.
+
+At handoff inspect four outer rows, EVERY triplet/ledger hash, source consumers
+and delivered files. No pending hash, stale Status/Details or future-tense
+completion claim may remain. Report actual checks and concrete remaining limits.
 
 ## Every implementation follow-up needs a fresh plan
 
-Each later user message requiring implementation starts a fresh plan BEFORE its
-feature checks/application edits, including small follow-ups after completion.
-Verify/reuse the task checkout and branch when they fit; no new checkout is
-required merely because a message arrived. Keep the SAME authoritative plan path.
+Each later user message requiring implementation starts a fresh plan BEFORE
+its checks/code, including small follow-ups after completion. Verify/reuse the
+same task checkout/branch when they fit; a new message needs no new checkout.
+Keep the SAME authoritative plan path.
 
-After completion, archive the old plan in an ignored file beside it, then write
-and read back the new goal, ledger and pending cycles. Mark startup complete
-only after verifying reuse; reset code and applicable docs to pending. Never
-leave the display on completed old work or a prior feature.
+After completion, archive the old plan in an ignored file beside it, then save
+and read the new goal, ledger and pending cycles. Mark startup complete ONLY
+after verifying reuse; reset code/applicable docs to pending. During unfinished
+work, revise/read back the current plan preserving completed evidence, queue
+and original boundaries; add new cycles but finish the active one first.
+Documentation follows all applicable cycles. Status/explanation-only messages
+need no fresh plan.
 
-During unfinished work, revise/read back the current plan while preserving
-completed evidence, unfinished queue and original capability boundaries. Add
-new cycles; finish the active cycle before another. Documentation follows all
-applicable cycles. A status/explanation requiring no implementation needs no
-new plan.
+**Next-action check:** current Feature's checks → baseline → only its code →
+passing cumulative run → its commit and selected delivery → close all three
+actual rows/hash. Repeat for the next sentence. README comes after that loop.
+
+**Before the final answer, validate the ACTUAL saved Status cells.** It is easy
+to finish every microstep while leaving the outer Write code row `in_progress`.
+Read the retained absolute plan and assert every applicable outer/microstep
+Status is `complete` (or justified `skipped`), in addition to checking widths.
+If this fails, repair and reread those same rows before handoff. Equivalent
+validation using available tooling is fine; this example derives no task count:
+
+```python
+import re
+from pathlib import Path
+plan_text = Path(plan_path).read_text()  # retained absolute LIVE plan path
+for heading, width, status_column in (("Tasks", 4, 2), ("Microsteps", 7, 5)):
+    section = plan_text.split("## " + heading + "\n", 1)[1].split("\n## ", 1)[0]
+    rows = []
+    for line in section.splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in re.split(r"(?<!\\)\|", line)[1:-1]]
+        assert len(cells) == width, line
+        if cells[0].isdigit():
+            rows.append(cells)
+            assert cells[status_column] in ("complete", "skipped"), line
+    assert rows, heading
+```
