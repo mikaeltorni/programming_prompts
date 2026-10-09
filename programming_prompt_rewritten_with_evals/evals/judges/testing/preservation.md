@@ -1,3 +1,16 @@
+A successful public seed before a nonmutating rejection loop can cover all its
+iterations when the immediate public reads prove that seeded state stays unchanged.
+Do not require a fresh mutation to seed each iteration. A redundant assignment
+of that already publicly established and observed value does not invalidate the
+public fixture; a private assignment cannot establish a missing public seed.
+
+A successful public resource-creation call can be a meaningful populated seed
+with zero numeric value or empty history if the following public lookup/read
+would detect loss of the resource. Trace that read and its missing-resource
+behavior before rejecting the seed. Numeric nonzero state is not an additional
+contract when resource existence is already observed. A privately assigned or
+never-publicly-created fixture still does not supply the required public seed.
+
 For each targeted rejection, check PUBLIC SEED → REJECT → PUBLIC READ in that
 actual body and its fixture. For mutable state, locate the successful public
 call that creates meaningful observable state BEFORE rejection. A private reset

@@ -1,3 +1,32 @@
+A successful public seed before a nonmutating rejection loop can cover all its
+iterations when the immediate public reads prove that seeded state stays unchanged.
+Do not require a fresh mutation to seed each iteration. A redundant assignment
+of that already publicly established and observed value does not invalidate the
+public fixture; a private assignment cannot establish a missing public seed.
+
+A successful public resource-creation call can be a meaningful populated seed
+with zero numeric value or empty history if the following public lookup/read
+would detect loss of the resource. Trace that read and its missing-resource
+behavior before rejecting the seed. Numeric nonzero state is not an additional
+contract when resource existence is already observed. A privately assigned or
+never-publicly-created fixture still does not supply the required public seed.
+
+Derive the required input grammar from the ORIGINAL REQUEST before examining
+implementation aliases. Test obligations cover requested forms and their stated
+optional/remaining-text operands; an extra selector implemented by the agent does
+not create another required command variant. A free-form first operand is not an
+operation selector: arbitrary valid operand text with valid remaining operands
+must not be labelled unknown dispatch. Require unknown-operation rejection only
+where the requested grammar actually has operation selectors.
+Before any missing-case verdict, expand ALL saved loop values and helpers across
+ALL current check files. Write the alleged missing public input, its actual
+validation owner, and the closest saved cases; check that the required input is
+absent before saying no. A shared fallback must consider every applicable saved
+case reaching it, regardless of which test method holds that assertion. Respect
+remaining-text forms: extra words can be accepted operand text, not extra operands.
+Remove disproved provisional omissions from the final reasoning, and make the
+final conclusion agree with the scored verdict.
+
 For each targeted rejection, check PUBLIC SEED → REJECT → PUBLIC READ in that
 actual body and its fixture. For mutable state, locate the successful public
 call that creates meaningful observable state BEFORE rejection. A private reset
@@ -15,8 +44,8 @@ count query, or history API. A mutation's return value is not an available read.
 Do not invent a new observation requirement from the implementation's fields.
 
 Before deciding, group operations by their ACTUAL validation owners FIRST.
-Also map blank/unknown dispatch rejections: selected testing requires both
-from the first dispatcher; operation-shape cases cannot replace them.
+Also map blank dispatch and applicable unknown-operation rejections against
+the requested grammar; operation-shape cases cannot replace required dispatch cases.
 For each owner, find its saved representative rejection input and assertion.
 Mark EVERY member COVERED by that input/location; never mark a member MISSING
 merely because its own duplicate case is absent. For a shared shape, MISSING
