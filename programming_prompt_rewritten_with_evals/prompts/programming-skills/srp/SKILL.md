@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.19 — Keep raw-command parsing and operation logic in separate helpers
+  v1.0.20 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
@@ -9,6 +9,17 @@ description: >-
 # Single responsibility
 
 Write code as single-responsibility functions/methods.
+
+Before writing a new operation helper, compare its planned decisions with the
+existing operation owners. If both operations need the same classification,
+range decision, calculation or validation, extract that decision once and make
+both owners call it. Keep each operation's output label and effects in its own
+owner; separate owners do not justify copying the shared decision tree. Do this
+in the current capability, before its introducing commit. At the commit gate,
+compare the actual helper bodies: repeated conditions assigning the same result
+are still duplicated logic even when the public dispatcher is thin. Remove the
+old inlined decision after extraction so there is only one owner to revise.
+
 
 When logging is independently selected, the public body is docstring → its own
 parameter print → shared parse call → dispatch to operation helpers → result
@@ -44,15 +55,6 @@ it after testing or in a later commit.
 A helper that only formats output, converts one token, or records history does
 not extract the operation that computes or mutates the value.
 
-Before writing a new operation helper, compare its planned decisions with the
-existing operation owners. If both operations need the same classification,
-range decision, calculation or validation, extract that decision once and make
-both owners call it. Keep each operation's output label and effects in its own
-owner; separate owners do not justify copying the shared decision tree. Do this
-in the current capability, before its introducing commit. At the commit gate,
-compare the actual helper bodies: repeated conditions assigning the same result
-are still duplicated logic even when the public dispatcher is thin. Remove the
-old inlined decision after extraction so there is only one owner to revise.
 
 Before each commit, read the public entrypoint itself and locate its call to
 the raw-command parser and its calls to the current operation owners. Move any

@@ -1,3 +1,10 @@
+FIRST resolve whether the requested public interface stores mutable state.
+A stateless formatter/converter PASSES every preservation/isolation question:
+it needs no public seed or observation, even for blank, malformed or conversion
+rejections. Those inputs are not empty-domain reads, but that distinction applies
+only AFTER mutable-state applicability is established. Do not fail a stateless
+case for lacking a seed. For a mutable interface, apply the full rules below.
+
 A successful public seed before a nonmutating rejection loop can cover all its
 iterations when the immediate public reads prove that seeded state stays unchanged.
 Do not require a fresh mutation to seed each iteration. A redundant assignment

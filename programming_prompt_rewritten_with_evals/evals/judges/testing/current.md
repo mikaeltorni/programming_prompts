@@ -1,3 +1,24 @@
+FIRST resolve whether the requested public interface stores mutable state.
+A stateless formatter/converter PASSES every preservation/isolation question:
+it needs no public seed or observation, even for blank, malformed or conversion
+rejections. Those inputs are not empty-domain reads, but that distinction applies
+only AFTER mutable-state applicability is established. Do not fail a stateless
+case for lacking a seed. For a mutable interface, apply the full rules below.
+
+Trace the concrete rejected input through the actual parser BEFORE assigning
+its shape owner. An earlier shared count guard owns every operation that must
+pass it, including operations with a later redundant count check. If that earlier
+guard raises first, the later check cannot create another independent public
+shape obligation. One tested member covers that actual earlier shared rule.
+This does not share separate acceptance predicates in independent branches.
+
+In a mixed grammar with special command words AND a free-form first-operand
+fallback, the special words do not turn every other first token into an unknown
+selector. A valid arbitrary name/text with valid remaining operands is accepted;
+a malformed remaining operand is a conversion/shape failure, not proof of an
+unknown-operation class. Require unknown selectors only where the original
+grammar excludes a valid free-form interpretation.
+
 A successful public seed before a nonmutating rejection loop can cover all its
 iterations when the immediate public reads prove that seeded state stays unchanged.
 Do not require a fresh mutation to seed each iteration. A redundant assignment

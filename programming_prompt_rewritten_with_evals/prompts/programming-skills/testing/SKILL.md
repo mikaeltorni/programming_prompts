@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.1.29 — Save and run each Feature's public-interface checks before its code,
+  v1.1.30 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -27,6 +27,12 @@ original request omits invalid-input prose. Respect free-form/remaining-text
 operands and genuinely shared shape predicates; do not invent error messages
 or numeric domain restrictions. These checks belong in the CURRENT Feature's
 3.1, with the required public seed and immediate available observations.
+
+Enumerate EVERY existing expected-exception body before each application edit,
+including standalone conversion tests outside malformed-input loops. When the
+CURRENT Feature adds a public read, upgrade those actual old bodies in place:
+publicly seed, reject, then immediately read affected values/history. One upgraded
+loop or a new complete class cannot cover another old body's missing observation.
 
 Read the ENTIRE request and preserve one queue row per complete capability
 sentence. A separate `It should also` sentence is a new row; commands and an
