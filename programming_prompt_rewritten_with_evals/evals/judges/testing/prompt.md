@@ -1,3 +1,13 @@
+For each targeted rejection, check PUBLIC SEED → REJECT → PUBLIC READ in that
+actual body and its fixture. For mutable state, locate the successful public
+call that creates meaningful observable state BEFORE rejection. A private reset
+may initialize a fresh case, but a private assignment cannot replace that public
+seed. An unseeded initial value followed by a correct read is still insufficient
+when public seeding is permitted. Blank/unknown/shape inputs are malformed input,
+never empty-domain reads. Exempt only a valid read whose documented rejection
+depends on its domain being empty; seeding would remove that required rejection.
+Judge each input separately, then its immediate public value/history assertions.
+
 Use the strongest AVAILABLE public read-only observations. If those queries
 expose aggregates or values but cannot reveal individual items or cardinality,
 state that limit; do not fail a correct block for lacking an unavailable getter,
