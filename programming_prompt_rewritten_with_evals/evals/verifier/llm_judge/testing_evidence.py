@@ -317,6 +317,14 @@ def rejection_case_criteria(criterion: dict[str, str], workspace: Path,
         function_context = current_rejection_function_context(workspace, block["file"], block["line"])
         result.append(dict(criterion, name=f"state_preservation_case_{index}",
                            source_criterion=criterion["name"], description=(
+                               "For THIS target, check PUBLIC SEED -> REJECT -> PUBLIC READ. "
+                               "Locate its successful PUBLIC seeding call before rejection. A "
+                               "private reset may initialize a fresh case, but a private assignment "
+                               "cannot replace public seeding. An unseeded initial-value read is "
+                               "insufficient when public seeding is permitted. Blank/unknown/shape "
+                               "failures are NEVER empty-domain reads. Exempt only a valid public "
+                               "read whose documented rejection DEPENDS on its domain being empty; "
+                               "seeding would remove that required rejection. "
                                "TARGET is ONLY the expected-exception statement at this exact "
                                "source reference: " + target_reference
                                + ". Judge that statement's rejection, branch and fixture. Later "

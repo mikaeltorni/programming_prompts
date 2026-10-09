@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.1.22 — Save and run each Feature's public-interface checks before its code,
+  v1.1.23 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -11,6 +11,9 @@ Before EVERY application edit, inspect the actual saved checks. First update
 each old rejection body for a planned new read; then save success AND rejection
 cases for EACH new command, including EACH query. Zero-operand queries need
 extra-input rejection. The first dispatcher also needs blank/unknown rejection.
+For each applicable rejection body, use PUBLIC SEED → REJECT → PUBLIC READ.
+A private assignment or an unseeded initial value does not supply public seeding.
+Blank input is malformed dispatch, never an empty-domain read.
 Run that saved suite now. A success-only command or an old block still followed
 by a recovery mutation cannot close 3.1 when a read is available/planned.
 
@@ -71,8 +74,14 @@ required affected history; a getter's absence cannot excuse omitting the total.
 
 For every applicable old AND new block:
 1. Seed meaningful nonempty state through the public API where the rejection
-   still applies. Blank, unknown, shape, conversion and domain failures usually
-   permit populated fixtures; do not confuse blank input with an empty-state query.
+   still applies. A private reset may initialize an independent case, but the
+   preservation seed itself must be a successful public call, not a private
+   assignment. Choose observable state so an unintended clear/reset would change
+   the expected public result. Blank, unknown, shape, conversion and domain
+   failures usually permit it; blank input is never an empty-state query.
+   If funding/populating the fixture changes a required rejection, recompute the
+   rejected operand from the contract (for example, make it exceed the new
+   available amount). Preserve genuine empty-domain failures in separate cases.
 2. Reject ONCE, then immediately assert independently expected affected values
    AND required history through the currently planned/available read-only queries.
    These assertions execute after EACH loop input, before another rejection,
