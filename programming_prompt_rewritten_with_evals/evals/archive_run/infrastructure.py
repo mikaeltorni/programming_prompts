@@ -22,6 +22,7 @@ def trial_infrastructure_failure(trial_dir: Path) -> str | None:
         Harbor may redact unrelated JSON fields into invalid literals.
     """
     print(f"trial_dir={trial_dir}")
+    startup_exceptions = []
     # An execution failure is causal even if recovery also wrote a judge error.
     for name in ("exception.txt", "20-exception.txt"):
         try:
@@ -30,6 +31,8 @@ def trial_infrastructure_failure(trial_dir: Path) -> str | None:
             )
         except OSError:
             continue
+        if "harbor.trial.errors.NonZeroAgentExitCodeError:" in exception_text:
+            startup_exceptions.append(("NonZeroAgentExitCodeError", exception_text))
         if "OAuth access token has expired" in exception_text:
             reason = "agent authentication expired"
             print(reason)
@@ -47,10 +50,19 @@ def trial_infrastructure_failure(trial_dir: Path) -> str | None:
         payload = load_json_lenient(trial_dir / name) or {}
         info = payload.get("exception_info")
         if isinstance(info, dict):
+            startup_exceptions.append((str(info.get("exception_type") or ""),
+                                       str(info.get("exception_message") or "")))
             reason = _INFRA_EXCEPTIONS.get(str(info.get("exception_type") or ""))
             if reason:
                 print(reason)
                 return reason
+    for exception_type, message in startup_exceptions:
+        if (exception_type == "NonZeroAgentExitCodeError"
+                and "couldn't set model" in message.casefold()
+                and "unknown model id" in message.casefold()):
+            reason = "configured agent model unavailable"
+            print(reason)
+            return reason
     reward_paths = [
         trial_dir / "verifier" / "reward.json", trial_dir / "01-reward.json",
         trial_dir / "03-reward.json", *sorted(trial_dir.glob("03-reward-*.json")),
