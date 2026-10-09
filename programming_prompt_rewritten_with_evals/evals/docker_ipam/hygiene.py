@@ -170,17 +170,21 @@ def prune_unused_harbor_images() -> list[str]:
 
 def prune_unused_builder_cache(*, min_free_space: int | None = None,
                                reserved_space: int | None = None,
-                               max_used_space: int | None = None) -> bool:
+                               max_used_space: int | None = None,
+                               all_unused: bool = False) -> bool:
     """Reclaim unused BuildKit cache with optional free-space and retention targets.
 
     Parameters: min_free_space - optional free-space target in bytes;
         reserved_space - optional warm-cache retention floor in bytes;
-        max_used_space - optional maximum retained unused-cache bytes.
+        max_used_space - optional maximum retained unused-cache bytes;
+        all_unused - include all reclaimable cache, including internal/frontend records.
 
     Returns: true when Docker accepted the prune command.
     """
-    print(f"min_free_space={min_free_space} reserved_space={reserved_space} max_used_space={max_used_space}", file=sys.stderr)
+    print(f"min_free_space={min_free_space} reserved_space={reserved_space} max_used_space={max_used_space} all_unused={all_unused}", file=sys.stderr)
     command = ["builder", "prune", "-f"]
+    if all_unused:
+        command.append("-a")
     if min_free_space is not None:
         command.extend(["--min-free-space", str(min_free_space)])
     if reserved_space is not None:
