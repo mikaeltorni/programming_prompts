@@ -11,6 +11,16 @@ Answer yes when ALL of these hold:
   churn, as detailed below; a final-file-only assessment is insufficient for
   an incremental task.
 
+Before a yes, compare the actual operation-helper bodies with one another.
+A shared classification, calculation or validation decision needs one owner
+called by each operation that uses it. Two helpers repeating equivalent range
+branches to select the same result still duplicate that decision, even when
+their command labels or surrounding output differ. Different operation-domain
+checks may stay in their own owners; they do not justify duplicating the shared
+calculation. Inspect the requested revision where the second operation appears,
+not just the public dispatcher's thinness. Cite both actual duplicate decisions
+for no; do not invent shared work between distinct arithmetic operations.
+
 At the public boundary, one shared parse call supplies the operation selector
 and parsed arguments before dispatch between command variants. A single-operation
 slice with no variant dispatch may return only its arguments; do not demand an
@@ -54,6 +64,11 @@ Arithmetic on that converted value (`int(token) - 1`),
 validating it against current state or a domain constraint (such as a negative
 bank amount), or assigning it into state
 (`_total = int(token)`) in the entrypoint is core logic, not a conversion.
+
+Once the parser has converted an argument, preserve its type across dispatch.
+Converting that value back to text and then reconverting it solely to retain an
+old result annotation duplicates parsing. Raw split tokens may still undergo
+one allowed int/float conversion before being passed unchanged to their owner.
 
 A core helper may itself dispatch operations with if/elif, validate
 already-parsed arguments, guard empty or out-of-range values

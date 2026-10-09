@@ -10,7 +10,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "single_responsibility"
-description = "workspace Python uses single-responsibility functions/methods and evolves simple working code through focused necessary edits at requested stages"
+description = "compare actual operation helper bodies: shared classifications/calculations have one called owner rather than copied equivalent decisions with different labels; preserve already-converted argument types across dispatch; workspace Python uses single-responsibility functions/methods and evolves simple working code through focused necessary edits at requested stages"
 type = "binary"
 
 [scoring]
