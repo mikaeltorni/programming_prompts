@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.2.19 — Establish the task checkout and authoritative plan, then finish
+  v1.2.20 — Establish the task checkout and authoritative plan, then finish
   each feature's tests → code → commit cycle before documentation.
 ---
 
@@ -36,6 +36,14 @@ Keep exactly four outer stages, in this order:
    After the final cycle, close the outer code row as well as its microsteps.
 4. **Write documentation.** Only after all cycles close, finish selected docs
    in the task checkout, commit and deliver it. Skip this row when unselected.
+
+Establish/verify the selected task checkout BEFORE writing the detailed plan.
+Resolving and retaining the live plan path is startup discovery; writing its
+feature tables is planning and must follow checkout establishment.
+In Microsteps, every Write code row belongs to one feature's 3.1/3.2/3.3 triplet.
+Never add a generic Write code row with Feature or Stage `-`; the outer Tasks
+row already represents that phase. Put investigation and wrap-up in the owning
+feature row or outer Details. Execution-policy directives are not capabilities.
 
 ## Resolve one authoritative plan path at startup
 

@@ -124,6 +124,12 @@ evidence before choosing no; a locator alone does not prove a semantic failure.
 
 Resolve these facts before choosing a verdict:
 
+Map each public command to its original capability sentence. A later sentence's
+query implemented during an earlier Feature fails order, even if described as
+an observer needed for rejection checks. Planned public views apply to the
+CURRENT Feature only; use already available views until that query's own cycle.
+Execution-policy directives are not additional capability Features.
+
 1. CONTRACT AND LOADED REVISION
 Read the original request and logs. Later replacements change only their named
 rules. Final checks loading the current module follow the final contract.
