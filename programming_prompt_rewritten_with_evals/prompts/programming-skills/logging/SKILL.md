@@ -1,133 +1,50 @@
 ---
 name: logging
 description: >-
-  v1.0.9 — Every authored function, test and fixture prints parameters first
+  v1.0.10 — Every authored function, test and fixture prints parameters first
   after its docstring, before helper calls, validation or declarations, and
   prints each normal return value. Use plain print(), with no logging modules or log files.
 ---
 
-# Function entry/exit print logging
+# Function entry and exit prints
 
-A public dispatcher follows this order: docstring, its own parameter print,
-shared parse call, dispatch, result print, return. Never move the parser call
-above the caller's entry trace during extraction; a parser's print does not
-replace the dispatcher's own first-statement print.
+Every function or method you create or edit, including constructors, tests,
+fixtures and private helpers, uses builtin `print()` for its own entry and
+normal exits. Lambdas and exception exits are exempt. Use no logging framework,
+custom logger or log files.
 
-When creating a function, write its docstring, then its entry print, then any
-`global` / `nonlocal` declaration, then its work. Build the body in that order
-from the first saved draft. A conventional declaration-first template must be
-reordered even for a parameterless state updater: its first body statement is
-`print("parameters=none")`, and its declaration follows that print.
+The first statement after the docstring prints every parameter's actual name
+and value, including optional `None` values and receivers `self`/`cls`. Put this
+print before parsing, validation, helper calls and `global`/`nonlocal`
+declarations. A function with no parameters may print `parameters=none`.
+A constructor with `self` is not parameterless; `object.__repr__(self)` safely
+identifies it without reading uninitialized fields or recursing through a
+custom representation.
 
-Parsing and validation helpers follow this same template: print the raw
-parameter before any type check or tokenization, and print each complete parsed
-return value in its own branch. Printing only in the operation helper and
-public caller leaves the parser untraced. Before saving a new helper, inspect
-its signature, first statement and every normal return independently.
+Immediately before each normal return, print its complete value. For a tuple,
+print all elements or the tuple itself. Before normal fallthrough, print `None`,
+including at the end of constructors and assertion-only tests. A final
+`print(None)` needs no additional `return None`. Nothing is required before
+`raise`.
 
-**Every** `def` / `async def` / method you write or edit gets an entry print
-and an exit print. No function is exempt — not private `_helpers`, not
-one-line functions, not the thin public entrypoint, not constructors or other
-special methods, not functions with no parameters. Only `lambda` expressions
-are exempt.
-
-**A constructor receives `self` even when called with no explicit arguments.**
-Write its entry trace before initializing fields and its exit trace after them:
+A helper's prints do not cover its caller. Assign the result of `helper()`,
+print it, then return it rather than returning the call directly. Branches
+may converge on one print and return. Test entry prints precede stdout capture,
+and the exit print follows the last assertion.
 
 ```python
-class Store:
-    def __init__(self):
-        """Create an empty store.
+def update(value):
+    """Replace stored state.
 
-        Parameters: self - the instance being initialized.
-
-        Returns: None.
-        """
-        print(f"self={object.__repr__(self)}")
-        self.items = []
-        print(None)
+    Parameters: value - the new state.
+    Returns: the stored state.
+    """
+    print(f"value={value}")
+    global stored_state
+    stored_state = value
+    print(stored_state)
+    return stored_state
 ```
 
-`print("parameters=none")` is invalid in this constructor. Determine parameter
-names from the `def` signature, never from the call site or a docstring that
-says "Parameters: none". An uninitialized instance still has an identity;
-`object.__repr__(self)` prints it without reading fields or invoking a custom
-representation.
-
-1. **Entry print — the first statement in the body.** `print` **every**
-   incoming parameter's **actual name** and value, including optional
-   parameters whose value is `None` and method receivers `self` / `cls`;
-   one print listing every real name is enough. "First statement" is literal:
-   no parse call, validation, `global`, or dispatch runs before it. Python
-   permits a `global` declaration after a parameter-only entry print; put
-   the declaration there, before reading or assigning that global. Keep a
-   docstring first when present, with the print directly after it.
-
-   ```python
-   def update(value):
-       """Replace stored state.
-
-       Parameters: value - the new state.
-
-       Returns: the stored state.
-       """
-       print(f"value={value}")        # first statement after the docstring
-       global stored_state           # declaration comes after the print
-       stored_state = value
-       print(stored_state)
-       return stored_state
-   ```
-
-   Failures: printing only after `parsed = _parse_command(command)`; omitting
-   a named parameter because it is unused or `None`; a generic label
-   (`input=`, `args=`, `params=`) or one unlabeled tuple standing in for the
-   real names. A helper that prints `command=` does not cover the entrypoint —
-   every function prints its own parameters. Only a signature with **zero
-   parameters**, such as `def ready()`, permits `print("entry")` or
-   `print("parameters=none")`. `def size(self)` has one parameter and must
-   print `self=`; `def update(self, value)` must print both `self=` and
-   `value=`. Class methods likewise print `cls=`. Use `object.__repr__(self)`
-   when tracing the receiver could call a traced `__repr__` / `__str__`
-   recursively.
-2. **Exit print — just before each `return`** (or before falling off the end
-   with an implicit `None`), `print` the value about to leave the function.
-   `print(result)` is enough; a `return=` label is not required. Print
-   **everything** the `return` hands back: for `return result, []` the value
-   is the whole tuple, so write `print(result, [])`. Every `return` gets its
-   own exit print, including an early or empty-input branch.
-   This includes constructors (`__init__`) and validation helpers: if they
-   finish normally without a return statement, end with `print(None)`.
-   A path ending in an explicit return has no additional implicit exit.
-   A helper's exit print does not cover its caller: before `return helper()`,
-   assign the helper result, print that result in the caller, and return it.
-   Check every dispatch branch, including branches with direct helper returns.
-
-Apply this rule to agent-authored tests as well as application code. Test methods,
-fixtures, setup/teardown methods, and assertion helpers have their own entries
-and normal exits. An assertion-only test method still receives `self` and
-normally returns `None`: print `self=` first and `None` after its final assertion.
-Calling a traced application function does not trace the test method itself.
-Redirecting stdout inside a test does not waive its first-statement entry print;
-place that print before opening the redirect. After editing a test's assertions,
-read its actual final statement: preserve or restore `print(None)` after the
-last assertion on each normal fallthrough path. A passing test run does not
-verify this trace. Review every changed Python file, including tests, before
-each commit.
-
-A new test loader or fixture helper is an authored function even when copied
-from an ordinary untraced testing template. Add its own parameter print before
-loading/importing a module. When extending a parser, inspect each new return
-branch for its own complete result print; another branch's trace does not cover
-it. Perform this check while saving the helper or branch, before relying on a
-whole-suite run.
-
-Before committing, inspect source order in every function: the first
-non-docstring statement must be its parameter print. A successful runtime
-trace does not excuse a preceding `global` declaration. Compare each
-signature with that first print and inspect every normal exit, including
-early returns. Check object construction in a smoke run so the constructor's
-`self=` and final `None` are observed.
-
-Nothing is required before a `raise` / exception exit — only normal return
-paths. Use the built-in `print(...)` only: no log files, no `logging` import,
-no custom logger helper.
+Before committing, compare every changed function's signature with its first
+statement and inspect each reachable normal exit, in application and test files.
