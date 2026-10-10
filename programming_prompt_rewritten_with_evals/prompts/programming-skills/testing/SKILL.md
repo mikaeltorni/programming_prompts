@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.1.43 — Save and run each Feature's public-interface checks before its code,
+  v1.1.44 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -42,7 +42,8 @@ Keep earlier regression assertions except rules this capability explicitly
 replaces. Check earlier rules against their earlier source, not against the
 final module. A fractional rejection required now is valid until a later decimal
 extension replaces it. Defer future executable expectations and public commands.
-Update every affected earlier expectation when a later Feature replaces its rule.
+Update every affected earlier expectation, including rejection loops and expected
+outputs, when a later Feature replaces its rule.
 
 ## Observe state after rejection
 
