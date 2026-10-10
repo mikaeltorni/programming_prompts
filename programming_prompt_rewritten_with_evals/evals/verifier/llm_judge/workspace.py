@@ -616,7 +616,7 @@ def pin_workspace_python(
     )
     task_logs_context = original_task_logs_context() if judge_name in {"debug", "debug_logs", "testing"} else ""
     boundaries = []
-    if judge_name in {"logging", "commenting"}:
+    if judge_name in {"logging", "commenting", "srp"}:
         for path in files:
             try:
                 boundaries.append(python_boundaries(path))
@@ -653,7 +653,7 @@ def pin_workspace_python(
         testing_source_context(workspace, files) + (coding_commands_context() if history_enabled else "")
         if judge_name == "testing" else ""
     )
-    current_source = workspace_python_context(workspace, files, line_numbers=judge_name == "testing")
+    current_source = workspace_python_context(workspace, files, line_numbers=judge_name in {"testing", "srp"})
     result = (
         template.rstrip()
         + ("\n\nThis batch scores CURRENT contract coverage and preservation only. "

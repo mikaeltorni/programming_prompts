@@ -22,6 +22,7 @@ it assigns, prints and returns its own result. Each normal fallthrough ends
 with print(None), including constructors and assertion-only tests after their
 last assertion. That print itself traces implicit None and needs no explicit
 return afterward. Do not invent fallthrough after an unconditional return/raise.
+Follow parser guarantees: selectors it rejects cannot reach dispatch fallthrough.
 
 Before no, quote the actual first statement or uncovered reachable exit and
 reconcile it with the supplied function-boundary evidence/current source.

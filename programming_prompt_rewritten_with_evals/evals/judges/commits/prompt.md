@@ -33,10 +33,14 @@ or loses required behavior; an omitted trace excerpt is not an omitted ledger.
 
 Available chronology must show saved checks/baseline before this Feature's code,
 then a passing cumulative run and its commit before the next Feature's checks.
+A baseline may fail because this Feature is missing; its cumulative pass is
+required after implementation, before commit and the next Feature's checks.
 Read writes/runs within one shell command in their literal order. Tests and
-code in one commit are expected, not proof of reversed order. Static content
-and project test prohibitions use direct checks; no Git or user no-commit
-instructions justify the documented exception. Missing chronology alone cannot
+code in one commit are expected, not proof of reversed order.
+Read-only review, syntax compilation and a modified Git status are not new
+source edits; identify the actual write before alleging an edit after a pass.
+Static content and project test prohibitions use direct checks; no Git or user
+no-commit instructions justify the documented exception. Missing chronology alone cannot
 invalidate an established working commit mapping.
 
 Give the Feature-to-hash mapping and verification limits for yes. For no,
