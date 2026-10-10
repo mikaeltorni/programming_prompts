@@ -1,7 +1,7 @@
 ---
 name: docs
 description: >-
-  v1.0.5 — After writing or fixing a program, document its purpose, public
+  v1.0.6 — After writing or fixing a program, document its purpose, public
   entrypoint, and accepted commands in the project-root README.md.
 ---
 
@@ -15,6 +15,7 @@ scripts and when workflow is unselected; function docstrings are separate.
 With feature cycles selected, finish every Feature's verification and commit
 before this final README phase. Required function documentation and feature-local
 notes still belong with their code.
+Completing code and commits does not finish the task while the root README is missing.
 
 With worktree selected, author and commit the README in the same task checkout,
 then merge and apply it through that workflow. Read the delivered root README

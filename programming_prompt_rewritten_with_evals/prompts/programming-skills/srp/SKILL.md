@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.27 — Keep raw-command parsing and operation logic in separate helpers
+  v1.0.28 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
@@ -17,8 +17,8 @@ arguments returned by that parser. Put sums and other computed results in operat
 - The parser receives the raw command once and returns its operation selector
   and parsed arguments. A single-operation interface may return arguments only.
   A zero-operand form may return a validated selector alone.
-  All raw stripping, splitting, slicing, regex matching, command-shape checks
-  and token conversion belong here, including zero-argument commands. Smaller
+  All raw stripping, splitting, text normalization, slicing, regex matching,
+  command-shape checks and token conversion belong here, including zero-argument commands. Smaller
   parsing helpers may compose inside this boundary.
   Dispatch and operations receive converted values, never raw numeric tokens
   or operand lists that still need shape checks.
@@ -26,6 +26,7 @@ arguments returned by that parser. Put sums and other computed results in operat
   validation: resource existence, uniqueness, funds/capacity, sign, finite-only,
   magnitude and integral-value acceptance. Numeric conversion establishes a
   representation; acceptance predicates on that value belong in operations.
+  Token-conversion helpers must not also enforce converted-value domain rules.
 - The public entrypoint parses once, dispatches using parsed data, then
   returns/formats the result. It passes converted values unchanged, without
   converting them back to text or inspecting the raw command again. It may

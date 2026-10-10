@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.2.10 — Give each complete capability sentence its own Feature and finish
+  v1.2.11 — Give each complete capability sentence its own Feature and finish
   tests → code → commit before starting the next sentence.
 ---
 
@@ -46,8 +46,9 @@ For each Feature, finish:
    advanced, inspect its contents and record the actual introducing hash now.
    Complete selected worktree merge and consumer verification before advancing.
 
-Do not draft all features and split them afterward, or pad history with empty
-commits. Each sentence has a distinct working introducing commit in order.
+Each sentence first becomes executable in its own introducing commit; a queue
+or later split cannot make a bundled implementation compliant. Do not pad history
+with empty commits.
 Focused repairs and optional follow-ups may close before the next Feature;
 record them with their original row without rewriting history. Final README
 work follows all feature cycles when docs is selected.
