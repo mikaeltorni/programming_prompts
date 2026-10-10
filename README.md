@@ -239,6 +239,14 @@ and retained negative judge replays passed, as did all 36 worktree checker cases
 These samples do not establish a complete-suite pass. Grok and Claude runtime
 smokes could not authenticate; their empty-workspace verdicts are not acceptance.
 
+The October 11 archive `2026-10-11_003606_345540` finished at 49/70 with no
+rate-limit or infrastructure exclusions: commits 32/40, SRP 28/40, testing 36/40,
+worktree 37/40. Its follow-up audit retained genuine bundling, missing state reads
+and layout failures. Small wording changes clarify sentence boundaries, numeric
+acceptance ownership and scratch placement; judges recognize exact-match parsing,
+parsed-selector routing and uncalled test definitions. No tests, benchmarks or
+judge replays ran for this follow-up; its effect on pass rate remains unverified.
+
 ACC's existing default set is `commits`, `worktree`, `workflow`, `docs`, `testing`,
 `srp`, `commenting`, `logging`, `debug`. Benchmark discovery excludes opt-in
 `workflow` and `debug_logs`; `logging-vague` remains a control. Dedicated repair
