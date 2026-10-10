@@ -371,8 +371,10 @@ traces or shell-command dumps. Running jobs keep their already-loaded code;
 these console changes take effect on the next benchmark invocation.
 Run one benchmark invocation at a time. See the
 [evals README](programming_prompt_rewritten_with_evals/evals/README.md) for the
-command surface and [AGENTS.md](AGENTS.md) for the repository's run policy and
-required full-suite command.
+command surface and [AGENTS.md's benchmark guidance](AGENTS.md#benchmark-commands-give-the-simple-default)
+for the simple default command: one positive Codex run with three attempts per
+task. Extra harnesses, baselines and comparison runs are supplied only when
+requested; each Codex command requires a current quota and auth-home check.
 
 `--skills` selects the Harbor skills and corresponding verifier judges;
 positive jobs install the selected skill bodies, while baseline jobs omit them.
