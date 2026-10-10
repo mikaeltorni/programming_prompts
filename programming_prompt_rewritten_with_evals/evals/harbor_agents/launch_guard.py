@@ -170,7 +170,7 @@ class DeadlineLaunchGuard(BaseJobPlugin):
     poll_interval = 5.0
 
     async def on_job_start(self, job) -> None:
-        """Attach admission and release hooks to the job's public lifecycle.
+        """Attach lifecycle hooks with full trial capacity and bounded setup.
 
         Parameters: self - launch guard; job - Harbor job whose starts will be paced.
         Returns: None.
@@ -179,13 +179,14 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         self.condition = asyncio.Condition()
         self.active: dict[str, ActiveTrial] = {}
         self.requested_ceiling = job.config.n_concurrent_trials
-        self.storage_root = docker_storage_root()
-        self.ceiling = await storage_capacity_after_reclaim(
-            self.requested_ceiling, self.storage_root, reclaim_unused=True,
-        )
-        if self.ceiling == 0:
-            raise RuntimeError("Docker storage has insufficient free space for one trial plus its reserve")
+        self.ceiling = self.requested_ceiling
         self.setup_ceiling = setup_ceiling(self.ceiling)
+        self.storage_root = docker_storage_root()
+        storage_capacity = await storage_capacity_after_reclaim(
+            self.setup_ceiling, self.storage_root, reclaim_unused=True,
+        )
+        if storage_capacity == 0:
+            raise RuntimeError("Docker storage has insufficient free space for one trial plus its reserve")
         self.setup_durations: deque[float] = deque(maxlen=64)
         job.add_hook(TrialEvent.START, self.admit)
         job.add_hook(TrialEvent.AGENT_START, self.agent_started)
@@ -193,9 +194,9 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         job.add_hook(TrialEvent.END, self.finished)
         job.add_hook(TrialEvent.CANCEL, self.cancelled)
         print(
-            f"Automatic launch guard: requested trial ceiling={self.requested_ceiling}; "
-            f"storage-bounded full trial ceiling={self.ceiling}; "
-            f"setup ceiling={self.setup_ceiling}; deadline headroom uses measured "
+            f"Automatic launch guard: full trial ceiling={self.ceiling}; "
+            f"setup ceiling={self.setup_ceiling}; storage-bounded setup ceiling={storage_capacity}; "
+            f"deadline headroom uses measured "
             f"setup p95 + {self.poll_interval:.1f}s (queue time is excluded)",
             file=sys.stderr,
         )
@@ -242,7 +243,7 @@ class DeadlineLaunchGuard(BaseJobPlugin):
         return result
 
     async def admit(self, event: TrialHookEvent) -> None:
-        """Wait before environment setup, then reserve this trial's admission.
+        """Reserve trial admission while charging build headroom only to setup.
 
         Parameters: self - launch guard; event - trial START event with an attempt ID.
         Returns: None after admission; cancellation releases a pending waiter.
@@ -256,12 +257,12 @@ class DeadlineLaunchGuard(BaseJobPlugin):
                 pressured = self.pressured_trials(now)
                 starting, stalled = self.setup_pressure(now)
                 storage_capacity = await storage_capacity_after_reclaim(
-                    self.ceiling, self.storage_root, reclaim_unused=not starting,
+                    self.setup_ceiling, self.storage_root, reclaim_unused=not starting,
                 )
                 if storage_capacity == 0 and not self.active:
                     raise RuntimeError("Docker storage has insufficient free space for another trial plus its reserve")
                 if (not pressured and not stalled and len(self.active) < self.ceiling
-                        and len(self.active) < storage_capacity and starting < self.setup_ceiling):
+                        and starting < storage_capacity):
                     self.active[key] = ActiveTrial(
                         name=event.trial_name, admitted=now, setup_budget=setup_budget,
                     )
