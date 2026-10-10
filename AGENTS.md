@@ -94,64 +94,6 @@ Always pass `--eval-agent codex` — see *Judges: Codex only while testing* belo
 Prompt-only work still uses Harbor when a live check is needed; do not add
 pytest under `programming_prompt_rewritten_with_evals/`.
 
-Before giving a user a benchmark command that uses Codex as its harness or
-evaluator, compare the current 5-hour and weekly usage remaining on every
-configured Codex instance. Select each instance in turn and use Codex `/status`
-or that account's Settings → Usage to check its live allowances; see [OpenAI's Codex usage
-guidance](https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan).
-Choose an instance with both windows available, preferring the one with the
-most remaining headroom in its more constrained window. Do not infer
-availability from an instance number, plan name, shell alias, or an older run.
-Use that instance's verified ID as `ACC_CODEX_INSTANCE=<selected-id>` on every
-related command, and verify the ID resolves to the intended auth home with
-`ACC_CODEX_INSTANCE=<selected-id> python3 harbor_agents/codex_account.py --auth`.
-Replace `<selected-id>` with the checked ID before sharing a runnable command.
-If current usage cannot be checked, or no instance has both windows available,
-say so and ask the user for current quota status instead of guessing.
-
-Omit pin-related options from normal benchmark runs and from commands given to
-the user. Do not pass `--pin-refresh` or `--no-pin-refresh` by default: without
-either flag, the wrapper checks for the current stable CLI version. Use a pin
-option only when the user explicitly requests that behavior for a particular
-run.
-
-Omit `--concurrency` from benchmark commands given to the user unless they
-explicitly request a concurrency limit. Without the flag, the wrapper requests
-all selected trials, subject to configured LLM and Docker network capacity
-limits. Its automatic launch guard paces container starts and holds new starts
-when active agents approach their execution deadlines; agents do not need to
-supply a value. Queue waiting precedes setup and the waiting agent's timer.
-
-Example (each command in its own terminal):
-
-```bash
-cd programming_prompt_rewritten_with_evals/evals
-```
-
-```bash
-ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness codex --eval-agent codex --baseline -k 1
-```
-
-```bash
-ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness codex --eval-agent codex -k 1
-```
-
-```bash
-ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness grok --eval-agent codex --baseline -k 1
-```
-
-```bash
-ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness grok --eval-agent codex -k 1
-```
-
-```bash
-ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness cc --eval-agent codex --baseline -k 1
-```
-
-```bash
-ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness cc --eval-agent codex -k 1
-```
-
 ## Judges: Codex only while testing
 
 **Every test run uses `--eval-agent codex` and nothing else.** Do not add `cc`,
@@ -204,37 +146,30 @@ deterministic; wrapping them in repo unit tests does not make the evaluation
 deterministic and is not wanted here. This AGENTS.md rule overrides the selected
 testing guidance on tests for this path.
 
-## Evaluation commands: one fenced block per terminal
+## Benchmark commands: give the simple default
 
-When giving the user Harbor / `run_benchmark.sh` commands to run by hand, put
-**each runnable command in its own** fenced `bash` code block. Do not bundle
-several `./run_benchmark.sh …` lines into one block — the user copies each
-block into a **different terminal**. Shared setup (`cd`, `export JOBS=…`) may
-sit in its own preceding block; every distinct benchmark invocation after that
-must be alone in a block.
+When asked for benchmark commands, or handing off prompt/skill/judge/runtime
+changes, give **one positive Codex command** by default. It uses the default
+skill suite, Codex as harness and judge, three attempts per task, and automatic
+concurrency. Do not add baseline, smoke, other-harness or separate-scoring runs
+unless requested. If the user names a harness/model or comparison, give only
+that requested selection. Runtime smoke checks above are agent verification
+requirements, not extra commands to append to every handoff.
 
-Apply the quota-selection rule above to every command that uses Codex as a
-harness or evaluator, and replace `<selected-id>` before presenting it.
+Before sharing any Codex harness/evaluator command, check every configured
+instance's current 5-hour and weekly quota using `/status`, Settings → Usage,
+or fresh shared-status observations sourced from `/status`. Choose an instance
+with both windows available and the most headroom in its more constrained
+window. Never infer quota from account IDs, plans, aliases or old runs. Verify
+its auth home from `evals/` with
+`ACC_CODEX_INSTANCE=<selected-id> python3 harbor_agents/codex_account.py --auth`,
+then replace `<selected-id>` with the checked ID. If live quota is unavailable or exhausted, ask for current
+quota information before giving a runnable command.
 
-**Give commands for the requested model only.** When the user asks for commands
-to run the benchmark, produce exactly the harness/model they named — if they say
-"run codex", every command is `--harness codex` with `--eval-agent codex`, with no
-extra `--harness cc` / `--harness grok` variants, no second eval agent, and no
-"here's the grok one too" bonus block. Extra commands get pasted by mistake and
-burn a whole run on the wrong account. Vary only the axis the user asked to vary
-(e.g. separate vs. non-separate, baseline vs. positive) and keep the model
-fixed. If the request does not name a model, ask before emitting commands.
-
-After an agent changes benchmark prompts, skills, judges, or runtime, include
-the following default-suite positive command in the final handoff, even when a
-shorter smoke run was used during development. First select the currently
-available instance using the quota check above, then replace `<selected-id>`
-with that verified ID. Keep the benchmark invocation in its own fenced `bash`
-block. It selects the runner's default programming-skill suite, the Codex
-harness and judge, three attempts per task, and automatic concurrency. If the
-change specifically requires evaluating opt-in `workflow`, include it in an
-explicit `--skills` list alongside the default skills. Omit pin options and
-`--tasks` so the runner selects every coding task.
+Put setup and each benchmark invocation in separate fenced `bash` blocks.
+Run **one benchmark at a time on this machine**; finish one before starting
+another. Giving commands does not authorize executing them, and explicit user
+prohibitions on benchmark execution override verification requirements.
 
 ```bash
 cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
@@ -243,6 +178,14 @@ cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals
 ```bash
 ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness codex --eval-agent codex -k 3
 ```
+
+Keep this command simple: omit `--skills`, `--tasks`, `--concurrency`,
+`--pin-refresh` and `--no-pin-refresh` by default. The wrapper checks the current
+stable CLI version and manages capacity without extra flags. Add a concurrency
+limit or pin option only if requested. When evaluation specifically needs
+opt-in `workflow`, include it alongside the default skills in an explicit
+`--skills` list. Preserve Codex-only judging and the low-reasoning model policy
+above unless the user explicitly requests an exception.
 
 ## The benchmark testing framework (read before running an eval)
 
@@ -267,16 +210,7 @@ run one wrapper invocation at a time; baseline and positive runs are sequential.
 versions, prepares tasks, starts one Harbor job per selected harness, then
 summarizes and archives each job under `evals/runs/<stamp>/`.
 
-Run it exactly as documented — one invocation per terminal, and **one run at a
-time on this machine**:
-
-```bash
-cd programming_prompt_rewritten_with_evals/evals
-```
-
-```bash
-ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness codex --eval-agent codex
-```
+Use the simple command above. Run one invocation at a time.
 
 ### One flag format: `--flag value`
 
