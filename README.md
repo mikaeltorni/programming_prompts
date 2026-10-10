@@ -220,6 +220,25 @@ contracts remain separate. Static validation, actual instruction assembly and
 isolated judge packaging passed. No benchmark was run for this revision, so
 its effect on pass rate remains unverified and archives retain their verdicts.
 
+The subsequent October 10 audit corrected judges that mistook read-only review
+for an edit, required superseded or duplicated stateless checks, or treated
+logging and numeric conversion as misplaced parsing/domain logic. SRP now receives
+numbered current source and existing function-boundary evidence. Short policy
+clarifications keep future commands unsupported until their Feature, require
+the actual commit before the next checks, upgrade older rejection files with
+new queries, and construct worktree names from shared shell variables.
+Valid bundled histories, incomplete checks and layout mismatches still fail.
+
+Verification uses the supported `evals/run_benchmark.sh` entrypoint and archived
+source, history and sessions. The final six-task Codex sample scored 5/6:
+testing, worktree and SRP each passed 6/6; one bank history genuinely bundled
+capabilities. The last complete default three-attempt run, before the final
+clarifications, scored 22/42. Both runs had no rate limits or infrastructure
+exclusions and used `gpt-6-luna`/low for coding and judging. Corrected positive
+and retained negative judge replays passed, as did all 36 worktree checker cases.
+These samples do not establish a complete-suite pass. Grok and Claude runtime
+smokes could not authenticate; their empty-workspace verdicts are not acceptance.
+
 ACC's existing default set is `commits`, `worktree`, `workflow`, `docs`, `testing`,
 `srp`, `commenting`, `logging`, `debug`. Benchmark discovery excludes opt-in
 `workflow` and `debug_logs`; `logging-vague` remains a control. Dedicated repair
