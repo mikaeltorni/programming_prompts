@@ -31,7 +31,8 @@ Source strings and commit counts cannot substitute for this assessment.
 The debug, debug_logs and testing judges receive original logs preserved in
 `tests/task-logs/`. Testing accepts saved literal regression assertions that
 match those logs; the checks need not load the logs themselves. The debug judge
-executes the reported example and documented boundaries in an isolated copy.
+uses original logs, reachable source and supplied execution; it may run a focused
+example in an isolated copy when execution tools are available.
 It reports applicability separately in its reasoning. Without a chronological
 tool trace it cannot prove that logs were read before editing; its verdict
 then describes the observable fix, not the agent's unseen thought process.
@@ -67,3 +68,27 @@ positions. Quotes verify text, while the LLM judges execution order. Unsupported
 quotations retry once and remain infrastructure exclusions if unresolved.
 The debug judge separately requires a saved public regression before repair;
 a terminal-only reproduction does not meet that selected policy.
+
+## Scope and criterion alignment
+
+Each semantic policy now has one binary criterion. Testing's `testing_contract`
+retains checks-before-code, coverage, preservation/isolation and cumulative
+execution requirements in one prompt/configuration. The former per-raise and
+per-rejection expansion is no longer selected, and its four auxiliary templates
+were removed. Runtime evidence helpers and immutable public correctness contracts
+are unchanged; no code-token, feature-count or automatic-pass shortcut replaces
+semantic inspection. The new detail schema is not directly comparable with
+historical expanded criterion rows.
+
+Do not grade optional coverage inventories or byte-for-byte ledger punctuation.
+A faithful capability queue still requires distinct working commits by sentence.
+Assess acceptance changes at the revision that requests them. A newly introduced
+query belongs in older retained test bodies during that query's checks step;
+this is not early implementation. SRP reuses actual equivalent domain decisions
+but does not force distinct arithmetic operations into a shared state updater.
+Every no needs a concrete violation; missing chronology alone is an explicit limit.
+
+The October 10, 2026 revision passed frontmatter/TOML/template validation, actual
+consumer loading, instruction assembly and isolated judge synchronization. No
+benchmark or LLM judge was run for it, so improved pass rate remains unverified.
+Old archives retain their original scores and reasoning.

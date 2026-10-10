@@ -156,58 +156,26 @@ harness's skill directory.
 
 ### workflow
 
-Invoke `$workflow`, or select `v2:workflow` in native global instructions, to
-run these stages in order:
+Select `v2:workflow` to follow four stages: establish worktree, plan, complete
+one Feature's checks → code → commit/delivery, then write documentation.
+The [policy](programming_prompt_rewritten_with_evals/prompts/programming-skills/workflow/SKILL.md)
+owns this cycle even without companions; selected companions add their contracts.
+With `commits`, each complete capability sentence defines one Feature, keeping
+its commands and optional clauses together. Finish the entire queue.
 
-1. **Establish worktree** — verify the task checkout before detailed planning.
-2. **Plan** — define concrete features, files, checks and expected results.
-3. **Write code** — finish **3.1 Write tests → 3.2 Write code → 3.3 Commit**
-   for each feature before starting the next feature.
-4. **Write documentation** — document the delivered interface after every
-   feature cycle closes, then commit and deliver the documentation.
+Retain the physical live root, task checkout and authoritative plan path.
+Use an absolute `ACC_WORKFLOW_FILE` inside the live root's `tmp/workflow/`,
+otherwise `<live-root>/tmp/workflow.md`. The ignored plan has four `Tasks` rows
+and seven `Microsteps` columns: Step, Phase, Feature, Stage, Action, Status,
+Evidence. Each code Feature has consecutive 3.1, 3.2, 3.3 rows. Read the first
+unfinished step, record actual results/hashes and close selected delivery before
+advancing; both outer rows and microsteps must be complete at handoff.
+Implementation follow-ups update this plan, preserving unfinished work or
+archiving a completed plan beside it. Reuse the verified task checkout.
 
-In 3.1, save and run the current feature's public checks before its application
-edit. In 3.2, implement that feature and run its checks plus retained relevant
-checks. In 3.3, commit checks and working code together; selected worktree
-merges and consumer reapplication finish this substep. Static content and
-project test prohibitions use recorded direct checks. Existing passing checks
-can protect a refactor. No Git or an explicit no-commit request can justify
-skipping 3.3. The cycle remains required without companion skills; companions
-add their own detailed contracts. Installing a skill alone does not activate it.
-
-The authoritative launch-project plan has exactly four `## Tasks` rows and a
-`## Microsteps` table with `Step`, `Phase`, `Feature`, `Stage`, `Action`,
-`Status`, and `Evidence` columns. Each code feature has consecutive 3.1, 3.2,
-3.3 rows with one stable feature identifier. Other phases use `-` for Feature
-and Stage. Actions identify actual files or public checks; evidence records
-observed runs, commits and delivery. Keep completed and pending work in this
-same plan. Selected commits guidance still owns capability-sentence boundaries.
-
-ACC provides an absolute `ACC_WORKFLOW_FILE` under the launch project's
-`tmp/workflow/`; otherwise use `<launch-project-root>/tmp/workflow.md`.
-Retain this path when entering the worktree. Statuses are `pending`,
-`in_progress`, `complete`, or `skipped`. The plan stays ignored. ACC displays
-numbered captions such as `3.2 Write code · parser · 1 out of 6` and separates
-each feature's three bar cells. The next feature uses `4.1`, `4.2`, `4.3` in
-the display; plan Stage cells remain `3.1`, `3.2`, `3.3`. Documentation follows
-all feature cells. Legacy five-column plans remain readable.
-
-After changing the prompt, run `acc pp rebuild` to refresh saved selections;
-`acc pp status --skill v2:workflow --check` verifies native instruction delivery.
-Original and V2 workflow prompts use the same seven-column schema. At each
-transition, read the saved plan and choose its first unfinished microstep. Close
-the actual tests/code Status cells before committing; record the verified commit
-hash and delivery before starting the next feature's checks. Before handoff,
-verify both the outer rows and microsteps are complete.
-
-Every implementation follow-up needs a fresh plan before its feature checks
-or edits, including small requests in the same conversation. Reuse the verified
-task worktree and the same assigned plan path. After a completed task, archive
-its plan beside that file and write a new goal, feature ledger and pending
-cycles. During unfinished work, revise the plan while retaining completed
-evidence and the remaining feature queue. Each feature still finishes
-3.1 tests → 3.2 code → 3.3 commit before the next; documentation follows.
-Status questions and explanations that require no implementation need no new plan.
+Agent Command Center consumes this schema for its progress display. Policy
+source edits do not activate native harness instructions by themselves;
+selection/deployment stays with ACC and the external installer.
 
 ### docs
 
@@ -218,131 +186,50 @@ function docstrings from a separately selected commenting skill.
 
 ### testing and the programming suite
 
-The independent [testing skill](programming_prompt_rewritten_with_evals/prompts/programming-skills/testing/SKILL.md)
-requires reusable behavior checks, bug regressions, meaningful public-interface
-coverage, isolated execution, and existing project tooling. Static content uses
-direct checks or the project's prescribed evaluation method. It does not create
-CI or install a new test framework by default.
+The [programming skills](programming_prompt_rewritten_with_evals/prompts/programming-skills/README.md)
+are independently selectable policies. Their [matching judges](programming_prompt_rewritten_with_evals/evals/judges/README.md)
+score the same behavioral requirements, without adding another policy's artifacts.
+`testing` requires saved public checks before each capability's code, current
+contract coverage, state observations after rejection, isolated cases and honest
+cumulative execution evidence. Static content and project test prohibitions use
+direct verification; no new test framework or hosted CI is required.
 
-Coverage distinguishes argument shape, numeric conversion, and domain rejection.
-Commands may share a representative rejection check when they execute the same
-validation path; independent handlers need their own coverage. When a later
-requirement changes accepted inputs or output, revise every affected retained
-assertion and recompute its expected result from that case's fixture and
-preceding public calls.
-Different operation names do not create independent copies of one shared
-predicate. Text/name operands require no numeric-conversion case unless their
-contract makes them numeric. Resource lookup cases follow their actual owners.
+Cover success/boundaries, documented operand shapes (including extra operands
+for zero-argument queries), numeric conversion and specified domain/resource
+failures. Preserve unaffected checks when requirements change. When a query's
+Feature begins, upgrade retained rejection bodies before its code: public seed,
+rejection, then immediate available read-only values and required history.
+Stateless cases need no state fixture; valid empty-domain query failures retain
+an empty fixture. Never pull a future public query into an earlier Feature.
+Coverage lists are optional, and commit queues may use faithful summaries that
+preserve each capability sentence's boundaries and behavior.
 
-Before application edits, save and read the coverage inventory beside the
-checks. It maps every current command, including queries, to concrete success,
-missing/extra-input, conversion and requested-domain assertions. A zero-operand
-command still needs extra-input rejection, even when the request has no error
-prose. Enumerate the actual retained exception bodies; upgrade those bodies
-with public seeds and immediate available/planned value and history reads before
-the current query's implementation. A later feature's query stays deferred.
-Trace shared coverage to the first reachable predicate; copied guards are
-independent owners. Missing and extra operands are separate rejection classes. Current-source runners retain only
-current-contract expectations; historical stage checks require matching source.
-Add executable future-capability cases only at their implementing revision.
-When a new command replaces its former unknown-command rejection, update that
-current-suite assertion and continue the remaining stages; a historical runner
-is not needed solely to preserve the retired expectation.
-Review every retained rejection loop when a query becomes available, using
-populated fixtures and immediate public observations when preservation is
-required. New complete cases do not repair incomplete older cases. Generated
-interpreter caches can stay unstaged; incidental cleanup never blocks delivery.
-Document the cumulative final runner with its working directory, discovery
-flags and required environment. Development selectors must not leave current
-assertions using obsolete expectations or silently omit delivered capabilities.
-Public history or aggregate queries can be the strongest available observation;
-an empty-state rejection keeps its required empty fixture. Supplemental private
-checks do not replace those public observations.
-Reject malformed clear/reset forms while the fixture is still populated,
-before successfully clearing it. When all public queries reject the required
-empty fixture, document that observation limit rather than inventing a query.
+SRP keeps parsing and token conversion, operations and public dispatch separate
+from the first working slice. Reuse genuinely identical domain decisions;
+different arithmetic does not require a shared updater merely because it touches
+one variable. Commenting and logging cover authored test functions and helpers
+as well as application functions. Docs requires the delivered root README after
+all selected Feature cycles.
 
-Agent Command Center's default installation enables V2 `commits`, `worktree`,
-`workflow`, `docs`, `testing`, `srp`, `commenting`, `logging`, and `debug`.
-Other skills remain independently selectable; manual selections are preserved. Apply this baseline across every harness with:
+The October 10, 2026 content revision shortened the policy suite by about 65%
+and judge text/configuration by about 80%. It removed repeated audit procedures,
+mandatory coverage inventories, literal ledger grading and testing's source-site
+question expansion. The testing judge now uses one `testing_contract` criterion
+covering all four retained obligations; immutable `debug_behavior` correctness
+contracts remain separate. Static validation, actual instruction assembly and
+isolated judge packaging passed. No benchmark was run for this revision, so
+its effect on pass rate remains unverified and archives retain their verdicts.
 
-```bash
-acc pp enable -v2 --skill commits,worktree,workflow,docs,testing,srp,commenting,logging,debug
-```
-
-```bash
-acc pp status --skill v2:commits,v2:worktree,v2:workflow,v2:docs,v2:testing,v2:srp,v2:commenting,v2:logging,v2:debug --check
-```
-
-The generic programming guidelines and their global bootstrap are retired and
-removed. Installer postflight disables their previous managed blocks and native
-skill paths, including registered Codex accounts. Existing conversations may
-retain previously supplied instructions; new sessions receive the current
-selection. Python setup remains owned by `init-project`, and desktop deployment
-remains owned by `linux-configuration`.
-
-The testing skill has a semantic Harbor judge under `evals/judges/testing/`.
-The judge resolves the current contract, traces assertions in execution order,
-and checks validation coverage, immediate public observations after rejection,
-and the saved runner's isolation fixtures. Historical coverage is assessed from
-the corresponding Git revision. A passing runner still needs this coverage audit.
-The judge derives command shape from public operands, follows actual shared
-validation helpers, and requires a request or task-log basis for numeric ranges.
-The declared input type bounds required validation; a defensive non-string
-guard does not add non-string cases to a string-command contract. Strict numeric
-bounds need their excluded endpoint and a value beyond it in each independent
-path. Preservation checks concern the resources affected by that operation.
-When only aggregate state queries exist, it uses those observations and records
-their limits. Source review alone does not establish a new benchmark pass rate.
-Default benchmark discovery selects `commenting`, `commits`, `debug`, `docs`,
-`logging`, `srp`, `testing`, and `worktree`. Both `workflow` and `debug_logs`
-require explicit selection; `logging-vague` remains a control. Existing launcher
-presets retain their explicit skill lists. Dedicated repair tasks receive only
-`debug`; the other selected skills retain their coding task family.
-Acceptance uses `gpt-6-luna` with `low` reasoning for both the coding model and
-Codex semantic judge, as specified in [AGENTS.md](AGENTS.md). Verify their actual
-archived turn settings; stronger models or higher reasoning do not establish
-acceptance. Preserve genuine failures and exclude authentication, quota and
-infrastructure failures from prompt-quality scores.
-
-Before a run, check the current 5-hour and weekly allowances on every configured
-Codex instance, choose the eligible instance with the most constrained-window
-headroom, and verify its auth home from `evals/` using the same selected ID:
-`ACC_CODEX_INSTANCE=1 python3 harbor_agents/codex_account.py --auth`.
-The examples below use instance 1, verified for this handoff; recheck availability
-and replace the ID for each later run. To inject and score only testing, use the
-public benchmark entrypoint below. Omitted `--tasks` selects all coding tasks;
-`-k 3` requests three attempts per task, and omitted concurrency uses automatic capacity. The
-runner copies the authoritative testing skill and judge into the new job.
-
-```bash
-cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-```
-
-```bash
-ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills testing -k 3
-```
-
-To evaluate the full suite including workflow:
-
-```bash
-cd programming_prompt_rewritten_with_evals/evals
-```
-
-```bash
-ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,commits,worktree,docs,srp,commenting,logging,debug,testing -k 3
-```
-
-Run one benchmark wrapper at a time. Judge verdicts inspect saved checks against
-the original request; without an agent trace, execution order remains unverified.
-The testing-only command requests 24 trials across the current eight tasks.
-Increasing `-k` increases attempts, independently of judge-worker concurrency.
-Use `-k 7` to repeat the 56-trial testing-only workload.
-Only the selected testing judge runs for each trial. Its verdict must use the
-final contract and actual assertion body: a retired command's rejection can be
-correct, and a historical expectation is not a current expectation. Judge
-execution must follow the saved invocation, including explicit discovery flags;
-zero tests from a different probe do not establish a submission defect.
+ACC's existing default set is `commits`, `worktree`, `workflow`, `docs`, `testing`,
+`srp`, `commenting`, `logging`, `debug`. Benchmark discovery excludes opt-in
+`workflow` and `debug_logs`; `logging-vague` remains a control. Dedicated repair
+trials receive `debug`, while other selected policies retain their coding family.
+Defaults and native selections were not changed by this content revision.
+Acceptance uses `gpt-6-luna` with low reasoning for both coding and judging.
+Before any future Codex benchmark command, verify every configured instance's
+current 5-hour and weekly quota and the chosen auth home; old instance examples
+are not evidence of available quota. Follow [AGENTS.md](AGENTS.md) and the
+[evaluation README](programming_prompt_rewritten_with_evals/evals/README.md).
 
 ### init-project
 
@@ -577,118 +464,36 @@ cleanup, allowing later inspection of actual judge tool calls. Credential and
 configuration files are excluded. Existing archives are not rescored by a source
 edit, and retention adds no judge calls or reward columns.
 
-Function contracts cover authored test methods, fixtures and assertion helpers
-as well as the program: selected commenting requires inline `Parameters:` and
-`Returns:` content, and selected logging requires each function's own parameter
-entry trace and returned-value trace, including `None` on normal fallthrough.
-The entry print precedes parsing and `global`/`nonlocal` declarations; a
-parameterless function may print a literal entry message. A final `print(None)`
-traces an implicit `None` return without requiring an explicit `return None`.
-After editing a test's assertions, read its actual final statement and preserve
-or restore `print(None)` on every normal fallthrough path; passing assertions
-alone do not verify logging.
-Logging verdicts must agree with the current source and function-boundary report.
-Testing alone does not enable these companions. Write complete docstrings when
-creating each function, including the initial regression test, and review test
-methods independently of their assertions and logging. With SRP selected,
-identify the parser and operation owners before the first source write. The
-first working slice and repairs to existing code keep raw-command parsing,
-state changes and computed results in helpers. The public dispatcher receives
-an operation and its arguments from one shared parsing call before branching;
-parsers may compose helpers internally. Extracting only formatting, token
-conversion or history recording leaves the operation mixed.
-Command-shape validation has one owner: a dispatcher does not repeat guards
-already enforced by its shared parser. Moving a guard removes its former copy
-in the same edit.
+Function contracts cover authored tests, fixtures and assertion helpers as well
+as program functions. Selected commenting requires purpose and same-line
+`Parameters:`/`Returns:` meanings. Selected logging requires each function's own
+first named-parameter print and complete normal-exit print, including `None` on
+fallthrough. Source inspection checks these obligations; passing assertions alone
+do not. Selected SRP keeps raw parsing/conversion in the parser and business
+validation/state updates in operation helpers, with a thin public dispatcher.
 
-The testing judge accepts meaningful saved assertion scripts or framework tests
-by source inspection when execution is unavailable, with that limit disclosed.
-It inspects available historical checks against their own revisions, so retired
-rules are not required in the final suite. Missing historical source is an
-unverified limit, rather than evidence that earlier tests were absent. Agents
-should retain unaffected regressions and meaningful negative assertions as they
-extend a suite; terminal-only assertions do not replace saved checks. Choose
-saved stdlib assertions or unittest checks when no framework exists; an empty
-creation checkout or absent existing suite does not block implementation.
-Read back delivered files before claiming that code or checks were saved.
-Save runnable public-interface checks with each working revision, covering
-explicitly requested empty commands, unknown operations and invalid argument
-shapes when those rejection classes are part of the original contract.
-The testing policy uses ordered revision gates and a saved coverage inventory
-that names executable cases and independently expected results. Its separate
-shared-validation section saves empty/unknown command and missing/extra argument
-assertions before application edits in the first dispatch revision when required
-by the contract. Extend the same suite, transfer unaffected assertions before
-replacing cases, and inspect the actual inputs and assertions before every
-commit; a docstring or implemented rejection branch does not supply coverage.
-A reported bug retains its exact input and expected result alongside boundary
-checks. When a public state query first
-appears, upgrade earlier rejection tests in that revision. Each required
-state-preserving rejection is immediately followed by public observations of
-affected values and available history, before another rejection, mutation,
-reset or reload. A later successful mutation's count or a private-state read
-does not replace that observation. Task examples demonstrating recovery still
-need the intervening query. Later-stage rules stay deferred, and explicitly
-replaced rules retire only at the revision that replaces them. Record each
-superseded expectation's last valid commit and replacement case, and update case
-names and docstrings to describe their current assertions. Broader numeric
-acceptance keeps other required domain rejections, including zero/negative
-values, in each independently implemented validation path.
-Reusable rejection helpers may accept independently expected observations and
-upgrade retained cases when queries appear; inline cases still need the same
-review. When a stage selector retires an obsolete numeric expectation, preserve
-its method's unaffected validation assertions in active cases.
+The testing judge assesses the complete saved contract in one binary verdict,
+using current numbered source, relevant historical revisions and coding traces.
+It no longer generates a question per raise or rejection block. Existing source,
+trace and citation evidence helpers remain available. A missing trace is an
+explicit verification limit, not evidence that code preceded tests. Required early
+rejections remain valid until the capability that replaces them, and a current
+query upgrade to an older test body belongs to the query's current Feature.
+Findings must identify a concrete violated rule with authentic evidence;
+optional isolated execution may resolve a material question when tools exist.
+The new single-criterion detail schema differs from historical expanded testing
+results; do not claim direct per-criterion comparability or rescore old archives.
 
-Record the saved suite's runnable command and confirm it discovers and executes
-assertions. Track required failures by operation and rejection reason, retain
-shared empty/unknown checks, and preserve applicable cases when consolidating a
-suite. Separately dispatched no-argument commands need their own extra-argument
-checks. Function documentation and entry/exit traces cover authored test helpers
-and fixtures as well as application functions; inspect the complete changed
-method body so its docstrings and final return trace survive assertion edits.
-Root README delivery remains required without workflow. Complete every required
-command in a capability sentence before its introducing commit, and reuse shared
-classification and token-validation helpers when extending the program.
+Debug/testing judges receive verifier-owned original failure logs in
+`tests/task-logs/`; agent-editable logs cannot redefine expected results.
+Debug requires a saved public regression before repair. `debug_logs` alone adds
+no regression or commit obligation. The separate `debug_behavior` judge executes
+immutable public behavior contracts. Worktree and docs remain programmatic.
 
-Codex semantic judges stream complete prompts through file-backed stdin. This
-avoids Linux's per-argument limit for large source/history evidence without
-truncating it or changing judge prompts and scoring. The adapter is scoped to
-rewardkit's child process; other backends keep their existing launch behavior.
-Run its isolated standalone checks from the repository root with:
-
-```bash
-python3 programming_prompt_rewritten_with_evals/evals/verifier/run_llm_judge.py --self-test
-```
-
-
-The debug, debug_logs and testing judges receive verifier-owned original failure logs
-from `tests/task-logs/`. A saved regression assertion may use a literal expected
-value that matches the original log; the test itself need not parse that log.
-The docs checker treats authored test runners as checks rather than application
-entrypoints and evaluates exclusions relative to the checkout, so an external
-worktree's `.worktrees` parent does not hide its application source.
-
-For stateful checks, establish fresh state before every independent case while
-preserving state within each requested multi-call sequence. Fixture setup may
-reset private state or load a fresh module; behavioral assertions use the
-public interface. Run mutable suites again in the same process or another order
-to check isolation. The testing judge traces repeatability case by case and
-cites the actual conflicting assertion for an isolation failure. A no-op method
-adds no coverage, but does not erase meaningful assertions elsewhere.
-
-Before the first source write, verify the registered physical task path and
-matching branch against the full `<parent>/.worktrees/<project>/<project>_<type>-<feature>`
-layout. Resolve the live repository with Git and its physical path, then derive
-the store from its immediate parent and the project component from its basename.
-Neither a guessed filesystem root nor an in-repository `.worktrees` directory
-satisfies that layout. Retain that live-derived destination when comparing
-registration before edits and at handoff; a successful merge does not repair a
-wrong location. Move this task's incorrectly placed checkout with
-`git worktree move` to the unused correct destination while preserving its branch
-and files.
-Worktree recovery drafts belong inside the registered task checkout's `tmp/`,
-keeping the external project worktree group free of stray files and unregistered
-directories.
+Codex semantic judges stream full prompts through file-backed stdin to avoid
+Linux argument limits. Archived prompt/backend evidence remains independent of
+coding execution transcripts. These runtime mechanisms and public task contracts
+were not changed in the simplification.
 
 ## Configuration
 
@@ -809,15 +614,9 @@ chronological evidence. A separate `debug_behavior` judge executes immutable
 public-call sequences, including varied inputs and immediate observations after
 rejections. Editing the supplied logs cannot redefine expected behavior.
 
-From the evaluation directory, run only these cases on Codex instance 1:
-
-```bash
-cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-```
-
-```bash
-ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills debug --suite debug -k 3
-```
+For a future dedicated repair run, select `--skills debug --suite debug` through
+`run_benchmark.sh` after checking current quotas and the chosen auth home.
+No fixed account ID is prescribed here.
 
 `--tasks debug-clock` narrows that run to one case. Selecting only `debug`
 without `--suite` or `--tasks` also chooses the repair family. A mixed selection
