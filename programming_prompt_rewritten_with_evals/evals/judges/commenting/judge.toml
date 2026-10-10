@@ -10,7 +10,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "function_commenting"
-description = "functions document description, Parameters, and Returns"
+description = "every authored or edited function, method, test and fixture documents purpose and all parameter/return meanings with same-line Parameters: and Returns: content; lambdas exempt"
 type = "binary"
 
 [scoring]

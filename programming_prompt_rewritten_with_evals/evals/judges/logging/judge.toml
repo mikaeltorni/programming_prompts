@@ -10,7 +10,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "entry_exit_prints"
-description = "every def/async def/method prints its named parameters (including optional None) at entry and prints the whole returned value before each return, using builtin print(); lambdas and raise paths exempt"
+description = "every authored or edited function, method, test and fixture uses builtin print for its first named-parameter statement and every complete normal return including implicit None; lambdas and exception exits exempt"
 type = "binary"
 
 [scoring]

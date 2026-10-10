@@ -9,7 +9,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "workflow_sequence"
-description = "the explicit workflow establishes or verifies its selected worktree before planning, makes a fresh plan for each supplied implementation follow-up while preserving unfinished work, records exactly four outer Tasks rows and consecutive 3.1 tests, 3.2 code, 3.3 commit Microsteps for each planned feature, closes each cycle before the next with an actual conventional type: or type(scope): commit subject even when commits is unselected, and writes selected documentation afterward; additional documentation Microsteps are valid when Phase is Write documentation and Feature/Stage are both -; a format failure must identify actual contradictory cells"
+description = "the authoritative ACC-compatible plan follows four outer stages and per-feature checks/code/conventional-commit cycles, records actual progress/hashes, completes selected delivery and documents afterward; companion obligations apply only when selected"
 type = "binary"
 
 [scoring]

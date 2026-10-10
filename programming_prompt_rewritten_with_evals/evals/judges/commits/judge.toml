@@ -9,7 +9,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "feature_commits"
-description = "each complete original capability sentence has its own faithful ledger entry when supplied, follows tests before implementation, and closes with its own working conventional commit including checks and code before the next capability"
+description = "each original capability sentence has its own working conventional introducing commit in order, with a faithful capability queue and checks/code/commit cycle; cosmetic ledger text and unavailable chronology alone are not failures"
 type = "binary"
 
 [scoring]
