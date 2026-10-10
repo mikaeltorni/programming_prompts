@@ -15,6 +15,7 @@ Require these boundaries from the first working slice, including repairs:
   command-shape validation and token conversion stay within parsing. Composed
   parsing helpers are valid; kind-only classification followed by raw parsing
   after dispatch is not this boundary.
+  Exact matching inside the parser is valid for zero-argument forms; splitting is not mandatory.
   `int`, `float` and `Decimal` token conversions belong here; pass their values unchanged.
 - Operations own arithmetic, computed outputs, state updates and domain rules
   such as sign, finite/integral acceptance, resources and funds/capacity.
@@ -23,6 +24,7 @@ Require these boundaries from the first working slice, including repairs:
   guards on parsed values are allowed; operation-specific ranges are not.
   Argument-count and presence checks belong in parsing, including guards on parsed arguments.
   Choosing an operation is dispatch; choosing its delta or output label is core.
+  Branching on a parsed selector, including an unsupported-selector fallback, is dispatch.
   Printing a parameter or return value is logging, not parsing or domain logic.
 
 Reuse genuinely identical classifications, calculations or domain-validation
