@@ -247,6 +247,13 @@ acceptance ownership and scratch placement; judges recognize exact-match parsing
 parsed-selector routing and uncalled test definitions. No tests, benchmarks or
 judge replays ran for this follow-up; its effect on pass rate remains unverified.
 
+The fast archive `2026-10-11_014743_461020` exposed genuine commit bundling and
+parser ownership failures alongside judge mistakes. A small follow-up clarifies
+separate cycles for same-command revisions, converted parser results, shared
+validation, invoked checks and replaced expectations. SRP judging accepts valid
+simple parser forms; testing coverage claims must cite the original contract.
+The updated skills are applied locally; their next positive rerun remains pending.
+
 ACC's existing default set is `commits`, `worktree`, `workflow`, `docs`, `testing`,
 `srp`, `commenting`, `logging`, `debug`. Benchmark discovery excludes opt-in
 `workflow` and `debug_logs`; `logging-vague` remains a control. Dedicated repair
@@ -401,8 +408,9 @@ The launch guard prints its capacity configuration once at startup; polling,
 per-trial admission and instruction-registration helpers run without verbose
 traces or shell-command dumps. Running jobs keep their already-loaded code;
 these console changes take effect on the next benchmark invocation.
-The October 11 setup-only storage repair was reviewed without running tests,
-as requested; revised k5 activation speed and total runtime remain unmeasured.
+A subsequent user-run k5 archive, `2026-10-11_014743_461020`, completed in
+6m23s with 13 quota-affected trials excluded. It confirms faster observed
+throughput, while quota failures prevent clean acceptance of that run.
 Run one benchmark invocation at a time. See the
 [evals README](programming_prompt_rewritten_with_evals/evals/README.md) for the
 command surface and [AGENTS.md's benchmark guidance](AGENTS.md#benchmark-commands-give-the-simple-default)
