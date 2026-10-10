@@ -13,8 +13,10 @@ inventory, plan format, Git commit, docstring or logging rule from another skill
 Read the full request. For each capability in order, locate saved public checks
 and their baseline before the application edit, then a passing cumulative rerun
 before the next capability's checks. Creation may fail to import its absent
-entrypoint; passing existing checks can protect a refactor. Read complete literal
-writes/runs within shell commands in their written order. A final pass, commit
+entrypoint; passing existing checks can protect a refactor.
+Any Feature's baseline may fail because its behavior is missing. The passing
+cumulative run belongs after implementation, before the next Feature's checks.
+Read complete literal writes/runs within shell commands in their written order. A final pass, commit
 or timestamp alone does not prove this sequence. Later public capabilities must
 not execute early, including observer queries; necessary shared helpers are fine.
 
@@ -23,9 +25,12 @@ sentence is valid until a later sentence replaces it. Adding a newly available
 query to older test bodies during that query's checks-before-code step is the
 required upgrade, not early feature exposure. Test/class names do not freeze
 their source revision. Do not mistake test expectations for an implementation.
+Check replacement acceptance anywhere in the cumulative suite; do not require
+the obsolete rejection or its replacement inside the same old test body.
 
 2. CONTRACT COVERAGE
 Expand actual assertions, loops and helpers across all current check files.
+Coverage is their union; stateless files need not duplicate cases covered elsewhere.
 Each requested command/query has meaningful success and specified boundaries.
 Documented forms require applicable missing/extra-operand rejection, even without
 error prose; zero operands need extra only. Include blank rejection and unknown
@@ -34,6 +39,8 @@ remaining text retain their acceptance. Cover invalid numeric tokens for each
 numeric operand, specified domain failures (strict excluded endpoint and beyond)
 and resource failures using otherwise valid input. Do not invent unsupported
 types, unrequested aliases, limits, error wording or internal representations.
+Required domains come from the original request and failure logs; an extra
+validator or README constraint does not create a mandatory rejection case.
 One case can cover an actually shared validation rule; no duplicate case per
 source raise is required. Different numeric operands/rejection reasons still
 need coverage. Retire only superseded expectations and retain other regressions.
@@ -50,8 +57,12 @@ cannot replace an available value query. Use the strongest available view,
 including aggregates; disclose what it cannot reveal rather than inventing APIs.
 
 Apply current queries to every retained current-module rejection body. Newer
-separate tests do not repair older missing observations. If no public read exists
-in the current Feature, a weaker public probe is allowed with its limit stated.
+separate tests do not repair older missing observations.
+Assess current assertions in the authoritative current-file blocks; historical
+trees establish earlier revisions. A query in another body does not observe
+the current rejection.
+If no public read exists in the current Feature, a weaker public probe is allowed
+with its limit stated.
 Valid empty-domain query rejection keeps an empty fixture and itself observes
 emptiness; this exemption does not cover malformed inputs in a mixed loop.
 Stateless interfaces need no seeds/reads. Independent mutable cases start fresh

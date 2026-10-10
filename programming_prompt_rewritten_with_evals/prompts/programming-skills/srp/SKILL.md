@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.24 — Keep raw-command parsing and operation logic in separate helpers
+  v1.0.25 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
@@ -11,6 +11,8 @@ description: >-
 From the first working slice, give raw-command parsing, operation logic and
 public dispatch separate owners. This applies to small scripts and repairs of
 mixed existing entrypoints. Keep the public signature and extract locally.
+Dispatch calls its parser before choosing an operation, with fully converted
+arguments returned by that parser. Put sums and other computed results in operations.
 
 - The parser receives the raw command once and returns its operation selector
   and parsed arguments. A single-operation interface may return arguments only.

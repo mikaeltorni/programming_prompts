@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >-
-  v1.0.14 — Edit Git projects in a sibling .worktrees project/task checkout,
+  v1.0.16 — Edit Git projects in a sibling .worktrees project/task checkout,
   commit there, merge each Feature into the live default branch, and reapply
   its consumers. Never push unless requested.
 ---
@@ -27,15 +27,25 @@ PARENT = LIVE's immediate parent
 PROJECT = LIVE's basename
 TYPE = conventional commit type
 FEATURE = one descriptive task slug
-WT = PARENT/.worktrees/PROJECT/PROJECT_TYPE-FEATURE
-BRANCH = TYPE/PROJECT_FEATURE
 ```
 
-Use the same PROJECT, TYPE and FEATURE bytes in both names. Resolve existing
-store symlinks; the store must remain under LIVE's immediate parent, outside
-LIVE. On collision, choose a unique FEATURE suffix and recompute both names;
-never delete or reuse another task. The first repository mutation is
+Assign those values once and construct both names with the same shell variables:
+
+```sh
+WT="$PARENT/.worktrees/$PROJECT/${PROJECT}_${TYPE}-${FEATURE}"
+BRANCH="$TYPE/${PROJECT}_${FEATURE}"
+git -C "$LIVE" worktree add -b "$BRANCH" "$WT"
+```
+
+Keep the FEATURE's hyphens unchanged in the branch.
+The branch separates PROJECT and FEATURE with `_`; the directory separates
+TYPE and FEATURE with `-`. Keep these separators exactly as shown above.
+Resolve existing store symlinks; the store must remain under LIVE's immediate
+parent, outside LIVE. On collision, choose a unique FEATURE suffix and recompute
+both names; never delete or reuse another task. The first repository mutation is
 `git worktree add -b BRANCH WT`, not source edits or `git init`.
+Create `WT/tmp/` only after that command succeeds; precreating it creates WT
+and makes Git reject the destination as already existing.
 
 Retain LIVE, WT and BRANCH for the whole task. Before edits/commits and at
 handoff, verify WT's physical path, registered location and branch against those

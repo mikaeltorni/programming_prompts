@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.1.40 — Save and run each Feature's public-interface checks before its code,
+  v1.1.42 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -20,8 +20,8 @@ that case's preceding calls, never from application output. Use existing project
 tooling; stdlib assertions or unittest suffice for a new project. Apply selected
 function contracts to tests, fixtures and helpers from their first draft.
 
-Cover each current command/query with meaningful success, specified boundaries
-and applicable rejection cases:
+Save success and rejection checks together before code for each current
+command/query, including specified boundaries and applicable cases below:
 
 - Blank input and unknown operations when the requested grammar has selectors.
   Valid free-form first operands are not unknown selectors.
@@ -36,6 +36,7 @@ One representative case may cover an actually shared validation rule; separate
 numeric operands and different rejection reasons still need applicable checks.
 Review concrete inputs/assertions in all saved loops and helpers for omissions;
 a short coverage list may help, but no additional inventory file is required.
+Before the baseline, add the applicable rejection cases above; success-only checks are incomplete.
 
 Keep earlier regression assertions except rules this capability explicitly
 replaces. Check earlier rules against their earlier source, not against the
@@ -58,10 +59,12 @@ A seed before a nonmutating rejection loop can cover all iterations.
 
 When a query's own Feature begins, upgrade every retained rejection body with
 that query in its checks-before-code step. This is a current-suite update, not
-an early implementation of the query in an earlier Feature. If no read exists
-yet, use the permitted weaker public probe and record its limit; do not invent
-or pull forward a future query. A valid query rejecting because its domain is
-empty keeps that empty fixture; its exception observes emptiness. This exemption
+an early implementation of the query in an earlier Feature.
+Edit every earlier saved check file: insert the new reads inside each old
+rejection loop immediately after the rejected call. A separate new test does not upgrade it.
+If no read exists yet, use the permitted weaker public probe and record its
+limit; do not invent or pull forward a future query. A valid query rejecting
+because its domain is empty keeps that empty fixture; its exception observes emptiness. This exemption
 does not cover malformed inputs in the same loop. Stateless interfaces need
 neither seeds nor state reads.
 
