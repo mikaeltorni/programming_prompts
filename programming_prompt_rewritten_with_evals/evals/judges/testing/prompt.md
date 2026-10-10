@@ -45,6 +45,9 @@ One case can cover an actually shared validation rule; no duplicate case per
 source raise is required. Different numeric operands/rejection reasons still
 need coverage. Retire only superseded expectations and retain other regressions.
 A missing case needs a concrete required input after inspecting all saved cases.
+For each alleged missing numeric, domain or boundary case, quote the original
+request or failure-log requirement that makes it mandatory. A solution-authored
+README or extra source validator alone cannot establish that requirement.
 
 3. PRESERVATION AND ISOLATION
 For mutable rejections, locate a successful meaningful public seed when possible,

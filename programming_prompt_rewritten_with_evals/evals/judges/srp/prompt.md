@@ -16,6 +16,9 @@ Require these boundaries from the first working slice, including repairs:
   parsing helpers are valid; kind-only classification followed by raw parsing
   after dispatch is not this boundary.
   Exact matching inside the parser is valid for zero-argument forms; splitting is not mandatory.
+  A validated selector alone suffices for a zero-operand form. Assess the
+  operations available in that slice; arguments-only parsing and a direct
+  operation call are valid while the slice has just one operation.
   `int`, `float` and `Decimal` token conversions belong here; pass their values unchanged.
 - Operations own arithmetic, computed outputs, state updates and domain rules
   such as sign, finite/integral acceptance, resources and funds/capacity.
@@ -32,6 +35,8 @@ decisions in a shared called owner, removing obsolete copies. Cite both actual
 equivalent decisions in the same revision before alleging duplication. Numeric
 token conversion and a domain acceptance check are different decisions.
 Separating conversion in parsing from acceptance in an operation is required.
+Repeated builtin token conversion within parsing alone is not duplicated
+classification, calculation or domain validation and requires no wrapper.
 Different arithmetic or domain rules need no common helper: opposing updates to one state variable are distinct
 operations. A shared variable alone does not establish shared logic.
 Do not require getter wrappers, fixed helper counts or decision-inventory files.
