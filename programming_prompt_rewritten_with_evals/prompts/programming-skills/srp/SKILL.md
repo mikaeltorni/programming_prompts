@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.25 — Keep raw-command parsing and operation logic in separate helpers
+  v1.0.26 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
@@ -22,7 +22,7 @@ arguments returned by that parser. Put sums and other computed results in operat
 - Operation helpers own arithmetic, computed results, state changes and domain
   validation: resource existence, uniqueness, funds/capacity, sign, finite-only,
   magnitude and integral-value acceptance. Numeric conversion establishes a
-  representation; it does not decide which values an operation accepts.
+  representation; acceptance predicates on that value belong in operations.
 - The public entrypoint parses once, dispatches using parsed data, then
   returns/formats the result. It passes converted values unchanged, without
   converting them back to text or inspecting the raw command again. It may

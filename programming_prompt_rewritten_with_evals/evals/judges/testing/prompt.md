@@ -71,6 +71,7 @@ repeat/order evidence. A leak allegation needs a reachable conflicting value.
 
 4. ACTUAL VERIFICATION
 Saved checks are runnable behavioral assertions, not prints or a zero-test suite.
+Running a script of uncalled test definitions does not execute its assertions, even with exit 0.
 The final cumulative runner uses the proper directory, discovery, environment
 and imports and covers delivered behavior after the last edit. Observe actual
 output and exit status; do not treat stdout tracing as a return-value mismatch.

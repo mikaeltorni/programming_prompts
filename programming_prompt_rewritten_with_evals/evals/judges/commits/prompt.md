@@ -44,7 +44,8 @@ no-commit instructions justify the documented exception. Missing chronology alon
 invalidate an established working commit mapping.
 
 Give the Feature-to-hash mapping and verification limits for yes. For no,
-identify the first concrete missing/incomplete Feature, bundled/early capability,
+quote the original disputed capability sentence and identify the first concrete
+missing/incomplete Feature, bundled/early capability,
 nonconventional commit or evidenced cycle violation. Finish the whole request;
 a completed first Feature does not excuse missing later ones. Checkout layout,
 merge mechanics and companion conventions belong to their own judges.
