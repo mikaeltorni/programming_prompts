@@ -2,7 +2,7 @@
 
 Each subdirectory is one injectable agent skill (`SKILL.md`) for Codex and/or
 Claude Code. Real skills are scored by a matching judge under
-`../evals/judges/<name>/`. Control skills named `<base>-vague` inject a
+`../../evals/judges/<name>/`. Control skills named `<base>-vague` inject a
 one-line vague hint and are scored by `judges/<base>/` (no judge of their own).
 
 Current skills:
@@ -13,7 +13,7 @@ Current skills:
 | [`commenting`](commenting/SKILL.md) | Docstrings with description, Parameters, Returns |
 | [`logging`](logging/SKILL.md) | Plain `print` of parameters at entry and return value before exit |
 | [`logging-vague`](logging-vague/SKILL.md) | Control: one vague “Use logging.” line; scored by the logging judge |
-| [`worktree`](worktree/SKILL.md) | Project-prefixed sibling `.worktrees/<project>/<project>_<type-feature>` worktree, merge back, never push |
+| [`worktree`](worktree/SKILL.md) | Project-prefixed sibling `.worktrees/<project>/<project>_<type>-<feature>` worktree, merge back, never push |
 | [`commits`](commits/SKILL.md) | One working commit per capability sentence in the original request |
 | [`testing`](testing/SKILL.md) | Contract-based regression checks, existing tooling, isolated execution, and honest verification evidence |
 | [`debug_logs`](debug_logs/SKILL.md) | Explicit-only read-logs-first policy, pending numeric positive evidence |
@@ -36,6 +36,8 @@ sentence from the original task, then maps each Feature to the first commit
 that implements it. It reads diffs and complete relevant trees, excludes the
 supplied seed, allows repair commits, and rejects bundling or history padding.
 Output formatting is evaluated as behavior, not a source-spelling constraint.
+The capability queue may use faithful summaries; cosmetic punctuation is not
+a commit-policy failure. Each sentence still needs its own working commit.
 
 **Debug eval note:** select `--skills debug --suite debug` to run the independent
 broken-project cases in `evals/debug-prompts/`. The semantic judge reads original
@@ -45,9 +47,12 @@ both task families by default, with only applicable skills on each family.
 Unrelated-skill runs do not execute the new cases. Use `debug_logs` with `greeter`
 to evaluate the preserved read-logs-first policy on the original staged task.
 
-**Testing eval note:** the semantic judge inspects agent-authored checks against
-the original request and runs them in isolation when execution tools are
-available. It does not require a framework, file name, or fixed test count.
+**Testing eval note:** the semantic judge assesses saved checks against the
+original request with one `testing_contract` verdict: checks before each
+capability, retained contract coverage, preservation/isolation and honest
+execution evidence. No per-source-site question expansion or mandatory coverage
+inventory is used. Existing evidence helpers remain available. It does not
+require a framework, file name, or fixed test count.
 Without an agent trace it reports execution order as unverified. Default
 discovery includes `testing`; select it alone with `--skills testing` or add it
 to the full suite.
@@ -83,3 +88,17 @@ Documentation follows all feature cycles. The workflow prompt owns the cycle
 with or without companions; those companions add their detailed requirements.
 Default discovery excludes both `workflow` and `debug_logs`; either remains
 explicitly selectable with `--skills`.
+
+## Policy and judge alignment
+
+Policies describe the required work; their judges score those same requirements.
+Do not add an unselected companion's artifacts or turn a partial transcript into
+an order failure. Current checks use current rules; earlier rules are assessed at
+their actual historical revisions. Query upgrades to retained rejection bodies
+belong to that query's own checks-before-code step. Distinct arithmetic/state
+updates are not duplicated decisions merely because they share storage.
+
+The October 10, 2026 simplification passed static content validation and isolated
+instruction assembly/judge packaging. Benchmark performance is unverified for
+this revision; original archived verdicts remain unchanged. Its testing detail
+schema is one criterion rather than historical expanded subquestions.
