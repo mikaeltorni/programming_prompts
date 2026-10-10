@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.26 — Keep raw-command parsing and operation logic in separate helpers
+  v1.0.27 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
@@ -16,9 +16,12 @@ arguments returned by that parser. Put sums and other computed results in operat
 
 - The parser receives the raw command once and returns its operation selector
   and parsed arguments. A single-operation interface may return arguments only.
+  A zero-operand form may return a validated selector alone.
   All raw stripping, splitting, slicing, regex matching, command-shape checks
   and token conversion belong here, including zero-argument commands. Smaller
   parsing helpers may compose inside this boundary.
+  Dispatch and operations receive converted values, never raw numeric tokens
+  or operand lists that still need shape checks.
 - Operation helpers own arithmetic, computed results, state changes and domain
   validation: resource existence, uniqueness, funds/capacity, sign, finite-only,
   magnitude and integral-value acceptance. Numeric conversion establishes a
@@ -34,8 +37,9 @@ Before extending an operation, read existing related owners. Reuse genuinely
 shared classification, calculation and domain-validation decisions in one
 called helper, removing their old copies in the same edit. Distinct arithmetic
 operations or domain rules need no common helper. Sharing a state variable does
-not make different updates the same decision. Dedicated operation helpers
-choose their own delta and output label; dispatch only chooses the operation.
+not make different updates the same decision. Identical acceptance rules still
+need one shared called helper across different operations. Dedicated operation
+helpers choose their own delta and output label; dispatch only chooses the operation.
 
 Do not repeat shape guards after the parser already enforces them. Formatting
 alone does not extract operation logic still left in dispatch. Avoid parallel

@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.1.42 — Save and run each Feature's public-interface checks before its code,
+  v1.1.43 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -42,6 +42,7 @@ Keep earlier regression assertions except rules this capability explicitly
 replaces. Check earlier rules against their earlier source, not against the
 final module. A fractional rejection required now is valid until a later decimal
 extension replaces it. Defer future executable expectations and public commands.
+Update every affected earlier expectation when a later Feature replaces its rule.
 
 ## Observe state after rejection
 
@@ -81,6 +82,8 @@ use temporary targets for install/config checks and avoid destructive actions.
 After the last edit, run the saved cumulative suite directly with its full output
 and exit status visible. Verify its directory, flags, environment, imports and
 discovery execute nonzero behavioral assertions covering all delivered behavior.
+Call saved check functions or use discovery that actually collects them;
+running a file of uncalled definitions verifies nothing.
 Resolve failures, inspect source/coverage, and finish selected commit/delivery
 before the next Feature. Report actual commands/results and concrete limits.
 
