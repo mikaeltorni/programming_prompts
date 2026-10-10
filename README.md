@@ -371,6 +371,11 @@ keeps that full ceiling for running trials and separately bounds simultaneous
 setups to half the host's available CPUs (at least one). On a 16-CPU host,
 eight trials may set up at once; each releases its setup slot when its agent
 starts, allowing more setups while existing coding and judging continue.
+Available Docker storage further bounds simultaneous setups with an 8 GiB
+allowance per setup and a 2 GiB shared reserve. That build allowance is released
+when the agent starts; it does not cap trials already coding or judging.
+For the default 14-task suite, `-k 5` therefore retains its configured
+70-trial ceiling while setup proceeds within the CPU and storage limits.
 `EVAL_SETUP_MAX_CONCURRENT` can impose a lower setup cap. New starts also wait
 when admitted setup work reaches half its environment startup budget or a
 running agent approaches its deadline. Agent headroom is the 95th percentile
@@ -396,6 +401,8 @@ The launch guard prints its capacity configuration once at startup; polling,
 per-trial admission and instruction-registration helpers run without verbose
 traces or shell-command dumps. Running jobs keep their already-loaded code;
 these console changes take effect on the next benchmark invocation.
+The October 11 setup-only storage repair was reviewed without running tests,
+as requested; revised k5 activation speed and total runtime remain unmeasured.
 Run one benchmark invocation at a time. See the
 [evals README](programming_prompt_rewritten_with_evals/evals/README.md) for the
 command surface and [AGENTS.md's benchmark guidance](AGENTS.md#benchmark-commands-give-the-simple-default)
