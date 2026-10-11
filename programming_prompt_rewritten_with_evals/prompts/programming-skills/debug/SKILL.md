@@ -1,7 +1,7 @@
 ---
 name: debug
 description: >-
-  v1.1.3 — Read original failure logs, save and run the failing public regression,
+  v1.1.4 — Read original failure logs, save and run the failing public regression,
   repair the responsible behavior, then verify it and preserve related behavior.
 ---
 
@@ -27,7 +27,10 @@ behavior and user data. Fix the general rule rather than hardcoding the example
 or weakening its expected result.
 
 Rerun the same regression and relevant retained checks with fresh state,
-including affected boundaries and state after rejection. Resolve failures before
+including affected boundaries and state after rejection. If a fixture or expected
+value is wrong, derive its correction from the original contract and preceding
+calls, retain the reported behavior, and rerun the same saved regression.
+Do not hand off with that correction or its rerun unfinished. Resolve failures before
 selected commit/delivery and before the next repair Feature. Selected workflow
 and commits own the queue and local delivery; debug alone requires no Git commit.
 

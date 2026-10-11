@@ -43,6 +43,8 @@ and resource failures using otherwise valid input. Do not invent unsupported
 types, unrequested aliases, limits, error wording or internal representations.
 Required domains come from the original request and failure logs; an extra
 validator or README constraint does not create a mandatory rejection case.
+For each alleged domain omission, establish that original requirement first;
+do not derive it from a solution's finite-only guard or other added validation.
 Coding-agent commentary is not an original failure log. Listed valid ranges
 do not specify the result outside them; require beyond-bound rejection only
 when the original contract excludes that bound.

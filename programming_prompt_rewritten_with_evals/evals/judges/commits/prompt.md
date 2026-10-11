@@ -8,6 +8,7 @@ must agree. Do not impose other policies' conventions. Use read-only inspection.
 Read the full original request and derive one Feature per complete capability
 sentence. Keep its commands/cases and optional `and may` clauses together;
 every separate `It should also` sentence adds a Feature.
+Required commands sharing one sentence work together in its introducing commit.
 Related behavior or a shared entrypoint does not combine separate sentences;
 separate sentences revising the same command still need distinct introducing commits.
 Artifact/signature setup and execution policies do not. A behavioral repair does. Do not assume
