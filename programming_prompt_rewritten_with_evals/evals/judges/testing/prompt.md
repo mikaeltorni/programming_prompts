@@ -16,6 +16,8 @@ before the next capability's checks. Creation may fail to import its absent
 entrypoint; passing existing checks can protect a refactor.
 Any Feature's baseline may fail because its behavior is missing. The passing
 cumulative run belongs after implementation, before the next Feature's checks.
+An expected pre-code failure is not a current-suite defect after the responsible
+source is repaired; reconcile it with current code and later execution.
 Read complete literal writes/runs within shell commands in their written order. A final pass, commit
 or timestamp alone does not prove this sequence. Later public capabilities must
 not execute early, including observer queries; necessary shared helpers are fine.
@@ -41,6 +43,9 @@ and resource failures using otherwise valid input. Do not invent unsupported
 types, unrequested aliases, limits, error wording or internal representations.
 Required domains come from the original request and failure logs; an extra
 validator or README constraint does not create a mandatory rejection case.
+Coding-agent commentary is not an original failure log. Listed valid ranges
+do not specify the result outside them; require beyond-bound rejection only
+when the original contract excludes that bound.
 One case can cover an actually shared validation rule; no duplicate case per
 source raise is required. Different numeric operands/rejection reasons still
 need coverage. Retire only superseded expectations and retain other regressions.
@@ -54,6 +59,8 @@ For mutable rejections, locate a successful meaningful public seed when possible
 then immediate public read-only assertions of affected values AND required history
 before another rejection, mutation, reset or reload. Public resource creation at
 zero can be meaningful. A seed before a nonmutating loop may cover all iterations.
+This preservation sequence applies to rejected calls, not successful mutations;
+do not require a value or history API that the task does not provide.
 Private resets/reloads initialize fixtures; private assignments do not replace
 seeding. Private equality, history alone or a mutation's returned count/value
 cannot replace an available value query. Use the strongest available view,
