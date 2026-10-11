@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.29 — Keep raw-command parsing and operation logic in separate helpers
+  v0.0.29 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---

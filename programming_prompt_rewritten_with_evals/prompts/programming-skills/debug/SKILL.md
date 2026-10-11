@@ -1,7 +1,7 @@
 ---
 name: debug
 description: >-
-  v1.1.4 — Read original failure logs, save and run the failing public regression,
+  v0.1.4 — Read original failure logs, save and run the failing public regression,
   repair the responsible behavior, then verify it and preserve related behavior.
 ---
 

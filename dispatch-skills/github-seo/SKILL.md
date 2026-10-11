@@ -1,7 +1,7 @@
 ---
 name: github-seo
 description: >-
-  v1.3.1 — Use when a GitHub project needs to be found: search-engine ranking, AI/LLM
+  v0.3.1 — Use when a GitHub project needs to be found: search-engine ranking, AI/LLM
   citability, GitHub-internal discovery, and registry presence. Runs a
   weighted 100-point audit, records a tracked scorecard, then closes the highest-value gap
   round after round until the score is a fully evidenced 100/100, and maintains it after.

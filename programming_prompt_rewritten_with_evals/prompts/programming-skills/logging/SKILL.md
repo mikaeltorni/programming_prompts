@@ -1,7 +1,7 @@
 ---
 name: logging
 description: >-
-  v1.0.10 — Every authored function, test and fixture prints parameters first
+  v0.0.10 — Every authored function, test and fixture prints parameters first
   after its docstring, before helper calls, validation or declarations, and
   prints each normal return value. Use plain print(), with no logging modules or log files.
 ---

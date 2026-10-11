@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.2.12 — Give each complete capability sentence its own Feature and finish
+  v0.2.12 — Give each complete capability sentence its own Feature and finish
   tests → code → commit before starting the next sentence.
 ---
 

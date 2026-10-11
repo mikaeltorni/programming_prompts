@@ -1,7 +1,7 @@
 ---
 name: worktree-cleanup
 description: >-
-  v1.1.1 — Use when linked git worktrees have piled up and are eating disk: audit every
+  v0.1.1 — Use when linked git worktrees have piled up and are eating disk: audit every
   worktree of a repository against a fixed expiry rubric, remove only the ones that are
   provably finished — merged, clean, unreferenced by any live agent session and by any
   open, in-progress, blocked or benched note — and report the round round after

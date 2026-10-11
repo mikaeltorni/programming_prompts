@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.2.26 — Establish the task checkout and authoritative plan, then finish
+  v0.2.26 — Establish the task checkout and authoritative plan, then finish
   each feature's tests → code → commit cycle before documentation.
 ---
 

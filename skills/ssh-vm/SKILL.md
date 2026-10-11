@@ -1,7 +1,7 @@
 ---
 name: ssh-vm
 description: >-
-  v1.0.13 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
+  v0.0.13 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM
