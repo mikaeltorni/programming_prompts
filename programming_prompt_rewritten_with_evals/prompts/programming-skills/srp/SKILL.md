@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v1.0.28 — Keep raw-command parsing and operation logic in separate helpers
+  v1.0.29 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
@@ -18,10 +18,13 @@ arguments returned by that parser. Put sums and other computed results in operat
   and parsed arguments. A single-operation interface may return arguments only.
   A zero-operand form may return a validated selector alone.
   All raw stripping, splitting, text normalization, slicing, regex matching,
-  command-shape checks and token conversion belong here, including zero-argument commands. Smaller
-  parsing helpers may compose inside this boundary.
+  command-shape checks and token conversion belong here, including zero-argument
+  commands. Validate each current form's operand count before indexing it.
+  Smaller parsing helpers may compose inside this boundary. Splitting/classifying
+  alone is incomplete: return normalized text and converted numeric operands.
   Dispatch and operations receive converted values, never raw numeric tokens
-  or operand lists that still need shape checks.
+  or operand lists that still need shape checks. Dispatch must not call another
+  parsing/conversion helper after choosing an operation.
 - Operation helpers own arithmetic, computed results, state changes and domain
   validation: resource existence, uniqueness, funds/capacity, sign, finite-only,
   magnitude and integral-value acceptance. Numeric conversion establishes a
@@ -36,7 +39,8 @@ arguments returned by that parser. Put sums and other computed results in operat
 
 Before extending an operation, read existing related owners. Reuse genuinely
 shared classification, calculation and domain-validation decisions in one
-called helper, removing their old copies in the same edit. Distinct arithmetic
+called helper, moving identical predicates out of existing operations when adding
+the new operation and removing their old copies in that edit. Distinct arithmetic
 operations or domain rules need no common helper. Sharing a state variable does
 not make different updates the same decision. Identical acceptance rules still
 need one shared called helper across different operations. Dedicated operation

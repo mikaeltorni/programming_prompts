@@ -7,21 +7,29 @@ must agree. Do not impose other policies' conventions. Use read-only inspection.
 
 Inspect raw-command parsing, operation helpers and public dispatch in the
 working slices and relevant requested revisions, not only helper names.
+The first working slice is agent-authored code, not the supplied broken seed or
+the pre-repair baseline. Identify its actual revision before alleging a violation.
 
 Require these boundaries from the first working slice, including repairs:
 
 - One parser call takes the raw command and returns selector plus parsed
   arguments; a single operation may return arguments only. All raw manipulation,
   command-shape validation and token conversion stay within parsing. Composed
-  parsing helpers are valid; kind-only classification followed by raw parsing
+  parsing helpers are valid inside the parser, including classification followed
+  by delegated parsing there; count the dispatch-to-parser boundary, not internal
+  helper calls. Kind-only classification followed by raw parsing
   after dispatch is not this boundary.
   Exact matching inside the parser is valid for zero-argument forms; splitting is not mandatory.
   A validated selector alone suffices for a zero-operand form. Assess the
   operations available in that slice; arguments-only parsing and a direct
   operation call are valid while the slice has just one operation.
   `int`, `float` and `Decimal` token conversions belong here; pass their values unchanged.
+  Validate each documented form's operand count. For a shape failure, identify
+  an actually accepted malformed form; indexing inside a parser alone proves none.
 - Operations own arithmetic, computed outputs, state updates and domain rules
   such as sign, finite/integral acceptance, resources and funds/capacity.
+  A type/domain guard on an already-converted value is allowed in an operation;
+  conversion having produced that type does not move the guard into parsing.
 - Public dispatch uses parsed values unchanged, calls the operation owner and
   returns/formats. Direct reads of existing state and universal representation
   guards on parsed values are allowed; operation-specific ranges are not.
