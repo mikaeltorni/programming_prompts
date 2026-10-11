@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.1.44 — Save and run each Feature's public-interface checks before its code,
+  v1.1.45 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -58,6 +58,8 @@ before another rejection, mutation, reset or reload. A mutation returning a
 value/count, private equality or history alone cannot replace an available value
 read. Use aggregates when they are the only view and disclose their limits.
 A seed before a nonmutating rejection loop can cover all iterations.
+Review each loop body: the public read assertions belong immediately after
+that iteration's rejected call, not before or after the loop.
 
 When a query's own Feature begins, upgrade every retained rejection body with
 that query in its checks-before-code step. This is a current-suite update, not
@@ -85,6 +87,8 @@ and exit status visible. Verify its directory, flags, environment, imports and
 discovery execute nonzero behavioral assertions covering all delivered behavior.
 Call saved check functions or use discovery that actually collects them;
 running a file of uncalled definitions verifies nothing.
+When extending a unittest class, put new test methods inside the collected
+class before its runner; appending functions after `unittest.main()` does not collect them.
 Resolve failures, inspect source/coverage, and finish selected commit/delivery
 before the next Feature. Report actual commands/results and concrete limits.
 

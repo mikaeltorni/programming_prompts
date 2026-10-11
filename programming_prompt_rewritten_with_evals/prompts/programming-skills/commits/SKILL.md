@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v1.2.11 — Give each complete capability sentence its own Feature and finish
+  v1.2.12 — Give each complete capability sentence its own Feature and finish
   tests → code → commit before starting the next sentence.
 ---
 
@@ -13,6 +13,8 @@ worktree delivery. Honor a user prohibition on commits; never push unless asked.
 Read the entire request before editing. Queue one Feature for each complete
 capability sentence, keeping its commands, cases and optional `and may` clauses
 together. Every separate `It should also` sentence starts another Feature.
+All required commands in one sentence work in its introducing commit; do not
+split that Feature into per-command cycles or combine adjacent Features.
 Copy each capability sentence into its own queue row before checks; a small
 program or shared entrypoint does not combine them.
 Separate sentences that revise the same command still need separate rows and

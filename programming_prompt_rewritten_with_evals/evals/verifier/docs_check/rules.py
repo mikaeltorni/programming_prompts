@@ -19,14 +19,16 @@ def _workspace_python_files(repo: Path) -> list[Path]:
 
     Returns: sorted Python paths.
     """
+    print(f"repo={repo}")
     files: list[Path] = []
     for path in sorted(repo.rglob("*.py")):
         relative = path.relative_to(repo)
-        if any(part in {".git", "__pycache__", ".worktrees", "tests", "test"} for part in relative.parts):
+        if any(part in {".git", "__pycache__", ".worktrees", "tests", "test", "tmp"} for part in relative.parts):
             continue
         if path.name == "conftest.py" or path.name.startswith("test_") or path.name.endswith("_test.py"):
             continue
         files.append(path)
+    print(files)
     return files
 
 
