@@ -1,7 +1,7 @@
 ---
 name: docs
 description: >-
-  v1.0.7 — After writing or fixing a program, document its purpose, public
+  v0.0.7 — After writing or fixing a program, document its purpose, public
   entrypoint, and accepted commands in the project-root README.md.
 ---
 

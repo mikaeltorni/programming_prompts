@@ -1,7 +1,7 @@
 ---
 name: commenting
 description: >-
-  v1.0.7 — Use whenever writing or editing Python (or other) functions: every
+  v0.0.7 — Use whenever writing or editing Python (or other) functions: every
   function, including authored tests and fixtures, needs a description and
   same-line Parameters and Returns labels. Apply on every coding task.
 ---

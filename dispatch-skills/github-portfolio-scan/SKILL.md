@@ -1,7 +1,7 @@
 ---
 name: github-portfolio-scan
 description: >-
-  v1.0.1 — Use when a directory of git checkouts needs a resume-facing GitHub
+  v0.0.1 — Use when a directory of git checkouts needs a resume-facing GitHub
   portfolio audit: inventory every live original repository, score each one for
   release-readiness (product story, docs, tests, license, secrets, coupling,
   authorship), report positives and flaws with evidence, and rank a tier list.

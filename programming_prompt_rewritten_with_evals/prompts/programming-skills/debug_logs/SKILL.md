@@ -1,7 +1,7 @@
 ---
 name: debug_logs
 description: >-
-  v1.1.0 — When software is reported broken, read its logs before diagnosing
+  v0.1.0 — When software is reported broken, read its logs before diagnosing
   it. Start with the repository .log/ directory.
 ---
 

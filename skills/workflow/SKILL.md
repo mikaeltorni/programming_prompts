@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v1.2.2 — Plan programming work, then repeat tests → code → commit for each
+  v0.2.2 — Plan programming work, then repeat tests → code → commit for each
   planned feature before writing documentation. Activated by explicit selection.
 ---
 

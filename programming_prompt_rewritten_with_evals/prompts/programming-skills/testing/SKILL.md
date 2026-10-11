@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v1.1.45 — Save and run each Feature's public-interface checks before its code,
+  v0.1.45 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 

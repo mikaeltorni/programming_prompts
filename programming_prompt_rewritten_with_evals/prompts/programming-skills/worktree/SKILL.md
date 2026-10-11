@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >-
-  v1.0.18 — Edit Git projects in a sibling .worktrees project/task checkout,
+  v0.0.18 — Edit Git projects in a sibling .worktrees project/task checkout,
   commit there, merge each Feature into the live default branch, and reapply
   its consumers. Never push unless requested.
 ---

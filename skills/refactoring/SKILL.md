@@ -1,7 +1,7 @@
 ---
 name: "refactoring"
 description: >-
-  v1.0.1 — Use when the user asks to refactor, restructure, or modularize an existing codebase.
+  v0.0.1 — Use when the user asks to refactor, restructure, or modularize an existing codebase.
   Extracts monolithic files into well-organized modules following single-responsibility principles,
   audits multi-repository workspaces, creates tests first (TDD), and ensures extracted code is
   documented, logged, and verified. Always analyze and plan module boundaries before touching code.
