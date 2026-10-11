@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v0.2.12 — Give each complete capability sentence its own Feature and finish
+  v0.2.13 — Give each complete capability sentence its own Feature and finish
   tests → code → commit before starting the next sentence.
 ---
 
@@ -15,15 +15,18 @@ capability sentence, keeping its commands, cases and optional `and may` clauses
 together. Every separate `It should also` sentence starts another Feature.
 All required commands in one sentence work in its introducing commit; do not
 split that Feature into per-command cycles or combine adjacent Features.
-Copy each capability sentence into its own queue row before checks; a small
-program or shared entrypoint does not combine them.
+Before checks, partition the capability sentences into separate queue rows.
+A row quoting several sentences is not one Feature; the module or public
+signature defines the artifact, not the capability boundary.
 Separate sentences that revise the same command still need separate rows and
 introducing commits. Preserve its earlier acceptance and results until that revision's cycle.
-Finish and record that row's actual commit before starting the next row's checks.
+Once the current cumulative checks pass, create and record that row's commit
+before writing any checks for the next row.
 Artifact/signature setup and execution policies are not capabilities; a
 behavioral repair is. Do not choose a fixed Feature count.
-Implement and expose only the current queue row's behavior. Later selectors
-remain unsupported until their own cycle; do not scaffold working future branches.
+Implement and expose only the current queue row's behavior. Later selectors and
+later changes to existing forms/results remain unsupported until their own cycle;
+do not scaffold working future branches.
 
 Record the queue in the selected workflow plan, or other task evidence when
 workflow is unselected. Use complete sentences or faithful summaries preserving
@@ -35,8 +38,10 @@ not a separate deliverable. Work only on its first unfinished Feature.
 For each Feature, finish:
 
 1. Save and run its public checks before editing application code. Existing
-   passing checks may protect a refactor; a missing-entrypoint import failure
-   is a valid creation baseline. Static content and project test prohibitions
+   passing checks may protect a refactor. A correct-path missing-file/import
+   failure for a new entrypoint completes the creation baseline: record it and
+   implement this Feature next, rather than rewriting the valid import path.
+   Static content and project test prohibitions
    use direct checks. Follow selected testing for detailed coverage.
 2. Implement only this capability and necessary integration. Run its checks
    with retained earlier checks, fix failures and review the actual diff.
