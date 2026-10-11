@@ -13,6 +13,8 @@ fixtures, constructors and helpers. Lambdas are exempt. Require a docstring with
   meaning, including self/cls. Parameterless functions may use none/None.
 - `Returns:` with its meaning on that same line, or None for no meaningful return.
 
+Meanings must describe current accepted inputs/results, including later capability revisions.
+
 Long lists may continue after the label line has content. Blank lines between
 sections and trailing periods are valid. `Args:` or a label on its own line
 fails. For no, identify the actual function and quote the missing/malformed

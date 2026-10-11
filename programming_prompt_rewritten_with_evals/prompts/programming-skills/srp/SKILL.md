@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v0.0.29 — Keep raw-command parsing and operation logic in separate helpers
+  v0.0.30 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
@@ -22,6 +22,7 @@ arguments returned by that parser. Put sums and other computed results in operat
   commands. Validate each current form's operand count before indexing it.
   Smaller parsing helpers may compose inside this boundary. Splitting/classifying
   alone is incomplete: return normalized text and converted numeric operands.
+  Return numeric values, not numeric strings that need converting again.
   Dispatch and operations receive converted values, never raw numeric tokens
   or operand lists that still need shape checks. Dispatch must not call another
   parsing/conversion helper after choosing an operation.
@@ -44,7 +45,8 @@ the new operation and removing their old copies in that edit. Distinct arithmeti
 operations or domain rules need no common helper. Sharing a state variable does
 not make different updates the same decision. Identical acceptance rules still
 need one shared called helper across different operations. Dedicated operation
-helpers choose their own delta and output label; dispatch only chooses the operation.
+helpers choose their own delta and compute results; dispatch chooses the operation
+and may add a literal response label to its returned value.
 
 Do not repeat shape guards after the parser already enforces them. Formatting
 alone does not extract operation logic still left in dispatch. Avoid parallel

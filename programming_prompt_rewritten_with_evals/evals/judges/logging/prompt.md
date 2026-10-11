@@ -26,7 +26,7 @@ Follow parser guarantees: selectors it rejects cannot reach dispatch fallthrough
 Assess reachability with the actual called helpers; hypothetical helper changes
 or mocks do not create an uncovered exit. A syntactic fallthrough alone is insufficient.
 
-Before no, quote the actual first statement or uncovered reachable exit and
+Before no, quote the actual signature and offending entry statement or normal exit;
 reconcile it with the supplied function-boundary evidence/current source.
 A helper's traces do not cover its caller. Ignore unrelated style or behavior.
 

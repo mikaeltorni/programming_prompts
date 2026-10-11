@@ -9,6 +9,7 @@ Inspect raw-command parsing, operation helpers and public dispatch in the
 working slices and relevant requested revisions, not only helper names.
 The first working slice is agent-authored code, not the supplied broken seed or
 the pre-repair baseline. Identify its actual revision before alleging a violation.
+A later extraction does not erase a violation in an earlier executable slice.
 
 Require these boundaries from the first working slice, including repairs:
 
@@ -33,8 +34,9 @@ Require these boundaries from the first working slice, including repairs:
 - Public dispatch uses parsed values unchanged, calls the operation owner and
   returns/formats. Direct reads of existing state and universal representation
   guards on parsed values are allowed; operation-specific ranges are not.
+  Adding a literal response label to an operation's computed value is allowed formatting.
   Argument-count and presence checks belong in parsing, including guards on parsed arguments.
-  Choosing an operation is dispatch; choosing its delta or output label is core.
+  Choosing an operation is dispatch; choosing its delta or computing its value is core.
   Branching on a parsed selector, including an unsupported-selector fallback, is dispatch.
   Parser validation of supported selectors and dispatch on that selector are distinct decisions.
   Required per-function parameter/return prints may repeat values; they are logging, not duplicated SRP decisions.
