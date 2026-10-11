@@ -13,6 +13,10 @@ used across this workspace's projects. It contains installable plugins, direct
 skills, and dispatch skills; the separate installer repository owns marketplace
 generation and deployment.
 
+All prompt and plugin releases use 0.x versions while this library remains a
+work in progress. The October 11 reset in `35702ba` changed only release metadata
+for 22 skills and four plugin manifests, preserving their minor/patch numbers.
+
 ## Contents
 
 - [AI coding-agent prompt features](#ai-coding-agent-prompt-features)
@@ -268,7 +272,7 @@ the source; the selector preserved an existing unmanaged Claude docs copy.
 No tests, benchmarks or judge replays ran for this follow-up, so its new pass rate
 remains unverified. Debug, worktree and scheduling were unchanged.
 
-The latest k10 archive, `2026-10-11_031057_869951`, scored 106/140 with zero
+The earlier k10 archive, `2026-10-11_031057_869951`, scored 106/140 with zero
 quota or infrastructure exclusions. SRP scored 67/80; commits 70/80; docs,
 testing, worktree and commenting each 77/80; logging 79/80; debug 58/60;
 the separate immutable debug behavior contract 60/60. All 140 coding and 465
@@ -285,6 +289,21 @@ The changes are merged locally and applied to managed native copies. Existing
 unmanaged Claude commenting, debug and docs copies were preserved. No tests,
 benchmarks or judge replays ran for this follow-up; its pass rate remains
 unverified. Scheduling and model/reasoning settings were unchanged.
+
+The latest k7 archive, `2026-10-11_103821_1615535`, scored 83/98 overall and
+47/56 for commits (83.9%), with zero quota or infrastructure exclusions. All
+98 coding and 325 judge session records used `gpt-6-luna`/low. Each of its nine
+failed commit verdicts has a genuine violation: eight bundled capabilities,
+and one stalled at an expected missing-file creation baseline. Some judge
+reasons incorrectly split optional clauses or misread baseline chronology;
+one related passed trial ignored an earlier merged commit's future behavior.
+Small repairs in `a299960` clarify separate sentence rows, committing before the
+next capability's checks, later form changes, valid creation baselines, and judging
+the earliest executable occurrence across task and delivered live history.
+The changes are merged and applied to managed native copies; five existing
+unmanaged Claude policy copies were preserved. Archived scores remain unchanged.
+No tests, benchmarks or judge replays ran, so the repaired pass rate remains
+unverified. Scheduling, verifier runtime and model/reasoning settings are unchanged.
 
 ACC's existing default set is `commits`, `worktree`, `workflow`, `docs`, `testing`,
 `srp`, `commenting`, `logging`, `debug`. Benchmark discovery excludes opt-in
