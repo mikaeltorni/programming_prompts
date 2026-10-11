@@ -28,12 +28,14 @@ Require these boundaries from the first working slice, including repairs:
   Argument-count and presence checks belong in parsing, including guards on parsed arguments.
   Choosing an operation is dispatch; choosing its delta or output label is core.
   Branching on a parsed selector, including an unsupported-selector fallback, is dispatch.
-  Printing a parameter or return value is logging, not parsing or domain logic.
+  Parser validation of supported selectors and dispatch on that selector are distinct decisions.
+  Required per-function parameter/return prints may repeat values; they are logging, not duplicated SRP decisions.
 
 Reuse genuinely identical classifications, calculations or domain-validation
 decisions in a shared called owner, removing obsolete copies. Cite both actual
-equivalent decisions in the same revision before alleging duplication. Numeric
-token conversion and a domain acceptance check are different decisions.
+equivalent decisions in the same revision before alleging duplication.
+Do not count removed and added diff lines as two decisions in one source tree.
+Numeric token conversion and a domain acceptance check are different decisions.
 Separating conversion in parsing from acceptance in an operation is required.
 Repeated builtin token conversion within parsing alone is not duplicated
 classification, calculation or domain validation and requires no wrapper.
@@ -43,7 +45,8 @@ Do not require getter wrappers, fixed helper counts or decision-inventory files.
 
 Requested growth uses focused edits through existing routing, keeps earlier
 contracts except explicit replacements, and removes newly obsolete branches.
-Local extraction is justified; unrelated rewrites, duplicate parsers and
+Local extraction, including formatting around a shared calculation, is valid;
+formatting alone does not move core logic still left in dispatch. Unrelated rewrites, duplicate parsers and
 speculative frameworks are not. Cite a concrete boundary violation or unnecessary
 change for no using an actual `Citation: path.py:LINE | exact source line`.
 For duplication, quote both decisions and their containing functions.

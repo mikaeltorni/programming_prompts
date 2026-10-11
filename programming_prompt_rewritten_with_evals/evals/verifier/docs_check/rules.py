@@ -8,6 +8,7 @@ from pathlib import Path
 from worktree_check.rules import CheckResult
 
 README_NAME = "README.md"
+ORIGINAL_TASK = Path("/tests/task.md")
 ENTRYPOINT_RE = re.compile(r"^def (run_[A-Za-z0-9_]+)\s*\(", re.MULTILINE)
 
 
@@ -51,6 +52,19 @@ def public_entrypoints(repo: Path) -> list[str]:
     return names
 
 
+def _required_commands(task_text: str) -> list[str]:
+    """Extract named command forms from the original task's inline grammar.
+
+    Parameters: task_text - verifier-owned original request text.
+    Returns: sorted unique command names explicitly documented by the task.
+    """
+    print(f"task_text={task_text}")
+    pattern = r"`([a-z][a-z0-9_-]*)(?:\s+<[^`<>]+>)+`|`([a-z][a-z0-9_-]*)`\s*(?:returns\b|→)"
+    result = sorted({match.group(1) or match.group(2) for match in re.finditer(pattern, task_text)})
+    print(result)
+    return result
+
+
 def check_repo(repo: Path) -> CheckResult:
     """Inspect whether README.md documents the workspace program.
 
@@ -58,35 +72,64 @@ def check_repo(repo: Path) -> CheckResult:
 
     Returns: pass/fail state and reasoning.
     """
+    print(f"repo={repo}")
     repo = repo.resolve()
     readme = repo / README_NAME
     if not readme.is_file():
-        return CheckResult(False, f"missing {readme}; write docs after the code")
+        result = CheckResult(False, f"missing {readme}; write docs after the code")
+        print(result)
+        return result
     try:
         text = readme.read_text(encoding="utf-8")
     except OSError as exc:
-        return CheckResult(False, f"could not read {readme}: {exc}")
+        result = CheckResult(False, f"could not read {readme}: {exc}")
+        print(result)
+        return result
     if not text.strip():
-        return CheckResult(False, f"{readme} is empty")
+        result = CheckResult(False, f"{readme} is empty")
+        print(result)
+        return result
+    try:
+        task_text = ORIGINAL_TASK.read_text(encoding="utf-8")
+    except OSError:
+        command_note = "; command coverage unverified: original task unavailable"
+    else:
+        commands = _required_commands(task_text)
+        missing_commands = [name for name in commands if not re.search(r"\b" + re.escape(name) + r"\b", text)]
+        if missing_commands:
+            result = CheckResult(False, f"{README_NAME} does not document command(s) {missing_commands!r}")
+            print(result)
+            return result
+        command_note = f"; names requested commands {commands!r}"
     entrypoints = public_entrypoints(repo)
     if entrypoints:
         missing = [name for name in entrypoints if name not in text]
         if missing:
-            return CheckResult(
+            result = CheckResult(
                 False,
                 f"{README_NAME} does not name the public entrypoint(s) {missing!r}",
             )
-        return CheckResult(
+            print(result)
+            return result
+        result = CheckResult(
             True,
-            f"{README_NAME} documents entrypoint(s) {entrypoints!r}",
+            f"{README_NAME} documents entrypoint(s) {entrypoints!r}{command_note}",
         )
+        print(result)
+        return result
     py_names = [path.name for path in _workspace_python_files(repo)]
     if not py_names:
-        return CheckResult(False, f"{README_NAME} exists but there is no workspace Python to document")
+        result = CheckResult(False, f"{README_NAME} exists but there is no workspace Python to document")
+        print(result)
+        return result
     missing_files = [name for name in py_names if name not in text]
     if missing_files:
-        return CheckResult(
+        result = CheckResult(
             False,
             f"{README_NAME} does not name the program file(s) {missing_files!r}",
         )
-    return CheckResult(True, f"{README_NAME} documents {py_names!r}")
+        print(result)
+        return result
+    result = CheckResult(True, f"{README_NAME} documents {py_names!r}{command_note}")
+    print(result)
+    return result
