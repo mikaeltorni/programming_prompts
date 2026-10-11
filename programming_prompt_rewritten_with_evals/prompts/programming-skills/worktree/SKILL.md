@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >-
-  v0.0.18 — Edit Git projects in a sibling .worktrees project/task checkout,
+  v0.0.19 — Edit Git projects in a sibling .worktrees project/task checkout,
   commit there, merge each Feature into the live default branch, and reapply
   its consumers. Never push unless requested.
 ---
@@ -59,6 +59,7 @@ After each completed Feature or focused repair:
 
 1. Commit its working code and checks in WT. Confirm HEAD advanced and source
    changes are committed; incidental caches may stay unstaged.
+   A README-only commit cannot deliver uncommitted source or checks.
 2. Verify the live checkout is on its actual default branch using repository
    metadata or project guidance. Preserve unrelated live changes and merge
    with `git merge --no-ff BRANCH`; resolve conflicts without discarding work.

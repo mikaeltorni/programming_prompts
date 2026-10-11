@@ -27,6 +27,8 @@ were read before diagnosis/edit and checks preceded repair. Read full literal
 writes/runs within a single command; one commit containing code and checks
 proves neither ordering. Complete evidence without a saved regression, or an
 observed repair before it, is a concrete failure; missing trace alone is not.
+If a runner is unavailable, inspect subsequent fallback runs before the first
+source edit; a later pre-repair failure is valid baseline evidence.
 Reconcile the current saved regression with its last actual run. A fixture or
 expectation correction derived from the original contract and preceding calls
 is valid; an earlier fixture failure does not refute a later successful rerun.

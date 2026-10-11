@@ -8,6 +8,7 @@ must agree. Do not impose other policies' conventions. Use read-only inspection.
 Read the full original request and derive one Feature per complete capability
 sentence. Keep its commands/cases and optional `and may` clauses together;
 every separate `It should also` sentence adds a Feature.
+Derive boundaries from the original request, not the agent's queue or split command descriptions.
 An `and may` clause starts neither another sentence nor another Feature.
 Required commands sharing one sentence work together in its introducing commit.
 Related behavior or a shared entrypoint does not combine separate sentences;
@@ -21,7 +22,8 @@ initial empty commit and merges from agent-authored Feature commits. Merge
 commits do not break task-branch ancestry. Subjects/counts/source tokens alone
 are insufficient. Each introducing subject uses type: or type(scope): with
 feat, fix, refactor, chore, docs, style, test or perf.
-Use the earliest executable occurrence in task and delivered live ancestry;
+Use the earliest executable occurrence of any behavior newly required by that
+sentence; all its required commands/forms must work there. Inspect task and delivered live ancestry;
 a restarted branch or later narrowed tree cannot erase earlier bundling.
 
 At each boundary, the current and earlier capabilities work through the public
@@ -45,6 +47,7 @@ An actual correct-path missing-file/import run before code is a valid creation
 baseline; it need not pass before implementation.
 Read writes/runs within one shell command in their literal order. Tests and
 code in one commit are expected, not proof of reversed order.
+Missing a commit boundary does not imply the saved checks came after code.
 Read-only review, syntax compilation and a modified Git status are not new
 source edits; identify the actual write before alleging an edit after a pass.
 Static content and project test prohibitions use direct checks; no Git or user

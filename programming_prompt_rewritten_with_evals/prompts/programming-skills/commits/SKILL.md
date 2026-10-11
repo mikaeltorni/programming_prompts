@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v0.2.13 — Give each complete capability sentence its own Feature and finish
+  v0.2.14 — Give each complete capability sentence its own Feature and finish
   tests → code → commit before starting the next sentence.
 ---
 
@@ -18,6 +18,7 @@ split that Feature into per-command cycles or combine adjacent Features.
 Before checks, partition the capability sentences into separate queue rows.
 A row quoting several sentences is not one Feature; the module or public
 signature defines the artifact, not the capability boundary.
+Do not implement later sentences before committing the current one.
 Separate sentences that revise the same command still need separate rows and
 introducing commits. Preserve its earlier acceptance and results until that revision's cycle.
 Once the current cumulative checks pass, create and record that row's commit
@@ -57,8 +58,8 @@ Each sentence first becomes executable in its own introducing commit; a queue
 or later split cannot make a bundled implementation compliant. Do not pad history
 with empty commits.
 Focused repairs and optional follow-ups may close before the next Feature;
-record them with their original row without rewriting history. Final README
-work follows all feature cycles when docs is selected.
+record them with their original row without rewriting history. Commit the final
+Feature's source and checks before starting README work when docs is selected.
 
 At handoff, reconcile the full queue with actual commit trees and delivered
 behavior. Finish every requested capability, not only the first passing cycle.

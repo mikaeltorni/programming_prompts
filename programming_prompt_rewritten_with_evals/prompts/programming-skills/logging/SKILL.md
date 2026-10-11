@@ -1,7 +1,7 @@
 ---
 name: logging
 description: >-
-  v0.0.10 — Every authored function, test and fixture prints parameters first
+  v0.0.11 — Every authored function, test and fixture prints parameters first
   after its docstring, before helper calls, validation or declarations, and
   prints each normal return value. Use plain print(), with no logging modules or log files.
 ---
@@ -16,7 +16,8 @@ custom logger or log files.
 The first statement after the docstring prints every parameter's actual name
 and value, including optional `None` values and receivers `self`/`cls`. Put this
 print before parsing, validation, helper calls and `global`/`nonlocal`
-declarations. A function with no parameters may print `parameters=none`.
+declarations. A function with no parameters still prints an entry message,
+such as `parameters=none`, before any declarations.
 A constructor with `self` is not parameterless; `object.__repr__(self)` safely
 identifies it without reading uninitialized fields or recursing through a
 custom representation.
@@ -26,6 +27,7 @@ print all elements or the tuple itself. Before normal fallthrough, print `None`,
 including at the end of constructors and assertion-only tests. A final
 `print(None)` needs no additional `return None`. Nothing is required before
 `raise`.
+When a loop is the last work in a function, put that exit print after the loop.
 
 A helper's prints do not cover its caller. Assign the result of `helper()`,
 print it, then return it rather than returning the call directly. Branches

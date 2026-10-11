@@ -73,8 +73,11 @@ separate tests do not repair older missing observations.
 Assess current assertions in the authoritative current-file blocks; historical
 trees establish earlier revisions. A query in another body does not observe
 the current rejection.
+Use the recorded runner's checkout; older live/HEAD copies are not current test bodies.
+Uncommitted saved checks still count; Git delivery belongs to other policies.
 If no public read exists in the current Feature, a weaker public probe is allowed
 with its limit stated.
+Check the current interface for an aggregate read before claiming no value query exists.
 Valid empty-domain query rejection keeps an empty fixture and itself observes
 emptiness; this exemption does not cover malformed inputs in a mixed loop.
 Stateless interfaces need no seeds/reads. Independent mutable cases start fresh

@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.45 — Save and run each Feature's public-interface checks before its code,
+  v0.1.46 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -66,6 +66,7 @@ that query in its checks-before-code step. This is a current-suite update, not
 an early implementation of the query in an earlier Feature.
 Edit every earlier saved check file: insert the new reads inside each old
 rejection loop immediately after the rejected call. A separate new test does not upgrade it.
+Include the earliest creation, duplicate-resource and malformed-command checks.
 If no read exists yet, use the permitted weaker public probe and record its
 limit; do not invent or pull forward a future query. A valid query rejecting
 because its domain is empty keeps that empty fixture; its exception observes emptiness. This exemption
