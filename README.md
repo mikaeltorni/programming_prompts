@@ -290,7 +290,7 @@ unmanaged Claude commenting, debug and docs copies were preserved. No tests,
 benchmarks or judge replays ran for this follow-up; its pass rate remains
 unverified. Scheduling and model/reasoning settings were unchanged.
 
-The latest k7 archive, `2026-10-11_103821_1615535`, scored 83/98 overall and
+The earlier k7 archive, `2026-10-11_103821_1615535`, scored 83/98 overall and
 47/56 for commits (83.9%), with zero quota or infrastructure exclusions. All
 98 coding and 325 judge session records used `gpt-6-luna`/low. Each of its nine
 failed commit verdicts has a genuine violation: eight bundled capabilities,
@@ -304,6 +304,21 @@ The changes are merged and applied to managed native copies; five existing
 unmanaged Claude policy copies were preserved. Archived scores remain unchanged.
 No tests, benchmarks or judge replays ran, so the repaired pass rate remains
 unverified. Scheduling, verifier runtime and model/reasoning settings are unchanged.
+
+The latest k7 archive, `2026-10-11_111226_3493815`, scored 81/98 overall in
+9m24s with zero quota or infrastructure exclusions. Commits scored 49/56,
+SRP 52/56 and testing 51/56. All 98 coding and 325 judge sessions used
+`gpt-6-luna`/low. Its 21 failed criteria across 17 trials were audited individually:
+two verdicts contradict the recorded debug baseline and allowed SRP formatting;
+19 have real violations, including bundled or uncommitted capabilities, missing
+rejection observations or prints, misplaced conversion and stale docstrings.
+Related positive verdicts also overlooked split same-sentence commands and an
+earlier SRP violation. Small repairs in `ab3aa81` clarify those boundaries and
+judge the actual runner's files and chronological evidence. Six changed skills
+received 0.x patch bumps and are applied to all nine harness families, including
+all Codex accounts and Claude. Archived scores remain unchanged. No tests,
+benchmarks or judge replays ran; the repaired pass rate remains unverified.
+Models, reasoning, runtime, scheduling and immutable behavior checks are unchanged.
 
 ACC's existing default set is `commits`, `worktree`, `workflow`, `docs`, `testing`,
 `srp`, `commenting`, `logging`, `debug`. Benchmark discovery excludes opt-in
