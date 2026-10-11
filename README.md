@@ -254,7 +254,7 @@ validation, invoked checks and replaced expectations. SRP judging accepts valid
 simple parser forms; testing coverage claims must cite the original contract.
 The updated skills are applied locally; their next positive rerun remains pending.
 
-The latest k10 archive, `2026-10-11_022519_2732605`, scored 113/140 in 13m01s
+The earlier k10 archive, `2026-10-11_022519_2732605`, scored 113/140 in 13m01s
 with no quota or infrastructure exclusions. SRP scored 68/80, testing 74/80,
 commits 71/80, docs 78/80, and debug plus its separate behavior contract 60/60.
 Small follow-up changes clarify normalization/domain ownership, distinct
@@ -267,6 +267,24 @@ The changes are delivered in `28c40e8` and `0c5af99`. Codex skill copies match
 the source; the selector preserved an existing unmanaged Claude docs copy.
 No tests, benchmarks or judge replays ran for this follow-up, so its new pass rate
 remains unverified. Debug, worktree and scheduling were unchanged.
+
+The latest k10 archive, `2026-10-11_031057_869951`, scored 106/140 with zero
+quota or infrastructure exclusions. SRP scored 67/80; commits 70/80; docs,
+testing, worktree and commenting each 77/80; logging 79/80; debug 58/60;
+the separate immutable debug behavior contract 60/60. All 140 coding and 465
+judge session records used `gpt-6-luna` with low reasoning.
+
+Every one of its 38 failed criteria across 34 trials was audited individually.
+Small repairs in `13b0015` and `790b5c1` clarify complete parser ownership,
+same-sentence required commands, test-method documentation, collected checks,
+immediate rejection observations, final README delivery and task-tip merges.
+Judges respect supplied seed code, parser composition, actual exit reachability,
+original domain requirements and the final saved debug regression. Docs entrypoint
+discovery excludes scratch files under `tmp/`. Genuine violations remain failures.
+The changes are merged locally and applied to managed native copies. Existing
+unmanaged Claude commenting, debug and docs copies were preserved. No tests,
+benchmarks or judge replays ran for this follow-up; its pass rate remains
+unverified. Scheduling and model/reasoning settings were unchanged.
 
 ACC's existing default set is `commits`, `worktree`, `workflow`, `docs`, `testing`,
 `srp`, `commenting`, `logging`, `debug`. Benchmark discovery excludes opt-in
