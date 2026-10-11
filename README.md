@@ -254,6 +254,20 @@ validation, invoked checks and replaced expectations. SRP judging accepts valid
 simple parser forms; testing coverage claims must cite the original contract.
 The updated skills are applied locally; their next positive rerun remains pending.
 
+The latest k10 archive, `2026-10-11_022519_2732605`, scored 113/140 in 13m01s
+with no quota or infrastructure exclusions. SRP scored 68/80, testing 74/80,
+commits 71/80, docs 78/80, and debug plus its separate behavior contract 60/60.
+Small follow-up changes clarify normalization/domain ownership, distinct
+introducing commits, replacement expectations in old rejection loops and README
+completion. Judges distinguish valid routing/logging/formatting, repaired
+baselines, specified bounds and rejected calls; they preserve genuine bundling
+failures. Docs additionally checks requested command names from the original
+`/tests/task.md`, reporting unavailable command evidence when that file is absent.
+The changes are delivered in `28c40e8` and `0c5af99`. Codex skill copies match
+the source; the selector preserved an existing unmanaged Claude docs copy.
+No tests, benchmarks or judge replays ran for this follow-up, so its new pass rate
+remains unverified. Debug, worktree and scheduling were unchanged.
+
 ACC's existing default set is `commits`, `worktree`, `workflow`, `docs`, `testing`,
 `srp`, `commenting`, `logging`, `debug`. Benchmark discovery excludes opt-in
 `workflow` and `debug_logs`; `logging-vague` remains a control. Dedicated repair
