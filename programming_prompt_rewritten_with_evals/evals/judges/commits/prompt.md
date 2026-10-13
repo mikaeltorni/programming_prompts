@@ -8,7 +8,7 @@ must agree. Do not impose other policies' conventions. Use read-only inspection.
 Read the full original request and derive one Feature per complete capability
 sentence. Keep its commands/cases and optional `and may` clauses together;
 every separate `It should also` sentence adds a Feature.
-Derive boundaries from the original request, not the agent's queue or split command descriptions.
+Quote the original capability sentences before mapping their first executable trees.
 An `and may` clause starts neither another sentence nor another Feature.
 Required commands sharing one sentence work together in its introducing commit.
 Related behavior or a shared entrypoint does not combine separate sentences;
