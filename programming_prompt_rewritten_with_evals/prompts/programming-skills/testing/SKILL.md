@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.47 — Save and run each Feature's public-interface checks before its code,
+  v0.1.48 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -28,7 +28,7 @@ command/query, including specified boundaries and applicable cases below:
 - Missing and extra operands for documented forms, even without explicit error
   prose. Zero-operand commands need only extra rejection. Optional operands and
   remaining/multi-word text retain their requested acceptance.
-- Invalid numeric text for each operand, separately from domain and resource
+- Invalid numeric text for each numeric operand, separately from domain and resource
   failures. Keep invalid-text cases when numeric acceptance changes.
   Exercise strict excluded endpoints and values beyond them.
   Do not invent unsupported types, numeric limits, error wording or aliases.
@@ -52,6 +52,7 @@ For mutable interfaces, establish meaningful state with successful public calls
 before a rejection when possible. A private reset/reload may initialize fresh
 cases; it does not replace public seeding. Resource creation at zero value can
 be meaningful when a public read detects resource loss.
+A successful call after rejection is not its seed; keep valid empty-query cases separate.
 
 After each rejection, immediately assert independently expected affected values
 and required history through currently available public read-only queries,
