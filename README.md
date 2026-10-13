@@ -205,8 +205,8 @@ Feature begins, upgrade retained rejection bodies before its code: public seed,
 rejection, then immediate available read-only values and required history.
 Stateless cases need no state fixture; valid empty-domain query failures retain
 an empty fixture. Never pull a future public query into an earlier Feature.
-Coverage lists are optional, and commit queues may use faithful summaries that
-preserve each capability sentence's boundaries and behavior.
+Coverage lists are optional. Commit queues retain each original capability
+sentence; recorded Git output may supply introducing hashes without duplicate cells.
 
 SRP keeps parsing and token conversion, operations and public dispatch separate
 from the first working slice. Reuse genuinely identical domain decisions;
@@ -305,7 +305,7 @@ unmanaged Claude policy copies were preserved. Archived scores remain unchanged.
 No tests, benchmarks or judge replays ran, so the repaired pass rate remains
 unverified. Scheduling, verifier runtime and model/reasoning settings are unchanged.
 
-The latest k7 archive, `2026-10-11_111226_3493815`, scored 81/98 overall in
+The earlier k7 archive, `2026-10-11_111226_3493815`, scored 81/98 overall in
 9m24s with zero quota or infrastructure exclusions. Commits scored 49/56,
 SRP 52/56 and testing 51/56. All 98 coding and 325 judge sessions used
 `gpt-6-luna`/low. Its 21 failed criteria across 17 trials were audited individually:
@@ -319,6 +319,19 @@ received 0.x patch bumps and are applied to all nine harness families, including
 all Codex accounts and Claude. Archived scores remain unchanged. No tests,
 benchmarks or judge replays ran; the repaired pass rate remains unverified.
 Models, reasoning, runtime, scheduling and immutable behavior checks are unchanged.
+
+The latest k10 archive, `2026-10-13_205215_3860584`, scored 109/140 overall
+with zero quota or infrastructure exclusions. All 140 coding and 463 judge
+sessions used `gpt-6-luna`/low. Its 33 failed criteria across 31 trials were
+audited individually. Two clear judge errors concern an identical README copy
+hiding a merged task commit and a caller already printing its own result.
+Most failures are genuine: bundled capabilities, stale docstrings, incomplete
+parsers, missing rejection observations or misplaced task files. Twelve focused
+commits from `ca646c1` through `6dc89ce` repair the responsible policies and judges;
+eight changed skills received 0.x patch bumps and are current in all nine harness
+families. Archived scores remain unchanged. No tests, benchmarks or judge replays
+ran, so the new pass rate and changed worktree checker's execution remain
+unverified. Scheduling, models, reasoning and immutable behavior checks are unchanged.
 
 ACC's existing default set is `commits`, `worktree`, `workflow`, `docs`, `testing`,
 `srp`, `commenting`, `logging`, `debug`. Benchmark discovery excludes opt-in
