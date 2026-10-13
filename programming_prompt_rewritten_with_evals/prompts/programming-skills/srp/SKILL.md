@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v0.0.30 — Keep raw-command parsing and operation logic in separate helpers
+  v0.0.31 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
@@ -52,8 +52,9 @@ Do not repeat shape guards after the parser already enforces them. Formatting
 alone does not extract operation logic still left in dispatch. Avoid parallel
 parsers, speculative frameworks and unrelated renaming or rewrites.
 
-With selected feature cycles, extend only the current capability through the
-existing routing path. Check new and retained public behavior; remove branches
+Extend only the current capability through the existing parser, operation and
+routing owners, including new operand shapes; public dispatch stays thin.
+Check new and retained public behavior; remove branches
 made obsolete by the requested change. Before committing, inspect the actual
 parser, dispatcher and related operations for these boundaries. With selected
 logging, the dispatcher's own parameter print comes before its parse call.
