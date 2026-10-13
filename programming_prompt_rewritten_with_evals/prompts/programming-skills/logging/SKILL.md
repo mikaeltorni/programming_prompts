@@ -1,7 +1,7 @@
 ---
 name: logging
 description: >-
-  v0.0.11 — Every authored function, test and fixture prints parameters first
+  v0.0.12 — Every authored function, test and fixture prints parameters first
   after its docstring, before helper calls, validation or declarations, and
   prints each normal return value. Use plain print(), with no logging modules or log files.
 ---
@@ -50,3 +50,4 @@ def update(value):
 
 Before committing, compare every changed function's signature with its first
 statement and inspect each reachable normal exit, in application and test files.
+Review tests and fixtures as separate functions; application prints do not cover them.

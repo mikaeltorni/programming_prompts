@@ -17,8 +17,8 @@ object.__repr__(self) safely covers the receiver.
 
 Immediately before each normal return, print the whole returned value. A tuple
 needs all its elements; no return label is required. Shared branches may converge
-on a common print and return. The caller's return helper() is uncovered unless
-it assigns, prints and returns its own result. Each normal fallthrough ends
+on a common print and return. A direct return helper() is uncovered. Assigning
+its result, printing it and returning it satisfies the caller. Each normal fallthrough ends
 with print(None), including constructors and assertion-only tests after their
 last assertion. That print itself traces implicit None and needs no explicit
 return afterward. Do not invent fallthrough after an unconditional return/raise.
