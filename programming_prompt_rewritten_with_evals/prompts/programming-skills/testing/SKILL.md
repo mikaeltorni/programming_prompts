@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.46 — Save and run each Feature's public-interface checks before its code,
+  v0.1.47 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -28,8 +28,9 @@ command/query, including specified boundaries and applicable cases below:
 - Missing and extra operands for documented forms, even without explicit error
   prose. Zero-operand commands need only extra rejection. Optional operands and
   remaining/multi-word text retain their requested acceptance.
-- Invalid numeric tokens for each numeric operand, plus specified domain and
-  resource failures. Exercise strict excluded endpoints and values beyond them.
+- Invalid numeric text for each operand, separately from domain and resource
+  failures. Keep invalid-text cases when numeric acceptance changes.
+  Exercise strict excluded endpoints and values beyond them.
   Do not invent unsupported types, numeric limits, error wording or aliases.
 
 One representative case may cover an actually shared validation rule; separate
@@ -66,7 +67,7 @@ that query in its checks-before-code step. This is a current-suite update, not
 an early implementation of the query in an earlier Feature.
 Edit every earlier saved check file: insert the new reads inside each old
 rejection loop immediately after the rejected call. A separate new test does not upgrade it.
-Include the earliest creation, duplicate-resource and malformed-command checks.
+Include old creation, duplicate and malformed-input checks, even if they only used private state before.
 If no read exists yet, use the permitted weaker public probe and record its
 limit; do not invent or pull forward a future query. A valid query rejecting
 because its domain is empty keeps that empty fixture; its exception observes emptiness. This exemption
