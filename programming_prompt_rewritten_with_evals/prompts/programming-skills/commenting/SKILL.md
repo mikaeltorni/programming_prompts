@@ -1,7 +1,7 @@
 ---
 name: commenting
 description: >-
-  v0.0.8 — Use whenever writing or editing Python (or other) functions: every
+  v0.0.9 — Use whenever writing or editing Python (or other) functions: every
   function, including authored tests and fixtures, needs a description and
   same-line Parameters and Returns labels. Apply on every coding task.
 ---
@@ -24,7 +24,8 @@ exempt.
 Write the complete docstring with the function's first saved draft. Before
 committing, review the functions in every changed source and test file;
 passing assertions do not verify their documentation.
-When a later capability changes accepted inputs or results, update the related docstrings.
+When acceptance changes, revisit parser, operation and entrypoint docstrings,
+including helpers whose code did not change.
 Description-only test-method docstrings are incomplete: include the receiver
 in `Parameters:` and the method's result in `Returns:`.
 
