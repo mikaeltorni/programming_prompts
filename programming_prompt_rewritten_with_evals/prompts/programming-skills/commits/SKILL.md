@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v0.2.15 — Give each complete capability sentence its own Feature and finish
+  v0.2.16 — Give each complete capability sentence its own Feature and finish
   tests → code → commit before starting the next sentence.
 ---
 
@@ -29,9 +29,10 @@ later changes to existing forms/results remain unsupported until their own cycle
 do not scaffold working future branches.
 
 Record the queue in the selected workflow plan, or other task evidence when
-workflow is unselected. Use complete sentences or faithful summaries preserving
-each sentence boundary, required behavior and optional clauses. List allowed commands, a
-planned conventional subject and the introducing hash.
+workflow is unselected. Preserve the original capability sentences, required
+behavior and optional clauses. List allowed commands and a planned conventional
+subject. Record actual introducing hashes in the queue or other task evidence;
+recorded Git output is sufficient without a duplicate queue entry.
 The queue must faithfully cover the request; cosmetic Markdown punctuation is
 not a separate deliverable. Work only on its first unfinished Feature.
 

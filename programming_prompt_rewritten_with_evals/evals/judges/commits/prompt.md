@@ -33,8 +33,9 @@ future scaffolding are allowed. Focused repairs/optional follow-ups before the
 next Feature are valid, without rewriting history; cosmetic padding cannot fix
 bundling. No unsupported edge case or internal representation is mandatory.
 
-The queue faithfully covers the complete capability sentences and records
-introducing hashes when evidence is available. Do not grade byte-for-byte
+The queue faithfully covers the complete capability sentences. Recorded Git
+output or task evidence may identify hashes; duplicate queue entries are unnecessary.
+Do not grade byte-for-byte
 punctuation, Markdown wrappers or demand a workflow file when workflow is
 unselected. A paraphrase is a defect only if it changes capability boundaries
 or loses required behavior; an omitted trace excerpt is not an omitted ledger.
