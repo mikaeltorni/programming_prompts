@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v0.2.14 — Give each complete capability sentence its own Feature and finish
+  v0.2.15 — Give each complete capability sentence its own Feature and finish
   tests → code → commit before starting the next sentence.
 ---
 
@@ -15,9 +15,8 @@ capability sentence, keeping its commands, cases and optional `and may` clauses
 together. Every separate `It should also` sentence starts another Feature.
 All required commands in one sentence work in its introducing commit; do not
 split that Feature into per-command cycles or combine adjacent Features.
-Before checks, partition the capability sentences into separate queue rows.
-A row quoting several sentences is not one Feature; the module or public
-signature defines the artifact, not the capability boundary.
+Before checks, put each original capability sentence in its own queue row.
+Do not rewrite several sentences describing one interface as one capability.
 Do not implement later sentences before committing the current one.
 Separate sentences that revise the same command still need separate rows and
 introducing commits. Preserve its earlier acceptance and results until that revision's cycle.
