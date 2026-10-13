@@ -43,8 +43,8 @@ and resource failures using otherwise valid input. Do not invent unsupported
 types, unrequested aliases, limits, error wording or internal representations.
 Required domains come from the original request and failure logs; an extra
 validator or README constraint does not create a mandatory rejection case.
-For each alleged domain omission, establish that original requirement first;
-do not derive it from a solution's finite-only guard or other added validation.
+A solution-authored README or validator cannot establish an original required bound;
+quote the original request or failure log.
 Coding-agent commentary is not an original failure log. Listed valid ranges
 do not specify the result outside them; require beyond-bound rejection only
 when the original contract excludes that bound.
@@ -61,6 +61,7 @@ For mutable rejections, locate a successful meaningful public seed when possible
 then immediate public read-only assertions of affected values AND required history
 before another rejection, mutation, reset or reload. Public resource creation at
 zero can be meaningful. A seed before a nonmutating loop may cover all iterations.
+Trace the seed before the rejected call; later successful calls do not seed that rejection.
 This preservation sequence applies to rejected calls, not successful mutations;
 do not require a value or history API that the task does not provide.
 Private resets/reloads initialize fixtures; private assignments do not replace
