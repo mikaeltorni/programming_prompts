@@ -14,6 +14,8 @@ fixtures, constructors and helpers. Lambdas are exempt. Require a docstring with
 - `Returns:` with its meaning on that same line, or None for no meaningful return.
 
 Meanings must describe current accepted inputs/results, including later capability revisions.
+Purpose summaries need not enumerate the grammar. Fail explicit stale restrictions,
+not an ambiguous word interpreted as an unstated type requirement.
 
 Long lists may continue after the label line has content. Blank lines between
 sections and trailing periods are valid. `Args:` or a label on its own line
