@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >-
-  v0.0.19 — Edit Git projects in a sibling .worktrees project/task checkout,
+  v0.0.20 — Edit Git projects in a sibling .worktrees project/task checkout,
   commit there, merge each Feature into the live default branch, and reapply
   its consumers. Never push unless requested.
 ---
@@ -52,8 +52,8 @@ handoff, verify WT's physical path, registered location and branch against those
 retained values. Use absolute task paths or an explicit tool working directory;
 a shell `cd` does not persist. Reuse this checkout and branch for every Feature,
 repair and documentation commit. The store holds registered worktrees only;
-scratch/recovery files belong inside `WT/tmp/`. The project store parent is
-not WT: every write and tool working directory uses the full retained task path.
+scratch/recovery files belong inside `WT/tmp/`, never `PARENT/.worktrees/PROJECT/tmp/`.
+Every write and tool working directory uses the full retained task checkout path.
 
 After each completed Feature or focused repair:
 
