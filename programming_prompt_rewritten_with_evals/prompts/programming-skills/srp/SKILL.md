@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v0.0.31 — Keep raw-command parsing and operation logic in separate helpers
+  v0.0.32 — Keep raw-command parsing and operation logic in separate helpers
   from the first working slice. Public entrypoints delegate; small scripts
   and new files follow the same boundaries on every coding task.
 ---
@@ -38,10 +38,9 @@ arguments returned by that parser. Put sums and other computed results in operat
   Universal representation guards on parsed values may stay in dispatch;
   operation-specific ranges belong with the operation.
 
-Before extending an operation, read existing related owners. Reuse genuinely
-shared classification, calculation and domain-validation decisions in one
-called helper, moving identical predicates out of existing operations when adding
-the new operation and removing their old copies in that edit. Distinct arithmetic
+Before extending an operation, read existing related owners. When adding an
+operation, reuse equivalent classification, calculation or operand/result
+acceptance in one called helper, removing old copies in that same edit. Distinct arithmetic
 operations or domain rules need no common helper. Sharing a state variable does
 not make different updates the same decision. Identical acceptance rules still
 need one shared called helper across different operations. Dedicated operation
