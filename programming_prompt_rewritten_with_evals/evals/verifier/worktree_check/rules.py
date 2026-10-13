@@ -104,15 +104,10 @@ def _is_under(path: Path, parent: Path) -> bool:
 def delivery_problems(repo: Path, merged: list[Path]) -> list[str]:
     """Check Python and README delivery in the live and merged checkouts.
 
-    Args:
-        repo: Physical live checkout.
-        merged: Valid worktrees whose HEAD is reachable from the live HEAD.
-
-    Returns:
-        Evidence of uncommitted deliverables or README commits authored outside
-        the task worktrees. Temporary plans, caches and ignored logs are not
-        deliverables. No task-specific names or Feature counts are used.
+    Parameters: repo - physical live checkout; merged - worktrees reachable from live HEAD.
+    Returns: evidence of uncommitted deliverables or README content not committed in a task worktree.
     """
+    print(f"repo={repo}, merged={merged}")
     problems = []
     for checkout in [repo, *merged]:
         status = run_git(checkout, "status", "--porcelain=v1", "-z",
@@ -135,16 +130,22 @@ def delivery_problems(repo: Path, merged: list[Path]) -> list[str]:
                 problems.append(f"uncommitted deliverable in {checkout}: {name}")
     readme = repo / "README.md"
     if readme.is_file():
-        commit = git_ok(repo, "log", "--no-merges", "-1", "--format=%H",
-                        "HEAD", "--", "README.md")
+        commits = git_ok(repo, "log", "--full-history", "--no-merges", "--format=%H",
+                         "HEAD", "--", "README.md").splitlines()
+        readme_blob = git_ok(repo, "rev-parse", "HEAD:README.md")
         authors = set()
         for checkout in merged:
             for event in git_ok(checkout, "reflog", "show", "--format=%H%x09%gs", "HEAD").splitlines():
                 sha, separator, action = event.partition("\t")
                 if separator and action.startswith("commit"):
                     authors.add(sha)
-        if not commit or commit not in authors:
+        delivered = any(
+            commit in authors and git_ok(repo, "rev-parse", f"{commit}:README.md") == readme_blob
+            for commit in commits
+        )
+        if not readme_blob or not delivered:
             problems.append("README.md has no introducing/update commit authored in a merged task worktree")
+    print(problems)
     return problems
 
 
