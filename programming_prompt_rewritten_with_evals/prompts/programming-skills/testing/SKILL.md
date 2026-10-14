@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.48 — Save and run each Feature's public-interface checks before its code,
+  v0.1.50 — Save and run each Feature's public-interface checks before its code,
   then verify the working revision with fresh state and retained regressions.
 ---
 
@@ -32,12 +32,19 @@ command/query, including specified boundaries and applicable cases below:
   failures. Keep invalid-text cases when numeric acceptance changes.
   Exercise strict excluded endpoints and values beyond them.
   Do not invent unsupported types, numeric limits, error wording or aliases.
+- For a mutable interface, the state reads after each rejected call described
+  under *Observe state after rejection*. When this capability adds a public
+  read-only query, this item also means editing every earlier check file so
+  each of its rejected calls is followed by that query's assertion; that edit
+  is part of this capability's checks and is saved before its code.
 
 One representative case may cover an actually shared validation rule; separate
 numeric operands and different rejection reasons still need applicable checks.
 Review concrete inputs/assertions in all saved loops and helpers for omissions;
 a short coverage list may help, but no additional inventory file is required.
-Before the baseline, add the applicable rejection cases above; success-only checks are incomplete.
+Before the baseline, add the applicable rejection cases above for this
+capability's own command or query; success-only checks are incomplete, and
+rejection cases saved for a later command do not cover an earlier one.
 
 Keep earlier regression assertions except rules this capability explicitly
 replaces. Check earlier rules against their earlier source, not against the
@@ -63,12 +70,25 @@ A seed before a nonmutating rejection loop can cover all iterations.
 Review each loop body: the public read assertions belong immediately after
 that iteration's rejected call, not before or after the loop.
 
-When a query's own Feature begins, upgrade every retained rejection body with
-that query in its checks-before-code step. This is a current-suite update, not
-an early implementation of the query in an earlier Feature.
-Edit every earlier saved check file: insert the new reads inside each old
-rejection loop immediately after the rejected call. A separate new test does not upgrade it.
-Include old creation, duplicate and malformed-input checks, even if they only used private state before.
+When a Feature introduces a public read-only query, its checks-before-code
+step has two parts, both before any application edit:
+
+1. Save the new query's own success and rejection checks.
+2. Open every earlier saved check file and, inside each retained rejection
+   body, insert an assertion of that query's independently expected result
+   immediately after the rejected call, seeding meaningful state first where
+   the body has none. Include the earliest creation, duplicate and
+   malformed-input bodies, even ones that only used private state before.
+   One check file per Feature does not exempt the earlier files; a separate
+   new test does not upgrade an old body, and editing earlier files for this
+   purpose is required, not a regression.
+
+Run the cumulative suite afterward: the edited old bodies now fail on the
+missing query, and that failure is part of this Feature's baseline. This is a
+current-suite update, not an early implementation of the query. A read whose
+result is never asserted, or whose failure is swallowed by a bare try/except,
+observes nothing. Routing every rejected call through one saved helper that
+performs the call and then the current reads keeps this upgrade a single edit.
 If no read exists yet, use the permitted weaker public probe and record its
 limit; do not invent or pull forward a future query. A valid query rejecting
 because its domain is empty keeps that empty fixture; its exception observes emptiness. This exemption
