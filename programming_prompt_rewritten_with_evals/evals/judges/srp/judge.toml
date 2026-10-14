@@ -1,16 +1,24 @@
-# Reward Kit harness config only — edit the prompt in prompt.md.
-# Keep the {criteria} token in prompt.md.
-
+# Independent semantic dimensions of the same SRP policy; all must pass.
 [judge]
 judge = "codex"
 model = "gpt-6-luna"
 cwd = "."
-timeout = 180
+timeout = 240
 prompt_template = "prompt.md"
 
 [[criterion]]
-name = "single_responsibility"
-description = "raw-command parsing and token conversion, operations and thin public dispatch have separate owners from the first slice; genuinely identical domain decisions are shared, distinct arithmetic is not forced together; changes are focused"
+name = "parsing_dispatch"
+description = "from the first authored working slice, raw-command shape and token conversion belong to the parser, public dispatch routes converted arguments unchanged, and calculations/mutations remain in operation helpers; growth is focused"
+type = "binary"
+
+[[criterion]]
+name = "domain_validation"
+description = "domain predicates on converted values (including sign, finiteness, integrality, magnitude, resource existence and capacity) belong to the operation layer, never parsing or conversion helpers; calling them input validity does not make them syntax"
+type = "binary"
+
+[[criterion]]
+name = "shared_decisions"
+description = "compare every inline guard and shared helper across related operations; semantically identical decisions, including common subconditions with corresponding available/requested roles, have one shared called owner in each revision; different resource identities, variable names or subsequent mutations do not make the same acceptance rule distinct"
 type = "binary"
 
 [scoring]
