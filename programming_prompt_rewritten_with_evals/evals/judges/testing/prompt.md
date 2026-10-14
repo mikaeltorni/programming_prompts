@@ -83,10 +83,13 @@ regressions stay. Do not invent unsupported types, aliases, numeric limits,
 error wording or internal representations. A listed valid range does not by
 itself specify the result outside it: require a beyond-bound rejection only
 when the original request or original failure log excludes that bound. For
-every alleged missing case, first inspect all saved cases, then quote the
-request or original-log requirement that makes it mandatory and name a
-concrete required input. Only the request and the original logs create
-required cases. A `raise` or guard in the solution's source, a bound in its
+every alleged missing case, first inspect all saved cases, then identify its
+origin and name a concrete required input. The selected testing policy itself
+requires grammar checks for blank/unknown selectors, missing/extra operands
+and invalid numeric text in the forms the request defines, even when that
+request contains no rejection prose. Do not excuse a success-only suite on
+that basis. Additional domain/resource acceptance rules come from the request
+and original logs. A `raise` or guard in the solution's source, a bound in its
 README, or a comment in its checks cannot be the origin of a missing case;
 when the request and original logs are silent on a bound, no case is missing
 even though the solution rejects it.
@@ -136,6 +139,19 @@ missing read, confirm all of: the interface is mutable, a public read-only
 query exists in the current interface, and that body's rejected call is not
 already followed by an asserted read of it. Redundant or duplicated reads are
 not a failure.
+
+Apply the no-query exemption to the actual revision being inspected. An early
+creation test may have needed a weaker probe originally, but its retained
+current body must use reads now available in the final interface. Check the
+earliest creation/malformed bodies and the new query's own malformed cases as
+well as transaction helpers. Follow actual helper arguments and branches:
+optional expectations left at None can skip all reads, even when the helper's
+name or other callers promise state checks. An observer callback counts only
+when that call executes its public assertions; an ignored query, empty callback
+or assertions for other rejection cases do not cover this call. Inline checks
+with immediate public assertions are equally valid; no particular helper
+signature is required by the judge.
+
 Independent mutable cases start fresh while required multi-call sequences keep
 their state; inspect the actual fixtures and the repeat or reorder evidence. A
 leakage allegation needs a reachable conflicting value.
