@@ -91,6 +91,14 @@ README, or a comment in its checks cannot be the origin of a missing case;
 when the request and original logs are silent on a bound, no case is missing
 even though the solution rejects it.
 
+For a mixed grammar with reserved selectors and a free-form first operand,
+resolve which form the concrete input matches before alleging an unknown
+selector. An unreserved word in the first operand remains valid free-form
+input when its remaining operands satisfy that form. Reserved selectors must
+still enforce their own operand shape instead of falling through to the
+free-form form. Judge coverage across the union of current checks, rather
+than requiring each capability's file to repeat shared selector cases.
+
 ## 3. State after rejection
 
 First decide whether the interface is mutable. A stateless interface (every
