@@ -97,6 +97,10 @@ cases and the applicable rejections:
   resource failures (missing, duplicate, insufficient) with otherwise valid
   input.
 
+A zero-operand form has no operand to omit. Its bare selector is a valid call,
+not a missing-operand rejection case. Require its extra-operand case only;
+blank input is a separate selector-grammar case.
+
 An excluded endpoint and a value beyond it need separate cases. If the original
 request requires positive numbers, zero-only rejections omit the negative-value
 case. Do not impose positivity when the request does not require it.
