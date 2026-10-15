@@ -13,7 +13,7 @@ type = "binary"
 
 [[criterion]]
 name = "rejection_preservation"
-description = "every current mutable rejection has meaningful public seeding and immediate assertions for all currently available affected-state read forms, including values, cardinality and required history; a cardinality-only helper omitting a value view fails even if current rejection code appears unable to mutate it; retain stateless and valid empty-domain exemptions"
+description = "every current mutable rejection has meaningful public seeding and immediate assertions for all currently available affected-state read forms, including values, cardinality and required history; cardinality alone cannot replace a value view; stateless interfaces are exempt, and an asserted valid empty-domain query exception itself observes emptiness, including after clear/reset, without reseeding or another read"
 type = "binary"
 
 [[criterion]]

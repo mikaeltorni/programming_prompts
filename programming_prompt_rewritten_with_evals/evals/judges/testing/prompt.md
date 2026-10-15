@@ -144,6 +144,11 @@ exists. When no public read exists in the current revision, a weaker public
 probe with its stated limit is acceptable. A valid query rejecting because its
 domain is empty keeps its empty fixture and itself observes emptiness; that
 exemption does not extend to malformed inputs in the same loop.
+This exemption also applies when a successful clear/reset made the domain
+empty earlier in the same case. An asserted exception from a valid empty-domain
+query already observes that empty state; it needs neither reseeding nor another
+query afterward. Distinguish it from malformed query/reset input, whose state
+preservation still needs meaningful seeding and immediate reads.
 
 Once a read query exists, every retained rejection body in the current module,
 including the earliest creation, duplicate and malformed-input checks, uses it;

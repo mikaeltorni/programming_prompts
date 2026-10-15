@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.63 — Save success and grammar checks before code; one shared rejection
+  v0.1.68 — Save success and grammar checks before code; one shared rejection
   owner asserts current public state and gains every new read before query code.
 ---
 
@@ -53,8 +53,11 @@ or wording. Inspect actual loop inputs/assertions before the baseline;
 success-only checks are incomplete, including for stateless repairs.
 
 Keep earlier checks except expectations explicitly replaced by this capability.
-Update every affected expectation across the cumulative suite while retaining
-unrelated cases. Earlier rules come from their own request sentence. Do not
+Update every affected expectation across the cumulative suite **before the
+application edit**, while retaining unrelated cases. When acceptance widens,
+remove obsolete rejection expectations and save new successes in this checks
+step; keep invalid numeric text and unrelated rejections. Earlier rules come
+from their own request sentence. Do not
 execute future capabilities, even as observers; their rejection may be checked.
 
 ## Every mutable rejection observes public state
@@ -92,6 +95,10 @@ def expect_rejection(run_command, command, expected_error, observations):
 Before rejection, reset privately if needed and seed meaningful state through
 successful public calls **inside that independent case**. A prior test's final
 value is not a seed, even if the runner currently leaves that value behind.
+Use the fixture's actual resource identifiers in its seed, rejected input and
+affected-state observations. Hardcoding another identifier can mask a numeric
+or domain failure behind missing-resource rejection. Keep all other operands
+and resources valid except the component this case deliberately rejects.
 Creation at zero is meaningful when a read detects
 resource loss. A seed may cover a nonmutating rejection loop, but each iteration
 asserts its reads immediately after its rejected call, before another rejection,
@@ -141,7 +148,9 @@ pairs empty or retain a mutating probe when the value query now exists.
 
 ## Baseline, implementation and cumulative verification
 
-Run saved current checks before application edits and record the actual outcome.
+Run the **newly saved current checks** before application edits and record the
+actual outcome. Invoke their new file/function or verify discovery collects
+those assertions; running only an older file is not the current baseline.
 Missing behavior or a correct-path import/missing-file failure for creation is a
 valid baseline; distinguish dependency/infrastructure errors. Implement only
 this capability, then run every current and retained check with fresh independent
@@ -157,6 +166,10 @@ Before that final run, reread the saved checks from disk: inspect every rejected
 call and its immediate observations, and every stateless form's actual rejection
 cases. Function names, a draft in memory or a passing success test prove none of
 those assertions exists.
+If a fixture or expected value is wrong, derive its correction from the original
+contract and preceding public calls, preserve the reported behavior, and rerun
+the same saved check plus the cumulative suite. Never copy application output
+into an expectation merely to obtain a pass or stop with that repair unfinished.
 Resolve failures, inspect retained rejection observations, and report actual
 commands/results and limits before selected commit/delivery or the next capability.
 
