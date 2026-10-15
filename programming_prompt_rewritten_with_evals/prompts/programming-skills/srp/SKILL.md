@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v0.0.54 — Parsing returns converted arguments; operations call validators
+  v0.0.55 — Parsing returns converted arguments; operations call validators
   for converted-value and resource acceptance, sharing every current rule.
 ---
 
@@ -236,6 +236,11 @@ an operation must share its owner with the same rule in another operation.
 Adding a helper for the new operation while leaving an earlier inline guard
 does not complete the extraction.
 
+Before editing the next operation, report the existing rule owners and their
+current callers from the saved source. When the new operation needs the same
+rule, name the owner it will call and replace any earlier inline copy now.
+Different parameter names or units do not change an equivalent acceptance rule.
+
 Distinct calculations or domain rules need no common helper. Opposing updates
 sharing a state variable are distinct operations; sharing storage alone proves
 no shared decision. Operations choose their own delta, compute results and
@@ -288,3 +293,11 @@ passing public behavior does not verify SRP. Extend existing owners, remove
 branches replaced by the current revision, and check new and retained public
 behavior. With logging selected, each function's own parameter print precedes
 helper calls and its complete normal result is printed before return.
+
+Report a short review of those actual saved bodies before that run: the
+parser's converted return shape, the arguments dispatch forwards, and each
+shared rule's validator plus all current callers. Check token-conversion calls
+in dispatch, raw text reused for formatting, old unused form parsers, and
+remaining inline acceptance predicates. Remove obsolete parsing paths and
+repair duplicated rules before running and committing. This review needs no
+new plan file or committed inventory; helper names alone are not evidence.
