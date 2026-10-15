@@ -1,8 +1,8 @@
 ---
 name: testing
 description: >-
-  v0.1.68 — Save success and grammar checks before code; one shared rejection
-  owner asserts current public state and gains every new read before query code.
+  v0.1.69 — Save success and grammar checks before code; one shared query
+  factory upgrades every retained rejection's state assertions before query code.
 ---
 
 # Public checks before code
@@ -27,8 +27,11 @@ If older bodies are inline or have local copies, route them through the shared
 owner during this checks-before-code step and run them before implementation.
 
 Save runnable assertions calling the public entrypoint before application edits.
-Derive expectations from the request, original logs and preceding public calls,
-never application output or a private-state snapshot. A logged valid-input
+Derive expectations from the current contract: the request and original logs
+define results and domain rules; this selected policy additionally requires
+grammar rejections and public atomicity even without error prose in the request.
+Use preceding public calls to derive expected state, never application output
+or a private-state snapshot. A logged valid-input
 regression supplements the other applicable cases; it does not replace them.
 Use existing tooling; stdlib assertions/unittest suffice. Apply selected function
 docstrings and entry/exit prints to tests, fixtures and helpers from first draft.
@@ -68,18 +71,23 @@ Do not skip its state assertions because the current parser appears read-only
 or rejects before mutation; the checks protect behavior across later edits.
 Keep one shared rejection helper used by all earlier/later check files,
 with required nonempty public observations. Keep construction of the current
-observation pairs in one shared fixture rather than copying query lists into
-each capability's file. Every new value/history query extends that owner and
-any independently expected state data; older callers then execute those new
-assertions too. Adapt this pattern to the interface:
+observation pairs in one shared function, `current_observations(expected_state)`.
+It names the current public queries and returns their independently expected
+call/result pairs from known fixture data. It never reads application state or
+autodetects command support to construct expectations. Every check file imports
+the same factory; callers pass expected fixture data, not their own query lists.
+Each new read extends that factory once, so older rejection callers automatically
+execute it. Add expected fixture data when a new view needs it. Adapt this pattern:
 
 ```python
-def expect_rejection(run_command, command, expected_error, observations):
+def expect_rejection(run_command, command, expected_error, expected_state, current_observations):
     """Assert rejection and immediately check independently expected public state.
-    Parameters: run_command - public entrypoint; command - rejected input; expected_error - required exception class; observations - nonempty list/tuple of current public call/result pairs.
+    Parameters: run_command - public entrypoint; command - rejected input; expected_error - required exception class; expected_state - independently expected seeded fixture data; current_observations - shared current-interface call/result factory.
     Returns: None.
     """
-    print(f"run_command={run_command}, command={command}, expected_error={expected_error}, observations={observations}")
+    print(f"run_command={run_command}, command={command}, expected_error={expected_error}, expected_state={expected_state}, current_observations={current_observations}")
+    # The caller has already publicly seeded this case; do not reset it here.
+    observations = tuple(current_observations(expected_state))
     assert observations, "provide public observations"
     try:
         run_command(command)
@@ -99,6 +107,9 @@ Use the fixture's actual resource identifiers in its seed, rejected input and
 affected-state observations. Hardcoding another identifier can mask a numeric
 or domain failure behind missing-resource rejection. Keep all other operands
 and resources valid except the component this case deliberately rejects.
+If a rejection helper owns the reset instead, it must also seed public state
+and construct its expected fixture data before the rejected call. It must not
+erase a caller's seed and then use stale default expectations.
 Creation at zero is meaningful when a read detects
 resource loss. A seed may cover a nonmutating rejection loop, but each iteration
 asserts its reads immediately after its rejected call, before another rejection,
@@ -116,6 +127,9 @@ it cannot detect; replace it with reads as they arrive. Never use optional None,
 empty pairs, a no-op callback or ignored query results to skip observations.
 Once a read exists, remove earlier mutating probes from the observation path:
 putting reads after the probe still checks state after another mutation.
+Use only public forms in the request or existing project contract. Do not add
+an application command solely to obtain an observer; use existing aggregate
+views and disclose their limitations instead.
 
 Stateless interfaces skip only state setup/observation, not coverage. Keep valid
 empty-domain query rejections separate and empty: their expected exception itself
@@ -124,6 +138,12 @@ observes emptiness. Malformed query inputs need meaningful seeded state and read
 ## New reads upgrade every retained rejection before code
 
 When introducing a read query:
+
+Here, current means the current capability's requested contract, not what the
+old implementation already supports. Adding this read to older test bodies in
+this capability is not executing a future capability in their original revision.
+Their file/class names do not freeze their observation logic. A missing current
+query should fail the baseline; never autodetect it and silently keep old probes.
 
 1. Save its success and malformed-form checks; its malformed checks observe state.
 2. Update the shared helper's observation data and **every retained caller/body**,
