@@ -13,5 +13,10 @@ reported honestly, never counted as a pass.
 Assess simplicity by unnecessary complexity, repeated or speculative rules and
 case-specific patches, not a fixed word count or a required prompt structure.
 
+Compare the main prompt and its judge with the original request. The judge must
+cover the intended acceptance rules, reject incorrect outputs and accept correct
+ones without extra requirements or keyword matching. Inspect evaluation examples
+of both correct and incorrect outputs.
+
 Criteria to score:
 {criteria}
