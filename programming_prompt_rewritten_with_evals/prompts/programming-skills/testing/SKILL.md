@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.71 — Before each baseline, save successes and grammar rejections for
+  v0.1.77 — Before each baseline, save successes and grammar rejections for
   every current form; shared observers upgrade all retained mutable rejections.
 ---
 
@@ -185,6 +185,15 @@ or whose failure is swallowed observes nothing. Do not leave older observation
 pairs empty or retain a mutating probe when the value query now exists.
 
 ## Baseline, implementation and cumulative verification
+
+Before the application edit, report a brief review of the saved checks you
+are about to run: name the current forms' success and rejection cases. For a
+mutable interface, name the shared rejection helper, its actual public seed,
+and each asserted public observation. When adding a read, identify an older
+rejection case you upgraded and run that case alone first. Its baseline must
+reach the new asserted read; a failure in only the new query test does not
+establish the upgrade. This is a review of actual saved bodies, not a promise
+to add checks later; it needs no new plan file or committed inventory.
 
 Run the **newly saved current checks** before application edits and record the
 actual outcome. Invoke their new file/function or verify discovery collects
