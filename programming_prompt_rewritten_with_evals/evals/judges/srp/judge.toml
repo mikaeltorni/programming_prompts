@@ -8,7 +8,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "parsing_dispatch"
-description = "from the first authored working slice, public dispatch crosses one parsing boundary and routes converted arguments unchanged; form parsers may compose inside that boundary with raw input; calculations/mutations remain in operation helpers and growth is focused"
+description = "from the first authored working slice, public dispatch crosses one parsing boundary and forwards converted arguments unchanged; form parsers may compose inside it; business calculations/classifications and mutations occur in a separately called operation, never a public-dispatch branch, including zero-operand queries; calling a validator there does not make that branch an operation helper"
 type = "binary"
 
 [[criterion]]
