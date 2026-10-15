@@ -616,11 +616,11 @@ def pin_workspace_python(
     template: str, workspace: Path, files: list[Path], judge_name: str = "",
     evidence_scope: str = "",
 ) -> str:
-    """Append source, plan, history and chronological evidence for a skill judge.
+    """Append current source and relevant plan, history and chronological evidence.
 
     Parameters: template - judge instructions; workspace - submission directory;
         files - discovered Python paths; judge_name - independently scored policy;
-        evidence_scope - current-only or chronological evidence, empty for all.
+        evidence_scope - current-only or chronological evidence; empty uses the policy's full scope.
     Returns: evidence-enriched template retaining its criteria placeholder.
     """
     print(f"template={template} workspace={workspace} files={files} judge_name={judge_name} evidence_scope={evidence_scope}")
@@ -643,7 +643,7 @@ def pin_workspace_python(
         + json.dumps(boundaries, indent=2) if boundaries else ""
     )
     git_context = ""
-    if history_enabled and judge_name in {"commits", "srp", "workflow", "testing"}:
+    if history_enabled and judge_name in {"commits", "srp", "workflow"}:
         try:
             git_context = commit_source_context(workspace)
             print(f"pinned historical source evidence judge={judge_name}")

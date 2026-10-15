@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.84 — Save form-complete checks first; mutable rejection cases call one
+  v0.1.87 — Save form-complete checks first; mutable rejection cases call one
   fixture/rejection/read helper, and each new read extends its shared factory.
 ---
 
@@ -29,9 +29,12 @@ applicable rejections in the first draft, before any application edit:
 | Form or rule | Required checks |
 | --- | --- |
 | Selector grammar | Blank input and an unknown selector. |
-| Each command/query | Missing and extra operands; zero-operand forms need only extra. |
+| Each command/query | Every specified result variant, including empty results; missing and extra operands (only extra for zero-operand forms). |
 | Each numeric operand | Invalid numeric text, with other operands/resources valid. |
 | Requested domain/resource rules | Strict excluded endpoints and beyond, empty-domain queries, missing/duplicate resources, insufficient funds/capacity, as specified. |
+
+When the request requires positive numbers, check both zero and a negative value;
+the excluded endpoint and a value beyond it are separate cases.
 
 Free-form first operands are data, not unknown selectors. Preserve optional
 and remaining/multi-word text; do not invent extra-operand restrictions for it.

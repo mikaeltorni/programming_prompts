@@ -8,7 +8,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "current_coverage"
-description = "current runnable public assertions cover requested successes, policy-required grammar/numeric rejections and only request/log-required domain/resource failures across all retained files; generated README restrictions and implementation guards never create required domain cases"
+description = "current runnable public assertions cover requested successes and grammar/numeric rejections across all retained files; domain rules come ONLY from the original request/logs, never numeric-operand syntax, generated README or implementation; explicitly required positive operands need zero AND negative cases; other requested strict endpoints and beyond both need cases; shared rules reuse the complete set"
 type = "binary"
 
 [[criterion]]
@@ -18,12 +18,12 @@ type = "binary"
 
 [[criterion]]
 name = "public_seeding"
-description = "before each mutable rejected call, a successful public seed executes AFTER the last private fixture write and BEFORE rejection; a read after rejection is not a seed; evaluate defaults/loop counts, including zero iterations; stateless and valid empty-domain queries are exempt"
+description = "for a mutable API every rejected case needs meaningful state created by a successful public call AFTER the last private write and BEFORE rejection; a default/empty fixture that cannot expose clearing of existing state fails setup even if its read matches; expand each caller/default and zero-iteration loop; stateless APIs and valid empty-domain query errors are exempt"
 type = "binary"
 
 [[criterion]]
 name = "rejection_preservation"
-description = "every current mutable rejection has meaningful public seeding and immediate assertions for all currently available affected-state read forms, including values, cardinality and required history; cardinality alone cannot replace a value view; stateless interfaces are exempt, and an asserted valid empty-domain query exception itself observes emptiness, including after clear/reset, without reseeding or another read"
+description = "after each mutable rejected call assert all current affected value/cardinality/history reads; count alone cannot replace a value view; stateless interfaces and valid empty-domain query errors are exempt; the empty-domain exception itself observes emptiness, including after clear/reset, with no reseed or other read; successful mutations do not trigger this rejection-preservation rule"
 type = "binary"
 
 [[criterion]]
