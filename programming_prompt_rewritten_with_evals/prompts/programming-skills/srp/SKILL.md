@@ -1,7 +1,7 @@
 ---
 name: srp
 description: >-
-  v0.0.46 — Create called validators for current domain rules from first use;
+  v0.0.49 — Create called validators for current domain rules from first use;
   parse and convert before thin dispatch, keeping calculations in operations.
 ---
 
@@ -23,6 +23,13 @@ public signature and use these owners:
 | Domain validators | Current acceptance rules on converted values and existing resources. |
 | Operations | Call applicable validators, calculate results and change state. |
 | Public dispatch | Parse once, route converted arguments unchanged, return/format results. |
+
+When repairing a supplied mixed entrypoint, the first working repair also
+extracts its raw parsing/conversion and core operation into these owners.
+Fixing only the reported result inside the mixed public function leaves that
+slice noncompliant; extracting it in a later capability does not repair the
+earlier slice. Keep the extraction local to the current behavior and preserve
+the public signature; it introduces no future commands.
 
 Implement only the current capability. A validator is called by its current
 operation immediately; future commands, selectors and checks wait for their
@@ -51,6 +58,54 @@ A successful float/Decimal conversion can produce NaN or infinity; calling
 its finiteness rejection invalid input does not make it a conversion rule.
 Representation normalization may preserve acceptance and mathematical value;
 it must not hide a converted-value rejection in parsing.
+
+For a current numeric form requiring finite values, keep conversion and the
+acceptance check in different owners. Even `inf`/`nan` can convert successfully;
+the operation rejects them through its validator. A parser may call the
+conversion helper; only operations call the domain validator:
+
+```python
+import math
+
+
+def parse_number(token):
+    """Convert a numeric token without imposing converted-value rules.
+    Parameters: token - the current form's numeric text.
+    Returns: the converted floating-point value.
+    """
+    print(f"token={token}")
+    result = float(token)
+    print(result)
+    return result
+
+
+def require_finite(value):
+    """Require the finite value accepted by the current operation.
+    Parameters: value - the already converted number.
+    Returns: the accepted finite value.
+    """
+    print(f"value={value}")
+    if not math.isfinite(value):
+        raise ValueError("nonfinite value")
+    print(value)
+    return value
+
+
+def calculate_half(value):
+    """Halve a number accepted by the current operation's rule.
+    Parameters: value - the already converted number.
+    Returns: half the accepted value.
+    """
+    print(f"value={value}")
+    value = require_finite(value)
+    result = value / 2
+    print(result)
+    return result
+```
+
+Apply that boundary to Decimal finiteness and converted-value integrality too.
+Widening an integer-only form to decimal values changes the converted-value
+validator and representation, without moving acceptance into its parser.
 
 ## Operations call rule owners
 
@@ -121,6 +176,14 @@ edit; the new operation calls that helper too. Compare shared subconditions,
 not just entire validation blocks: positive-and-finite acceptance stays shared
 when one operation additionally requires integrality. An unused helper shares
 nothing. Apply this to identical acceptance, classification and calculation.
+When another response form needs an existing classification or calculation,
+call its operation helper instead of copying its branches into the new form.
+Different final strings do not make the underlying calculation different.
+Sharing only its domain validator still leaves a copied classification unshared.
+An earlier conditional guard still counts: a rule used only in one branch of
+an operation must share its owner with the same rule in another operation.
+Adding a helper for the new operation while leaving an earlier inline guard
+does not complete the extraction.
 
 Distinct calculations or domain rules need no common helper. Opposing updates
 sharing a state variable are distinct operations; sharing storage alone proves
@@ -159,9 +222,13 @@ add a literal response label, or keep a universal representation guard on
 parsed values. Calculations such as min/max/sum/sorting, mutations, choosing a
 delta and operation-specific acceptance belong in operations, including when
 hidden inside formatting. No parallel parsers or unrelated rewrites.
+Formatting parsed text together with an operation's already computed result
+is permitted; a helper whose only work would be that final string is optional.
 
-Before each cumulative run and commit, inspect the actual parser, dispatcher,
-validators and related operations together. Follow every validator call;
+Before the final cumulative run for each capability, reopen the saved parser,
+dispatcher, validators and related operations from disk, including unchanged
+earlier operations. Inspect those actual bodies together rather than relying
+on a draft, helper names or memory. Follow every validator call;
 compare remaining inline predicates across operations, including corresponding
 input roles and shared subconditions. Repair copied rules before committing;
 passing public behavior does not verify SRP. Extend existing owners, remove
