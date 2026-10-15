@@ -47,15 +47,29 @@ both task families by default, with only applicable skills on each family.
 Unrelated-skill runs do not execute the new cases. Use `debug_logs` with `greeter`
 to evaluate the preserved read-logs-first policy on the original staged task.
 
-**Testing eval note:** the semantic judge assesses saved checks against the
-original request with one `testing_contract` verdict: checks before each
-capability, retained contract coverage, preservation/isolation and honest
-execution evidence. No per-source-site question expansion or mandatory coverage
-inventory is used. Existing evidence helpers remain available. It does not
-require a framework, file name, or fixed test count.
-Without an agent trace it reports execution order as unverified. Default
-discovery includes `testing`; select it alone with `--skills testing` or add it
-to the full suite.
+**Testing eval note:** testing v0.1.100 uses one mutable rejection helper,
+self-resetting public seeds, independent expected data and one growing observation
+factory. Initially no-read interfaces use a limited current mutation probe; when
+reads arrive the factory replaces all mutation probes with every current read.
+Stateless APIs and valid empty-domain query errors retain their exemptions.
+Originally required empty-domain mutation failures keep empty fixtures and
+assert available empty-state reads. Malformed mutable inputs remain seeded.
+The semantic judge requires six dimensions to all pass: current coverage,
+fixture independence, public seeding, rejection preservation, checks order and
+checks execution. Four current-source and two chronology criteria each use one
+focused call through the same Codex judge. Historical source remains available
+by lookup. No per-source-site question expansion or mandatory coverage inventory
+is used, and no framework, file name or fixed test count is required. Missing
+chronology is an explicit verification limit. Default discovery includes
+`testing`; select it alone with `--skills testing` or add it to the full suite.
+
+**SRP eval note:** SRP v0.0.62 establishes the parser/operation/validator layout
+before the first application write. The judge requires parsing/dispatch, domain
+validation and shared decisions to all pass. Converted-value/resource rules
+belong in called validators, operations own calculations and stored mutations,
+and dispatch forwards converted arguments unchanged. Direct stored reads and
+formatting need no getter; assigning stored state remains mutation even if a
+helper computes the replacement.
 
 **Docs eval note:** after the code, write `README.md` naming the public
 `run_*` entrypoint and the commands. Function docstrings stay on the
@@ -98,7 +112,8 @@ their actual historical revisions. Query upgrades to retained rejection bodies
 belong to that query's own checks-before-code step. Distinct arithmetic/state
 updates are not duplicated decisions merely because they share storage.
 
-The October 10, 2026 simplification passed static content validation and isolated
+The historical October 10, 2026 simplification passed static content validation and isolated
 instruction assembly/judge packaging. Benchmark performance is unverified for
 this revision; original archived verdicts remain unchanged. Its testing detail
-schema is one criterion rather than historical expanded subquestions.
+schema used one criterion rather than earlier expanded subquestions; the current
+six-criterion schema above supersedes it without rescoring original archives.
