@@ -1,0 +1,14 @@
+[judge]
+judge = "codex"
+model = "gpt-6-luna"
+cwd = "."
+timeout = 240
+prompt_template = "prompt.md"
+
+[[criterion]]
+name = "prompt_engineering"
+description = "The prompt expresses the original requested behavior."
+type = "binary"
+
+[scoring]
+aggregation = "all_pass"
