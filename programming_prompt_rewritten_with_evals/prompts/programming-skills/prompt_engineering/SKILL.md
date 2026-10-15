@@ -1,7 +1,7 @@
 ---
 name: prompt_engineering
 description: >-
-  v0.0.4 — Guide prompt creation and revision.
+  v0.0.5 — Guide prompt creation and revision.
 ---
 
 # Prompt engineering
@@ -21,3 +21,6 @@ edge cases, elaborate frameworks and wording tailored to individual test cases.
 Make the judge prompt reflect the main prompt's intended behavior and acceptance
 rules. It must distinguish correct from incorrect outputs without imposing extra
 requirements or rewarding copied wording. Include examples of both in evaluation.
+
+Always edit the main prompt and its judge together in each revision; create the
+missing counterpart when needed. Keep their requirements consistent.

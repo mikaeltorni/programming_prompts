@@ -18,5 +18,8 @@ cover the intended acceptance rules, reject incorrect outputs and accept correct
 ones without extra requirements or keyword matching. Inspect evaluation examples
 of both correct and incorrect outputs.
 
+Verify each prompt revision also edits its judge, creating a missing counterpart,
+and that the pair remains consistent.
+
 Criteria to score:
 {criteria}
