@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.70 — Before each baseline, save successes and grammar rejections for
+  v0.1.71 — Before each baseline, save successes and grammar rejections for
   every current form; shared observers upgrade all retained mutable rejections.
 ---
 
@@ -18,7 +18,9 @@ operand of each form**; and requested domain/resource failures. Include blank
 input and an unknown selector when the grammar has selectors. A zero-operand
 form still needs an extra-operand rejection. These checks belong in the first
 draft, including stateless programs and valid-input repairs. A success-only
-baseline is incomplete; do not implement code after one.
+baseline is incomplete; do not implement code after one. Include an operation's
+required empty-domain rejection in this draft too; a later passing check cannot
+make that check precede code.
 
 For a mutable interface, create its shared rejection helper in that same first
 draft and put exception capture there. Every rejection case calls it; an older
@@ -26,6 +28,13 @@ bare exception assertion must be rewired when retained. Its one shared query
 factory gains every current read **before query code**, so all earlier cases
 execute the new assertions too. Before a baseline, inspect actual older bodies
 as well as the new file. Do not leave this work until final verification.
+Treat each mutable rejection as one saved unit: **public seed → rejected call →
+assert every current public read**. A separate success test or a read after the
+whole rejection loop does not complete that unit. When the first read arrives,
+upgrade even the earliest blank/unknown/shape checks in older files: they now
+seed meaningful state and call the same observer. No retained rejection body
+may remain exception-only. Valid empty-domain queries are the exception described
+below; malformed inputs are not empty-domain queries.
 
 ## Save complete current checks
 
