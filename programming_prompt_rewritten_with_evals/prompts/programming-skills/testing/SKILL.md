@@ -1,8 +1,8 @@
 ---
 name: testing
 description: >-
-  v0.1.59 — Save public checks before code; mutable rejections require public
-  observations, and every retained check gains new reads before query code.
+  v0.1.63 — Save success and grammar checks before code; one shared rejection
+  owner asserts current public state and gains every new read before query code.
 ---
 
 # Public checks before code
@@ -12,7 +12,19 @@ checks → baseline → code → cumulative pass → selected commit/delivery be
 starting the next capability's checks. Selected commits/workflow own the queue;
 testing alone adds no plan or Git requirement. Repairs follow the same order.
 
+The first saved checks for a form include its successes **and** applicable
+grammar rejections, even when a repair log shows only a valid-input failure.
+For mutable interfaces, establish one shared rejection/observation owner in
+the first capability; every rejection case calls it. Extend that owner as
+public reads arrive, before editing their application code.
+
 ## Save complete current checks
+
+Before writing this capability's checks, open the retained checks and find
+their rejection/observation helper. Import and extend that same owner from
+new check files; do not create another local rejection helper for this Feature.
+If older bodies are inline or have local copies, route them through the shared
+owner during this checks-before-code step and run them before implementation.
 
 Save runnable assertions calling the public entrypoint before application edits.
 Derive expectations from the request, original logs and preceding public calls,
@@ -51,8 +63,12 @@ Catching an exception alone leaves a mutable rejection check unfinished.
 This is the public atomicity contract, including malformed inputs and queries.
 Do not skip its state assertions because the current parser appears read-only
 or rejects before mutation; the checks protect behavior across later edits.
-Default to one shared rejection helper used by all earlier/later check files,
-with required nonempty public observations. Adapt this pattern to the interface:
+Keep one shared rejection helper used by all earlier/later check files,
+with required nonempty public observations. Keep construction of the current
+observation pairs in one shared fixture rather than copying query lists into
+each capability's file. Every new value/history query extends that owner and
+any independently expected state data; older callers then execute those new
+assertions too. Adapt this pattern to the interface:
 
 ```python
 def expect_rejection(run_command, command, expected_error, observations):
@@ -74,11 +90,16 @@ def expect_rejection(run_command, command, expected_error, observations):
 ```
 
 Before rejection, reset privately if needed and seed meaningful state through
-successful public calls. Creation at zero is meaningful when a read detects
+successful public calls **inside that independent case**. A prior test's final
+value is not a seed, even if the runner currently leaves that value behind.
+Creation at zero is meaningful when a read detects
 resource loss. A seed may cover a nonmutating rejection loop, but each iteration
 asserts its reads immediately after its rejected call, before another rejection,
 mutation, reset or reload. A successful mutation afterward is neither a seed
 nor a read. Inline checks satisfy this same immediate-observation rule.
+If a case clears state or reloads the module, its earlier seed is gone:
+seed again before a malformed rejection, including malformed read/reset forms.
+An intentionally empty valid-domain query remains the separate exemption below.
 
 Use available affected value reads **and** required history. A mutation's
 returned count/value, private equality or history alone cannot replace an
@@ -86,6 +107,8 @@ available value query. Use aggregates when they are the only view and disclose
 limits. With no public read yet, supply a weaker public probe and record what
 it cannot detect; replace it with reads as they arrive. Never use optional None,
 empty pairs, a no-op callback or ignored query results to skip observations.
+Once a read exists, remove earlier mutating probes from the observation path:
+putting reads after the probe still checks state after another mutation.
 
 Stateless interfaces skip only state setup/observation, not coverage. Keep valid
 empty-domain query rejections separate and empty: their expected exception itself
@@ -100,6 +123,11 @@ When introducing a read query:
    including earliest creation, duplicate, blank/unknown, shape and invalid-number
    cases in all saved files. Add public seeds where missing. New tests do not
    upgrade old bodies. Replace old mutation/second-rejection probes ahead of reads.
+   Each newly introduced query is asserted after every retained rejection;
+   keeping only an earlier aggregate or subset of the current queries is incomplete.
+   Extend the observation set; a new query does not replace an earlier read
+   unless the request explicitly removes that earlier form. A count cannot
+   detect a changed value, and a value aggregate cannot detect every lost resource.
 3. If older mutable rejection checks exist, run an upgraded older check on its
    own before query code. Its observer executes the new asserted query; an absent
    query makes that older body fail there. Then run the cumulative baseline.
