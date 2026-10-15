@@ -1,15 +1,18 @@
 ---
 name: srp
 description: >-
-  v0.0.61 — Parse raw input once; operations call validators for converted values
+  v0.0.62 — Parse raw input once; operations call validators for converted values
   and share equivalent rules, calculations and classifications.
 ---
 
 # Parsing, validation, operations and dispatch
 
-From the first agent-authored working slice, preserve the public signature and
-use these owners. A repair of a supplied mixed entrypoint extracts its current
-parsing and core operation in that first repair, not a later capability.
+Before the first application write, identify the current parser, operation and
+applicable validators, then save that layout directly. Even one command with
+zero operands needs a parsing boundary and a separately called operation when
+it calculates or mutates. A minimal working inline entrypoint followed by later
+extraction fails this rule, including in repairs. Preserve the public signature;
+extract a supplied mixed entrypoint's parsing and operation in its first repair.
 
 | Owner | Responsibility |
 | --- | --- |
