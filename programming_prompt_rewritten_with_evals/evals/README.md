@@ -146,48 +146,37 @@ Acceptance uses `gpt-6-luna` with `low` reasoning for both the Codex coding mode
 and Codex semantic judge. Check actual archived turn settings, not only defaults.
 Do not raise effort or switch to a stronger model to pass. Authentication, quota
 and infrastructure failures are limits, never passing prompt trials.
-Before copying a command, compare current 5-hour and weekly allowances on every
-configured Codex instance and verify the chosen auth home. These examples use
-instance 1, verified at this handoff; replace it with the eligible ID you verify
-for each later run.
+Before running, compare fresh 5-hour and weekly allowances on every configured
+Codex instance. Choose an eligible instance with the most headroom in its more
+constrained window. Replace `<selected-id>` in the template with that checked ID;
+verify its auth home using `harbor_agents/codex_account.py --auth` with the same
+`ACC_CODEX_INSTANCE` from `evals/`. Account IDs and old runs do not establish quota.
 
 ```bash
 cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
 ```
 
-A focused positive check:
+The default positive Codex run uses the default skills, three attempts per task,
+and automatic concurrency:
 
 ```bash
-ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug_logs --tasks greeter -k 1
+ACC_CODEX_INSTANCE=<selected-id> ./run_benchmark.sh --harness codex --eval-agent codex -k 3
 ```
 
-A baseline injects no skill bodies but keeps the selected judges:
-
-```bash
-ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,testing,debug_logs --tasks greeter --baseline -k 1
-```
-
-Wait for each command to finish before starting the next. Use the account
-instance intended for the run. Account resolution honors `ACC_CODEX_INSTANCE`
+Wait for the command to finish before starting another. Account resolution honors `ACC_CODEX_INSTANCE`
 first, then the persisted ACC selection; confirm the startup account path and
 credit probe before accepting results.
 
-Only the new debugging scenarios:
-
-```bash
-ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills debug --suite debug -k 3
-```
-
-A focused repair case is selected with `--tasks debug-clock`. To combine a coding
+For a requested focused run, a repair case is selected with `--tasks debug-clock`.
+Select only repair scenarios with `--skills debug --suite debug`. To combine a coding
 check with a repair check, select `--skills testing,debug --tasks counter,debug-clock`.
 Omitting both task selectors includes all tasks applicable to the selected skills.
 `--suite coding`, `--suite debug`, and `--suite all` choose a family explicitly.
 
-The full positive suite, including opt-in workflow:
-
-```bash
-ACC_CODEX_INSTANCE=1 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow,commits,worktree,docs,srp,commenting,logging,debug,testing -k 3
-```
+Include opt-in workflow only when needed, with
+`--skills workflow,commits,worktree,docs,srp,commenting,logging,debug,testing`.
+`--baseline` omits skill bodies while retaining the selected judges; runtime
+verification uses sequential baseline and positive `-k 1` jobs.
 
 ## Parameters
 
@@ -201,9 +190,11 @@ Use long kebab-case flags followed by values. Historical `harness=`,
 | `--skills workflow,testing,debug` | Skills to inject and score; omission selects the default suite. |
 | `--tasks greeter` | Named task subset; omission uses the applicable selected suite. |
 | `--suite debug` | Family: `coding`, `debug`, or `all`; omission derives families from selected skills. |
+| `--concurrency N` | Optional lower trial ceiling; omission uses automatic capacity and pacing. |
 | `--baseline` | No skill injection, retaining selected judges. |
 | `--run-separately` | Independent skill scores in the same job and trial count, instead of requiring every judge to pass. |
 | `--install-only` | Prepare and verify CLI installation without an LLM coding run. |
+| `--pin-refresh` / `--no-pin-refresh` | Explicit pin refresh policy; normal invocations omit both. |
 | `--eval-agent-model MODEL` | Explicit judge model override. |
 | `--eval-agent-reasoning-effort low` | Explicit judge effort override. |
 | `-k 3` | Harbor attempts per task. Other unowned flags pass through to Harbor. |
@@ -312,7 +303,9 @@ Temporary analysis reports belong under `tmp/reports/`. Do not commit generated
 tasks, runtime artifacts, or add pytest suites in this evaluation tree.
 Prompt-only changes use direct consistency checks and focused Harbor runs.
 Runtime wrapper or verifier changes additionally require baseline and positive
-smoke jobs for every supported coding harness under the root AGENTS.md rules.
+one-attempt smoke jobs with the Codex coding harness and Codex judge, under the
+temporary Codex-only rule in root AGENTS.md. Both use `gpt-6-luna` with `low`
+reasoning. Read actual archived settings and results; a label alone is insufficient.
 
 From `evals/`, `bash lib/self_test_skills.sh` checks discovery, one-job scheduling
 for mixed and single-family selections, family-specific instruction documents

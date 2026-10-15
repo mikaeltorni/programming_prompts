@@ -228,18 +228,29 @@ contract coverage, state observations after rejection, isolated cases and honest
 cumulative execution evidence. Static content and project test prohibitions use
 direct verification; no new test framework or hosted CI is required.
 
-Cover success/boundaries, documented operand shapes (including extra operands
-for zero-argument queries), numeric conversion and specified domain/resource
-failures. Preserve unaffected checks when requirements change. When a query's
-Feature begins, upgrade retained rejection bodies before its code: public seed,
-rejection, then immediate available read-only values and required history.
+Cover every specified success/result variant, operand shapes (only extra
+operands for zero-operand forms), numeric conversion and requested domain/resource
+failures. Positive-only inputs need both zero and negative rejection cases.
+An actual shared count predicate can share its malformed-input cases across
+forms. Preserve unaffected checks when requirements change. Mutable rejection
+checks use one shared helper: create meaningful state through current public
+calls, reject, then immediately assert every current value/cardinality/history
+read. Independent expected data feeds one growing observation factory; adding a
+read retains all earlier reads and upgrades every older rejection before code.
+Private/default empty state and a zero-iteration seed loop do not expose loss.
 Stateless cases need no state fixture; valid empty-domain query failures retain
 an empty fixture. Never pull a future public query into an earlier Feature.
 Coverage lists are optional. Commit queues retain each original capability
 sentence; recorded Git output may supply introducing hashes without duplicate cells.
 
-SRP keeps parsing and token conversion, operations and public dispatch separate
-from the first working slice. Reuse genuinely identical domain decisions;
+SRP establishes parser, operations and applicable validators before the first
+application write, including a supplied mixed entrypoint's first repair. The
+parser returns converted arguments; called validators own every requested
+converted-value/resource acceptance rule, even with one caller. Separate
+operations own calculations and stored-state mutations. Dispatch parses once
+and forwards arguments unchanged. It may read/format stored state without a
+getter; assigning a global or stored field is still mutation when a helper
+calculates the right-hand side. Reuse genuinely identical domain decisions;
 different arithmetic does not require a shared updater merely because it touches
 one variable. Commenting and logging cover authored test functions and helpers
 as well as application functions. Docs requires the delivered root README after
@@ -248,11 +259,12 @@ all selected Feature cycles.
 The October 10, 2026 content revision shortened the policy suite by about 65%
 and judge text/configuration by about 80%. It removed repeated audit procedures,
 mandatory coverage inventories, literal ledger grading and testing's source-site
-question expansion. The testing judge now uses one `testing_contract` criterion
+question expansion. That revision used one `testing_contract` criterion
 covering all four retained obligations; immutable `debug_behavior` correctness
 contracts remain separate. Static validation, actual instruction assembly and
 isolated judge packaging passed. No benchmark was run for this revision, so
-its effect on pass rate remains unverified and archives retain their verdicts.
+its effect on pass rate was unverified; archives retain their verdicts. The
+current judge schema and later verification are described below.
 
 The subsequent October 10 audit corrected judges that mistook read-only review
 for an edit, required superseded or duplicated stateless checks, or treated
@@ -479,7 +491,11 @@ Coding tasks live under
 `run_greeter` for `<name> <hour>`, `bye <name>`, and `period <hour>`).
 The runner accepts `--harness`, selects the Codex judge with
 `--eval-agent codex`, selects programming skills with `--skills`, and accepts
-`--tasks`, `--suite coding|debug|all`, `--concurrency`, `--baseline`, and Harbor's `-k` attempt count.
+`--tasks`, `--suite coding|debug|all`, `--concurrency`, `--baseline`,
+`--run-separately`, `--install-only`, `--pin-refresh` / `--no-pin-refresh`,
+`--eval-agent-model`, `--eval-agent-reasoning-effort`, and Harbor's `-k` attempt
+count. The [parameter table](programming_prompt_rewritten_with_evals/evals/README.md#parameters)
+describes their values and defaults.
 Without `--concurrency`, all selected tasks × attempts remain eligible, subject
 to configured LLM caps and available per-trial Docker network slots. The automatic
 [launch guard](programming_prompt_rewritten_with_evals/evals/harbor_agents/launch_guard.py)
@@ -548,8 +564,8 @@ Do this when no benchmark is running; the benchmark wrapper also regenerates
 its own isolated job copies from canonical source when a new run starts.
 
 The [SRP skill](programming_prompt_rewritten_with_evals/prompts/programming-skills/srp/SKILL.md)
-also guides focused edits: start with a small working slice, extend its existing
-helpers and command path, and preserve simple responsibilities as requirements
+also guides focused edits: save the ownership layout with the first working
+slice, extend its existing helpers and command path, and preserve responsibilities as requirements
 change. The `todo`, `bank`, and `stats` benchmark prompts repeatedly revise
 earlier behavior as well as adding commands. Each stage requires public-entrypoint
 checks and a working commit; the SRP judge receives historical source and diffs
@@ -559,7 +575,7 @@ Before introducing another operation, compare its decisions with existing
 owners and extract any shared classification, calculation or validation once.
 Keep operation labels and effects in their respective owners. Successful token
 conversion establishes representability; operation-specific sign, magnitude,
-finite-value and integral-value requirements stay in the operation helper,
+finite-value and integral-value requirements stay in validators called by operations,
 including historical revisions before a later requirement changes acceptance.
 
 Semantic judges receive the actual source, function boundaries, workflow plan,
@@ -574,8 +590,11 @@ the requested filename alone does not make that verdict inconsistent.
 Testing judges receive numbered current Python source and saved runner
 documentation/configuration. Runner documents are capped at eight files, 8 KB
 per file and 24 KB total. Additional AST evidence, bounded to 12 KB, identifies
-current equality assertions and the statements immediately following expected
-exceptions. Up to four recent completed coding commands from Harbor's Codex
+current equality assertions, local call arguments/defaults, and statements
+following expected exceptions without executing submitted source. Authored
+Python in hidden directories such as `.checks/` is included; known VCS,
+dependency, cache and linked-worktree directories and paths outside the
+submission remain excluded. Up to four recent completed coding commands from Harbor's Codex
 JSONL log add at most 10 KB, including command/output heads and tails, exit
 codes, literal runner-summary lines and later file-change positions. The
 summaries preserve results when printed source follows a run.
@@ -600,6 +619,7 @@ or mismatched quotes use the same one-retry budget; persistent inconsistency
 is a judge infrastructure exclusion. A matching quote does not establish its
 semantic claim, and this gate never awards an automatic pass. Empty submissions
 can fail on their missing evidence without quoting a nonexistent file.
+Authentic bracketed citations also pass the same exact path/line/text check.
 Worktree-check instructions are supplied only to judges whose criteria use that
 evidence. No task markers, expected feature counts or automatic passing scores
 are introduced.
@@ -625,17 +645,27 @@ fallthrough. Source inspection checks these obligations; passing assertions alon
 do not. Selected SRP keeps raw parsing/conversion in the parser and business
 validation/state updates in operation helpers, with a thin public dispatcher.
 
-The testing judge assesses the complete saved contract in one binary verdict,
-using current numbered source, relevant historical revisions and coding traces.
-It no longer generates a question per raise or rejection block. Existing source,
-trace and citation evidence helpers remain available. A missing trace is an
+The current testing judge requires all six binary dimensions to pass:
+`current_coverage`, `fixture_independence`, `public_seeding`,
+`rejection_preservation`, `checks_order`, and `checks_execution`. Four criteria
+use current source; two use chronology. Each criterion has a focused prompt and
+one independent call through the same Codex semantic judge. Current coverage,
+setup and read findings receive current source without the coding trace; the order/execution calls receive the chronological trace and focused
+instructions. Historical source remains available by lookup rather than being
+eagerly included in testing inputs. `criterion_prompts` selects a configured
+single-criterion template before the existing family/scope fallback, retaining
+the original task context and same-directory path checks. There is no per-raise
+question expansion or additional judge. SRP requires `parsing_dispatch`, `domain_validation`, and
+`shared_decisions` to all pass. A missing trace is an
 explicit verification limit, not evidence that code preceded tests. Required early
 rejections remain valid until the capability that replaces them, and a current
 query upgrade to an older test body belongs to the query's current Feature.
 Findings must identify a concrete violated rule with authentic evidence;
 optional isolated execution may resolve a material question when tools exist.
-The new single-criterion detail schema differs from historical expanded testing
+These detail schemas differ from earlier single-criterion and expanded testing
 results; do not claim direct per-criterion comparability or rescore old archives.
+The docs verifier requires the requested public API in the root README;
+internal checking helpers do not become additional product entrypoints.
 
 Debug/testing judges receive verifier-owned original failure logs in
 `tests/task-logs/`; agent-editable logs cannot redefine expected results.
@@ -645,8 +675,33 @@ immutable public behavior contracts. Worktree and docs remain programmatic.
 
 Codex semantic judges stream full prompts through file-backed stdin to avoid
 Linux argument limits. Archived prompt/backend evidence remains independent of
-coding execution transcripts. These runtime mechanisms and public task contracts
-were not changed in the simplification.
+coding execution transcripts. Evidence batching adds a scope suffix to testing
+artifacts so both inputs and responses remain available.
+
+The delivered revisions are testing **v0.1.100** and SRP **v0.0.62**.
+Testing resets each fixture inside its seed helper, derives expectations from
+known public inputs, and replaces limited mutation probes with all current
+read-only queries when reads become available. Required empty-domain mutation
+cases stay empty and assert the available empty-state reads. Stateless APIs have
+no mutable fixture requirement; malformed mutable calls still need meaningful
+seeds. Requested positive-only bounds require zero and negative rejection cases;
+unrequested numeric restrictions add no coverage obligation.
+
+Verification uses Codex for both coding and judging, with `gpt-6-luna` and `low`
+reasoning. The unchanged routing runtime received baseline
+`2026-10-15_232735_2444858` (0/1) and positive `2026-10-15_233146_2685679` (1/1),
+with zero rate-limit or infrastructure exclusions. The last complete full run,
+`2026-10-15_235102_3772959`, used testing v0.1.96 and SRP v0.0.62: 28/42 overall,
+testing 12/24, and SRP 23/24, with no exclusions. Subsequent run
+`2026-10-16_003229_2106898` used testing v0.1.98 and recorded 29/33 scored trials,
+but nine quota-limited trials prevent using it as acceptance or a rate comparison.
+Final prompt examples and routing checks pass; actual Codex judge controls accept
+valid no-read, stateless and required-empty cases while rejecting dependent
+expectations, unseeded malformed inputs and mutations before available reads.
+The user requested closure without further broad iteration, so there is no
+final-v0.1.100 full-suite pass-rate claim. Incomplete retained checks and late
+required cases remain genuine failures. Semantic judgments remain fallible;
+authentic citations prove quoted text, not the conclusion drawn from it.
 
 ## Configuration
 
