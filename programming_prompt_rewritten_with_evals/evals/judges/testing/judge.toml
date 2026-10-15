@@ -1,4 +1,4 @@
-# One semantic contract verdict; source and chronological evidence remain available.
+# Independent semantic dimensions; all must pass the same testing contract.
 [judge]
 judge = "codex"
 model = "gpt-6-luna"
@@ -7,8 +7,18 @@ timeout = 240
 prompt_template = "prompt.md"
 
 [[criterion]]
-name = "testing_contract"
-description = "saved public checks precede each capability's code, cover the current contract and retained rules, observe affected state after rejection with isolated cases, and have honest cumulative execution evidence; respect documented direct-check exceptions and report unavailable chronology separately"
+name = "current_coverage"
+description = "current runnable public assertions cover requested successes, policy-required grammar/numeric rejections and only request/log-required domain/resource failures across all retained files; generated README restrictions and implementation guards never create required domain cases"
+type = "binary"
+
+[[criterion]]
+name = "rejection_preservation"
+description = "every current mutable rejection has meaningful public seeding and immediate asserted affected-value and required-history reads using all currently available queries, including retained creation/malformed checks; stateless and valid empty-domain exemptions remain valid"
+type = "binary"
+
+[[criterion]]
+name = "checks_execution"
+description = "saved public checks and new-read upgrades precede each capability's code, followed by actual isolated cumulative execution after the last application/check edit and before later capability checks; documentation-only edits need no rerun; unavailable chronology alone is a reported limit, never a demonstrated no"
 type = "binary"
 
 [scoring]
