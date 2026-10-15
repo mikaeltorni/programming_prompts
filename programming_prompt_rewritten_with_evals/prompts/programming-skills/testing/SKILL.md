@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.83 — Save form-complete checks first; mutable rejection cases call one
+  v0.1.84 — Save form-complete checks first; mutable rejection cases call one
   fixture/rejection/read helper, and each new read extends its shared factory.
 ---
 
@@ -65,23 +65,25 @@ Use one shared rejection helper and one shared
 older inline/local copies into this owner. The factory constructs all current
 public command/expected-result pairs from independent fixture data; it never
 reads actual application state or autodetects command support. Callers supply
-expected data, not their own frozen query lists. Keep the current case fixture in
-`seed_case(expected_state)`: reset privately if needed, then seed through successful
-public calls using known fixture data. Every malformed-input case must actually
-execute a public seed, including zero/empty expected data; a zero-iteration loop
-after private reset is not a seed. Choose meaningful fixture data reachable through
-currently supported public calls. The helper calls this fixture for each case.
+expected data, not their own frozen query lists. The shared `seed_case()` resets
+privately if needed, then establishes meaningful state through successful current
+public calls and returns its independently known expected data. Compute that data
+from the fixture inputs/contract, never the unchecked return of a seed call.
+The rejection helper obtains its expected data from this fixture; callers cannot
+accidentally request an empty setup. Use this same fixture for blank, unknown and
+malformed query/reset cases. If a case needs another fixture, it follows the same
+public-seed/independent-data contract and uses identifiers matching its rejected input.
 Adapt the following pattern to the actual entrypoint; do not generate an exception loop
 inside each test:
 
 ```python
-def expect_rejection(command, expected_state, expected_error=ValueError):
+def expect_rejection(command, expected_error=ValueError):
     """Seed, reject input and immediately assert independently expected public state.
-    Parameters: command - rejected input; expected_state - known fixture data to seed; expected_error - required exception class.
+    Parameters: command - rejected input using the fixture's resources; expected_error - required exception class.
     Returns: None.
     """
-    print(f"command={command}, expected_state={expected_state}, expected_error={expected_error}")
-    seed_case(expected_state)
+    print(f"command={command}, expected_error={expected_error}")
+    expected_state = seed_case()
     observations = tuple(current_observations(expected_state))
     assert observations, "provide public observations"
     try:
@@ -101,6 +103,8 @@ fixture write/reload or clear, seed again before malformed input. Another test's
 final state is not a seed. Creation at zero can detect resource loss. A seed may
 cover a nonmutating rejection loop, but each iteration observes state before the
 next rejection, mutation or reset. A successful mutation afterward is not a read.
+An empty collection/default or zero-iteration setup is not a meaningful seed for
+malformed inputs. The separate valid empty-domain query case below stays empty.
 
 Use every current value/cardinality view and required history. Counts, private
 equality, history alone, ignored queries, empty observations and no-op callbacks
