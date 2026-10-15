@@ -58,7 +58,7 @@ sed -n '1,120p' programming_prompt_rewritten_with_evals/prompts/programming-skil
 
 The command prints the independent testing skill. The programming suite
 contains workflow, commits, worktree, docs, srp, commenting, logging, debug_logs,
-debug, and testing; see its [skill catalog](programming_prompt_rewritten_with_evals/prompts/programming-skills/README.md).
+debug, testing, and prompt_engineering; see its [skill catalog](programming_prompt_rewritten_with_evals/prompts/programming-skills/README.md).
 
 ## AI coding-agent prompt features
 
@@ -157,6 +157,30 @@ when a safe capture path is available. If visual confirmation would help but
 no capture path exists, it asks the user for a screenshot. SSH alone does not
 guarantee guest desktop access. Installed as a native skill under each
 harness's skill directory.
+
+### prompt_engineering
+
+Use `$prompt_engineering` or ask for `prompt_engineering` when creating or
+editing prompts. The [five-step policy](programming_prompt_rewritten_with_evals/prompts/programming-skills/prompt_engineering/SKILL.md)
+also applies to AI instructions in Markdown, including skills and judges.
+It keeps instructions simple, reads existing benchmark evidence, creates a small
+reusable evaluation suite when needed, and edits the main prompt and judge
+together. Actual model responses and correct/incorrect judge checks must pass;
+source-wording checks cannot substitute for behavioral evaluation.
+
+Enable or refresh the conditional policy across configured harnesses with
+`acc pp enable -v2 --skill prompt_engineering`; verify with
+`acc pp status --skill v2:prompt_engineering --check`. It is currently applied to
+all nine harness families. It remains optional in fresh-install and benchmark
+defaults; ordinary Markdown documentation alone does not activate its workflow.
+
+The [creation and repair cases](programming_prompt_rewritten_with_evals/evals/coding-prompts/README.md#prompt-engineering-cases)
+are selected with `--skills prompt_engineering --tasks prompt-create,prompt-repair`.
+The Codex-only baseline `2026-10-15_231357_1616784` scored 0/2; final positive
+`2026-10-15_233729_3012346` scored 2/2 with coding and judging on `gpt-6-luna`
+at low reasoning, zero rate-limited trials and zero infrastructure failures.
+These are one-attempt smoke checks on two tasks, not a broad reliability claim.
+Earlier failed verdicts remain archived. Syntax and scheduling self-checks passed.
 
 ### workflow
 
@@ -335,7 +359,7 @@ unverified. Scheduling, models, reasoning and immutable behavior checks are unch
 
 ACC's existing default set is `commits`, `worktree`, `workflow`, `docs`, `testing`,
 `srp`, `commenting`, `logging`, `debug`. Benchmark discovery excludes opt-in
-`workflow` and `debug_logs`; `logging-vague` remains a control. Dedicated repair
+`workflow`, `debug_logs`, and `prompt_engineering`; `logging-vague` remains a control. Dedicated repair
 trials receive `debug`, while other selected policies retain their coding family.
 Defaults and native selections were not changed by this content revision.
 Acceptance uses `gpt-6-luna` with low reasoning for both coding and judging.
