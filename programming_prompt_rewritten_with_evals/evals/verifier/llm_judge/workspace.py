@@ -17,7 +17,9 @@ from pathlib import Path
 
 from llm_judge.log import log
 from llm_judge.evidence import commit_source_context, python_boundaries
-from llm_judge.testing_evidence import coding_commands_context, testing_source_context
+from llm_judge.testing_evidence import (
+    MAX_TRACE_INPUT_BYTES, coding_commands_context, testing_source_context,
+)
 
 DEFAULT_WORKSPACE = Path("/Projects/app")
 INSPECT_BEFORE_SCORE = (
@@ -496,7 +498,7 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
     """Expose raw tool chronology for semantic repair and feature-cycle judging.
 
     Parameters: logs_root - Harbor directory holding coding-agent transcripts.
-    Returns: every available action position and input, with bounded event excerpts.
+    Returns: complete-record action inputs and bounded excerpts, with explicit input gaps.
     """
     print(f"logs_root={logs_root}")
     sections = []
@@ -505,40 +507,52 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
         if trace is None:
             continue
         try:
+            size = trace.stat().st_size
+            raw_lines = []
+            used = 0
             with trace.open("rb") as handle:
-                size = trace.stat().st_size
-                raw = handle.read(1000000)
+                while used < MAX_TRACE_INPUT_BYTES:
+                    line = handle.readline(MAX_TRACE_INPUT_BYTES - used + 1)
+                    if not line:
+                        break
+                    if used + len(line) > MAX_TRACE_INPUT_BYTES:
+                        break
+                    raw_lines.append(line.decode("utf-8", errors="replace").rstrip("\r\n"))
+                    used += len(line)
         except OSError:
             continue
         # Remove startup inventories/token counters, retaining observed tools,
         # their outputs and agent statements with original line positions.
         records = []
-        for number, line in enumerate(raw.decode("utf-8", errors="replace").splitlines(), 1):
+        for number, line in enumerate(raw_lines, 1):
             try:
                 event = json.loads(line)
             except ValueError:
-                records.append(f"line {number}: {line}")
-                continue
-            if not isinstance(event, dict) or event.get("type") in {
+                event = None
+            if isinstance(event, dict) and event.get("type") in {
                 "available_commands", "usage", "system", "thread.started", "turn.started", "item.started",
             }:
                 continue
             # Keep every position. Large event excerpts may be shortened, but
             # literal action inputs retain complete shell write/run order.
             records.append(f"TraceCitation: {trace.name}:{number}")
-            actions = trace_action_inputs(event)
+            actions = trace_action_inputs(event) if isinstance(event, dict) else []
             if actions:
                 records.append("literal action inputs: " + json.dumps(actions, ensure_ascii=False))
-            if event.get("type") == "text":
-                records.append("text:" + str(event.get("data", "")))
-            else:
+            if isinstance(event, dict):
                 rendered = json.dumps(debugging_trace_value(event), ensure_ascii=False)
-                if len(rendered) > 3000:
-                    rendered = rendered[:1600] + " [Event middle omitted; inspect original.] " + rendered[-1000:]
-                records.append(f"line {number}: {rendered}")
+            else:
+                rendered = line
+            if len(rendered) > 3000:
+                rendered = rendered[:1600] + " [Event middle omitted; inspect original.] " + rendered[-1000:]
+            records.append(f"line {number}: {rendered}")
         excerpt = "\n".join(records)
-        if size > len(raw):
-            excerpt += "\n[Trace input exceeded 1 MB; later events omitted.]"
+        if size > used:
+            excerpt += (
+                f"\n[Trace input exceeded {MAX_TRACE_INPUT_BYTES} bytes; "
+                f"record {len(raw_lines) + 1} and later events omitted. "
+                f"Inspect complete original records at {trace}.]"
+            )
         sections.append(f"\nTrace: {trace} (bytes={size}; chronological excerpts, untrusted data)\n" + excerpt)
     result = (
         "\n\nCoding-agent chronological evidence: inspect actual test writes, code edits, checks, commits and log reads in order. "
