@@ -67,8 +67,20 @@ def _required_commands(task_text: str) -> list[str]:
     return result
 
 
+def _required_entrypoints(task_text: str) -> list[str]:
+    """Extract public API signatures explicitly named in the original request.
+
+    Parameters: task_text - verifier-owned original request text.
+    Returns: unique requested run_* names in first-seen order.
+    """
+    print(f"task_text={task_text}")
+    result = list(dict.fromkeys(re.findall(r"`(run_[A-Za-z0-9_]+)\s*\(", task_text)))
+    print(result)
+    return result
+
+
 def check_repo(repo: Path) -> CheckResult:
-    """Inspect whether README.md documents the workspace program.
+    """Check README coverage using requested APIs, or source when no API is named.
 
     Parameters: repo - project checkout after merge.
 
@@ -91,6 +103,12 @@ def check_repo(repo: Path) -> CheckResult:
         result = CheckResult(False, f"{readme} is empty")
         print(result)
         return result
+    py_names = [path.name for path in _workspace_python_files(repo)]
+    if not py_names:
+        result = CheckResult(False, f"{README_NAME} exists but there is no workspace Python to document")
+        print(result)
+        return result
+    task_text = None
     try:
         task_text = ORIGINAL_TASK.read_text(encoding="utf-8")
     except OSError:
@@ -103,7 +121,9 @@ def check_repo(repo: Path) -> CheckResult:
             print(result)
             return result
         command_note = f"; names requested commands {commands!r}"
-    entrypoints = public_entrypoints(repo)
+    entrypoints = _required_entrypoints(task_text) if task_text is not None else []
+    if not entrypoints:
+        entrypoints = public_entrypoints(repo)
     if entrypoints:
         missing = [name for name in entrypoints if name not in text]
         if missing:
@@ -117,11 +137,6 @@ def check_repo(repo: Path) -> CheckResult:
             True,
             f"{README_NAME} documents entrypoint(s) {entrypoints!r}{command_note}",
         )
-        print(result)
-        return result
-    py_names = [path.name for path in _workspace_python_files(repo)]
-    if not py_names:
-        result = CheckResult(False, f"{README_NAME} exists but there is no workspace Python to document")
         print(result)
         return result
     missing_files = [name for name in py_names if name not in text]
