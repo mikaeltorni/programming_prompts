@@ -10,5 +10,8 @@ a missing evaluation suite was created with inputs and independent expectations;
 and before/after runs and per-case findings guided iteration. A blocked run is
 reported honestly, never counted as a pass.
 
+Assess simplicity by unnecessary complexity, repeated or speculative rules and
+case-specific patches, not a fixed word count or a required prompt structure.
+
 Criteria to score:
 {criteria}
