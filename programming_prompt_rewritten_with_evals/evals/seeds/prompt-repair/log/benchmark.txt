@@ -1,0 +1,11 @@
+Original benchmark: translation-labels, 0/3 passed.
+input: bonjour
+actual: hello (a French greeting)
+expected: hello
+input: merci
+actual: thanks
+expected: thank you
+input: salut
+actual: hi
+expected: unknown
+Judge calibration: the old judge incorrectly accepted all three incorrect outputs above.

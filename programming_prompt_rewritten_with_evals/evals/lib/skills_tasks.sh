@@ -119,7 +119,24 @@ task_family() {
   fi
 }
 
+task_policy_is_selected() {
+  # Accept an unrestricted task or one whose declared optional policy is selected.
+  # Parameters: $1 - resolved task prompt path.
+  # Returns: success for an applicable task, nonzero for an unselected policy.
+  printf 'prompt=%s\n' "$1" >&2
+  local prompt="$1" result=0
+  if [[ -f "${prompt%.md}.opt-in" ]] && ! skill_is_selected "$(cat "${prompt%.md}.opt-in")"; then
+    result=1
+  fi
+  printf 'return=%s\n' "$result" >&2
+  return "$result"
+}
+
 list_available_tasks() {
+  # Discover tasks whose optional policy requirement is currently selected.
+  # Parameters: $1 - optional coding, debug or all suite selector.
+  # Returns: sorted task names on stdout and success status.
+  printf 'suite=%s\n' "${1:-${SUITE_ARG:-default}}" >&2
   local suite="${1:-${SUITE_ARG:-$(default_task_suite)}}" directory prompt
   local -a directories=()
   [[ "$suite" == coding || "$suite" == all ]] && directories+=("$CODING_PROMPTS_DIR")
@@ -127,12 +144,18 @@ list_available_tasks() {
   for directory in "${directories[@]}"; do
     for prompt in "$directory"/*.md; do
       [[ -f "$prompt" && "$(basename "$prompt")" != README.md ]] || continue
+      task_policy_is_selected "$prompt" || continue
       printf '%s\n' "$(basename "$prompt" .md)"
     done
   done | sort
+  printf 'return=0\n' >&2
 }
 
 resolve_tasks() {
+  # Resolve and validate the requested current tasks before scheduling.
+  # Parameters: $1 - comma-separated task names, or empty for discovery.
+  # Returns: selected task names on stdout; nonzero for invalid selections.
+  printf 'raw=%s\n' "$1" >&2
   local raw="$1"
   local -a selected=()
   if [[ -z "$raw" ]]; then
@@ -156,6 +179,10 @@ resolve_tasks() {
       echo "Unknown task '$task'; available: $(list_available_tasks all | tr '\n' ' ')" >&2
       return 1
     }
+    if ! task_policy_is_selected "$path"; then
+      echo "Task '$task' requires its optional policy in --skills" >&2
+      return 1
+    fi
     if [[ "$(task_family "$task")" == debug ]]; then
       if ! skill_is_selected debug; then
         echo "Debug task '$task' requires --skills debug (alone or alongside other skills)" >&2
@@ -173,6 +200,7 @@ resolve_tasks() {
     fi
   done
   printf '%s\n' "${selected[@]}"
+  printf 'return=0\n' >&2
 }
 
 task_is_selected() {
