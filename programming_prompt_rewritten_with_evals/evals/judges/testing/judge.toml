@@ -8,31 +8,37 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "current_coverage"
-description = "judge ONLY current saved runnable assertions, not ad hoc terminal probes; requested positive operands need saved zero AND negative rejections, not zero alone; requested successes and grammar/numeric rejections are covered across retained files; MUST credit the same upfront count predicate's saved missing/extra cases for EVERY form reaching it, even if only one selector appears in those malformed cases; separate predicates do not share cases; domain rules come ONLY from original request/logs, never generated README or implementation; zero-operand forms require only extra-operand rejection, NEVER a missing operand"
+description = "judge ONLY current saved runnable assertions, not ad hoc terminal probes; require zero AND negative rejections ONLY when the original request/logs explicitly require positive-only operands, never infer sign restrictions from numeric input or positive success examples; requested successes and grammar/numeric rejections are covered across retained files; MUST credit the same upfront count predicate's saved missing/extra cases for EVERY form reaching it, even if only one selector appears in those malformed cases; separate predicates do not share cases; domain rules come ONLY from original request/logs, never generated README or implementation; zero-operand forms require only extra-operand rejection, NEVER a missing operand"
 type = "binary"
 evidence_scope = "current"
 
 [[criterion]]
 name = "fixture_independence"
-description = "mutable rejection expectations come from the contract and known public inputs, never unchecked application output or private application snapshots; identify the actual data origin; bookkeeping from known command operands is independent"
+description = "stateless APIs PASS this dimension; missing checks/evidence are not dependent expected data; mutable rejection expectations come from the contract and known public inputs, never unchecked application output or private application snapshots; identify the actual data origin; bookkeeping from known command operands is independent"
 type = "binary"
 evidence_scope = "current"
 
 [[criterion]]
 name = "public_seeding"
-description = "for a mutable API every rejected case needs meaningful state created by a successful public call AFTER the last private write and BEFORE rejection; a default/empty fixture that cannot expose clearing of existing state fails setup even if its read matches; expand each caller/default and zero-iteration loop; publicly creating a resource at zero is meaningful when the reads expose its loss; stateless APIs and valid empty-domain query errors are exempt"
+description = "for a mutable API every rejected case needs meaningful state created by a successful public call AFTER the last private write and BEFORE rejection; a default/empty fixture that cannot expose clearing of existing state fails setup even if its read matches; expand each caller/default and zero-iteration loop; publicly creating a resource at zero is meaningful when the reads expose its loss; stateless APIs, valid empty-domain query errors, and originally required empty-domain mutation failures keep their empty fixtures; malformed input is never exempt"
 type = "binary"
 evidence_scope = "current"
 
 [[criterion]]
 name = "rejection_preservation"
-description = "after each mutable rejected call assert all current affected value/cardinality/history reads; count alone cannot replace a value view; stateless interfaces and valid empty-domain query errors are exempt; the empty-domain exception itself observes emptiness, including after clear/reset, with no reseed or other read; successful mutations do not trigger this rejection-preservation rule"
+description = "FIRST classify side effects: mutations returning state NEVER count as read-only forms; with no read-only form permit the limited current mutation probe; otherwise after each mutable rejected call assert all current affected value/cardinality/history READ-ONLY queries BEFORE any successful mutation/reset/next rejection; returning a count/value does not make a mutation a read; remove ALL old mutating probes when reads exist, including probes after reads; ONLY with NO current public read, allow a limited CURRENT mutation probe instead, never demand a future API; count alone cannot replace a value view; stateless interfaces and valid empty-domain query errors are exempt; the empty-domain exception itself observes emptiness, including after clear/reset, with no reseed or other read; successful mutations do not trigger this rejection-preservation rule"
 type = "binary"
 evidence_scope = "current"
 
 [[criterion]]
+name = "checks_order"
+description = "for EACH capability name its REQUIRED saved success and rejected inputs with FIRST-SAVE positions; compare ONLY with that SAME capability's application edit, never earlier capabilities' code; required assertions and read upgrades precede its own edit; optional new junk spellings or unrequested domain cases added later are not an order failure; an older rejection observer does not supply still-unwritten required new-read malformed/empty cases; grade saved assertion order ONLY, not test execution; missing chronology alone is a limit, never a demonstrated no"
+type = "binary"
+evidence_scope = "chronology"
+
+[[criterion]]
 name = "checks_execution"
-description = "saved public checks and new-read upgrades precede each capability's code, followed by actual isolated cumulative execution after the last application/check edit and before later capability checks; documentation-only edits need no rerun; unavailable chronology alone is a reported limit, never a demonstrated no"
+description = "each newly saved suite is invoked as its baseline; a correct-path missing-entrypoint import failure IS a valid creation baseline before assertions execute; after implementation a real passing cumulative run follows the last application/check edit and precedes commit or the NEXT capability's first checks; never borrow a later pass across that boundary; FAILED/nonzero and agent claims do not prove a pass; documentation-only edits need no rerun; missing chronology alone is a limit, never a demonstrated no"
 type = "binary"
 evidence_scope = "chronology"
 
@@ -41,3 +47,15 @@ aggregation = "all_pass"
 
 [evidence_prompts]
 chronology = "chronology.md"
+
+# Keep each semantic decision focused on its own current-source evidence.
+[question_batch_sizes]
+"" = 1
+
+[criterion_prompts]
+current_coverage = "coverage.md"
+fixture_independence = "fixtures.md"
+public_seeding = "seeding.md"
+rejection_preservation = "preservation.md"
+checks_order = "order.md"
+checks_execution = "execution.md"

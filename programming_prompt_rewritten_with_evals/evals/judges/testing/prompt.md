@@ -7,8 +7,9 @@ the coding request appended at the end of this prompt; all must pass.
 `fixture_independence` checks expected-data origin; `public_seeding` checks the
 actually executed public fixture setup. Score these separately.
 `rejection_preservation` covers section 3 in every current retained body.
-`checks_execution` covers sections 1 and 4, including when new public reads
-were added to old checks. A good chronology cannot excuse missing current
+`checks_order` covers saved assertions and read upgrades before code;
+`checks_execution` covers actual baseline/cumulative runs and cycle boundaries.
+A good chronology cannot excuse missing current
 coverage or observations. In particular, tests originally written before a
 query still require that query in their retained current bodies. Judge their
 final contents for preservation, then their upgrade order separately.
@@ -103,7 +104,11 @@ blank input is a separate selector-grammar case.
 
 An excluded endpoint and a value beyond it need separate cases. If the original
 request requires positive numbers, zero-only rejections omit the negative-value
-case. Do not impose positivity when the request does not require it.
+case. Positive success examples do not imply positive-only acceptance. Do not
+impose positivity when the original request/logs do not require it.
+Before yes, enumerate the literal saved endpoint AND beyond-boundary inputs for
+each explicitly requested bound. For positive-only acceptance, identify both
+zero and a negative input; zero alone fails, even when other coverage is complete.
 
 A saved case set may cover an actually shared syntax or domain rule across
 commands. Trace the first applicable predicate: when one operand-count guard
@@ -165,13 +170,23 @@ it. A seed before a non-mutating rejection loop may cover all its iterations,
 but inside a loop the reads belong directly after that iteration's rejected
 call, not before or after the loop.
 
-Verify where each expected state value came from. A seed's unchecked returned
-value, parsed into a later expected read, is application output rather than an
-independent expectation. Use the contract and known preceding public calls;
-an already asserted seed result may supply a value whose expectation was checked.
-Score expected-data origin in `fixture_independence`. Independent bookkeeping
-calculated from known command operands is valid; identify an actual unchecked-output
-or private-application-data flow to allege dependent expectations.
+A mutation is never a read-only query merely because it returns a count or
+value. Inspect what each factory/probe call does, not its tuple position or
+label. Once public reads exist, a retained mutating probe before those reads
+violates immediate preservation checks; remove it rather than treating its
+returned count as a cardinality read.
+When every current command mutates, no read-only form exists even if those
+commands return stored values; apply the permitted limited-probe branch.
+
+For `fixture_independence`, trace expected data through the actual seed calls.
+Stateless interfaces pass this dimension; missing checks are a coverage or
+evidence limit, never proof of dependent mutable expectations.
+Resetting a fixture, publicly writing a known value, and expecting that value
+from its public read is independent. Parsing the unchecked write response and
+using it as the expected read is dependent. An independently asserted seed
+result and bookkeeping from known operands are valid. Judge that data flow,
+not copied helper names, example commands or a claim of independence; identify
+the actual unchecked-output or private-snapshot source for a no.
 
 For `public_seeding`, name the successful public call that actually executes after
 the last private fixture write and before each rejection. Evaluate every current
@@ -199,6 +214,10 @@ empty earlier in the same case. An asserted exception from a valid empty-domain
 query already observes that empty state; it needs neither reseeding nor another
 query afterward. Distinguish it from malformed query/reset input, whose state
 preservation still needs meaningful seeding and immediate reads.
+A well-formed mutating operation whose original contract requires rejection on
+an empty domain also keeps that empty fixture: a nonempty seed changes the case.
+It must still assert every available empty-state read after rejection. This
+exception never covers malformed input or replaces the other seeded cases.
 
 Once a read query exists, every retained rejection body in the current module,
 including the earliest creation, duplicate and malformed-input checks, uses it;
