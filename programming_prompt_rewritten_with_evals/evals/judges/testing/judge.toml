@@ -8,28 +8,36 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "current_coverage"
-description = "current runnable public assertions cover requested successes and grammar/numeric rejections across all retained files; domain rules come ONLY from the original request/logs, never numeric-operand syntax, generated README or implementation; explicitly required positive operands need zero AND negative cases; other requested strict endpoints and beyond both need cases; shared rules reuse the complete set"
+description = "judge ONLY current saved runnable assertions, not ad hoc terminal probes; requested positive operands need saved zero AND negative rejections, not zero alone; requested successes and grammar/numeric rejections are covered across retained files; MUST credit the same upfront count predicate's saved missing/extra cases for EVERY form reaching it, even if only one selector appears in those malformed cases; separate predicates do not share cases; domain rules come ONLY from original request/logs, never generated README or implementation"
 type = "binary"
+evidence_scope = "current"
 
 [[criterion]]
 name = "fixture_independence"
 description = "mutable rejection expectations come from the contract and known public inputs, never unchecked application output or private application snapshots; identify the actual data origin; bookkeeping from known command operands is independent"
 type = "binary"
+evidence_scope = "current"
 
 [[criterion]]
 name = "public_seeding"
-description = "for a mutable API every rejected case needs meaningful state created by a successful public call AFTER the last private write and BEFORE rejection; a default/empty fixture that cannot expose clearing of existing state fails setup even if its read matches; expand each caller/default and zero-iteration loop; stateless APIs and valid empty-domain query errors are exempt"
+description = "for a mutable API every rejected case needs meaningful state created by a successful public call AFTER the last private write and BEFORE rejection; a default/empty fixture that cannot expose clearing of existing state fails setup even if its read matches; expand each caller/default and zero-iteration loop; publicly creating a resource at zero is meaningful when the reads expose its loss; stateless APIs and valid empty-domain query errors are exempt"
 type = "binary"
+evidence_scope = "current"
 
 [[criterion]]
 name = "rejection_preservation"
 description = "after each mutable rejected call assert all current affected value/cardinality/history reads; count alone cannot replace a value view; stateless interfaces and valid empty-domain query errors are exempt; the empty-domain exception itself observes emptiness, including after clear/reset, with no reseed or other read; successful mutations do not trigger this rejection-preservation rule"
 type = "binary"
+evidence_scope = "current"
 
 [[criterion]]
 name = "checks_execution"
 description = "saved public checks and new-read upgrades precede each capability's code, followed by actual isolated cumulative execution after the last application/check edit and before later capability checks; documentation-only edits need no rerun; unavailable chronology alone is a reported limit, never a demonstrated no"
 type = "binary"
+evidence_scope = "chronology"
 
 [scoring]
 aggregation = "all_pass"
+
+[evidence_prompts]
+chronology = "chronology.md"

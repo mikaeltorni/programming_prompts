@@ -78,14 +78,18 @@ expectations are not an implementation.
 
 Coverage is the union of actual assertions, loops and helper calls across all
 current check files; a stateless file need not duplicate cases covered
-elsewhere. For each requested command or query, require meaningful success
+elsewhere. Terminal-only probes are execution evidence, not saved coverage.
+For each requested command or query, require meaningful success
 cases and the applicable rejections:
 
 - Blank input and unknown selectors when the grammar has selectors; a valid
   free-form first operand is not an unknown selector.
-- Missing and extra operands for each documented form, even without error
-  prose; a zero-operand command needs only the extra-operand case. Optional
-  operands and remaining or multi-word text keep their requested acceptance.
+- Missing and extra operands for each distinct shape rule, even without error
+  prose; a zero-operand command needs only the extra-operand case. Several
+  forms checked by one upstream count predicate share its missing/extra cases.
+  A form needs no dedicated malformed assertion when that same predicate is
+  already covered. Optional operands and remaining or multi-word text keep
+  their requested acceptance.
 - Invalid numeric text for each numeric operand, separately from domain and
   resource failures; invalid-text cases are retained when numeric acceptance
   widens.
@@ -97,9 +101,18 @@ An excluded endpoint and a value beyond it need separate cases. If the original
 request requires positive numbers, zero-only rejections omit the negative-value
 case. Do not impose positivity when the request does not require it.
 
-A complete set of boundary cases may cover an actually shared validation rule
-across commands; sharing does not remove an excluded endpoint or its beyond-boundary
-case. No case per source `raise` is required. Separate numeric operands and different rejection reasons
+A saved case set may cover an actually shared syntax or domain rule across
+commands. Trace the first applicable predicate: when one operand-count guard
+runs before several forms, a missing/extra pair reaching it covers that shared
+shape rule. A different selector alone is never a missing shape case.
+For example, if `len(parts) != required_count` rejects before selector routing,
+all forms reaching that predicate share its saved missing/extra checks. Testing
+those bad counts with just one selector is sufficient for that predicate; a
+missing dedicated malformed call for another selector is not a failure.
+Equal arity in separate guards, or a common final fallback alone, does not prove
+sharing. An untested rule still needs cases. Sharing does not remove an excluded
+endpoint or its beyond-boundary case. No case per source `raise` is required.
+Separate numeric operands and different rejection reasons
 still need their own cases. Superseded expectations are retired; all other
 regressions stay. Do not invent unsupported types, aliases, numeric limits,
 or require every malformed numeric spelling. A retained invalid-text case for
