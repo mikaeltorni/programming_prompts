@@ -29,8 +29,8 @@ limit to report, not evidence of churn.
 
 ## Three owners
 
-Parser. One parser call receives the raw command once and returns the
-operation selector plus fully converted arguments. It owns all raw stripping,
+Parser. Public dispatch crosses one parsing boundary that returns the
+operation selector plus fully converted arguments. That boundary owns all raw stripping,
 splitting, text normalization, slicing, regex matching, command-shape checks,
 operand-count validation before indexing, and token conversion (`int`,
 `float`, `Decimal`). It returns numeric values, never numeric strings that
@@ -42,6 +42,12 @@ form. While the slice has one operation, arguments-only parsing and a direct
 operation call are valid. The parser must not enforce domain rules on the
 converted value (sign, finiteness, integral value, magnitude, funds, capacity,
 resource existence or uniqueness).
+
+The outer parser may classify a form and call a form parser with the raw
+command before returning converted arguments. Those helpers are inside the
+same boundary. Repeated raw reads there do not establish a second public
+parsing boundary; identify raw handling after public dispatch chooses an
+operation, or another concrete violation, before failing composition.
 
 Builtin conversion may naturally reject invalid numeric syntax, and lexical
 checks on raw numeric tokens belong to parsing. Distinguish those from a
@@ -73,6 +79,12 @@ a converted value belongs here; conversion having produced that type does not
 move the guard into parsing. Distinct arithmetic operations or domain rules
 need no common helper, and opposing updates to one state variable are distinct
 operations. A shared variable alone does not establish shared logic.
+
+For `domain_validation`, trace the predicate's callers. A standalone validator
+called by an operation is correct operation-layer ownership. The mere presence
+of a predicate on a converted value is not a violation. For a `no`, identify
+the parser/conversion helper that executes it, directly or through a called
+validator, or the operation-specific rule incorrectly executed by dispatch.
 
 Compare the domain guards across the operation helpers as a separate part of
 inspection. Different calculations may still repeat the same acceptance rule:

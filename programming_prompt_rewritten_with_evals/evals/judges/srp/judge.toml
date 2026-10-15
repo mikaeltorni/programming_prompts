@@ -8,12 +8,12 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "parsing_dispatch"
-description = "from the first authored working slice, raw-command shape and token conversion belong to the parser, public dispatch routes converted arguments unchanged, and calculations/mutations remain in operation helpers; growth is focused"
+description = "from the first authored working slice, public dispatch crosses one parsing boundary and routes converted arguments unchanged; form parsers may compose inside that boundary with raw input; calculations/mutations remain in operation helpers and growth is focused"
 type = "binary"
 
 [[criterion]]
 name = "domain_validation"
-description = "domain predicates on converted values (including sign, finiteness, integrality, magnitude, resource existence and capacity) belong to the operation layer, never parsing or conversion helpers; calling them input validity does not make them syntax"
+description = "trace callers of converted-value domain predicates: validators called by operations are correct, while parser/conversion callers or operation-specific guards in dispatch fail; predicate presence alone is not a violation, and input-validity wording never makes a domain rule syntax"
 type = "binary"
 
 [[criterion]]
