@@ -93,8 +93,13 @@ cases and the applicable rejections:
   resource failures (missing, duplicate, insufficient) with otherwise valid
   input.
 
-One case may cover an actually shared validation rule; no case per source
-`raise` is required. Separate numeric operands and different rejection reasons
+An excluded endpoint and a value beyond it need separate cases. If the original
+request requires positive numbers, zero-only rejections omit the negative-value
+case. Do not impose positivity when the request does not require it.
+
+A complete set of boundary cases may cover an actually shared validation rule
+across commands; sharing does not remove an excluded endpoint or its beyond-boundary
+case. No case per source `raise` is required. Separate numeric operands and different rejection reasons
 still need their own cases. Superseded expectations are retired; all other
 regressions stay. Do not invent unsupported types, aliases, numeric limits,
 or require every malformed numeric spelling. A retained invalid-text case for
@@ -134,7 +139,8 @@ mutable interfaces.
 
 For a mutable interface, each rejected call is preceded when possible by a
 successful public seed that creates meaningful state (public creation at zero
-can be meaningful when a read detects resource loss) and is immediately
+can be meaningful when a read detects resource loss; a private reset to zero
+is never a public creation or seed) and is immediately
 followed by public read-only assertions of the affected values and required
 history, before any other rejection, mutation, reset or reload. Trace the seed
 before the rejected call; a successful call after the rejection does not seed
@@ -150,19 +156,17 @@ Score expected-data origin in `fixture_independence`. Independent bookkeeping
 calculated from known command operands is valid; identify an actual unchecked-output
 or private-application-data flow to allege dependent expectations.
 
-For `public_seeding`, require this executed order: last private fixture write →
-successful public seed → rejected call → asserted public read. Name the seed that
-executes after the private write and BEFORE rejection for each caller/default path.
-A `get` executed after the rejected call is an observation, never its seed.
-Evaluate seed-loop counts:
-zero iterations execute no public seed. A reset/reload/assignment inside a helper
-discards the caller's earlier seed, even when it writes the expected value. Correct
-expectations and later reads do not seed state. A private write followed directly by
-rejection fails; cite that write and the caller/default reaching that path. A fixture
-function containing a public call does not prove every invocation executes it.
-For example, `for _ in range(count): public_seed()` executes no call when the
-caller's argument/default is zero. A positive count in another case does not cover
-that zero case. One unseeded rejected call makes `public_seeding` no.
+For `public_seeding`, name the successful public call that actually executes after
+the last private fixture write and before each rejection. Evaluate every current
+caller's arguments/defaults and loop count: `range(0)` executes no seed, even if
+the reset established the correct expected value. A helper containing a public
+call is insufficient when this invocation skips it. A private write discards any
+earlier seed; later reads and other cases' positive counts cannot replace it.
+Require a fixture that would expose accidental clearing of existing state.
+An empty/default fixture fails setup even when its read matches; the API remains
+mutable in that case. Public resource creation at zero can expose resource loss.
+One such unseeded rejected call makes `public_seeding` no; cite its private write
+and the actual caller/default path.
 
 A mutation's returned count or value, private equality or history alone does
 not replace an available value read; private resets or reloads may initialize
