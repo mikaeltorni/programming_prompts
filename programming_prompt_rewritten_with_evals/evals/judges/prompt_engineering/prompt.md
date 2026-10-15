@@ -21,5 +21,9 @@ of both correct and incorrect outputs.
 Verify each prompt revision also edits its judge, creating a missing counterpart,
 and that the pair remains consistent.
 
+Apply this policy to explicit prompt_engineering requests and AI-instruction
+Markdown creation or editing, including skill and judge prompts. Ordinary
+Markdown documentation alone is not applicable and passes without extra work.
+
 Criteria to score:
 {criteria}
