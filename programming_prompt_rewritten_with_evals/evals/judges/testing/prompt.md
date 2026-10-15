@@ -95,6 +95,11 @@ One case may cover an actually shared validation rule; no case per source
 `raise` is required. Separate numeric operands and different rejection reasons
 still need their own cases. Superseded expectations are retired; all other
 regressions stay. Do not invent unsupported types, aliases, numeric limits,
+or require every malformed numeric spelling. A retained invalid-text case for
+an operand still covers that operand after decimal acceptance widens; do not
+demand another decimal-looking junk token merely because the first case was
+written in an earlier Feature. Judge the union of current executed assertions.
+Do not invent
 error wording or internal representations. A listed valid range does not by
 itself specify the result outside it: require a beyond-bound rejection only
 when the original request or original failure log excludes that bound. For
