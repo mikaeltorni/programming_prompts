@@ -161,7 +161,7 @@ harness's skill directory.
 ### prompt_engineering
 
 Use `$prompt_engineering` or ask for `prompt_engineering` when creating or
-editing prompts. The [five-step policy](programming_prompt_rewritten_with_evals/prompts/programming-skills/prompt_engineering/SKILL.md)
+editing prompts. The [four-step policy](programming_prompt_rewritten_with_evals/prompts/programming-skills/prompt_engineering/SKILL.md)
 also applies to AI instructions in Markdown, including skills and judges.
 It keeps instructions simple, reads existing benchmark evidence, creates a small
 reusable evaluation suite when needed, and edits the main prompt and judge
@@ -176,11 +176,17 @@ defaults; ordinary Markdown documentation alone does not activate its workflow.
 
 The [creation and repair cases](programming_prompt_rewritten_with_evals/evals/coding-prompts/README.md#prompt-engineering-cases)
 are selected with `--skills prompt_engineering --tasks prompt-create,prompt-repair`.
-The Codex-only baseline `2026-10-15_231357_1616784` scored 0/2; final positive
-`2026-10-15_233729_3012346` scored 2/2 with coding and judging on `gpt-6-luna`
-at low reasoning, zero rate-limited trials and zero infrastructure failures.
-These are one-attempt smoke checks on two tasks, not a broad reliability claim.
-Earlier failed verdicts remain archived. Syntax and scheduling self-checks passed.
+The initial two-trial smoke passed, but the larger run
+`2026-10-15_235755_9782` scored only 1/6. Revision v0.0.13 shortened the policy,
+made separate main-prompt and model-judge calls explicit, and clarified final-answer
+capture and waiting for active evaluations. Its judge now reads complete evidence
+and recognizes successful reruns without requiring a printed Git diff.
+The unchanged two tasks, three attempts each, scored 6/6 in
+`2026-10-16_000515_446512`, with zero rate-limited or infrastructure trials.
+Coding and semantic judging used `gpt-6-luna` at low reasoning. One generated
+runner reported that it did not apply low reasoning to its nested target calls;
+that limitation remains recorded in its verdict. This is still a small suite,
+not a guarantee of reliability. Original failed verdicts remain unchanged.
 
 ### workflow
 
