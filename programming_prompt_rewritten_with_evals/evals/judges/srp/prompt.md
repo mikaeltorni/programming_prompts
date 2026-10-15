@@ -28,6 +28,9 @@ is valid even in the first single-operation slice. It must not reparse raw input
 convert tokens after routing, repeat operand-shape guards, calculate, choose deltas
 or mutate state. Numeric strings awaiting conversion are not converted arguments.
 Operations own arithmetic, sums/extrema/sorting/index adjustment and state changes.
+An operation helper is a separately called function or method. A selector branch
+inside the public entrypoint remains dispatch, including for zero-operand queries;
+calling a validator there does not turn that branch's calculation into a helper.
 Reading/formatting existing state needs no pass-through getter. Literal labels and
 formatting parsed text with an already computed operation result are valid; a
 formatting-only helper is optional. Arithmetic/classification inside interpolation

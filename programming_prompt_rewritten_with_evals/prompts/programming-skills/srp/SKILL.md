@@ -1,8 +1,8 @@
 ---
 name: srp
 description: >-
-  v0.0.57 — Parse raw input once into converted arguments; operations call domain
-  validators and share equivalent rules, calculations and classifications.
+  v0.0.61 — Parse raw input once; operations call validators for converted values
+  and share equivalent rules, calculations and classifications.
 ---
 
 # Parsing, validation, operations and dispatch
@@ -13,10 +13,14 @@ parsing and core operation in that first repair, not a later capability.
 
 | Owner | Responsibility |
 | --- | --- |
-| Parser | Raw classification, normalization, operand shape and token conversion. |
-| Domain validators | Acceptance predicates and rejection for converted values/resources. |
-| Operations | Call applicable validators, calculate results and change state. |
+| Parser | Raw syntax, normalization, operand shape and token conversion; no acceptance checks on converted numbers. |
+| Domain validators | Every requested value/resource acceptance predicate and rejection, including empty-state checks; operations call this owner from its first use, even with one caller. |
+| Operations | Separate callables that call applicable validators, calculate results and change state. |
 | Public dispatch | Parse once, route converted arguments unchanged, return/format results. |
+
+Apply only the request's current acceptance rules. After conversion, sign,
+finiteness and integrality checks belong in validators called by operations.
+Never repeat them in parsing, even when the operation already calls a validator.
 
 Implement only the current capability. Future commands/selectors wait for their
 own cycle. A validator called by one current operation owns a current rule; it
@@ -36,14 +40,15 @@ valid for one operation; a validated selector suffices for a zero-operand form.
 When adding forms, update that return and its caller together. Return normalized
 text and numeric values, never numeric strings or unchecked operand lists.
 
-Builtin conversion errors and lexical numeric grammar belong to parsing. After
-successful float/Decimal conversion, sign, finiteness, magnitude, integrality,
-zero-divisor and resource acceptance belong to called domain validators. NaN and
-infinity can convert successfully; rejecting them is not lexical conversion.
-Likewise, float conversion followed by `value.is_integer()` rejection is domain
-acceptance even in the first whole-number capability. Builtin `int(token)`
-rejecting lexical syntax is different. Representation normalization is permitted
-only when it preserves acceptance and mathematical value.
+Builtin conversion errors and lexical numeric grammar belong to parsing.
+After `float()` or `Decimal()` succeeds, rejection through `math.isfinite()`,
+`value.is_finite()` or `value.is_integer()` belongs to a called domain validator,
+including the first whole-number capability. Raising a conversion exception
+after one of these predicates still rejects a converted value; it does not make
+the rule lexical. NaN and infinity can convert successfully. Magnitude,
+zero-divisor and resource acceptance likewise belong to called validators.
+Builtin `int(token)` rejecting lexical syntax stays in parsing. Representation
+normalization is permitted only when it preserves acceptance and mathematical value.
 
 ## Operations call rule owners
 
@@ -131,11 +136,15 @@ and any necessary parser representation together: drop integrality when fraction
 become accepted; retain finiteness only if the current contract requires it.
 
 Before adding another operation, read related saved owners and report their
-rules and current callers. Reuse the same called validator for equivalent rules;
+rules and current callers. Derive the new operation's prerequisites from its
+contract; sharing storage or operand counts does not inherit another operation's
+acceptance rules. Returning a value does not make a mutation a read-only query.
+Reuse the same called validator when both operations require equivalent rules;
 extract every earlier inline copy in that edit, including conditional guards and
 shared subconditions. Positive-and-finite remains shared when another operation
-also requires integrality. Different resource identities, names, units, comparison
-direction or later mutations do not make equivalent acceptance different. Validate
+also requires integrality. Different resource identities, names, units, error
+messages, comparison direction or read/write callers do not make equivalent
+acceptance different. Validate
 each resource in a multi-resource operation. An unused helper shares nothing.
 
 For an availability rule, both operations call `require_available(available, requested)`:
@@ -168,6 +177,8 @@ Dispatch may branch on the parsed selector, including a fallback, but never
 repeat shape checks, convert tokens, reconstruct commands or inspect raw input
 after parsing. Forward converted values unchanged. Operations own arithmetic,
 deltas, sums/extrema/sorting/index adjustments, replacement/clearing and mutations.
+An operation helper is a separate callable. A selector branch inside the public
+entrypoint remains dispatch; zero operands do not permit arithmetic there.
 For a one-based position, dispatch calls `operation(parsed_index)` unchanged;
 the operation validates it and computes `parsed_index - 1`. Computing that offset
 in dispatch or hiding it inside a helper argument is still operation logic.
