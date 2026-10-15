@@ -13,7 +13,12 @@ type = "binary"
 
 [[criterion]]
 name = "fixture_independence"
-description = "for each mutable rejection, expected state comes from the request and known preceding calls, never an unchecked application return parsed into an expectation; after any private fixture assignment or reload, successful public seeding happens before rejection; private assignment itself is never a public seed; stateless checks and valid empty-domain query rejections are exempt"
+description = "mutable rejection expectations come from the contract and known public inputs, never unchecked application output or private application snapshots; identify the actual data origin; bookkeeping from known command operands is independent"
+type = "binary"
+
+[[criterion]]
+name = "public_seeding"
+description = "before each mutable rejected call, a successful public seed executes AFTER the last private fixture write and BEFORE rejection; a read after rejection is not a seed; evaluate defaults/loop counts, including zero iterations; stateless and valid empty-domain queries are exempt"
 type = "binary"
 
 [[criterion]]

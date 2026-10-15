@@ -4,6 +4,8 @@ actually executed. Score the supplied dimensions independently against
 the coding request appended at the end of this prompt; all must pass.
 
 `current_coverage` covers section 2 and the current assertions.
+`fixture_independence` checks expected-data origin; `public_seeding` checks the
+actually executed public fixture setup. Score these separately.
 `rejection_preservation` covers section 3 in every current retained body.
 `checks_execution` covers sections 1 and 4, including when new public reads
 were added to old checks. A good chronology cannot excuse missing current
@@ -144,17 +146,23 @@ Verify where each expected state value came from. A seed's unchecked returned
 value, parsed into a later expected read, is application output rather than an
 independent expectation. Use the contract and known preceding public calls;
 an already asserted seed result may supply a value whose expectation was checked.
-Trace the last private fixture write before each rejected call. A private reset,
-reload or assignment after public seeding discards that seed; require successful
-public seeding after that write, even when the assignment writes the expected
-value. A helper resetting privately and then immediately rejecting is not a
-publicly seeded case. Inspect its actual body, not its name or docstring.
-Score that data origin and last-write order in `fixture_independence`
-separately from whether reads exist. Parsing an unchecked seed return into
-`expected_state` still copies application output. Assigning private state
-inside the rejection helper is a private fixture write, even when a caller
-previously seeded through the public interface. A later read cannot make
-either construction independent or publicly seeded.
+Score expected-data origin in `fixture_independence`. Independent bookkeeping
+calculated from known command operands is valid; identify an actual unchecked-output
+or private-application-data flow to allege dependent expectations.
+
+For `public_seeding`, require this executed order: last private fixture write →
+successful public seed → rejected call → asserted public read. Name the seed that
+executes after the private write and BEFORE rejection for each caller/default path.
+A `get` executed after the rejected call is an observation, never its seed.
+Evaluate seed-loop counts:
+zero iterations execute no public seed. A reset/reload/assignment inside a helper
+discards the caller's earlier seed, even when it writes the expected value. Correct
+expectations and later reads do not seed state. A private write followed directly by
+rejection fails; cite that write and the caller/default reaching that path. A fixture
+function containing a public call does not prove every invocation executes it.
+For example, `for _ in range(count): public_seed()` executes no call when the
+caller's argument/default is zero. A positive count in another case does not cover
+that zero case. One unseeded rejected call makes `public_seeding` no.
 
 A mutation's returned count or value, private equality or history alone does
 not replace an available value read; private resets or reloads may initialize
