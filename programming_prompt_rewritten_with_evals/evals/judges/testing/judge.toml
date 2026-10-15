@@ -13,7 +13,7 @@ type = "binary"
 
 [[criterion]]
 name = "rejection_preservation"
-description = "every current mutable rejection has meaningful public seeding and immediate asserted affected-value and required-history reads using all currently available queries, including retained creation/malformed checks; stateless and valid empty-domain exemptions remain valid"
+description = "every current mutable rejection has meaningful public seeding and immediate assertions for all currently available affected-state read forms, including values, cardinality and required history; a cardinality-only helper omitting a value view fails even if current rejection code appears unable to mutate it; retain stateless and valid empty-domain exemptions"
 type = "binary"
 
 [[criterion]]

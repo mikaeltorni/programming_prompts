@@ -155,6 +155,19 @@ query exists in the current interface, and that body's rejected call is not
 already followed by an asserted read of it. Redundant or duplicated reads are
 not a failure.
 
+Compare the executed observations with every currently available public read
+form; finding one read in a helper does not establish the complete upgrade.
+For example, a cardinality query cannot detect changed stored values, and a
+value aggregate can miss resource loss. A newer read does not supersede an
+older read unless the request explicitly replaces that API. Check both views
+when the contract exposes both; apply the same comparison to later read forms.
+Name the current public read forms and the helper's actually asserted views
+in this dimension's reasoning. An omitted value view is a failure even when
+the current rejection guard appears unable to mutate that value: these checks
+protect the public preservation contract across implementation changes. The
+seed already supplies the independently expected value; do not demand a
+separate expected mutation to justify checking it after rejection.
+
 Apply the no-query exemption to the actual revision being inspected. An early
 creation test may have needed a weaker probe originally, but its retained
 current body must use reads now available in the final interface. Check the
