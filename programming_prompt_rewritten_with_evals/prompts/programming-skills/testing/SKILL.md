@@ -1,8 +1,8 @@
 ---
 name: testing
 description: >-
-  v0.1.69 — Save success and grammar checks before code; one shared query
-  factory upgrades every retained rejection's state assertions before query code.
+  v0.1.70 — Before each baseline, save successes and grammar rejections for
+  every current form; shared observers upgrade all retained mutable rejections.
 ---
 
 # Public checks before code
@@ -12,11 +12,20 @@ checks → baseline → code → cumulative pass → selected commit/delivery be
 starting the next capability's checks. Selected commits/workflow own the queue;
 testing alone adds no plan or Git requirement. Repairs follow the same order.
 
-The first saved checks for a form include its successes **and** applicable
-grammar rejections, even when a repair log shows only a valid-input failure.
-For mutable interfaces, establish one shared rejection/observation owner in
-the first capability; every rejection case calls it. Extend that owner as
-public reads arrive, before editing their application code.
+Before the first baseline for each capability, inspect its saved assertions
+form by form: success; missing/extra operands; invalid text for **each numeric
+operand of each form**; and requested domain/resource failures. Include blank
+input and an unknown selector when the grammar has selectors. A zero-operand
+form still needs an extra-operand rejection. These checks belong in the first
+draft, including stateless programs and valid-input repairs. A success-only
+baseline is incomplete; do not implement code after one.
+
+For a mutable interface, create its shared rejection helper in that same first
+draft and put exception capture there. Every rejection case calls it; an older
+bare exception assertion must be rewired when retained. Its one shared query
+factory gains every current read **before query code**, so all earlier cases
+execute the new assertions too. Before a baseline, inspect actual older bodies
+as well as the new file. Do not leave this work until final verification.
 
 ## Save complete current checks
 
