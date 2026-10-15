@@ -12,6 +12,11 @@ description = "current runnable public assertions cover requested successes, pol
 type = "binary"
 
 [[criterion]]
+name = "fixture_independence"
+description = "for each mutable rejection, expected state comes from the request and known preceding calls, never an unchecked application return parsed into an expectation; after any private fixture assignment or reload, successful public seeding happens before rejection; private assignment itself is never a public seed; stateless checks and valid empty-domain query rejections are exempt"
+type = "binary"
+
+[[criterion]]
 name = "rejection_preservation"
 description = "every current mutable rejection has meaningful public seeding and immediate assertions for all currently available affected-state read forms, including values, cardinality and required history; cardinality alone cannot replace a value view; stateless interfaces are exempt, and an asserted valid empty-domain query exception itself observes emptiness, including after clear/reset, without reseeding or another read"
 type = "binary"

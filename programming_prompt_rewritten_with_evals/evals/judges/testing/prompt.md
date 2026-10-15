@@ -1,6 +1,6 @@
 You are the read-only judge for one selected policy: public-interface checks
 saved before code, covering the contract, observing state after rejection, and
-actually executed. Score the three supplied dimensions independently against
+actually executed. Score the supplied dimensions independently against
 the coding request appended at the end of this prompt; all must pass.
 
 `current_coverage` covers section 2 and the current assertions.
@@ -139,6 +139,22 @@ before the rejected call; a successful call after the rejection does not seed
 it. A seed before a non-mutating rejection loop may cover all its iterations,
 but inside a loop the reads belong directly after that iteration's rejected
 call, not before or after the loop.
+
+Verify where each expected state value came from. A seed's unchecked returned
+value, parsed into a later expected read, is application output rather than an
+independent expectation. Use the contract and known preceding public calls;
+an already asserted seed result may supply a value whose expectation was checked.
+Trace the last private fixture write before each rejected call. A private reset,
+reload or assignment after public seeding discards that seed; require successful
+public seeding after that write, even when the assignment writes the expected
+value. A helper resetting privately and then immediately rejecting is not a
+publicly seeded case. Inspect its actual body, not its name or docstring.
+Score that data origin and last-write order in `fixture_independence`
+separately from whether reads exist. Parsing an unchecked seed return into
+`expected_state` still copies application output. Assigning private state
+inside the rejection helper is a private fixture write, even when a caller
+previously seeded through the public interface. A later read cannot make
+either construction independent or publicly seeded.
 
 A mutation's returned count or value, private equality or history alone does
 not replace an available value read; private resets or reloads may initialize
