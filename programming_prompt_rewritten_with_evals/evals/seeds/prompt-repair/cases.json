@@ -1,0 +1,26 @@
+[
+  {
+    "input": "bonjour",
+    "expected": "hello",
+    "incorrect": [
+      "Hello!",
+      "hello means bonjour"
+    ]
+  },
+  {
+    "input": "merci",
+    "expected": "thank you",
+    "incorrect": [
+      "thanks",
+      "Thank you."
+    ]
+  },
+  {
+    "input": "salut",
+    "expected": "unknown",
+    "incorrect": [
+      "hi",
+      "hello"
+    ]
+  }
+]

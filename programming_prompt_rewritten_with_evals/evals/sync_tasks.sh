@@ -230,7 +230,7 @@ for prompt_path in prompt_files:
     artifact = meta["artifact"]
     description = meta["description"].replace('"', '\\"')
     oracle_src = oracles_dir / f"{name}.py"
-    if not oracle_src.is_file():
+    if meta.get("oracle") != "none" and not oracle_src.is_file():
         raise SystemExit(f"Missing oracle for '{name}': {oracle_src}")
 
     task_dir = tasks_dir / name
@@ -277,8 +277,9 @@ for prompt_path in prompt_files:
     if cases_src.is_file():
         shutil.copy2(cases_src, task_dir / "tests" / "debug-cases.json")
     log(f"prepared original task context for {name}")
-    shutil.copy2(oracle_src, task_dir / "solution" / "oracle.py")
-    write_solve_sh(task_dir / "solution" / "solve.sh", artifact, name)
+    if meta.get("oracle") != "none":
+        shutil.copy2(oracle_src, task_dir / "solution" / "oracle.py")
+        write_solve_sh(task_dir / "solution" / "solve.sh", artifact, name)
     print(f"materialized task {name} -> {task_dir}", flush=True)
 
 log(

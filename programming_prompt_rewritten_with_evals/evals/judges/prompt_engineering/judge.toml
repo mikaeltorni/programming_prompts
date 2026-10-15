@@ -7,7 +7,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "prompt_engineering"
-description = "The prompt expresses the original requested behavior."
+description = "Applicable prompt edits use benchmark evidence, simple behavioral evaluations, concise general instructions and aligned prompt/judge revisions; verification limits are reported honestly."
 type = "binary"
 
 [scoring]
