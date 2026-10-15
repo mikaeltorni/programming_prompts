@@ -57,24 +57,22 @@ _MAX_RUNNER_TOTAL_BYTES = 24_000
 
 
 def _is_skipped_python(path: Path, workspace: Path) -> bool:
-    """Return True when *path* lives under junk/hidden dirs, not solution code.
+    """Exclude known non-solution directories and paths outside the submission.
 
-    Args:
-        path: Candidate ``*.py`` file.
-        workspace: Judge ``--workspace`` root.
-
-    Returns:
-        True to omit the file from the prompt listing.
+    Parameters: path - candidate Python file; workspace - submission root.
+    Returns: True for excluded paths, otherwise False, including authored hidden files.
     """
+    print(f"path={path} workspace={workspace}")
     try:
         relative = path.resolve().relative_to(workspace.resolve())
     except ValueError:
+        print(True)
         return True
     for part in relative.parts:
         if part in _SKIP_DIR_NAMES:
+            print(True)
             return True
-        if part.startswith(".") and part not in {".", ".."}:
-            return True
+    print(False)
     return False
 
 
