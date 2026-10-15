@@ -19,6 +19,7 @@ Current skills:
 | [`debug_logs`](debug_logs/SKILL.md) | Explicit-only read-logs-first policy, pending numeric positive evidence |
 | [`debug`](debug/SKILL.md) | Diagnose, reproduce, repair and verify logged failures |
 | [`docs`](docs/SKILL.md) | README.md after the code: program, entrypoint, commands |
+| [`prompt_engineering`](prompt_engineering/SKILL.md) | Optional prompt Markdown engineering: simple instructions, paired judge edits and real model evaluations |
 | [`workflow`](workflow/SKILL.md) | Explicit-only worktree → plan → per-feature tests/code/commit → docs |
 
 **Logging eval note:** pair `logging` (or `logging-vague`) with `srp` so the
@@ -86,8 +87,8 @@ finishes 3.1 saved checks and baseline, 3.2 implementation and cumulative checks
 then 3.3 working commit and required delivery before the next feature starts.
 Documentation follows all feature cycles. The workflow prompt owns the cycle
 with or without companions; those companions add their detailed requirements.
-Default discovery excludes both `workflow` and `debug_logs`; either remains
-explicitly selectable with `--skills`.
+Default discovery excludes `workflow`, `debug_logs`, and `prompt_engineering`;
+each remains explicitly selectable with `--skills`.
 
 ## Policy and judge alignment
 
@@ -102,3 +103,14 @@ The October 10, 2026 simplification passed static content validation and isolate
 instruction assembly/judge packaging. Benchmark performance is unverified for
 this revision; original archived verdicts remain unchanged. Its testing detail
 schema is one criterion rather than historical expanded subquestions.
+
+## Prompt engineering
+
+`prompt_engineering` is an optional conditional policy: invoke it by name or
+create/edit AI-instruction Markdown, including skill and judge prompts. It reads
+existing results, keeps changes small, edits both prompt and judge, and reuses or
+creates simple cases with real model calls and calibrated judge responses.
+Ordinary documentation alone is outside its scope. Its matching judge receives
+Markdown, evaluation data/runners, original logs and chronological evidence.
+Select `prompt-create,prompt-repair` to exercise its two focused Harbor cases;
+see the [case catalog](../../evals/coding-prompts/README.md#prompt-engineering-cases).

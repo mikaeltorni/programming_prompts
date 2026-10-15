@@ -56,3 +56,21 @@ Select tasks through the benchmark's canonical flags:
 ```bash
 ./run_benchmark.sh --harness codex --eval-agent codex --tasks todo,bank,stats --skills srp,commits,worktree -k 1
 ```
+
+## Prompt engineering cases
+
+`prompt-create` creates a short question-label prompt and its judge with no
+pre-existing evaluation suite. `prompt-repair` repairs a short translation prompt
+and judge using original benchmark failures and independently specified cases.
+Both target `gpt-6-luna` at low reasoning through the available Codex CLI.
+
+Select them with `--skills prompt_engineering --tasks prompt-create,prompt-repair`.
+A task's optional `<name>.opt-in` file names its required policy. Discovery skips
+it when that policy is unselected, and explicit selection rejects it too, keeping
+the existing coding suite unchanged. The policy itself is also opt-in.
+
+These tasks declare `oracle: none` in frontmatter: they evaluate prompt-engineering
+behavior through the semantic judge and do not provide Python reference solutions
+or support oracle runs. Other tasks still require their existing oracle files.
+The verifier includes actual prompt Markdown, evaluation cases (including JSONL),
+runners, results and original failure evidence instead of requiring Python source.
