@@ -31,7 +31,14 @@ Operations own arithmetic, sums/extrema/sorting/index adjustment and state chang
 An operation helper is a separately called function or method. A selector branch
 inside the public entrypoint remains dispatch, including for zero-operand queries;
 calling a validator there does not turn that branch's calculation into a helper.
-Reading/formatting existing state needs no pass-through getter. Literal labels and
+Reading/formatting existing state needs no pass-through getter. Assigning an
+existing stored value to a local variable is still a direct read, not arithmetic
+or a state mutation. The separate-operation rule applies to calculations and
+mutations, not to such a read, including a zero-operand query. Conversely,
+`stored = calculate(stored)` in dispatch mutates stored state when `stored` is
+global or a stored field; the helper doing arithmetic does not move that write
+out of dispatch. The operation must own both calculation and state change.
+Literal labels and
 formatting parsed text with an already computed operation result are valid; a
 formatting-only helper is optional. Arithmetic/classification inside interpolation
 still belongs to operations. Universal representation guards on parsed values are
