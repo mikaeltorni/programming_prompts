@@ -1,8 +1,8 @@
 ---
 name: srp
 description: >-
-  v0.0.49 — Create called validators for current domain rules from first use;
-  parse and convert before thin dispatch, keeping calculations in operations.
+  v0.0.54 — Parsing returns converted arguments; operations call validators
+  for converted-value and resource acceptance, sharing every current rule.
 ---
 
 # Parsing, validation, operations and dispatch
@@ -12,6 +12,11 @@ rule. Reuse it when another operation needs that rule.** This reliable default
 avoids copying inline guards during later growth. A validator with one current
 caller owns a real current rule; it is not a future capability or framework.
 Do not invent acceptance rules the request does not require.
+
+Put each current value/resource acceptance predicate and its rejection in that
+called validator, including a rule needed only in one operation branch. The
+operation may choose whether the validator applies, then calls it; leaving
+the predicate and `raise` inline bypasses the rule owner and invites copies.
 
 Read the entire request before coding. From the first agent-authored working
 slice, including a small script or repair of a mixed entrypoint, keep the
@@ -42,6 +47,8 @@ converted arguments. It owns stripping, splitting, slicing, regex matching,
 text normalization, selector classification and operand counts before indexing.
 Check each documented form, including zero-operand forms. Exact matching is
 valid. Smaller form parsers may compose inside this boundary.
+Internal form helpers are part of that one parsing boundary; the dispatcher
+still calls the outer parser once and receives fully converted arguments.
 
 Prefer selector-and-arguments results from the first slice so later forms
 extend the same parser. Arguments-only parsing is valid for one operation,
@@ -56,13 +63,18 @@ operation layer: sign, finiteness, magnitude, integral-value restrictions,
 zero divisors, resource constraints, existence, uniqueness and funds/capacity.
 A successful float/Decimal conversion can produce NaN or infinity; calling
 its finiteness rejection invalid input does not make it a conversion rule.
+Likewise, `if not value.is_integer()` after successful float conversion is a
+whole-value acceptance rule, even in the first whole-number capability; put it
+in the operation's called validator. Builtin `int(token)` rejecting lexical
+syntax is different from converting with float and then rejecting its value.
 Representation normalization may preserve acceptance and mathematical value;
 it must not hide a converted-value rejection in parsing.
 
-For a current numeric form requiring finite values, keep conversion and the
+For a current numeric form requiring finite whole-valued numbers, keep conversion and the
 acceptance check in different owners. Even `inf`/`nan` can convert successfully;
-the operation rejects them through its validator. A parser may call the
-conversion helper; only operations call the domain validator:
+the operation rejects them through its validator. The outer parser calls the
+conversion helper before returning its converted argument tuple. Dispatch and
+operations never call token-conversion helpers; operations call domain validators:
 
 ```python
 import math
@@ -91,13 +103,26 @@ def require_finite(value):
     return value
 
 
-def calculate_half(value):
-    """Halve a number accepted by the current operation's rule.
-    Parameters: value - the already converted number.
-    Returns: half the accepted value.
+def require_integral(value):
+    """Require the finite whole value accepted by the current operation.
+    Parameters: value - the already converted floating-point number.
+    Returns: the accepted finite whole value.
     """
     print(f"value={value}")
     value = require_finite(value)
+    if not value.is_integer():
+        raise ValueError("fractional value")
+    print(value)
+    return value
+
+
+def calculate_half(value):
+    """Halve a finite whole-valued number accepted by the current operation.
+    Parameters: value - the already converted floating-point number.
+    Returns: half the accepted whole value.
+    """
+    print(f"value={value}")
+    value = require_integral(value)
     result = value / 2
     print(result)
     return result
@@ -106,6 +131,8 @@ def calculate_half(value):
 Apply that boundary to Decimal finiteness and converted-value integrality too.
 Widening an integer-only form to decimal values changes the converted-value
 validator and representation, without moving acceptance into its parser.
+When fractions become accepted, its operation drops the integral restriction;
+it retains the finite rule only when the current contract still requires it.
 
 ## Operations call rule owners
 
@@ -123,6 +150,30 @@ def require_available(available, requested):
         raise ValueError("insufficient available quantity")
     print(requested)
     return requested
+
+
+def consume_quantity(available, requested):
+    """Calculate what remains after an accepted consumption.
+    Parameters: available - current quantity; requested - quantity to consume.
+    Returns: the remaining quantity.
+    """
+    print(f"available={available}, requested={requested}")
+    requested = require_available(available, requested)
+    result = available - requested
+    print(result)
+    return result
+
+
+def calculate_request_cost(available, requested, unit_price):
+    """Calculate a request cost accepted by the same availability rule.
+    Parameters: available - current quantity; requested - quantity to price; unit_price - price per unit.
+    Returns: the accepted request's cost.
+    """
+    print(f"available={available}, requested={requested}, unit_price={unit_price}")
+    requested = require_available(available, requested)
+    result = requested * unit_price
+    print(result)
+    return result
 ```
 
 Every operation requiring that rule calls the same owner with its own
@@ -188,8 +239,10 @@ does not complete the extraction.
 Distinct calculations or domain rules need no common helper. Opposing updates
 sharing a state variable are distinct operations; sharing storage alone proves
 no shared decision. Operations choose their own delta, compute results and
-own replacement/clearing, sums, extrema, sorting and index adjustment. Derived
-acceptance flags or validation modes belong here too. Revising numeric
+own replacement/clearing, sums, extrema, sorting and index adjustment. Operations
+choose which current validation modes/rules apply; their validators own the
+accept/reject predicates. Mode selection is not permission to repeat those
+predicates inline. Revising numeric
 acceptance changes the operation/validator and any necessary parser
 representation together, while routing continues to forward converted data.
 
