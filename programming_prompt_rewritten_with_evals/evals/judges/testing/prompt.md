@@ -212,6 +212,11 @@ archived evidence in a separate host directory does not require the original
 agent to have run in that new host directory. Missing execution evidence is
 a reported verification limit; a `no` still requires a concrete demonstrated
 ordering, import or execution defect.
+Trace a repaired snapshot through subsequent commits, merges and runs before
+using an earlier failed run as the final result. A repair write followed by a
+passing cumulative run, commit/merge and passing delivered run is sufficient;
+no additional write after the repair is required. Cite an actual later source
+change or unexecuted assertion to claim the passing run used a different snapshot.
 Separate infrastructure failures from defects. Respect
 project test prohibitions and static or low-impact direct-check exceptions;
 installing a framework or hosted CI is never required.
