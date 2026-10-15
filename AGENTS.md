@@ -86,10 +86,14 @@ remain excluded limits, never passing trials or evidence of prompt quality.
 
 ## Harness smoke tests when the agent verifies evals code
 
+**Codex-only verification is the temporary default, at the user's request.**
+Use Codex as both the coding harness and semantic judge. Do not run Grok or
+Claude smoke jobs unless the user explicitly requests another harness.
+
 When an agent changes Harbor wrappers, verifier code, `run_benchmark.sh`,
 or other evals runtime — not prompt-only edits — it must run a **1-attempt
-baseline and a 1-attempt positive** job for **every coding harness**
-(`codex`, `grok`, `cc`) before reporting the task done. Use `-k 1`.
+baseline and a 1-attempt positive** job with **the Codex coding harness**
+before reporting the task done. Use `--harness codex` and `-k 1`.
 Always pass `--eval-agent codex` — see *Judges: Codex only while testing* below.
 Prompt-only work still uses Harbor when a live check is needed; do not add
 pytest under `programming_prompt_rewritten_with_evals/`.
