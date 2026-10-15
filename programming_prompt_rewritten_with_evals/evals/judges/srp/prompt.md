@@ -116,6 +116,13 @@ fallback. Choosing the operation is dispatch; choosing a delta or computing a
 value is an operation. Parser validation of supported selectors and dispatch
 on that selector are distinct decisions.
 
+Combining parsed text and an operation's already computed result in a final
+string is permitted formatting. It needs no extra helper whose only work is
+building that response. Trace the values: interpolation of existing parsed
+arguments and helper results contains no domain classification or calculation.
+Arithmetic, raw parsing, classification and mutation inside an interpolation
+still belong to their existing owners; formatting does not excuse them.
+
 This selector distinction also applies to the first single-operation slice.
 A branch on the validated selector and an unreachable unsupported-selector
 fallback are permitted dispatch; they do not duplicate parser classification
