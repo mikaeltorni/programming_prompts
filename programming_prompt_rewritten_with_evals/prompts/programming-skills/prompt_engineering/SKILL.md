@@ -1,10 +1,16 @@
 ---
 name: prompt_engineering
 description: >-
-  v0.0.5 — Guide prompt creation and revision.
+  v0.0.6 — Use when asked for prompt_engineering or when creating or editing AI
+  instructions in any prompt Markdown file, including skills and judges. Keep
+  prompts simple and improve them with aligned evaluations.
 ---
 
 # Prompt engineering
+
+Use this policy whenever the user asks for prompt_engineering, or when creating
+or editing a Markdown file that contains instructions for an AI, including skill
+and judge prompts. Ordinary Markdown documentation alone does not activate it.
 
 Create or revise the requested prompt to express its intended behavior.
 
