@@ -1,9 +1,15 @@
 ---
 name: prompt_engineering
 description: >-
-  v0.0.1 — Guide prompt creation and revision.
+  v0.0.2 — Guide prompt creation and revision.
 ---
 
 # Prompt engineering
 
 Create or revise the requested prompt to express its intended behavior.
+
+Before revising, read the existing test results, benchmark outputs and failure
+examples. If no evaluation suite exists, create a small reusable suite with
+inputs and independently expected outcomes. Run it before and after the change;
+read the per-case results and iterate on demonstrated failures. Stop when the
+requested behavior passes, or report a concrete blocker without claiming a pass.
