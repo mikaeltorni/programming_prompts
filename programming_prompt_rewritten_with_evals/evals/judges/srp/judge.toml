@@ -13,7 +13,7 @@ type = "binary"
 
 [[criterion]]
 name = "domain_validation"
-description = "trace callers of converted-value domain predicates: validators called by operations are correct, while parser/conversion callers or operation-specific guards in dispatch fail; predicate presence alone is not a violation, and input-validity wording never makes a domain rule syntax"
+description = "every current converted-value/resource acceptance predicate and rejection belongs to a validator called by its operation, even for one caller or branch; inline operation guards, parser domain filters and operation-specific dispatch guards fail; trace actual callers, not predicate presence alone"
 type = "binary"
 
 [[criterion]]
