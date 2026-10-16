@@ -86,11 +86,6 @@ _TESTING_CITATION = re.compile(
     r"(?=[ \t]+(?:Citation:\s*(?:[0-9a-f]{7,40}:)?[^\s|:]+\.py:\d+\s*\|"
     r"|TraceCitation:\s*[a-zA-Z0-9_-]+\.txt:\d+)|\n|$)"
 )
-_BRACKET_TESTING_CITATION = re.compile(
-    r"\[(?:(?P<commit>[0-9a-f]{7,40}):)?"
-    r"(?P<path>[^\s|:]+\.py):(?P<line>\d+)\s*\|\s*(?P<source>[^\n]+?)\]"
-    r"(?=[ \t]*(?:\n|$)|[ \t]+(?:\[|Citation:))"
-)
 
 
 class UnreliableJudgeScore(RuntimeError):
@@ -342,17 +337,14 @@ def _assertion_syntax_present(python_files: list[Path]) -> bool:
 def _testing_citation_issue(
     reasoning: str, python_files: list[Path], *, logs_root: Path = Path("/logs/agent")
 ) -> str | None:
-    """Validate canonical/bracketed Python quotes or available trace references.
+    """Validate Python quotes or available transcript references for a testing finding.
 
     Parameters: reasoning - judge finding; python_files - submitted Python paths;
         logs_root - allowed chronological transcript root.
     Returns: a quotation issue, or None when the cited evidence is authentic.
     """
     print(f"reasoning={reasoning} python_files={python_files} logs_root={logs_root}")
-    citations = sorted(
-        [*_TESTING_CITATION.finditer(reasoning), *_BRACKET_TESTING_CITATION.finditer(reasoning)],
-        key=lambda match: match.start(),
-    )
+    citations = list(_TESTING_CITATION.finditer(reasoning))
     if not citations:
         trace_reference = re.search(r"\bTraceCitation:|\b[a-zA-Z0-9_-]+\.txt:\d+", reasoning)
         if not trace_reference and not _assertion_syntax_present(python_files):
