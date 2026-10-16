@@ -180,7 +180,7 @@ def write_pinned_judge_dir(
 
 
 def scoped_judge_directory(judge_dir: Path, criteria: list[dict[str, str]]) -> tuple[Path, Path]:
-    """Copy requested criteria, preferring a configured single-criterion prompt.
+    """Copy a judge with only the requested criterion blocks.
 
     Parameters: judge_dir - canonical judge directory; criteria - one evidence batch.
     Returns: temporary parent to clean up and its same-named scoped judge directory.
@@ -207,9 +207,7 @@ def scoped_judge_directory(judge_dir: Path, criteria: list[dict[str, str]]) -> t
     target = parent / judge_dir.name
     target.mkdir()
     metadata = tomllib.loads(config)
-    fragment_names = (set(metadata.get("evidence_prompts", {}).values())
-                      | set(metadata.get("question_prompts", {}).values())
-                      | set(metadata.get("criterion_prompts", {}).values()))
+    fragment_names = set(metadata.get("evidence_prompts", {}).values()) | set(metadata.get("question_prompts", {}).values())
     for fragment_name in fragment_names:
         fragment_path = (judge_dir / fragment_name).resolve()
         if fragment_path.parent != judge_dir.resolve():
@@ -220,8 +218,7 @@ def scoped_judge_directory(judge_dir: Path, criteria: list[dict[str, str]]) -> t
     scope = next(iter(scopes)) if len(scopes) == 1 else ""
     families = {entry.get("question_family", "") for entry in criteria}
     family = next(iter(families)) if len(families) == 1 else ""
-    criterion_fragment = metadata.get("criterion_prompts", {}).get(next(iter(names))) if len(names) == 1 else None
-    fragment = criterion_fragment or metadata.get("question_prompts", {}).get(family) or metadata.get("evidence_prompts", {}).get(scope)
+    fragment = metadata.get("question_prompts", {}).get(family) or metadata.get("evidence_prompts", {}).get(scope)
     if fragment:
         fragment_path = (judge_dir / fragment).resolve()
         if fragment_path.parent != judge_dir.resolve():

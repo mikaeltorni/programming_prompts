@@ -1,240 +1,121 @@
 ---
 name: testing
 description: >-
-  v0.1.100 — Save complete public checks before code; one mutable rejection helper
-  seeds state and asserts every current read through one growing factory.
+  v0.1.50 — Save and run each Feature's public-interface checks before its code,
+  then verify the working revision with fresh state and retained regressions.
 ---
 
-# Public checks before code
+# Verify each capability through its public interface
 
-Read the full request and existing checks. Each current capability has two gates:
-save and run success AND applicable rejection assertions BEFORE application edits;
-then obtain a real cumulative pass AFTER the last code/check edit and BEFORE
-commit or the next capability's checks. Earlier capabilities' code already exists;
-the check gate precedes THIS capability's edit. Repairs use both gates. Testing alone adds
-no plan or Git requirement. Prefer one plain assertion module in an empty project;
-preserve an existing framework. No new framework or hosted CI is required.
-Save retained checks inside the task checkout so they remain reviewable and
-can be committed with the code; external scratch files do not deliver them.
-Honor project test prohibitions and static/low-impact direct-check
-exceptions with actual syntax, link, consistency or evaluation checks.
+Read the whole request and work on the current capability only. With selected
+commits/workflow, use their Feature queue and finish the current commit/delivery
+before starting the next checks. Testing alone requires the checks-before-code
+sequence, without adding Git commits or a plan format.
 
-## Build the rejection path first
+## Save checks before code
 
-An API is mutable as soon as any current command changes state, including a
-zero-operand command with no read query yet. Build the shared rejection path
-in the FIRST saved checks, not when a query arrives. Without a current read,
-the same factory supplies a weaker current public probe and states its limit.
-That limit does not block implementation. Never create or call a future observer.
-A public read means a call that does not mutate state. If every current command
-mutates, the no-read rule applies even when those commands return stored values.
+Save runnable public-interface assertions and run them before this capability's
+application edit. Compute expected results from the request, original logs and
+that case's preceding calls, never from application output. Use existing project
+tooling; stdlib assertions or unittest suffice for a new project. Apply selected
+function contracts to tests, fixtures and helpers from their first draft.
 
-Write these owners once and make every mutable rejection caller use them:
+Save success and rejection checks together before code for each current
+command/query, including specified boundaries and applicable cases below:
 
-- `seed_case()` itself establishes a known starting state EACH invocation, then creates meaningful state through
-  successful CURRENT public calls and returns independent expected data. Compute
-  expectations from known inputs and the contract, never unchecked call results
-  or private application snapshots. A private zero/default is not a public seed;
-  public resource creation at zero can expose resource loss. The helper's caller
-  must not default to an empty setup or a zero-iteration public loop.
-  A framework's `setUp` does not repeat when one test loops over helper calls;
-  put the required reset inside the seed, rather than assuming the first seed's value persists.
-- `current_observations(expected_state)` builds every current public read and
-  expected result from that data. Callers pass expected data, never their own
-  frozen query lists. No application reads or support autodetection construct
-  expectations. Known-input bookkeeping is independent, but is not itself a read.
-  Once a public read exists, remove mutating probes: returning a value/count
-  never makes a mutation read-only, and no mutation may precede those reads.
-  Replace the entire probe tuple with current read-only pairs; prepending a
-  read while retaining old mutation probes is not that replacement.
-- `expect_rejection()` calls the seed, rejects, then immediately asserts all those
-  reads. Only this helper captures expected exceptions: individual mutable tests
-  call it instead of using `assertRaises`, `pytest.raises` or `try`/`except`.
-  Rewire older captures in every retained file into the same helper and factory.
+- Blank input and unknown operations when the requested grammar has selectors.
+  Valid free-form first operands are not unknown selectors.
+- Missing and extra operands for documented forms, even without explicit error
+  prose. Zero-operand commands need only extra rejection. Optional operands and
+  remaining/multi-word text retain their requested acceptance.
+- Invalid numeric text for each numeric operand, separately from domain and resource
+  failures. Keep invalid-text cases when numeric acceptance changes.
+  Exercise strict excluded endpoints and values beyond them.
+  Do not invent unsupported types, numeric limits, error wording or aliases.
+- For a mutable interface, the state reads after each rejected call described
+  under *Observe state after rejection*. When this capability adds a public
+  read-only query, this item also means editing every earlier check file so
+  each of its rejected calls is followed by that query's assertion; that edit
+  is part of this capability's checks and is saved before its code.
 
-Adapt this recipe to CURRENT commands and results. The illustrative API starts
-at zero and initially supports only `advance`: add three and return `value=<n>`.
-`reset_fixture()` is private setup. With no read yet, a further `advance` is a
-limited public probe, not a reason to invent a getter or stop. Reset inside EVERY
-seed invocation because the preceding probe changed state. Expectations below
-come from that known start and the specified delta, not parsed call results.
+One representative case may cover an actually shared validation rule; separate
+numeric operands and different rejection reasons still need applicable checks.
+Review concrete inputs/assertions in all saved loops and helpers for omissions;
+a short coverage list may help, but no additional inventory file is required.
+Before the baseline, add the applicable rejection cases above for this
+capability's own command or query; success-only checks are incomplete, and
+rejection cases saved for a later command do not cover an earlier one.
 
-```python
-def seed_case():
-    """Reset and publicly create independently known state for this rejection.
-    Parameters: none.
-    Returns: the known seeded value.
-    """
-    print("parameters=none")
-    reset_fixture()
-    assert run_command("advance") == "value=3"
-    expected_state = 3
-    print(expected_state)
-    return expected_state
+Keep earlier regression assertions except rules this capability explicitly
+replaces. Check earlier rules against their earlier source, not against the
+final module. A fractional rejection required now is valid until a later decimal
+extension replaces it. Defer future executable expectations and public commands.
+Update every affected earlier expectation, including rejection loops and expected
+outputs, when a later Feature replaces its rule.
 
+## Observe state after rejection
 
-def current_observations(expected_state):
-    """Build the limited current probe while no public read exists.
-    Parameters: expected_state - independently known seeded value.
-    Returns: the current mutation probe and independently expected response.
-    """
-    print(f"expected_state={expected_state}")
-    observations = (("advance", f"value={expected_state + 3}"),)
-    print(observations)
-    return observations
+For mutable interfaces, establish meaningful state with successful public calls
+before a rejection when possible. A private reset/reload may initialize fresh
+cases; it does not replace public seeding. Resource creation at zero value can
+be meaningful when a public read detects resource loss.
+A successful call after rejection is not its seed; keep valid empty-query cases separate.
 
+After each rejection, immediately assert independently expected affected values
+and required history through currently available public read-only queries,
+before another rejection, mutation, reset or reload. A mutation returning a
+value/count, private equality or history alone cannot replace an available value
+read. Use aggregates when they are the only view and disclose their limits.
+A seed before a nonmutating rejection loop can cover all iterations.
+Review each loop body: the public read assertions belong immediately after
+that iteration's rejected call, not before or after the loop.
 
-def expect_rejection(command, expected_error=ValueError):
-    """Seed, reject input and immediately assert independently expected public state.
-    Parameters: command - rejected input using the fixture's resources; expected_error - required exception class.
-    Returns: None.
-    """
-    print(f"command={command}, expected_error={expected_error}")
-    expected_state = seed_case()
-    observations = tuple(current_observations(expected_state))
-    assert observations, "provide public observations"
-    try:
-        run_command(command)
-    except expected_error:
-        pass
-    else:
-        raise AssertionError("expected rejection")
-    for query, expected in observations:
-        assert run_command(query) == expected
-    print(None)
+When a Feature introduces a public read-only query, its checks-before-code
+step has two parts, both before any application edit:
 
+1. Save the new query's own success and rejection checks.
+2. Open every earlier saved check file and, inside each retained rejection
+   body, insert an assertion of that query's independently expected result
+   immediately after the rejected call, seeding meaningful state first where
+   the body has none. Include the earliest creation, duplicate and
+   malformed-input bodies, even ones that only used private state before.
+   One check file per Feature does not exempt the earlier files; a separate
+   new test does not upgrade an old body, and editing earlier files for this
+   purpose is required, not a regression.
 
-reset_fixture()
-assert run_command("advance") == "value=3"
-assert run_command("advance") == "value=6"
-rejected_commands = ("", "unknown", "advance extra")
-for rejected_command in rejected_commands:
-    expect_rejection(rejected_command)
-```
+Run the cumulative suite afterward: the edited old bodies now fail on the
+missing query, and that failure is part of this Feature's baseline. This is a
+current-suite update, not an early implementation of the query. A read whose
+result is never asserted, or whose failure is swallowed by a bare try/except,
+observes nothing. Routing every rejected call through one saved helper that
+performs the call and then the current reads keeps this upgrade a single edit.
+If no read exists yet, use the permitted weaker public probe and record its
+limit; do not invent or pull forward a future query. A valid query rejecting
+because its domain is empty keeps that empty fixture; its exception observes emptiness. This exemption
+does not cover malformed inputs in the same loop. Stateless interfaces need
+neither seeds nor state reads.
 
-Only when a requested read `inspect` is introduced, replace the existing factory
-ABOVE the cumulative runner with the following definition. This removes the
-mutation probe; it does not append a second factory after older calls. Save the
-read's own success/malformed cases too, then run the upgraded older rejection
-and baseline before read code. Later reads add pairs without dropping `inspect`.
+## Run and review
 
-```python
-def current_observations(expected_state):
-    """Build the current read-only observations after their introduction.
-    Parameters: expected_state - independently known seeded value.
-    Returns: all current public read queries and expected responses.
-    """
-    print(f"expected_state={expected_state}")
-    observations = (("inspect", f"value={expected_state}"),)
-    print(observations)
-    return observations
-```
+Record the actual baseline, separating missing behavior from dependency or
+infrastructure errors. An absent-entrypoint import failure is valid for creation;
+existing passing checks can protect a refactor. Implement only this capability,
+then run its checks and retained regressions with fresh independent case state.
+Preserve required multi-call sequences and verify mutable-case isolation with
+a repeat in the same process or another order. Mock unnecessary external effects;
+use temporary targets for install/config checks and avoid destructive actions.
 
-Keep the complete current rejected-input set routed through that helper.
-Adding a new helper-based test while older classes/files still capture their
-own mutable exceptions leaves those older cases unprotected. Rewrite their
-bodies to call the shared owner; do not just add a second newer test.
+After the last edit, run the saved cumulative suite directly with its full output
+and exit status visible. Verify its directory, flags, environment, imports and
+discovery execute nonzero behavioral assertions covering all delivered behavior.
+Call saved check functions or use discovery that actually collects them;
+running a file of uncalled definitions verifies nothing.
+When extending a unittest class, put new test methods inside the collected
+class before its runner; appending functions after `unittest.main()` does not collect them.
+Resolve failures, inspect source/coverage, and finish selected commit/delivery
+before the next Feature. Report actual commands/results and concrete limits.
 
-Every rejected call needs its seed AFTER the last private clear/write/reload and
-BEFORE rejection. Another test's final state is not a seed; never erase a seed
-before rejecting. A nonmutating rejection loop may share one seed, but each
-iteration asserts reads immediately before the next rejection, mutation or reset.
-A later successful mutation is not a read or a seed for an earlier rejection.
-Different fixtures still publicly seed matching resource identifiers and return
-independent expected data. Blank, unknown and malformed query/reset cases use
-meaningful seeded state too.
-
-Assert every available affected value, cardinality and required history view.
-Count alone, history alone, private equality, ignored query results, empty
-observations and no-op callbacks cannot replace available value reads. Use an
-aggregate when that is the only read and state its limit. With NO current public
-read, use a weaker public probe and state its limit. Never invent an observer
-API or execute a future command.
-
-Stateless APIs skip state setup/observation and may capture exceptions directly;
-they have no mutable fixture-dependence obligation. Coverage remains required.
-Valid queries rejecting an intentionally empty domain observe emptiness through
-that exception, including after reset: keep those cases empty, with no reseed or
-extra read. When the contract requires a mutating operation to reject an empty
-domain, also keep that case empty: use an explicit empty fixture in the shared
-rejection helper, then assert all available empty-state reads. A nonempty seed
-would change that required case. Neither exemption covers malformed input or
-replaces the meaningful seeded rejection cases.
-
-## Save every current case before application edits
-
-In the first saved draft include:
-
-| Current form/rule | Saved public assertions |
-| --- | --- |
-| Selector grammar | Blank and unknown selectors. |
-| Each command/query | Every specified success/result variant, including empty results; missing and extra operands, only extra for zero-operand forms. |
-| Each numeric operand | Invalid text with other operands/resources valid. |
-| Requested domain/resources | Strict excluded endpoints AND beyond; ONLY a stated positive-only input rule requires zero AND negative rejection; required empty-domain, missing/duplicate resource and insufficient funds/capacity cases. |
-
-For each requested bound, name the saved endpoint input and the saved input
-beyond it. A positive-only rule needs both zero and a negative value: checking
-zero alone leaves the negative case missing. Never infer a bound from examples.
-
-Use the request and original failure logs for results and domain rules. Grammar
-rejections and public atomicity are also required by this policy without error
-prose. Do not invent bounds, types, aliases or error wording. Free-form first
-operands are data, not unknown selectors; preserve optional/multi-word/remainder
-text without invented extra-operand restrictions. A case set can cover an actually
-shared rule; distinct numeric operands and rejection reasons still need cases.
-One retained invalid-text case for an operand survives numeric widening; no new
-junk spelling is required. A valid-input regression or success-only baseline is
-incomplete. Use real fixture identifiers so missing resources cannot mask the
-numeric/domain error being checked.
-
-When acceptance changes, update every replaced expectation and add new successes
-across the suite BEFORE application edits; keep unaffected checks and invalid
-numeric text. Derive corrections from the contract and preceding public calls,
-never copy actual output. Prefer one cumulative module and direct public calls;
-existing multiple files share the same rejection helper and observation factory.
-
-## Grow the observation factory before each new read
-
-1. Save the new read's own success, malformed and applicable empty-domain assertions;
-   upgrading older rejection observations alone is incomplete. Extend expected fixture data
-   and ADD its query pairs to the one factory. Retain every earlier read unless
-   the request removes it; a new value view never silently replaces an old one.
-2. Inspect EVERY retained rejection body/caller in EVERY executed file, including
-   earliest creation, duplicate, blank, unknown, shape and numeric cases. All use
-   that factory with actual nonempty seeds and asserted current reads. A newer
-   test alone does not upgrade an older body; names do not freeze old observers.
-3. Run an upgraded older rejection alone, then the cumulative baseline, BEFORE
-   query code. It must reach the newly asserted read. Unsupported-query failure
-   is the expected red baseline: do not catch it, skip it, make it conditional or
-   implement query code before the upgraded checks.
-
-Current means this capability's requested interface. Updating older checks now
-is required, not early execution in their original revision. Future capabilities
-stay unsupported and unexecuted, even as observers; probing their rejection is
-allowed. Before each baseline, briefly report the actual saved success/rejection
-inputs, helper, public seed, asserted reads and upgraded older-case result.
-
-## Finish the actual cumulative run
-
-Invoke these newly saved checks before application edits. A correct-path missing
-entrypoint/import is a valid creation baseline even though assertions cannot yet
-execute; distinguish infrastructure errors.
-Do not add a stub or rewrite a valid import just to turn that expected failure
-green. Existing passing checks can protect a refactor.
-
-Use fresh independent case state; preserve required multi-call sequences and
-repeat/reorder mutable cases to check isolation. Mock unnecessary external effects
-and use temporary install/config targets. Resolve leaked fixture state and wrong
-expectations, then rerun the SAME regression and cumulative suite.
-
-After the final application/check edit, reopen every saved rejection capture and
-its enclosing function. Mutable captures belong only to the shared helper; follow
-every caller through its public seed and all current asserted reads. Recheck the
-factory's retained pairs. Run the cumulative suite directly with full output and
-exit status, correct directory/imports/environment/discovery and nonzero behavioral
-assertions. Call saved functions and put collected methods before the runner.
-After implementation, a nonzero exit or FAILED runner summary blocks commit and
-the next capability's checks; trailing function prints do not establish a pass.
-Apply selected function docstrings and each function's own entry/exit prints from
-the first draft, including tests and fixtures. Fix failures before selected commit,
-delivery or the next capability; report actual commands/results and limits.
+Honor project test prohibitions and static/low-impact direct-check exceptions.
+Record the actual syntax, links, consistency or prescribed evaluation check
+instead of claiming a saved test. Do not install a framework or hosted CI
+without a request.

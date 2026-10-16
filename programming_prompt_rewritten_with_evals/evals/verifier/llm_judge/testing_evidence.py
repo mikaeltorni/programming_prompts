@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import ast
-import inspect
 import json
 import re
 from collections import deque
@@ -45,44 +44,8 @@ def equality_expectations(tree: ast.AST) -> tuple[set[str], bool]:
     return values, dynamic
 
 
-def _local_call_arguments(call: ast.Call, definition: ast.FunctionDef | ast.AsyncFunctionDef) -> dict[str, str] | None:
-    """Bind rendered expressions to a declared local signature without execution.
-
-    Parameters: call - literal call syntax; definition - unambiguous module-level declaration.
-    Returns: argument/default expressions, or None for unsupported or invalid binding.
-    """
-    print(f"call={call}, definition={definition}")
-    keyword_names = [keyword.arg for keyword in call.keywords]
-    if (definition.args.vararg or definition.args.kwarg
-            or any(isinstance(argument, ast.Starred) for argument in call.args)
-            or None in keyword_names or len(set(keyword_names)) != len(keyword_names)):
-        print(None)
-        return None
-    positional = definition.args.posonlyargs + definition.args.args
-    parameters = []
-    for index, parameter in enumerate(positional):
-        offset = index - (len(positional) - len(definition.args.defaults))
-        default = ast.unparse(definition.args.defaults[offset]) if offset >= 0 else inspect.Parameter.empty
-        kind = inspect.Parameter.POSITIONAL_ONLY if index < len(definition.args.posonlyargs) else inspect.Parameter.POSITIONAL_OR_KEYWORD
-        parameters.append(inspect.Parameter(parameter.arg, kind, default=default))
-    for parameter, default_node in zip(definition.args.kwonlyargs, definition.args.kw_defaults):
-        default = ast.unparse(default_node) if default_node is not None else inspect.Parameter.empty
-        parameters.append(inspect.Parameter(parameter.arg, inspect.Parameter.KEYWORD_ONLY, default=default))
-    try:
-        bound = inspect.Signature(parameters).bind(
-            *(ast.unparse(argument) for argument in call.args),
-            **{keyword.arg: ast.unparse(keyword.value) for keyword in call.keywords},
-        )
-        bound.apply_defaults()
-        result = dict(bound.arguments)
-    except (TypeError, ValueError):
-        result = None
-    print(result)
-    return result
-
-
 def testing_syntax_records(workspace: Path, files: list[Path]) -> tuple[list[dict], bool]:
-    """Collect bounded assertions, local calls, defaults and surrounding syntax.
+    """Collect bounded assertion locations, conditions and following statements.
 
     Parameters: workspace - current submission root; files - current Python paths.
     Returns: literal syntax records and whether any source evidence is incomplete.
@@ -128,23 +91,9 @@ def testing_syntax_records(workspace: Path, files: list[Path]) -> tuple[list[dic
                                 item for item in field[index + 1:index + 3]
                                 if isinstance(item, ast.stmt)
                             ]
-        local_definitions = {}
-        for function in functions:
-            if function in tree.body:
-                local_definitions[function.name] = None if function.name in local_definitions else function
         facts: list[dict] = []
-        calls: list[dict] = []
         raises = []
         for node in ast.walk(tree):
-            node_line = getattr(node, "lineno", 0)
-            owners = [owner for owner in functions if owner.lineno <= node_line <= owner.end_lineno]
-            function_name = max(owners, key=lambda owner: owner.lineno).name if owners else None
-            node_loops = [
-                {"line": loop.lineno,
-                 "target": ast.get_source_segment(source, loop.target),
-                 "iterable": ast.get_source_segment(source, loop.iter)}
-                for loop in loops if loop.lineno <= node_line <= loop.end_lineno
-            ]
             node_conditions = [
                 {"line": condition.lineno,
                  "condition": ast.get_source_segment(source, condition.test),
@@ -153,19 +102,13 @@ def testing_syntax_records(workspace: Path, files: list[Path]) -> tuple[list[dic
                 if condition.lineno <= getattr(node, "lineno", 0) <= condition.end_lineno
             ]
             if isinstance(node, ast.Raise):
+                owners = [owner for owner in functions
+                          if owner.lineno <= node.lineno <= owner.end_lineno]
                 raises.append({
                     "line": node.lineno,
-                    "function": function_name,
+                    "function": max(owners, key=lambda owner: owner.lineno).name if owners else None,
                     "statement": ast.get_source_segment(source, node),
                     "enclosing_conditions": node_conditions,
-                })
-            definition = local_definitions.get(node.func.id) if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) else None
-            if definition is not None:
-                calls.append({
-                    "line": node.lineno, "function": function_name,
-                    "callee": definition.name, "declaration_line": definition.lineno,
-                    "arguments_with_declared_defaults": _local_call_arguments(node, definition),
-                    "enclosing_conditions": node_conditions, "enclosing_loops": node_loops,
                 })
             assertion = isinstance(node, ast.Assert) or (
                 isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
@@ -184,9 +127,16 @@ def testing_syntax_records(workspace: Path, files: list[Path]) -> tuple[list[dic
             statement = ast.get_source_segment(source, node) or ""
             fact = {"line": node.lineno, "statement": statement[:600],
                     "statement_truncated": len(statement) > 600}
-            fact["function"] = function_name
+            owners = [owner for owner in functions
+                      if owner.lineno <= node.lineno <= owner.end_lineno]
+            fact["function"] = max(owners, key=lambda owner: owner.lineno).name if owners else None
             fact["enclosing_conditions"] = node_conditions
-            fact["enclosing_loops"] = node_loops
+            fact["enclosing_loops"] = [
+                {"line": loop.lineno,
+                 "target": ast.get_source_segment(source, loop.target),
+                 "iterable": ast.get_source_segment(source, loop.iter)}
+                for loop in loops if loop.lineno <= node.lineno <= loop.end_lineno
+            ]
             if rejection:
                 observations = []
                 for item in following.get(id(node), []):
@@ -198,20 +148,18 @@ def testing_syntax_records(workspace: Path, files: list[Path]) -> tuple[list[dic
         literals, dynamic = equality_expectations(tree)
         record = {"file": label, "literal_equality_expectations": sorted(literals),
                   "dynamic_expectations_require_review": dynamic, "raise_syntax": raises,
-                  "assertion_syntax": [], "local_call_syntax": []}
+                  "assertion_syntax": []}
         size = len(json.dumps(record, ensure_ascii=False).encode("utf-8"))
         if used + size > MAX_FACT_BYTES:
             truncated = True
             break
-        entries = [("assertion_syntax", fact) for fact in facts] + [("local_call_syntax", call) for call in calls]
-        for kind, fact in sorted(entries, key=lambda item: item[1]["line"]):
+        for fact in sorted(facts, key=lambda item: item["line"]):
             fact_size = len(json.dumps(fact, ensure_ascii=False).encode("utf-8")) + 2
             if used + size + fact_size + 80 > MAX_FACT_BYTES:
                 record["assertion_syntax_truncated"] = True
-                record["local_call_syntax_truncated"] = True
                 truncated = True
                 break
-            record[kind].append(fact)
+            record["assertion_syntax"].append(fact)
             size += fact_size
         used += size
         records.append(record)
@@ -223,7 +171,7 @@ def testing_syntax_records(workspace: Path, files: list[Path]) -> tuple[list[dic
 
 
 def testing_source_context(workspace: Path, files: list[Path]) -> str:
-    """Format current assertion and local-call syntax for semantic inspection.
+    """Format current literal syntax for semantic inspection.
 
     Parameters: workspace - current submission root; files - current Python paths.
     Returns: bounded source facts, with an explicit incomplete-evidence notice.
@@ -235,8 +183,6 @@ def testing_source_context(workspace: Path, files: list[Path]) -> str:
         + json.dumps(records, ensure_ascii=False)
         + ("\nSyntax evidence truncated; inspect the remaining listed source." if truncated else "")
         + "\nFunction owners and enclosing loop inputs are literal CURRENT syntax, not historical cases. "
-        + "Local-call bindings use declared defaults and rendered expressions, not executed values; "
-        + "resolve actual bindings and loop iterations in the saved source. A null argument map means unresolved call syntax. "
         + "Following statements are in the same lexical block; fixtures and helper calls still require inspection.\n"
     )
     print(result)
