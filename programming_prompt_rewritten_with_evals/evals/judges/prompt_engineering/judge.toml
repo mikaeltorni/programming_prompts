@@ -7,7 +7,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "prompt_engineering"
-description = "Prompt and judge stay simple and aligned, reuse benchmark evidence or create a missing suite, and pass actual model evaluations and correct/incorrect judge controls; unfinished checks remain unverified."
+description = "Prompt and judge stay simple and aligned, reuse benchmark evidence or create a missing suite, and finish every saved main/judge case plus one fixed incorrect control with runner-checked verdicts; mismatches require paired repair and unfinished checks remain unverified."
 type = "binary"
 
 [scoring]

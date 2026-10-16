@@ -1,35 +1,43 @@
 ---
 name: prompt_engineering
 description: >-
-  v0.0.36 — Use when asked for prompt_engineering or when creating or editing AI
+  v0.0.59 — Use when asked for prompt_engineering or when creating or editing AI
   instructions in prompt Markdown, including skills and judges. Keep prompts
   simple and improve the prompt and judge together using real model evaluations.
 ---
 
 # Prompt engineering
 
-Use for AI prompt Markdown, not ordinary documentation.
+Finish with a passing full suite. A wrong answer or verdict needs repair; it is
+not an execution blocker.
 
-1. Read existing cases, benchmark results and failures. Reuse the suite; if missing,
-   save a few inputs, independent expected results and a small runner.
-2. Revise the main prompt and judge together. Keep both short, general and
-   consistent. The judge checks requested behavior without extra requirements.
-3. Calibrate the judge with a fixed, independently written correct/incorrect pair;
-   do not ask a model to generate these controls. Keep calibration small and use
-   the saved cases for broader coverage. Run the saved main
-   prompt on every case and judge its answers too. For exact outputs, compare the
-   candidate with the independent expected answer. Return reason and verdict in
-   separate fields; parse only the verdict. Actually call both models; fail on any
-   wrong answer or decision. Equality checks cannot replace model judge calls.
-4. Reuse one evaluation path. Send saved instructions plus clearly marked input;
-   keep candidate and reference in separate fields. Input contains only case text.
-   Avoid nested shell quoting and extra dependencies. For Codex, send stdin with:
-   `codex exec -m MODEL -c 'model_reasoning_effort="low"' --output-last-message FILE - >/dev/null`
-   Read FILE only; helpers return only the answer or parsed verdict, not logs or
-   explanation. Save answers and verdicts. Keep the returned session ID and use
-   its continuation tool until exit or timeout; an empty command does not wait.
-   Do not interrupt a running evaluation because of retry warnings.
+1. Read existing cases, benchmark results and failures. Reuse the suite; if
+   missing, save a few inputs, independent expected answers and a small runner.
+2. Edit the main prompt and judge together. Keep both short and consistent;
+   replace conflicting instructions instead of appending exceptions.
+3. Run the suite using actual model calls and checks:
 
-If a check fails, inspect the submitted text, repair the cause, update both prompts
-and rerun the same cases until all pass. Report unfinished checks only for genuine
-execution blockers; recovered warnings with completed responses are not blockers.
+   ```python
+   for case in cases:
+       answer = ask(main_text, {"input": case["input"]})
+       assert answer == case["expected"]  # for exact-output tasks
+       data = {"input": case["input"], "candidate": answer, "reference": case["expected"]}
+       assert json.loads(ask(judge_text, data))["verdict"] == "PASS"
+   assert json.loads(ask(judge_text, fixed_wrong_control))["verdict"] == "FAIL"
+   ```
+
+   Use the requested criteria for non-exact answers. A verified correct answer
+   supplies the positive control; write the wrong control independently. Return
+   reason and verdict separately and check only the verdict. Save answers and
+   decisions. Printing results alone does not check them.
+4. On failure, inspect the submitted request, repair the cause in both prompts
+   and rerun the same cases until all pass. Only real execution blockers justify
+   handing off unfinished checks.
+
+`ask` sends selected saved instructions plus clearly marked data, with input,
+candidate and reference separate. It reads only the final answer. For Codex:
+`codex exec -m MODEL -c 'model_reasoning_effort="low"' --output-last-message FILE - >/dev/null`
+When a tool yields, expose its whole result, including the session handle, and
+poll that handle until exit or timeout. Printing only result.output loses handles.
+Recovered retry warnings are not blockers. Avoid extra dependencies and nested
+shell quoting.

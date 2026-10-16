@@ -496,7 +496,7 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
     """Expose raw tool chronology for semantic repair and feature-cycle judging.
 
     Parameters: logs_root - Harbor directory holding coding-agent transcripts.
-    Returns: complete-record action inputs and bounded excerpts, with explicit input gaps.
+    Returns: complete action inputs, decoded shell commands, tool statuses and bounded output excerpts.
     """
     print(f"logs_root={logs_root}")
     sections = []
@@ -522,6 +522,7 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
         # Remove startup inventories/token counters, retaining observed tools,
         # their outputs and agent statements with original line positions.
         records = []
+        output_bytes = 0
         for number, line in enumerate(raw_lines, 1):
             try:
                 event = json.loads(line)
@@ -537,6 +538,25 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
             actions = trace_action_inputs(event) if isinstance(event, dict) else []
             if actions:
                 records.append("literal action inputs: " + json.dumps(actions, ensure_ascii=False))
+            item = event.get("item", {}) if isinstance(event, dict) else {}
+            if isinstance(item, dict) and item.get("type") == "command_execution":
+                command = item.get("command", "")
+                if isinstance(command, str) and command:
+                    try:
+                        parts = shlex.split(command)
+                    except ValueError:
+                        parts = []
+                    decoded = parts[-1] if len(parts) == 3 and parts[1] in {"-c", "-lc"} else command
+                    records.append("Recorded command:\n" + decoded)
+                observed = {key: item[key] for key in ("id", "status", "exit_code") if key in item}
+                records.append("Observed tool result: " + json.dumps(observed, ensure_ascii=False))
+                output = item.get("aggregated_output")
+                if isinstance(output, str) and output:
+                    data = output.encode("utf-8")
+                    limit = min(_MAX_FILE_BYTES, max(0, _MAX_TOTAL_BYTES - output_bytes))
+                    note = " (truncated; inspect original)" if len(data) > limit else ""
+                    records.append("Recorded tool output" + note + ":\n" + data[:limit].decode("utf-8", errors="replace"))
+                    output_bytes += min(len(data), limit)
             if isinstance(event, dict):
                 rendered = json.dumps(debugging_trace_value(event), ensure_ascii=False)
             else:
