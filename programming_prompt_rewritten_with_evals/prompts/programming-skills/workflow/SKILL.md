@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.2.26 — Establish the task checkout and authoritative plan, then finish
+  v0.2.27 — Establish the task checkout and authoritative plan, then finish
   each feature's tests → code → commit cycle before documentation.
 ---
 
@@ -67,8 +67,15 @@ At each transition, read this saved plan and do its first unfinished microstep:
 
 Update the existing rows in place as each step closes; mark outer Write code
 complete only after every cycle is delivered. Documentation follows all cycles,
-uses the same task checkout and delivery path, and closes outer row 4. Unselected
-docs are skipped. Before handoff, verify actual statuses, hashes and delivered
+uses the same task checkout and delivery path, and closes outer row 4. Plan two
+separate `Write documentation` microsteps from the start, using `-` for Feature
+and Stage: **Write and verify documentation** names the README and its public
+interface checks; **Commit documentation** stages the verified docs, creates a
+conventional docs commit, records its actual hash, and completes selected
+worktree merge and consumer verification. Keep the commit row pending while
+writing docs; close it and outer row 4 only after delivery. If Git is absent
+or commits are explicitly forbidden, mark the commit row skipped with that
+reason. Unselected docs skip both rows and outer row 4. Before handoff, verify actual statuses, hashes and delivered
 files; finish the remaining queue rather than stopping after a passing Feature.
 
 An implementation follow-up needs an updated plan before checks/edits. Reuse

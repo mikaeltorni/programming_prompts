@@ -67,7 +67,13 @@ checks for 3.1. Neither the absence of Git nor a user no-commit instruction
 justifies skipping only the commit step while performing the rest.
 
 Documentation comes after every Feature cycle, uses the same task checkout and
-delivery path, and closes outer row 4; unselected docs are `skipped`.
+delivery path, and closes outer row 4. When docs are selected, the initial plan
+has separate Write documentation microsteps for writing/verifying the README
+and committing/delivering it, with `-` for Feature and Stage. The commit step
+stays pending during writing; its completion evidence includes the actual docs
+commit hash and selected delivery. Outer row 4 closes only after that step.
+Absent Git or an explicit no-commit instruction permits skipping that commit
+row with the reason. Unselected docs skip both rows and outer row 4.
 
 ## Progress and completion
 
