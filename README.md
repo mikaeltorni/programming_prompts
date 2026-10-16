@@ -207,6 +207,13 @@ and seven `Microsteps` columns: Step, Phase, Feature, Stage, Action, Status,
 Evidence. Each code Feature has consecutive 3.1, 3.2, 3.3 rows. Read the first
 unfinished step, record actual results/hashes and close selected delivery before
 advancing; both outer rows and microsteps must be complete at handoff.
+Plan separate documentation actions from the start: write and verify the root
+README, then **Commit documentation**. Both use `Write documentation` as Phase
+and `-` for Feature/Stage. The commit action records its actual hash and selected
+worktree delivery before the documentation phase can complete. Explicit no-commit
+instructions or absent Git skip that action with a reason; unselected docs skip
+both actions. ACC shows these actions in Todo/Completed and the active docs
+caption, so the docs commit remains visible while pending and running.
 Implementation follow-ups update this plan, preserving unfinished work or
 archiving a completed plan beside it. Reuse the verified task checkout.
 
