@@ -71,17 +71,14 @@ a terminal-only reproduction does not meet that selected policy.
 
 ## Scope and criterion alignment
 
-Testing has six binary criteria, aggregated with `all_pass`:
-`current_coverage`, `fixture_independence`, `public_seeding`,
-`rejection_preservation`, `checks_order`, and `checks_execution`. The first four
-use current source evidence; the last two use chronology. Each has a focused
-[criterion prompt](testing/judge.toml) and a separate call through the same Codex
-judge. Generic `criterion_prompts` routing prefers the single-criterion template,
-then retains the existing family/scope fallback. Original request context and
-same-directory path validation remain in place. Testing keeps historical source
-available by lookup and supplies coding chronology only to the order/execution
-calls. Full scoped prompt/backend artifacts remain in each trial's verifier
-directory. Other applicable history-based judges retain their history evidence.
+Testing has one binary criterion. Its `testing_contract`
+retains checks-before-code, coverage, preservation/isolation and cumulative
+execution requirements in one prompt/configuration. The former per-raise and
+per-rejection expansion is no longer selected, and its four auxiliary templates
+were removed. Runtime evidence helpers and immutable public correctness contracts
+are unchanged; no code-token, feature-count or automatic-pass shortcut replaces
+semantic inspection. The new detail schema is not directly comparable with
+historical expanded criterion rows.
 
 SRP uses three `all_pass` criteria: `parsing_dispatch`, `domain_validation`, and
 `shared_decisions`. Reading stored state into a local result needs no getter;
@@ -89,21 +86,8 @@ dispatch writing a global/field remains mutation even with a helper on the RHS.
 Converted-value acceptance belongs in called validators, and operations own
 calculation and mutation from the first authored slice.
 
-Testing credits an actually shared operand-count predicate's saved cases for
-every form reaching it. Zero-operand forms need only extra-operand rejection.
-Meaningful public seeds and all current reads remain required after malformed
-mutable calls. Valid empty-domain queries observe emptiness through their
-exception; originally required empty-domain mutation failures retain their empty
-fixture and assert available empty-state reads. Stateless APIs have no mutable
-fixture requirement. No-read interfaces may use limited current mutation probes;
-a returned state value never makes a mutation read-only. Requested positive-only
-bounds require both zero and negative rejections; unrequested bounds do not.
 Authored hidden Python checks are included, while known junk and
-escaping paths are excluded. Canonical and authentic bracketed citations undergo
-the same exact path/line/text check; quotation validity does not prove semantics.
-No per-raise expansion, code-token, feature-count or automatic-pass shortcut
-replaces inspection. Current detail rows are not directly comparable with earlier
-single-criterion or expanded schemas; old archives retain their original scores.
+escaping paths are excluded.
 
 Do not grade optional coverage inventories or byte-for-byte ledger punctuation.
 A faithful capability queue still requires distinct working commits by sentence.
@@ -113,7 +97,7 @@ this is not early implementation. SRP reuses actual equivalent domain decisions
 but does not force distinct arithmetic operations into a shared state updater.
 Every no needs a concrete violation; missing chronology alone is an explicit limit.
 
-The historical October 10, 2026 revision passed frontmatter/TOML/template validation, actual
+The October 10, 2026 revision passed frontmatter/TOML/template validation, actual
 consumer loading, instruction assembly and isolated judge synchronization. No
 benchmark or LLM judge was run for it, so improved pass rate remains unverified.
 Old archives retain their original scores and reasoning.
