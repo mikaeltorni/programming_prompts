@@ -82,8 +82,8 @@ _EXPECTED_LITERAL_CLAIM = re.compile(
 )
 _TESTING_CITATION = re.compile(
     r"\bCitation:\s*(?:(?P<commit>[0-9a-f]{7,40}):)?"
-    r"(?P<path>[^\s|:]+\.py):(?P<line>\d+)\s*\|\s*(?P<source>[^\n]+?)"
-    r"(?=[ \t]+(?:Citation:\s*(?:[0-9a-f]{7,40}:)?[^\s|:]+\.py:\d+\s*\|"
+    r"(?P<path>[^\n|:]+?\.py):(?P<line>\d+)\s*\|\s*(?P<source>[^\n]+?)"
+    r"(?=[ \t]+(?:Citation:\s*(?:[0-9a-f]{7,40}:)?[^\n|:]+?\.py:\d+\s*\|"
     r"|TraceCitation:\s*[a-zA-Z0-9_-]+\.txt:\d+)|\n|$)"
 )
 
@@ -430,56 +430,58 @@ def unreliable_score_reason(
 
     Triggers on skip-inspect wording, a no verdict whose reasoning explicitly
     says the score should be yes, or ``.py`` citations outside a nonempty
-    workspace listing. A workflow yes also retries when it contradicts concrete
+    accepted source listing. A workflow yes also retries when it contradicts concrete
     plan structure or internal-consistency issues. This gate never assigns a
     semantic replacement score.
 
-    Args:
-        rows: Parsed criterion scores.
-        listed_keys: Lowercased names from ``listed_python_keys``.
-        judge_name: Skill name; logging and testing receive syntax contradiction checks.
-        python_files: Solution source paths for that bounded check.
-        request_text: Original task context for literal punctuation claims.
-        workflow_issues: Concrete issues within the saved plan, not expected
-            Feature counts derived from a task catalog.
-
-    Returns:
-        ``not_inspected:<criterion>``, ``contradictory_no:<criterion>``,
-        ``source_conflict:<criterion>:<function>``, ``plan_conflict:<criterion>``,
-        ``request_boundary_conflict:<criterion>``, or ``wrong_path:<criterion>:<file>``.
-        Testing may return ``testing_literal_conflict:<criterion>`` for a quoted
-        current expectation absent from the cited file's literal assertions, or
-        ``testing_citation_<issue>:<criterion>`` for missing/mismatched source quotes.
+    Parameters: rows - parsed criterion scores; listed_keys - accepted lowercase source names;
+        judge_name - selected policy; python_files - current source paths;
+        workflow_issues - concrete plan issues; request_text - original task context.
+    Returns: a contradiction or quotation issue token, or None for usable evidence.
     """
+    print(f"rows={rows} listed_keys={listed_keys} judge_name={judge_name} python_files={python_files} workflow_issues={workflow_issues} request_text={request_text}")
     for row in rows:
         reasoning = re.sub(r"[*`]", "", str(row.get("reasoning") or ""))
         if float(row["reward"]) >= 1.0:
             if _CONTRADICTORY_YES.search(reasoning):
+                print(f"contradictory_yes:{row['name']}")
                 return f"contradictory_yes:{row['name']}"
             if judge_name == "workflow" and workflow_issues:
+                print(f"plan_conflict:{row['name']}")
                 return f"plan_conflict:{row['name']}"
             continue
         name = str(row["name"])
         if request_text and _contradicted_request_boundary(reasoning, request_text):
+            print(f"request_boundary_conflict:{name}")
             return f"request_boundary_conflict:{name}"
         if _NOT_INSPECTED.search(reasoning):
+            print(f"not_inspected:{name}")
             return f"not_inspected:{name}"
         if _CONTRADICTORY_NO.search(reasoning):
+            print(f"contradictory_no:{name}")
             return f"contradictory_no:{name}"
         if judge_name == "testing" and python_files and _contradicted_testing_literal(
             str(row.get("reasoning") or ""), python_files
         ):
+            print(f"testing_literal_conflict:{name}")
             return f"testing_literal_conflict:{name}"
         if judge_name == "testing" and python_files:
             issue = _testing_citation_issue(str(row.get("reasoning") or ""), python_files)
             if issue:
+                print(f"testing_citation_{issue}:{name}")
                 return f"testing_citation_{issue}:{name}"
+            if _TESTING_CITATION.search(str(row.get("reasoning") or "")):
+                # Exact references already checked every quoted path. The loose
+                # prose matcher cannot represent filenames containing spaces.
+                continue
         if judge_name == "logging" and python_files:
             function = _contradicted_fallthrough(str(row.get("reasoning") or ""), python_files)
             if function:
+                print(f"source_conflict:{name}:{function}")
                 return f"source_conflict:{name}:{function}"
             function = _contradicted_exit_trace(str(row.get("reasoning") or ""), python_files)
             if function:
+                print(f"exit_trace_conflict:{name}:{function}")
                 return f"exit_trace_conflict:{name}:{function}"
         mentioned = mentioned_python_paths(reasoning)
         # An empty source listing supports a missing-submission no verdict.
@@ -489,7 +491,9 @@ def unreliable_score_reason(
             continue
         if any(_path_is_listed(item, listed_keys) for item in mentioned):
             continue
+        print(f"wrong_path:{name}:{Path(mentioned[0]).name}")
         return f"wrong_path:{name}:{Path(mentioned[0]).name}"
+    print(None)
     return None
 
 
