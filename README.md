@@ -176,17 +176,20 @@ defaults; ordinary Markdown documentation alone does not activate its workflow.
 
 The [creation and repair cases](programming_prompt_rewritten_with_evals/evals/coding-prompts/README.md#prompt-engineering-cases)
 are selected with `--skills prompt_engineering --tasks prompt-create,prompt-repair`.
-The initial two-trial smoke passed, but the larger run
-`2026-10-15_235755_9782` scored only 1/6. Revision v0.0.13 shortened the policy,
-made separate main-prompt and model-judge calls explicit, and clarified final-answer
-capture and waiting for active evaluations. Its judge now reads complete evidence
-and recognizes successful reruns without requiring a printed Git diff.
-The unchanged two tasks, three attempts each, scored 6/6 in
-`2026-10-16_000515_446512`, with zero rate-limited or infrastructure trials.
-Coding and semantic judging used `gpt-6-luna` at low reasoning. One generated
-runner reported that it did not apply low reasoning to its nested target calls;
-that limitation remains recorded in its verdict. This is still a small suite,
-not a guarantee of reliability. Original failed verdicts remain unchanged.
+The reported k10 run `2026-10-16_001254_888877` scored 18/20, including
+8/10 repairs. Revision v0.0.36 keeps four steps while clarifying fixed,
+independently written judge controls, separate reason/verdict fields, final-answer
+file capture and continuation of running evaluations. The matching judge accepts
+successful equivalent implementations without extra artifact requirements.
+Evidence collection now includes UTF-8 `.answer`, `.verdict` and extensionless
+files, avoiding false missing-evidence failures.
+
+The unchanged two cases, ten attempts each, scored **20/20** in
+`2026-10-16_080901_2187155`: creation 10/10 and repair 10/10, with zero
+rate-limited or infrastructure trials. Archived settings confirm `gpt-6-luna`
+at low reasoning for coding and semantic judging. All twenty verdicts were
+inspected. This small sample does not guarantee reliability; original failed
+verdicts remain unchanged.
 
 ### workflow
 

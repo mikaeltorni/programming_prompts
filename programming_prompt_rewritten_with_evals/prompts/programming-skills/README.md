@@ -118,8 +118,11 @@ schema is one criterion rather than historical expanded subquestions.
 create/edit AI-instruction Markdown, including skill and judge prompts. It reads
 existing results, keeps changes small, edits both prompt and judge, and reuses or
 creates simple cases with separate model calls for the main prompt and judge.
-Its small runner captures final answers, saves per-case results and waits for
-completion; a Python rule implementation cannot replace running the judge.
+Judge calibration uses a small, fixed, independently written correct/incorrect
+pair. Evaluation captures only final answers and parsed verdicts, saves per-case
+results and continues running sessions until completion; a Python rule
+implementation cannot replace running the judge. Create a small runner when
+the suite is missing; reuse existing cases otherwise.
 Ordinary documentation alone is outside its scope. Its matching judge receives
 Markdown, evaluation data/runners, original logs and chronological evidence.
 Select `prompt-create,prompt-repair` to exercise its two focused Harbor cases;
