@@ -653,6 +653,22 @@ Findings must identify a concrete violated rule with authentic evidence;
 optional isolated execution may resolve a material question when tools exist.
 The new single-criterion detail schema differs from historical expanded testing
 results; do not claim direct per-criterion comparability or rescore old archives.
+
+Testing completes each behavior sentence's saved checks → baseline → implementation
+→ cumulative pass before saving the next sentence's checks. Commands joined in one
+sentence stay together. Saving every capability's checks up front is a bundled
+cycle; a baseline failing on the current missing behavior is expected.
+
+Mutable rejection checks establish state through successful public mutations and
+immediately assert public values and required history inside each rejection loop.
+A seed before the loop can cover its iterations. Valid empty queries observe
+emptiness through their asserted exception; required empty-state mutation failures
+retain empty fixtures and assert available reads. A new query upgrades older
+rejection bodies too, including helper callers whose optional read would otherwise
+be skipped. Expected values come from the contract and preceding calls.
+Judge calibration on saved answers does not measure a fresh coding pass rate;
+retain the original archived rewards and report remaining explanation errors.
+
 The docs verifier requires the requested public API in the root README;
 internal checking helpers do not become additional product entrypoints.
 
