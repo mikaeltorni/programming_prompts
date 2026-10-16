@@ -663,8 +663,8 @@ A missing trace is an
 explicit verification limit, not evidence that code preceded tests. Required early
 rejections remain valid until the capability that replaces them, and a current
 query upgrade to an older test body belongs to the query's current Feature.
-Findings must identify a concrete violated rule with authentic evidence;
-optional isolated execution may resolve a material question when tools exist.
+Findings must identify a concrete violated rule with authentic evidence.
+The testing judge inspects recorded execution; it does not run or edit submissions.
 The new single-criterion detail schema differs from historical expanded testing
 results; do not claim direct per-criterion comparability or rescore old archives.
 
@@ -682,6 +682,28 @@ rejection bodies too, including helper callers whose optional read would otherwi
 be skipped. Expected values come from the contract and preceding calls.
 Judge calibration on saved answers does not measure a fresh coding pass rate;
 retain the original archived rewards and report remaining explanation errors.
+
+The original task and selected policy define testing requirements. Generated
+README restrictions and implementation guards cannot add required rejection cases.
+Coverage is the union of saved checks and called helpers: shared blank/unknown
+checks need not be copied into each test, and invalid numeric text needs a
+representative for each operand rather than every spelling. Literal expected
+results and calculations from known fixture inputs are independent; copying an
+unchecked actual result into the expected baseline is not.
+
+Testing evidence includes current numbered source, saved runner documentation and
+a compact action timeline. Each command is rendered once with its observed status,
+bounded output and literal runner summaries, including failures hidden in output
+middles. Full raw transcripts and named historical-source lookup remain available.
+Bulk Git histories, workflow plans and duplicate syntax/raise inventories are not
+inlined for testing. Other judges retain their existing evidence routes. Missing
+or shortened evidence must be inspected or disclosed, rather than scored as an
+invented source defect. Public aggregates are valid when they are the only value
+view; their limits do not create an unavailable per-resource getter.
+
+An explicit no-test instruction takes precedence over execution and calibration
+steps. Such a repair may use saved source/log analysis and static review; report
+that limit and make no new benchmark pass-rate or runtime-verification claim.
 
 The docs verifier requires the requested public API in the root README;
 internal checking helpers do not become additional product entrypoints.
