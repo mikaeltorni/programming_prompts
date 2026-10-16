@@ -17,9 +17,7 @@ from pathlib import Path
 
 from llm_judge.log import log
 from llm_judge.evidence import commit_source_context, python_boundaries
-from llm_judge.testing_evidence import (
-    MAX_TRACE_INPUT_BYTES, coding_commands_context, testing_source_context,
-)
+from llm_judge.testing_evidence import MAX_TRACE_INPUT_BYTES, _RUNNER_SUMMARY
 
 DEFAULT_WORKSPACE = Path("/Projects/app")
 INSPECT_BEFORE_SCORE = (
@@ -492,13 +490,14 @@ def trace_action_inputs(event: dict) -> list[dict]:
     return actions
 
 
-def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
+def debugging_trace_context(logs_root: Path = Path("/logs/agent"), *, compact: bool = False) -> str:
     """Expose raw tool chronology for semantic repair and feature-cycle judging.
 
-    Parameters: logs_root - Harbor directory holding coding-agent transcripts.
-    Returns: complete action inputs, decoded shell commands, tool statuses and bounded output excerpts.
+    Parameters: logs_root - Harbor directory holding coding-agent transcripts;
+        compact - render each action once with bounded output and runner summaries.
+    Returns: literal action chronology, tool statuses and explicitly bounded output evidence.
     """
-    print(f"logs_root={logs_root}")
+    print(f"logs_root={logs_root} compact={compact}")
     sections = []
     for names in (("codex.txt",), ("claude-code.txt",), ("grok-build.txt", "grok.txt")):
         trace = next((logs_root / name for name in names if (logs_root / name).is_file()), None)
@@ -532,13 +531,19 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
                 "available_commands", "usage", "system", "thread.started", "turn.started", "item.started",
             }:
                 continue
-            # Keep every position. Large event excerpts may be shortened, but
-            # literal action inputs retain complete shell write/run order.
-            records.append(f"TraceCitation: {trace.name}:{number}")
             actions = trace_action_inputs(event) if isinstance(event, dict) else []
-            if actions:
-                records.append("literal action inputs: " + json.dumps(actions, ensure_ascii=False))
             item = event.get("item", {}) if isinstance(event, dict) else {}
+            command_event = isinstance(item, dict) and item.get("type") == "command_execution"
+            if compact and not actions and not command_event:
+                continue
+            # Preserve raw positions and complete action inputs. The testing
+            # view avoids repeating the same command in three representations.
+            records.append(f"TraceCitation: {trace.name}:{number}")
+            if actions and not (compact and command_event):
+                records.append("literal action inputs: " + json.dumps(actions, ensure_ascii=False))
+                if compact and isinstance(item, dict):
+                    observed = {key: item[key] for key in ("id", "type", "status", "exit_code") if key in item}
+                    records.append("Observed tool result: " + json.dumps(observed, ensure_ascii=False))
             if isinstance(item, dict) and item.get("type") == "command_execution":
                 command = item.get("command", "")
                 if isinstance(command, str) and command:
@@ -553,10 +558,25 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent")) -> str:
                 output = item.get("aggregated_output")
                 if isinstance(output, str) and output:
                     data = output.encode("utf-8")
-                    limit = min(_MAX_FILE_BYTES, max(0, _MAX_TOTAL_BYTES - output_bytes))
-                    note = " (truncated; inspect original)" if len(data) > limit else ""
-                    records.append("Recorded tool output" + note + ":\n" + data[:limit].decode("utf-8", errors="replace"))
-                    output_bytes += min(len(data), limit)
+                    if compact:
+                        summaries = [text.strip() for text in output.splitlines()
+                                     if _RUNNER_SUMMARY.match(text.strip())]
+                        if len(data) > 1600:
+                            excerpt = data[:800].decode("utf-8", errors="replace")
+                            excerpt += "\n[Output middle omitted; inspect raw transcript.]\n"
+                            excerpt += data[-800:].decode("utf-8", errors="replace")
+                        else:
+                            excerpt = output
+                        records.append("Recorded tool output excerpt:\n" + excerpt)
+                        if summaries:
+                            records.append("Literal runner summary lines:\n" + "\n".join(summaries))
+                    else:
+                        limit = min(_MAX_FILE_BYTES, max(0, _MAX_TOTAL_BYTES - output_bytes))
+                        note = " (truncated; inspect original)" if len(data) > limit else ""
+                        records.append("Recorded tool output" + note + ":\n" + data[:limit].decode("utf-8", errors="replace"))
+                        output_bytes += min(len(data), limit)
+            if compact:
+                continue
             if isinstance(event, dict):
                 rendered = json.dumps(debugging_trace_value(event), ensure_ascii=False)
             else:
@@ -674,17 +694,19 @@ def pin_workspace_python(
     template: str, workspace: Path, files: list[Path], judge_name: str = "",
     evidence_scope: str = "",
 ) -> str:
-    """Append source, plan, history and chronological evidence for a skill judge.
+    """Compose the selected skill's current source and relevant evidence.
 
     Parameters: template - judge instructions; workspace - submission directory;
         files - discovered Python paths; judge_name - independently scored policy;
         evidence_scope - current-only or chronological evidence, empty for all.
-    Returns: evidence-enriched template retaining its criteria placeholder.
+    Returns: evidence-enriched template retaining its criteria placeholder;
+        testing gets numbered current source, runner documents and compact
+        chronology, with optional historical lookup instead of bulk Git/plan data.
     """
     print(f"template={template} workspace={workspace} files={files} judge_name={judge_name} evidence_scope={evidence_scope}")
     history_enabled = evidence_scope != "current"
     plan_context = (
-        workspace_workflow_plan_context(workspace) if history_enabled and judge_name in {"workflow", "commits", "testing"} else ""
+        workspace_workflow_plan_context(workspace) if history_enabled and judge_name in {"workflow", "commits"} else ""
     )
     task_logs_context = original_task_logs_context() if judge_name in {"debug", "debug_logs", "testing", "prompt_engineering"} else ""
     boundaries = []
@@ -701,7 +723,7 @@ def pin_workspace_python(
         + json.dumps(boundaries, indent=2) if boundaries else ""
     )
     git_context = ""
-    if history_enabled and judge_name in {"commits", "srp", "workflow", "testing", "prompt_engineering"}:
+    if history_enabled and judge_name in {"commits", "srp", "workflow", "prompt_engineering"}:
         try:
             git_context = commit_source_context(workspace)
             print(f"pinned historical source evidence judge={judge_name}")
@@ -721,10 +743,6 @@ def pin_workspace_python(
         )
     tools_context += "These tools supply evidence, not semantic Feature scores. Inspect actual source; do not infer behavior from commit subjects.\n"
     runner_context = workspace_runner_context(workspace) if judge_name == "testing" else ""
-    testing_context = (
-        testing_source_context(workspace, files) + (coding_commands_context() if history_enabled else "")
-        if judge_name == "testing" else ""
-    )
     current_source = (
         workspace_prompt_context(workspace) if judge_name == "prompt_engineering"
         else workspace_python_context(workspace, files, line_numbers=judge_name in {"testing", "srp"})
@@ -741,6 +759,12 @@ def pin_workspace_python(
            "Historical drafts do not supply missing current assertions. Chronology/execution are scored separately.\n"
            if evidence_scope == "current" else "")
         + tools_context
+        + ("\n\nEvidence authority: the Original coding request and verifier-owned original logs define program behavior. "
+           "Generated README/configuration below identifies the saved runner only; its invented restrictions are not task requirements. "
+           "Current code guards and syntax facts likewise do not create coverage obligations. "
+           "Use current numbered source for final assertions and the literal action timeline for their ordering. "
+           "The raw transcript and named historical-source lookup remain available for material gaps.\n"
+           if judge_name == "testing" else "")
         + f"\n\nInspect the current working directory ({workspace}).\n"
         + inspection
         + "\n\n"
@@ -750,10 +774,9 @@ def pin_workspace_python(
         + boundary_context
         + git_context
         + task_logs_context
-        + (debugging_trace_context() if history_enabled and judge_name in {"debug", "debug_logs", "workflow", "testing", "commits", "prompt_engineering"} else "")
+        + (debugging_trace_context(compact=judge_name == "testing") if history_enabled and judge_name in {"debug", "debug_logs", "workflow", "testing", "commits", "prompt_engineering"} else "")
         + ("\n\nAuthoritative CURRENT workspace source for final-suite coverage; historical bodies above apply only to their named revisions:\n"
            + current_source if judge_name == "testing" else "")
-        + testing_context
         + ("\n\nAuthoritative CURRENT plan at the retained LIVE launch root; "
            "historical or foreign trace paths cannot replace this required file:\n"
            + plan_context if judge_name == "workflow" else "")
