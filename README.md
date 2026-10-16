@@ -176,20 +176,27 @@ defaults; ordinary Markdown documentation alone does not activate its workflow.
 
 The [creation and repair cases](programming_prompt_rewritten_with_evals/evals/coding-prompts/README.md#prompt-engineering-cases)
 are selected with `--skills prompt_engineering --tasks prompt-create,prompt-repair`.
-The reported k10 run `2026-10-16_001254_888877` scored 18/20, including
-8/10 repairs. Revision v0.0.36 keeps four steps while clarifying fixed,
-independently written judge controls, separate reason/verdict fields, final-answer
-file capture and continuation of running evaluations. The matching judge accepts
-successful equivalent implementations without extra artifact requirements.
-Evidence collection now includes UTF-8 `.answer`, `.verdict` and extensionless
-files, avoiding false missing-evidence failures.
+The reported k20 run `2026-10-16_122925_427166` scored **36/40**.
+Its four failures exposed unfinished evaluations, controls-only judging, an
+unresolved wrong verdict and substring-based verdict parsing. Revision v0.0.59
+keeps four steps and adds a short checked-run example: compare exact answers,
+judge every actual answer, check parsed verdicts, then repair both prompts until
+the suite passes. Verified correct answers also test judge acceptance; one fixed,
+independently written wrong answer tests rejection. Yielded tool results retain
+their session handles so evaluations can finish. Evidence collection exposes
+completed command statuses, decoded commands and bounded outputs without inferring
+semantic compliance.
 
-The unchanged two cases, ten attempts each, scored **20/20** in
-`2026-10-16_080901_2187155`: creation 10/10 and repair 10/10, with zero
-rate-limited or infrastructure trials. Archived settings confirm `gpt-6-luna`
-at low reasoning for coding and semantic judging. All twenty verdicts were
-inspected. This small sample does not guarantee reliability; original failed
-verdicts remain unchanged.
+The final focused run `2026-10-16_174652_652469` scored **6/6**: creation 3/3
+and repair 3/3, with zero quota or infrastructure failures. Archived actual turn
+settings confirm `gpt-6-luna` at low reasoning for coding and judging. All 24 main
+answers, their judge decisions and the wrong controls were inspected. Five fixed
+audit controls passed, covering a complete run and the four original failure
+patterns; eight archived successful evaluations were accepted by the revised
+judge. Runtime smoke checks scored baseline 0/2 and positive 2/2.
+Intermediate drafts still failed, including 33/40 in the latest k20 draft;
+those original verdicts remain unchanged. The smaller final sample does not
+establish 40/40 reliability.
 
 ### workflow
 
