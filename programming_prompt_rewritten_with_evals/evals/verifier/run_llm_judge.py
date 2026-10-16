@@ -14,6 +14,7 @@ from llm_judge.reliability import UnreliableJudgeScore
 from llm_judge.rewardkit import score_with_rewardkit
 from llm_judge.scores import write_reward
 from llm_judge.self_test import run_self_test
+from llm_judge.testing_sources import list_testing_python
 from llm_judge.workspace import DEFAULT_WORKSPACE, list_workspace_python, load_judge_dir
 
 
@@ -34,9 +35,13 @@ def run_eval_agent(
 
     Returns: None.
     """
+    print(f"agent={agent} judge_dir={judge_dir} output={output} workspace={workspace} model={model} effort={effort} timeout={timeout} max_turns={max_turns}")
     template, criteria, toml_timeout = load_judge_dir(judge_dir)
     budget = timeout or toml_timeout
-    files = list_workspace_python(workspace)
+    files = (
+        list_testing_python(workspace, logs_root=output.parent.parent / "agent")
+        if judge_dir.name == "testing" else list_workspace_python(workspace)
+    )
     try:
         if agent == "grok":
             raw, rows = score_with_grok(
@@ -69,10 +74,11 @@ def run_eval_agent(
                 f"unknown eval agent {agent!r} (expected grok, cc, or codex)"
             )
     except UnreliableJudgeScore as exc:
-        log(f"evalAgent {agent} produced no reliable score: {exc}")
+        print(f"evalAgent {agent} produced no reliable score: {exc}")
         write_reward(
             output, [], exc.raw, agent=agent, error="judge_inconsistent"
         )
+        print(None)
         return
     except JUDGE_CLI_FAILURES as exc:
         err = ""
@@ -83,7 +89,7 @@ def run_eval_agent(
         # A crashed or timed-out judge CLI did not score the trial. Treat
         # that as a rate-limit skip, including Codex uvx/rewardkit exit 1
         # and subprocess.TimeoutExpired (not a TimeoutError) from uvx warmup.
-        log(
+        print(
             f"evalAgent {agent} judge CLI failed; recording ratelimit skip "
             f"not a scored no ({type(exc).__name__})"
         )
@@ -94,8 +100,10 @@ def run_eval_agent(
             agent=agent,
             ratelimit=True,
         )
+        print(None)
         return
     write_reward(output, rows, raw, agent=agent)
+    print(None)
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -54,16 +54,33 @@ _MAX_RUNNER_FILE_BYTES = 8_000
 _MAX_RUNNER_TOTAL_BYTES = 24_000
 
 
-def _is_skipped_python(path: Path, workspace: Path) -> bool:
-    """Exclude known non-solution directories and paths outside the submission.
+def _is_skipped_python(path: Path, workspace: Path, temporary_root: Path | None = None) -> bool:
+    """Exclude missing files, non-solution directories and paths outside their root.
 
-    Parameters: path - candidate Python file; workspace - submission root.
+    Parameters: path - candidate Python file; workspace - submission root;
+        temporary_root - additional trial scratch root excluding native Codex home,
+        or None for workspace only.
     Returns: True for excluded paths, otherwise False, including authored hidden files.
     """
-    print(f"path={path} workspace={workspace}")
-    try:
-        relative = path.resolve().relative_to(workspace.resolve())
-    except ValueError:
+    print(f"path={path} workspace={workspace} temporary_root={temporary_root}")
+    if not path.is_file():
+        print(True)
+        return True
+    resolved = path.resolve()
+    roots = [workspace]
+    if temporary_root is not None:
+        if resolved.is_relative_to(temporary_root.resolve() / "codex-home"):
+            print(True)
+            return True
+        roots.append(temporary_root)
+    relative = None
+    for root in roots:
+        try:
+            relative = resolved.relative_to(root.resolve())
+            break
+        except ValueError:
+            continue
+    if relative is None:
         print(True)
         return True
     for part in relative.parts:
@@ -74,49 +91,73 @@ def _is_skipped_python(path: Path, workspace: Path) -> bool:
     return False
 
 
-def list_workspace_python(workspace: Path) -> list[Path]:
-    """Return solution ``*.py`` files under *workspace*, junk dirs omitted.
+def source_listing_has_capacity(files: list[Path]) -> bool:
+    """Classify whether the shared source inventory can accept another file.
 
-    Args:
-        workspace: Directory the coding agent wrote into.
-
-    Returns:
-        Sorted real files, capped at ``_MAX_LISTED_FILES``.
+    Parameters: files - currently accepted source paths.
+    Returns: True when the shared listing limit has not been reached.
     """
+    print(f"files={files}")
+    result = len(files) < _MAX_LISTED_FILES
+    print(result)
+    return result
+
+
+def list_workspace_python(workspace: Path) -> list[Path]:
+    """Return solution Python files under the workspace, omitting junk directories.
+
+    Parameters: workspace - directory the coding agent wrote into.
+    Returns: sorted physical files, capped at the shared listing limit.
+    """
+    print(f"workspace={workspace}")
     if not workspace.is_dir():
-        log(f"workspace is not a directory: {workspace}")
+        print(f"workspace is not a directory: {workspace}")
+        print([])
         return []
     found: list[Path] = []
     for path in sorted(workspace.rglob("*.py")):
-        if not path.is_file():
-            continue
         if _is_skipped_python(path, workspace):
             continue
         found.append(path.resolve())
-        if len(found) >= _MAX_LISTED_FILES:
-            log(
+        if not source_listing_has_capacity(found):
+            print(
                 f"python listing capped at {_MAX_LISTED_FILES} files "
                 f"under {workspace}"
             )
             break
-    log(
+    print(
         f"listed {len(found)} python file(s) under {workspace}: "
         + ", ".join(p.name for p in found[:12])
         + ("…" if len(found) > 12 else "")
     )
+    print(found)
     return found
+
+
+def python_evidence_label(path: Path, workspace: Path) -> str:
+    """Give current source a relative workspace label or exact external path.
+
+    Parameters: path - source file; workspace - submission root.
+    Returns: an unambiguous source label for listing and numbered quotations.
+    """
+    print(f"path={path} workspace={workspace}")
+    resolved = path.resolve()
+    try:
+        result = resolved.relative_to(workspace.resolve()).as_posix()
+    except ValueError:
+        result = resolved.as_posix()
+    print(result)
+    return result
 
 
 def listed_python_keys(files: list[Path], workspace: Path) -> set[str]:
     """Lowercased names and paths the judge is allowed to cite.
 
-    Args:
-        files: Paths from :func:`list_workspace_python`.
-        workspace: Judge ``--workspace`` root.
-
-    Returns:
-        Absolute paths, relative paths, and basenames.
+    Parameters: files - accepted current source paths, including recorded scratch checks;
+        workspace - judge submission root.
+    Returns: absolute paths, available relative paths and basenames.
     """
+    print(f"files={files} workspace={workspace}")
     keys: set[str] = set()
     root = workspace.resolve()
     for path in files:
@@ -132,23 +173,24 @@ def listed_python_keys(files: list[Path], workspace: Path) -> set[str]:
             keys.add(str(relative).lower())
         except ValueError:
             pass
+    print(keys)
     return keys
 
 
 def workspace_python_context(
     workspace: Path, files: list[Path], *, line_numbers: bool = False
 ) -> str:
-    """Build the prompt block that names and inlines workspace Python.
+    """Build the prompt block for submitted and recorded scratch Python files.
 
-    Parameters: workspace - submission root; files - listed current Python paths;
+    Parameters: workspace - submission root; files - accepted current Python paths;
         line_numbers - include ready-to-copy references to actual source lines.
     Returns: Markdown listing paths and bounded literal file contents.
     """
     print(f"workspace={workspace} files={files} line_numbers={line_numbers}")
     if not files:
-        log(f"no python files to inline under {workspace}")
+        print(f"no python files to inline under {workspace}")
         result = (
-            f"No `*.py` files were found under {workspace}. "
+            f"No current Python sources were accepted for {workspace}. "
             "Do not invent paths such as app.py. Score only files that exist."
         )
         print(result)
@@ -159,38 +201,30 @@ def workspace_python_context(
         "Do not invent paths "
         f"(for example {workspace / 'app.py'} is not a file unless listed):",
     ]
-    root = workspace.resolve()
     for path in files:
-        try:
-            relative = path.resolve().relative_to(root)
-        except ValueError:
-            relative = Path(path.name)
-        lines.append(f"- {path.resolve()}  (relative: {relative.as_posix()})")
+        label = python_evidence_label(path, workspace)
+        lines.append(f"- {path.resolve()}  (source label: {label})")
     lines.append("")
     lines.append(
-        "File contents below are the workspace source. Score this text. "
+        "File contents below are current submitted source, including recorded scratch checks. Score this text. "
         "Do not substitute a different filename."
     )
     total = 0
     for path in files:
-        try:
-            relative = path.resolve().relative_to(root)
-        except ValueError:
-            relative = Path(path.name)
-        rel_text = relative.as_posix()
+        rel_text = python_evidence_label(path, workspace)
         try:
             data = path.read_bytes()
         except OSError as exc:
-            log(f"unreadable python file {rel_text}: {exc}")
+            print(f"unreadable python file {rel_text}: {exc}")
             lines.append(f"\n### {rel_text}\n(unreadable: {exc})")
             continue
         truncated = False
         if len(data) > _MAX_FILE_BYTES:
             data = data[:_MAX_FILE_BYTES]
             truncated = True
-            log(f"truncated {rel_text} to {_MAX_FILE_BYTES} bytes")
+            print(f"truncated {rel_text} to {_MAX_FILE_BYTES} bytes")
         if total + len(data) > _MAX_TOTAL_BYTES:
-            log(f"omitted {rel_text}: inline budget {_MAX_TOTAL_BYTES} bytes")
+            print(f"omitted {rel_text}: inline budget {_MAX_TOTAL_BYTES} bytes")
             lines.append(
                 f"\n### {rel_text}\n(omitted: remaining inline budget exhausted)"
             )
