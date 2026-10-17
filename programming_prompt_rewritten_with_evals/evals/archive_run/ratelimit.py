@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from .fsutil import load_json_lenient
 
-# Verifier stdout markers. Do not scan agent trajectories — those can
-# mention HTTP 429 without the *judge* having been rate-limited.
+# Read verifier diagnostics and explicit native provider failure records.
+# Ordinary agent messages/tool data can quote HTTP 429 without a quota failure.
 # Harbor's wrapper log (21-trial.log) is different: when the *coding*
 # agent dies on quota, Harbor writes ApiRateLimitError there. Codex
 # workspace-empty errors land in exception.txt as NonZeroAgentExitCodeError
@@ -65,6 +66,30 @@ def parse_archive_reward(payload: dict) -> float | None:
     return result
 
 
+def read_native_codex_failures(trial_dir: Path) -> list[str]:
+    """Read provider failure records without treating quoted trajectory data as errors.
+
+    Parameters: trial_dir - live or archived Harbor trial directory.
+    Returns: native error and failed-turn diagnostics from available Codex JSONL logs.
+    """
+    print(f"trial_dir={trial_dir}")
+    result = []
+    for relative in ("agent/codex.txt", "logs/agent/codex.txt"):
+        try:
+            with (trial_dir / relative).open(encoding="utf-8", errors="replace") as handle:
+                for line in handle:
+                    try:
+                        event = json.loads(line)
+                    except ValueError:
+                        continue
+                    if isinstance(event, dict) and event.get("type") in {"error", "turn.failed"}:
+                        result.append(json.dumps(event, ensure_ascii=False))
+        except OSError:
+            continue
+    print(result)
+    return result
+
+
 def is_completed_reward(score: float | None) -> bool:
     """Classify a converted completed reward for every archive failure route.
 
@@ -82,7 +107,7 @@ def trial_is_ratelimited(trial_dir: Path) -> bool:
 
     Parameters: trial_dir - Harbor trial directory (live or archived).
 
-    Returns: true when reward JSON is flagged or verifier stdout matches.
+    Returns: true when reward JSON, verifier diagnostics or native provider failures confirm quota.
         A trial that already scored 1.0 is never a skip — Harbor may log
         ApiRateLimitError on a command it then retried successfully.
     """
@@ -105,7 +130,7 @@ def trial_is_ratelimited(trial_dir: Path) -> bool:
     if completed:
         print(False)
         return False
-    for text in read_verifier_reports(trial_dir):
+    for text in read_verifier_reports(trial_dir) + read_native_codex_failures(trial_dir):
         if looks_like_judge_rate_limit(text):
             print(True)
             return True

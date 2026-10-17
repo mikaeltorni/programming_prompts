@@ -449,6 +449,25 @@ def _check_results(record) -> None:
             not trial_is_ratelimited(live),
             "ApiRateLimitError after a 1.0 reward is a pass, not a skip",
         )
+    for name, relative, content, limited in (
+        ("native_judge_usage", "verifier/test-stdout.txt",
+         "ERROR: You’ve hit your usage limit. Try again later.", True),
+        ("native_coding_usage", "agent/codex.txt",
+         json.dumps({"type": "error", "message": "You've hit your usage limit."}), True),
+        ("native_failed_turn_usage", "agent/codex.txt",
+         json.dumps({"type": "turn.failed", "error": {"message": "You’ve hit your usage limit."}}), True),
+        ("quoted_usage_is_data", "agent/codex.txt",
+         json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": "You've hit your usage limit."}}), False),
+        ("native_nonquota_error", "agent/codex.txt",
+         json.dumps({"type": "error", "message": "invalid configuration"}), False),
+    ):
+        with tempfile.TemporaryDirectory(prefix="archive-native-quota-") as raw:
+            trial = Path(raw)
+            diagnostic = trial / relative
+            diagnostic.parent.mkdir(parents=True)
+            diagnostic.write_text(content + "\n", encoding="utf-8")
+            record(name, trial_is_ratelimited(trial) is limited,
+                   "only explicit provider failure records identify native quota exhaustion")
     print(None)
 
 

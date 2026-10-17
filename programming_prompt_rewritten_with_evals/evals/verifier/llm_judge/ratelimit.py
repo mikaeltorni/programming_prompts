@@ -20,6 +20,7 @@ _RATE_LIMIT_PATTERNS = tuple(re.compile(pattern) for pattern in (
     r'"ratelimit"\s*:\s*true\b',
     r"\bfailed due to ratelimit\b",
     r"\busage[ _]limit[ _]reached\b",
+    r"\bhit your usage limit\b",
 ))
 _CREDIT_EXHAUSTION_NEEDLES = (
     "out of credits", "ask your workspace owner to refill",
