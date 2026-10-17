@@ -48,6 +48,7 @@ def run_self_test() -> int:
 
     Returns: zero when every check passes, otherwise one.
     """
+    print("parameters=none")
     cases: list[tuple[str, bool, str]] = []
 
     def check(name: str, ok: bool, detail: str) -> None:
@@ -86,21 +87,21 @@ def run_self_test() -> int:
     )
     check("criteria_token", '"yes" or "no"' in block, "prompt lists yes/no scores")
     check(
-        "ratelimit_detects_claude_is_error",
-        looks_like_judge_rate_limit(
+        "ratelimit_ignores_generic_cli_error",
+        not looks_like_judge_rate_limit(
             "CalledProcessError: Agent CLI 'claude' exited with code 1: "
             '{"is_error":true,"duration_api_ms":0}'
         ),
-        "Claude is_error + exit 1 is a rate-limit skip",
+        "generic is_error plus exit 1 does not establish provider quota",
     )
     check(
-        "ratelimit_detects_codex_rewardkit_crash",
-        looks_like_judge_rate_limit(
+        "ratelimit_ignores_rewardkit_crash",
+        not looks_like_judge_rate_limit(
             "subprocess.CalledProcessError: Command '['uvx', '--from', "
             "'harbor-rewardkit@0.1.7', 'rewardkit', '--judge', 'codex']' "
             "returned non-zero exit status 1."
         ),
-        "Codex rewardkit exit 1 with empty reasoning is a rate-limit skip",
+        "a rewardkit crash without quota evidence is infrastructure",
     )
     check(
         "ratelimit_ignores_scored_no",
@@ -108,13 +109,13 @@ def run_self_test() -> int:
         "a scored no is not a rate-limit",
     )
     check(
-        "ratelimit_detects_uvx_warmup_timeout",
-        looks_like_judge_rate_limit(
+        "ratelimit_ignores_uvx_warmup_timeout",
+        not looks_like_judge_rate_limit(
             "subprocess.TimeoutExpired: Command '['uvx', '--from', "
             "'harbor-rewardkit@0.1.7', 'rewardkit', '--help']' "
             "timed out after 180 seconds"
         ),
-        "uvx warmup timeout is a rate-limit skip, not a scored no",
+        "a warmup timeout is infrastructure, not provider quota or a scored no",
     )
     check(
         "timeout_expired_is_cli_failure",
@@ -881,6 +882,8 @@ def run_self_test() -> int:
     failed = [name for name, ok, _ in cases if not ok]
     if failed:
         print(f"{len(failed)}/{len(cases)} llm-judge self-test(s) failed", flush=True)
+        print(1)
         return 1
     print(f"{len(cases)}/{len(cases)} llm-judge self-tests passed", flush=True)
+    print(0)
     return 0
