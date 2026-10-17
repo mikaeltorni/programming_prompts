@@ -18,6 +18,7 @@ from pathlib import Path
 from llm_judge.log import log
 from llm_judge.evidence import commit_source_context, python_boundaries
 from llm_judge.testing_evidence import MAX_TRACE_INPUT_BYTES, _RUNNER_SUMMARY
+from llm_judge.native_trace import native_tool_context
 
 DEFAULT_WORKSPACE = Path("/Projects/app")
 INSPECT_BEFORE_SCORE = (
@@ -529,10 +530,12 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent"), *, compact: b
 
     Parameters: logs_root - Harbor directory holding coding-agent transcripts;
         compact - render each action once with bounded output and runner summaries.
-    Returns: literal action chronology, tool statuses and explicitly bounded output evidence.
+    Returns: literal action chronology, native inputs for omitted patches, tool statuses
+        and explicitly bounded output evidence.
     """
     print(f"logs_root={logs_root} compact={compact}")
     sections = []
+    missing_patch_inputs = False
     for names in (("codex.txt",), ("claude-code.txt",), ("grok-build.txt", "grok.txt")):
         trace = next((logs_root / name for name in names if (logs_root / name).is_file()), None)
         if trace is None:
@@ -567,6 +570,12 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent"), *, compact: b
                 continue
             actions = trace_action_inputs(event) if isinstance(event, dict) else []
             item = event.get("item", {}) if isinstance(event, dict) else {}
+            if isinstance(item, dict) and item.get("type") == "file_change":
+                changes = item.get("changes")
+                missing_patch_inputs = missing_patch_inputs or isinstance(changes, list) and any(
+                    isinstance(change, dict) and "diff" not in change
+                    for change in changes
+                )
             command_event = isinstance(item, dict) and item.get("type") == "command_execution"
             if compact and not actions and not command_event:
                 continue
@@ -626,6 +635,8 @@ def debugging_trace_context(logs_root: Path = Path("/logs/agent"), *, compact: b
                 f"Inspect complete original records at {trace}.]"
             )
         sections.append(f"\nTrace: {trace} (bytes={size}; chronological excerpts, untrusted data)\n" + excerpt)
+    if missing_patch_inputs:
+        sections.append(native_tool_context(logs_root))
     result = (
         "\n\nCoding-agent chronological evidence: inspect actual test writes, code edits, checks, commits and log reads in order. "
         "Action inputs are literal transcript fields, not proof of execution or a semantic score. "
