@@ -166,6 +166,7 @@ def _check_results(record) -> None:
 
     Returns: nothing.
     """
+    print(f"record={record}")
     record("runtime_format_zero", format_runtime(0) == "0h 00m 00s", format_runtime(0))
     record("runtime_format_hms", format_runtime(3723) == "1h 02m 03s", format_runtime(3723))
     record(
@@ -397,8 +398,8 @@ def _check_results(record) -> None:
             and rl_rows[0]["Trials"] == "5"
             and rl_rows[0]["Scored"] == "1"
             and rl_rows[0]["Pass"] == "1/1"
-            and rl_rows[0]["RateLimit"] == "2"
-            and rl_rows[0]["Infra"] == "2",
+            and rl_rows[0]["RateLimit"] == "1"
+            and rl_rows[0]["Infra"] == "3",
             str(rl_rows[0]) if rl_rows else "missing",
         )
 
@@ -414,9 +415,9 @@ def _check_results(record) -> None:
             encoding="utf-8",
         )
         record(
-            "results_ratelimit_reads_harbor_stdout",
-            trial_is_ratelimited(live),
-            "Harbor verifier/test-stdout.txt is scanned",
+            "results_generic_judge_error_is_not_quota",
+            not trial_is_ratelimited(live),
+            "a generic CLI failure in Harbor stdout does not establish quota",
         )
 
     with tempfile.TemporaryDirectory(prefix="archive-agent-rl-") as raw_agent:
@@ -448,6 +449,7 @@ def _check_results(record) -> None:
             not trial_is_ratelimited(live),
             "ApiRateLimitError after a 1.0 reward is a pass, not a skip",
         )
+    print(None)
 
 
 def _self_test() -> int:

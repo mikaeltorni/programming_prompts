@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # Aggregate and report per-agent and per-skill rewards.
 
+# Aggregate per-agent scores and preserve quota versus infrastructure diagnostics.
+# Parameters: $1 - skill name; $2 - destination reward path.
+# Returns: the Python aggregator exit status.
 aggregate_eval_agent_rewards() {
+  printf 'skill=%s dest=%s\n' "$1" "$2"
+  local aggregate_status
   local skill="$1"
   local dest="$2"
   python3 - "$skill" "$dest" "${EVAL_AGENT_LIST[@]}" <<'PY'
@@ -35,8 +40,16 @@ def is_ratelimit(path: Path) -> bool:
     return str(payload.get("error") or "").lower() in {"ratelimit", "rate_limit"}
 
 def judge_error(path: Path) -> str:
+    """Read a nonquota infrastructure error from an evaluator reward.
+
+    Parameters: path - evaluator reward file.
+    Returns: its infrastructure error code, or empty text for a quota/scored result.
+    """
+    print(f"path={path}")
     error = str(load(path).get("error") or "")
-    return error if error == "judge_inconsistent" else ""
+    result = error if error not in {"ratelimit", "rate_limit", "rate-limit"} else ""
+    print(result)
+    return result
 
 def bits(details: dict) -> tuple[str, str]:
     reward = details.get("reward")
@@ -58,13 +71,13 @@ def bits(details: dict) -> tuple[str, str]:
 per_agent = []
 rewards = []
 ratelimited = False
-inconsistent = False
+infrastructure_error = ""
 for agent in agents:
     path = verifier / f"reward-{skill}-{agent}.json"
     limited = is_ratelimit(path)
     error = judge_error(path)
     ratelimited = ratelimited or limited
-    inconsistent = inconsistent or bool(error)
+    infrastructure_error = infrastructure_error or error
     reward = 0.0 if limited else reward_of(path)
     details = load(verifier / f"reward-{skill}-{agent}-details.json")
     raw, reasoning = bits(details)
@@ -99,8 +112,8 @@ skill_payload = {"reward": overall}
 if ratelimited:
     skill_payload["ratelimit"] = True
     skill_payload["error"] = "ratelimit"
-elif inconsistent:
-    skill_payload["error"] = "judge_inconsistent"
+elif infrastructure_error:
+    skill_payload["error"] = infrastructure_error
 dest.write_text(json.dumps(skill_payload, indent=2) + "\n", encoding="utf-8")
 details_dest = dest.parent / f"reward-{skill}-details.json"
 payload = {
@@ -112,7 +125,7 @@ payload = {
             "name": skill,
             "reward": overall,
             "raw": "ratelimit" if ratelimited else (
-                "unreliable" if inconsistent else ("yes" if overall >= 1.0 else "no")
+                "unreliable" if infrastructure_error else ("yes" if overall >= 1.0 else "no")
             ),
             "reasoning": "; ".join(
                 f"{item['agent']}={item['raw']}" for item in per_agent
@@ -127,6 +140,9 @@ print(
     flush=True,
 )
 PY
+  aggregate_status=$?
+  printf '%s\n' "$aggregate_status"
+  return "$aggregate_status"
 }
 
 read_skill_reward() {
@@ -185,9 +201,11 @@ PY
 }
 
 # Write the Harbor score separately from diagnostic metadata.
-# Parameters: $1 - skill-name array; $2 - corresponding reward array.
-# Returns: zero after writing reward.json and reward-details.json.
+# Parameters: $1 - skill-name array variable; $2 - corresponding reward array variable.
+# Returns: the Python aggregator exit status after writing reward and diagnostic files.
 write_overall_reward() {
+  printf 'names_ref=%s rewards_ref=%s\n' "$1" "$2"
+  local overall_status
   local -n names_ref="$1"
   local -n rewards_ref="$2"
   python3 - <<'PY' /logs/verifier "${names_ref[@]}" -- "${rewards_ref[@]}"
@@ -247,7 +265,7 @@ if independent:
     # stay the scores. Overall 1.0 means judges ran (unless rate-limited).
     overall = 1.0 if rewards else 0.0
 ratelimited = False
-inconsistent = False
+infrastructure_error = ""
 for name in names:
     skill_path = out_dir / f"reward-{name}.json"
     if skill_path.is_file():
@@ -257,9 +275,10 @@ for name in names:
             skill_payload = {}
         if isinstance(skill_payload, dict) and skill_payload.get("ratelimit") is True:
             ratelimited = True
-        if isinstance(skill_payload, dict) and skill_payload.get("error") == "judge_inconsistent":
-            inconsistent = True
-if ratelimited or inconsistent:
+        error = str(skill_payload.get("error") or "") if isinstance(skill_payload, dict) else ""
+        if error and error not in {"ratelimit", "rate_limit", "rate-limit"}:
+            infrastructure_error = infrastructure_error or error
+if ratelimited or infrastructure_error:
     overall = 0.0
 reward_payload = {"reward": overall}
 # Harbor treats every reward.json field as a numeric reward. Diagnostic
@@ -274,7 +293,7 @@ reward_payload = {"reward": overall}
             "overall": overall,
             "ratelimit": ratelimited,
             "error": "ratelimit" if ratelimited else (
-                "judge_inconsistent" if inconsistent else None
+                infrastructure_error or None
             ),
             "criteria": criteria,
         }
@@ -289,4 +308,7 @@ for item in criteria:
         flush=True,
     )
 PY
+  overall_status=$?
+  printf '%s\n' "$overall_status"
+  return "$overall_status"
 }

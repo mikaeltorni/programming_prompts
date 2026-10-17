@@ -9,7 +9,7 @@ from pathlib import Path
 
 from llm_judge.grok import DEFAULT_MAX_TURNS, score_with_grok
 from llm_judge.log import log
-from llm_judge.ratelimit import JUDGE_CLI_FAILURES
+from llm_judge.ratelimit import JUDGE_CLI_FAILURES, classify_judge_cli_failure, parse_judge_cli_failure
 from llm_judge.reliability import UnreliableJudgeScore
 from llm_judge.rewardkit import score_with_rewardkit
 from llm_judge.scores import write_reward
@@ -81,25 +81,10 @@ def run_eval_agent(
         print(None)
         return
     except JUDGE_CLI_FAILURES as exc:
-        err = ""
-        if isinstance(exc, subprocess.CalledProcessError):
-            err = str(exc.stderr or exc.output or exc)
-        else:
-            err = str(exc)
-        # A crashed or timed-out judge CLI did not score the trial. Treat
-        # that as a rate-limit skip, including Codex uvx/rewardkit exit 1
-        # and subprocess.TimeoutExpired (not a TimeoutError) from uvx warmup.
-        print(
-            f"evalAgent {agent} judge CLI failed; recording ratelimit skip "
-            f"not a scored no ({type(exc).__name__})"
-        )
-        write_reward(
-            output,
-            [],
-            err or str(exc),
-            agent=agent,
-            ratelimit=True,
-        )
+        kind, arguments = parse_judge_cli_failure(exc)
+        diagnostic, limited, error = classify_judge_cli_failure(kind, *arguments)
+        print(f"evalAgent {agent} judge CLI failed: error={error} ratelimit={limited} ({type(exc).__name__})")
+        write_reward(output, [], diagnostic, agent=agent, ratelimit=limited, error=error)
         print(None)
         return
     write_reward(output, rows, raw, agent=agent)

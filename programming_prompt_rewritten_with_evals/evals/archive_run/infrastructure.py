@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from .fsutil import load_json_lenient
+from .ratelimit import is_completed_reward, parse_archive_reward, read_verifier_reports
+from verifier.llm_judge.ratelimit import classify_judge_cli_failure, parse_judge_cli_report
 
 _INFRA_EXCEPTIONS = {
     "AgentTimeoutError": "agent timeout",
@@ -13,12 +15,27 @@ _INFRA_EXCEPTIONS = {
 }
 
 
+def judge_infrastructure_reason(error: str) -> str | None:
+    """Describe a nonquota judge infrastructure error from any evidence route.
+
+    Parameters: error - converted judge error code or empty text.
+    Returns: a known or generic infrastructure reason, or None for quota/scored results.
+    """
+    print(f"error={error}")
+    result = None if not error or error in {"ratelimit", "rate_limit", "rate-limit"} else {
+        "judge_inconsistent": "judge verdict inconsistent", "judge_timeout": "judge timeout",
+        "judge_cli_error": "judge CLI failed",
+    }.get(error, f"judge failure: {error}")
+    print(result)
+    return result
+
+
 def trial_infrastructure_failure(trial_dir: Path) -> str | None:
     """Return a known infrastructure failure, or ``None`` for a scored trial.
 
     Parameters: trial_dir - live Harbor trial or archived ``jobs/*/trials/*``.
 
-    Returns: short failure reason, or None for a scored trial. Prefer the final traceback because
+    Returns: short execution/judge infrastructure reason, or None for a scored/quota trial. Prefer the final traceback because
         Harbor may redact unrelated JSON fields into invalid literals.
     """
     print(f"trial_dir={trial_dir}")
@@ -68,13 +85,25 @@ def trial_infrastructure_failure(trial_dir: Path) -> str | None:
         trial_dir / "03-reward.json", *sorted(trial_dir.glob("03-reward-*.json")),
         trial_dir / "verifier" / "reward-details.json", trial_dir / "02-reward-details.json",
     ]
+    completed = False
     for path in reward_paths:
         payload = load_json_lenient(path) or {}
         reward = payload.get("reward")
         details = reward if isinstance(reward, dict) else payload
-        if details.get("error") == "judge_inconsistent":
-            reason = "judge verdict inconsistent"
+        score = parse_archive_reward(payload)
+        completed = completed or is_completed_reward(score)
+        error = str(details.get("error") or "")
+        reason = judge_infrastructure_reason(error)
+        if reason:
             print(reason)
             return reason
+    if not completed:
+        for text in read_verifier_reports(trial_dir):
+            kind, arguments = parse_judge_cli_report(text)
+            _, _, error = classify_judge_cli_failure(kind, *arguments)
+            reason = judge_infrastructure_reason(error or "")
+            if reason:
+                print(reason)
+                return reason
     print(None)
     return None
