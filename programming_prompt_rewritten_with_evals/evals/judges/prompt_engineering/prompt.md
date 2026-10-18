@@ -9,14 +9,19 @@ Check these outcomes:
   demonstrated requirement; removing redundant instructions is a valid repair.
 - A saved runner uses real requested-model calls on every main case and judges
   each actual answer plus fixed wrong controls. Expected answers/verdicts are
-  independent. Every expected criterion is asserted; a single-verdict schema has
-  only one criterion. Main comparisons alone do not validate the judge.
+  independent. Assert each field against its independent expected value; no
+  redundant cross-field assertion is required. A single-verdict schema has only
+  one criterion. Main comparisons alone do not validate the judge.
 - Decisive witnesses support the labels. Invented evidence, wrong calculations or
   aggregate-only checks do not establish correct multi-field judging.
 - Focused checks are followed by the full requested evaluation on a frozen
   candidate. Submitted requests, replies, verdicts, settings, nonzero collection
   and exits are retained. Report execution blockers separately from semantic
   findings; missing execution is not verified completion.
+- When logs say a requested setting was ignored, require a corrected invocation
+  or evidence that the requested setting was already active. The ignored option
+  itself does not prove that setting; recognized settings in saved calls suffice
+  when no warning contradicts them.
 
 Apply the user's acceptance criteria. Exact correctness cases and judge controls
 must match their expectations. A sampled benchmark can finish with honestly
