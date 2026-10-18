@@ -244,20 +244,12 @@ function docstrings from a separately selected commenting skill.
 The [programming skills](programming_prompt_rewritten_with_evals/prompts/programming-skills/README.md)
 are independently selectable policies. Their [matching judges](programming_prompt_rewritten_with_evals/evals/judges/README.md)
 score the same behavioral requirements, without adding another policy's artifacts.
-`testing` requires saved public checks before each capability's code, current
-contract coverage, state observations after rejection, isolated cases and honest
-cumulative execution evidence. Static content and project test prohibitions use
-direct verification; no new test framework or hosted CI is required.
-
-Cover success/boundaries, documented operand shapes (including extra operands
-for zero-argument queries), numeric conversion and specified domain/resource
-failures. Preserve unaffected checks when requirements change. When a query's
-Feature begins, upgrade retained rejection bodies before its code: public seed,
-rejection, then immediate available read-only values and required history.
-Stateless cases need no state fixture; valid empty-domain query failures retain
-an empty fixture. Never pull a future public query into an earlier Feature.
-Coverage lists are optional. Commit queues retain each original capability
-sentence; recorded Git output may supply introducing hashes without duplicate cells.
+`testing` covers correct public results, relevant errors and boundaries, stateful
+sequences, preservation after rejection, isolated fixtures and actual test
+execution. Use existing tools or stdlib checks. Save a regression before fixing
+a reported bug; ordinary creation does not require tests before each capability.
+Selected workflow and commit policies own their separate implementation cycles.
+Static content and project test prohibitions use direct verification.
 
 SRP establishes parser, operations and applicable validators before the first
 application write, including a supplied mixed entrypoint's first repair. The
@@ -275,8 +267,8 @@ all selected Feature cycles.
 The October 10, 2026 content revision shortened the policy suite by about 65%
 and judge text/configuration by about 80%. It removed repeated audit procedures,
 mandatory coverage inventories, literal ledger grading and testing's source-site
-question expansion. The testing judge now uses one `testing_contract` criterion
-covering all four retained obligations; immutable `debug_behavior` correctness
+question expansion. The October 10 testing judge used one `testing_contract` criterion
+covering that revision's obligations; immutable `debug_behavior` correctness
 contracts remain separate. Static validation, actual instruction assembly and
 isolated judge packaging passed. No benchmark was run for this revision, so
 its effect on pass rate remains unverified and archives retain their verdicts.
@@ -284,10 +276,10 @@ its effect on pass rate remains unverified and archives retain their verdicts.
 The subsequent October 10 audit corrected judges that mistook read-only review
 for an edit, required superseded or duplicated stateless checks, or treated
 logging and numeric conversion as misplaced parsing/domain logic. SRP now receives
-numbered current source and existing function-boundary evidence. Short policy
-clarifications keep future commands unsupported until their Feature, require
-the actual commit before the next checks, upgrade older rejection files with
-new queries, and construct worktree names from shared shell variables.
+numbered current source and existing function-boundary evidence. That historical revision
+clarified future commands, commit timing, rejection observations and worktree
+names. The current testing policy above supersedes its testing chronology
+requirements.
 Valid bundled histories, incomplete checks and layout mismatches still fail.
 
 Verification uses the supported `evals/run_benchmark.sh` entrypoint and archived
