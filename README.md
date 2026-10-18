@@ -171,13 +171,16 @@ Refresh with `acc pp enable -v2 --skill testing`; check installation with
 `acc pp status --skill v2:testing --check`. Its benchmark selector is
 `--skills testing`; the judge gives one `testing_contract` verdict.
 
-Candidate v0.1.109 scored **27/32** in archived run `2026-10-18_154515_150834`,
-using Codex `gpt-6-luna`/low for coding and judging, with zero quota or
-infrastructure failures. Review found two false rejections of successful plain
-assertion runners. The v0.1.110 correction passed **14/14** focused judge controls,
-including those archived trials. Its final full rerun remains unverified because
-the selected account exhausted its quota. Scores from the older sentence-cycle
-rubric are not directly comparable.
+Revision v0.1.110 scored **28/32 (87.5%)** across all eight tasks with four
+attempts each in archived run `2026-10-18_162739_2545515`. Coding and judging
+used Codex `gpt-6-luna`/low on instance 2, with zero quota or infrastructure
+failures. All four failed trials were inspected: two omitted relevant invalid
+inputs and two stopped before completing implementation or tests. Their failure
+verdicts remain unchanged. Focused judge controls passed **14/14**, including the
+two successful plain-assertion runners wrongly rejected by the earlier judge.
+The earlier v0.1.109 run `2026-10-18_154515_150834` scored 27/32; these small
+samples do not establish a reliable improvement rate. Scores from the older
+sentence-cycle rubric are not directly comparable.
 
 ### prompt_engineering
 
@@ -198,9 +201,17 @@ to all nine configured harness families. Prompt engineering remains optional in
 fresh-install and benchmark defaults; select its two benchmark cases with
 `--skills prompt_engineering --tasks prompt-create,prompt-repair`.
 
-Revision v0.0.63 and its paired judge passed direct content checks. New real-model
-verification is pending: the selected account returned an out-of-credits error
-before producing an answer. This is an execution blocker, not a semantic result.
+Revision v0.0.66 requires a saved evaluation command that submits the tested
+prompt text with each input and verifies actual answers plus fixed wrong judge
+controls. It also checks for ignored model-setting options; Codex uses
+`model_reasoning_effort`. Creation needs no invented broken baseline.
+
+The final two-task run `2026-10-18_164039_3322724` passed **2/2**, with seven
+main answers and 17 judge decisions independently checked. Focused judge controls
+passed **5/5**, including rejection of an actual run with an ignored reasoning
+setting. The full run used Codex `gpt-6-luna`/low on instance 2 with zero quota
+or infrastructure failures. Earlier failing runs and their raw verdicts remain
+archived; the rejected settings evidence was not relabeled as a passing run.
 
 ### workflow
 
