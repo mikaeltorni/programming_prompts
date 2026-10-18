@@ -1,4 +1,3 @@
-# One semantic contract verdict; source and chronological evidence remain available.
 [judge]
 judge = "codex"
 model = "gpt-6-luna"
@@ -8,7 +7,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "testing_contract"
-description = "saved public checks precede each capability's code, cover the current contract and retained rules, observe affected state after rejection with isolated cases, and have honest cumulative execution evidence; respect documented direct-check exceptions and report unavailable chronology separately"
+description = "Runnable tests cover the requested behavior with independent correct expectations, relevant errors and stateful cases; the final relevant suite actually runs and passes, with honest limits."
 type = "binary"
 
 [scoring]
