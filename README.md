@@ -158,45 +158,49 @@ no capture path exists, it asks the user for a screenshot. SSH alone does not
 guarantee guest desktop access. Installed as a native skill under each
 harness's skill directory.
 
+### testing
+
+Use `$testing` for ordinary public-interface tests: correct expected results,
+relevant invalid inputs and boundaries, stateful sequences, isolation and a real
+final test run. The [testing policy](programming_prompt_rewritten_with_evals/prompts/programming-skills/testing/SKILL.md)
+uses existing tools or stdlib checks. It does not impose feature ledgers or
+sentence-by-sentence implementation cycles; separately selected workflow and
+commit policies own those requirements.
+
+Refresh with `acc pp enable -v2 --skill testing`; check installation with
+`acc pp status --skill v2:testing --check`. Its benchmark selector is
+`--skills testing`; the judge gives one `testing_contract` verdict.
+
+Candidate v0.1.109 scored **27/32** in archived run `2026-10-18_154515_150834`,
+using Codex `gpt-6-luna`/low for coding and judging, with zero quota or
+infrastructure failures. Review found two false rejections of successful plain
+assertion runners. The v0.1.110 correction passed **14/14** focused judge controls,
+including those archived trials. Its final full rerun remains unverified because
+the selected account exhausted its quota. Scores from the older sentence-cycle
+rubric are not directly comparable.
+
 ### prompt_engineering
 
-Use `$prompt_engineering` or ask for `prompt_engineering` when creating or
-editing prompts. The [four-step policy](programming_prompt_rewritten_with_evals/prompts/programming-skills/prompt_engineering/SKILL.md)
-also applies to AI instructions in Markdown, including skills and judges.
-It keeps instructions simple, reads existing benchmark evidence, creates a small
-reusable evaluation suite when needed, and edits the main prompt and judge
-together. Actual model responses and correct/incorrect judge checks must pass;
-source-wording checks cannot substitute for behavioral evaluation.
+Use `$prompt_engineering` when creating or editing prompts, skills or judges.
+The [policy](programming_prompt_rewritten_with_evals/prompts/programming-skills/prompt_engineering/SKILL.md)
+starts with **Do not overcomplicate**: use short clear instructions and the
+simplest existing evaluation. Remove redundant rules before adding machinery.
+Reuse original failures and independent cases, keep the main prompt and judge
+aligned, and verify actual model outputs and parsed judge decisions.
 
-Enable or refresh the conditional policy across configured harnesses with
-`acc pp enable -v2 --skill prompt_engineering`; verify with
-`acc pp status --skill v2:prompt_engineering --check`. It is currently applied to
-all nine harness families. It remains optional in fresh-install and benchmark
-defaults; ordinary Markdown documentation alone does not activate its workflow.
+Follow the user's acceptance criteria. Exact correctness cases and judge controls
+must match their expectations. A sampled benchmark reports its pass rate and
+remaining errors; 100% is required only when the user asked for it.
 
-The [creation and repair cases](programming_prompt_rewritten_with_evals/evals/coding-prompts/README.md#prompt-engineering-cases)
-are selected with `--skills prompt_engineering --tasks prompt-create,prompt-repair`.
-The reported k20 run `2026-10-16_122925_427166` scored **36/40**.
-Its four failures exposed unfinished evaluations, controls-only judging, an
-unresolved wrong verdict and substring-based verdict parsing. Revision v0.0.59
-keeps four steps and adds a short checked-run example: compare exact answers,
-judge every actual answer, check parsed verdicts, then repair both prompts until
-the suite passes. Verified correct answers also test judge acceptance; one fixed,
-independently written wrong answer tests rejection. Yielded tool results retain
-their session handles so evaluations can finish. Evidence collection exposes
-completed command statuses, decoded commands and bounded outputs without inferring
-semantic compliance.
+Refresh with `acc pp enable -v2 --skill prompt_engineering`; verify with
+`acc pp status --skill v2:prompt_engineering --check`. Both policies are applied
+to all nine configured harness families. Prompt engineering remains optional in
+fresh-install and benchmark defaults; select its two benchmark cases with
+`--skills prompt_engineering --tasks prompt-create,prompt-repair`.
 
-The final focused run `2026-10-16_174652_652469` scored **6/6**: creation 3/3
-and repair 3/3, with zero quota or infrastructure failures. Archived actual turn
-settings confirm `gpt-6-luna` at low reasoning for coding and judging. All 24 main
-answers, their judge decisions and the wrong controls were inspected. Five fixed
-audit controls passed, covering a complete run and the four original failure
-patterns; eight archived successful evaluations were accepted by the revised
-judge. Runtime smoke checks scored baseline 0/2 and positive 2/2.
-Intermediate drafts still failed, including 33/40 in the latest k20 draft;
-those original verdicts remain unchanged. The smaller final sample does not
-establish 40/40 reliability.
+Revision v0.0.63 and its paired judge passed direct content checks. New real-model
+verification is pending: the selected account returned an out-of-credits error
+before producing an answer. This is an execution blocker, not a semantic result.
 
 ### workflow
 

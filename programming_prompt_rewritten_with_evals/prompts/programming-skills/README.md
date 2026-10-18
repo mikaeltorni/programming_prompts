@@ -48,15 +48,12 @@ both task families by default, with only applicable skills on each family.
 Unrelated-skill runs do not execute the new cases. Use `debug_logs` with `greeter`
 to evaluate the preserved read-logs-first policy on the original staged task.
 
-**Testing eval note:** the semantic judge assesses saved checks against the
-original request with one `testing_contract` verdict: checks before each
-capability, retained contract coverage, preservation/isolation and honest
-execution evidence. No per-source-site question expansion or mandatory coverage
-inventory is used. Existing evidence helpers remain available. It does not
-require a framework, file name, or fixed test count.
-Without an agent trace it reports execution order as unverified. Default
-discovery includes `testing`; select it alone with `--skills testing` or add it
-to the full suite.
+**Testing eval note:** the semantic judge gives one `testing_contract` verdict
+for ordinary tests: correct public results, relevant errors, stateful preservation
+and isolation, and actual final execution. Plain-assertion runners count.
+No sentence-cycle chronology, special helper, feature ledger, framework, file name
+or fixed test count is required. Default discovery includes `testing`; select it
+alone with `--skills testing` or include it in the full suite.
 
 **SRP eval note:** SRP v0.0.62 establishes the parser/operation/validator layout
 before the first application write. The judge requires parsing/dispatch, domain
@@ -101,30 +98,29 @@ each remains explicitly selectable with `--skills`.
 ## Policy and judge alignment
 
 Policies describe the required work; their judges score those same requirements.
-Do not add an unselected companion's artifacts or turn a partial transcript into
-an order failure. Current checks use current rules; earlier rules are assessed at
-their actual historical revisions. Query upgrades to retained rejection bodies
-belong to that query's own checks-before-code step. Distinct arithmetic/state
-updates are not duplicated decisions merely because they share storage.
+Do not impose an unselected companion's workflow requirements. The testing judge
+assesses final ordinary tests and their actual execution; workflow and commits
+remain separately selectable policies. Historical benchmark verdicts stay intact
+when a policy changes, and scores from different rubrics are not directly comparable.
 
-The October 10, 2026 simplification passed static content validation and isolated
-instruction assembly/judge packaging. Benchmark performance is unverified for
-this revision; original archived verdicts remain unchanged. Its testing detail
-schema is one criterion rather than historical expanded subquestions.
+The October 18 ordinary-testing candidate scored 27/32 with no quota or
+infrastructure failures. The subsequent judge correction passed 14/14 focused
+controls; its final full rerun remains pending account availability. The testing
+schema has one criterion. The root README records the revision and evidence limits.
 
 ## Prompt engineering
 
-`prompt_engineering` is an optional conditional policy: invoke it by name or
-create/edit AI-instruction Markdown, including skill and judge prompts. It reads
-existing results, keeps changes small, edits both prompt and judge, and reuses or
-creates simple cases with separate model calls for the main prompt and judge.
-Every independently verified correct main answer checks judge acceptance; one
-fixed, independently written wrong answer checks rejection. The runner compares
-exact answers, checks parsed verdicts and saves results; a Python rule cannot
-replace model judge calls. Yielded tool results preserve session handles and are
-polled until completion. Mismatches require paired repair and rerunning the suite.
-Create a small runner when the suite is missing; reuse existing cases otherwise.
-Ordinary documentation alone is outside its scope. Its matching judge receives
-Markdown, evaluation data/runners, original logs and chronological evidence.
-Select `prompt-create,prompt-repair` to exercise its two focused Harbor cases;
-see the [case catalog](../../evals/coding-prompts/README.md#prompt-engineering-cases).
+`prompt_engineering` is optional: invoke it by name when creating or editing AI
+instructions, including skills and judges. **Do not overcomplicate.** Keep prompts
+short, reuse the simplest existing evaluation, and add machinery only for a
+demonstrated need. Read original failures, make a causal repair and keep prompt
+and judge aligned. Save actual main-model answers and model-judge decisions,
+assert independent expectations and wrong controls, and inspect their evidence.
+Finish the full requested evaluation. Exact correctness cases and judge controls
+must match expectations; sampled benchmark errors are reported, with no unasked
+100% requirement. Report execution blockers honestly.
+
+Refresh with `acc pp enable -v2 --skill prompt_engineering`; verify using
+`acc pp status --skill v2:prompt_engineering --check`. Select
+`prompt-create,prompt-repair` for its two Harbor cases; see the
+[case catalog](../../evals/coding-prompts/README.md#prompt-engineering-cases).
