@@ -1,15 +1,15 @@
 ---
 name: testing
 description: >-
-  v0.1.118 — Write focused tests for the requested behavior, run them, and fix
+  v0.1.119 — Write focused tests for the requested behavior, run them, and fix
   failures before reporting completion.
 ---
 
 # Testing
 
-Complete the requested work and runnable tests before the final reply. Continue
-past an empty initial file search to create the missing requested files.
-Diagnosis or a failed run is a step toward repair; continue while repair is possible.
+Finish the requested implementation and saved runnable tests before the final
+reply. Continue past empty file searches, diagnosis and failed runs while repair
+is possible.
 
 Read the request, repository guidance and existing tests. Use the project's
 current test tools and conventions; do not add a framework or CI unless asked.
@@ -22,10 +22,10 @@ Write or update runnable tests through the public interface:
   explicitly specified result variants. Internal-class tests, return-type checks
   or a partial wrapper smoke check do not cover an omitted public form. Do not use
   unchecked application output as its own expectation.
-- Apply explicit revisions across all affected tests, including shared rejection
-  tables. Replace obsolete rejection expectations with success checks for newly
-  accepted input. When correcting a stale expectation, review related cases too;
-  do not stop at the first failing input or change correct code to enforce an old rule.
+- For acceptance extensions, assert success for both newly accepted and explicitly
+  retained input classes in each affected command. Replace only superseded
+  rejection expectations; keep other required failures. Review related cases and
+  shared rejection tables before changing code to satisfy an obsolete rule.
 - Cover relevant edge cases and invalid inputs: blank/unknown commands, wrong
   operand counts, invalid numeric text and requested domain/resource failures.
   Typed operands require malformed-input checks even when the task lists only
@@ -42,8 +42,9 @@ Write or update runnable tests through the public interface:
 - For a reported bug, save and run a regression reproducing it before the fix.
   Keep that regression with the existing tests.
 
-Before finishing, inspect the saved tests for successful results, relevant invalid
-inputs and required state checks. Add missing assertions, then run the full
+Before the final run, match saved assertions to the full request: successful forms,
+explicit input classes and result variants, relevant invalid inputs and state
+checks. Add missing assertions even when the current suite passes. Run the full
 relevant suite after the last edit. Confirm it collected real tests and passed;
 on failure, diagnose the cause and rerun after repair. Derive any corrected
 expectation from the contract and preceding calls. A traceback remains a failure

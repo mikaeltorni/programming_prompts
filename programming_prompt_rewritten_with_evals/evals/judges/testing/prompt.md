@@ -14,9 +14,11 @@ Choose YES when these ordinary testing requirements are met:
    forms use an internal class. One correct example covers a form; additional
    values/states are required only for explicitly specified classes, results or boundaries.
    A zero-operand query does not itself require a separate empty-state example.
-   Explicit acceptance revisions need a successful newly accepted case, replacing
-   obsolete rejection expectations; a passing suite enforcing an earlier rule is
-   not correct coverage of the final contract.
+   Explicit acceptance extensions need successful assertions for both newly
+   accepted and explicitly retained input classes in the affected command.
+   Credit a class only with its actual successful assertion; another operation's
+   inputs or failed calls do not supply it. Replace obsolete rejection expectations;
+   a passing suite enforcing an earlier rule is not correct final-contract coverage.
    Error/exception checks do not cover a valid return. Calculate nontrivial fixture
    results with Python. Accept contract-permitted
    numeric representations; do not invent formatting or type restrictions.
@@ -51,6 +53,8 @@ statement previews and runner summaries do not show every assertion.
 In reasoning, briefly mark coverage, errors, state and execution as met or missing
 (use not applicable for stateless code). A required missing item means NO. Then
 give the matching yes/no score.
+For a claimed explicit input-class check, identify its actual successful assertion;
+if none exists, report that gap. Do not invent a witness to agree with a raw verdict.
 Cite one actual current line as Citation: relative_file.py:NUMBER | entire line
 or one supplied run locator as TraceCitation: path:NUMBER without a quote.
 
