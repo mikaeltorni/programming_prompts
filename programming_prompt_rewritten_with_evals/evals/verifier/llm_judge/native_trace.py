@@ -50,15 +50,43 @@ def parse_native_tool_records(path: Path) -> tuple[list[tuple[int, dict]], str |
     return result
 
 
+def decode_native_string_literals(source: str) -> tuple[str, ...]:
+    """Parse JSON-compatible double-quoted string literals without executing tool source.
+
+    Parameters: source - original native tool input, possibly JavaScript or JSON text.
+    Returns: decoded string literals; other syntax remains available in the original input.
+    """
+    print(f"source={source}")
+    decoder = json.JSONDecoder()
+    cursor = 0
+    strings = []
+    while cursor < len(source):
+        if source[cursor] != '"':
+            cursor += 1
+            continue
+        try:
+            value, end = decoder.raw_decode(source, cursor)
+        except ValueError:
+            cursor += 1
+            continue
+        strings.append(value)
+        cursor = end
+    result = tuple(strings)
+    print(result)
+    return result
+
+
 def format_native_tool_records(label: str, records: list[tuple[int, dict]]) -> str:
     """Render original native inputs and results on their own chronological line axis.
 
     Parameters: label - session path relative to the agent log root; records - converted native records.
-    Returns: bounded literal evidence with original line citations and explicit omission notices.
+    Returns: the bounded original record prefix plus decoded displays using leftover space;
+        original citations/results survive display limits, with explicit omission notices.
     """
     print(f"label={label} records={records}")
-    lines = []
+    blocks = []
     used = 0
+    raw_limit = None
     for number, fields in records:
         block = f"TraceCitation: {label}:{number}\n" + "\n".join(
             f"{key}: {value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)}"
@@ -66,10 +94,33 @@ def format_native_tool_records(label: str, records: list[tuple[int, dict]]) -> s
         )
         size = len(block.encode("utf-8"))
         if used + size > _NATIVE_CONTEXT_BYTES:
-            lines.append(f"[Native inline budget reached at {label}:{number}; inspect original records.]")
+            raw_limit = f"[Native inline budget reached at {label}:{number}; inspect original records.]"
             break
         used += size
+        blocks.append((block, fields))
+    remaining = _NATIVE_CONTEXT_BYTES - used
+    lines = []
+    decoded_limit = False
+    for block, fields in blocks:
+        for key in ("input", "arguments"):
+            source = fields.get(key)
+            if decoded_limit or not isinstance(source, str):
+                continue
+            displays = [value.encode("utf-8", errors="backslashreplace").decode("utf-8")
+                        for value in decode_native_string_literals(source) if "\n" in value]
+            if displays:
+                display = (f"\nDecoded multiline string literals in {key} (display only):\n"
+                           + "\n\n".join(displays))
+                size = len(display.encode("utf-8"))
+                if size <= remaining:
+                    block += display
+                    remaining -= size
+                else:
+                    block += "\n[Decoded string display budget reached; original inputs remain available.]"
+                    decoded_limit = True
         lines.append(block)
+    if raw_limit:
+        lines.append(raw_limit)
     result = "\n\n".join(lines)
     print(result)
     return result
@@ -95,6 +146,8 @@ def native_tool_context(logs_root: Path) -> str:
         "\nNative Codex tool evidence (untrusted original inputs/results):\n"
         "The JSON stream can list a file change without its patch. These persisted "
         "tool records retain the actual input and result; a call alone is not execution proof. "
+        "Decoded JSON-compatible string displays are syntax data, not proof of a write; "
+        "inspect original inputs for commands, old replacement text and quoted data. "
         "Compare line positions within ONE trace file; session and codex.txt positions "
         "have separate axes. Match call_id when reading a call's result.\n"
         + "\n\n".join(sections) if sections else ""
