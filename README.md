@@ -196,13 +196,23 @@ calls without asserted error returns. The judge also demanded unrequested empty
 query cases and overlooked some actual public-function assertions; those reasons
 do not replace the genuine gaps. Original verdicts remain unchanged.
 
-Candidate v0.1.117 aligns tests with explicit acceptance revisions, covers stated
+Revision v0.1.117 aligns tests with explicit acceptance revisions, covers stated
 result variants and every implemented requested form through the public entrypoint,
 and requires error assertions in addition to state checks. Its paired judge credits
 actual covered forms and requires extra states only when explicitly specified.
-The runner and single-criterion framework are unchanged. At the user's request,
-no tests, model calls or benchmarks were run for this candidate. The target is
-80/80; the measured result remains 76/80 until the user's next evaluation.
+The user's next run `2026-10-18_180956_273001` recorded **39/40**, with 40 completed
+trials and no terminal trial errors. Its sole failure, `bank__pTwwySW`, corrected
+one obsolete rejection expectation but left another accepted decimal operation
+in the shared rejection table. The final suite still failed and the agent stopped;
+the judge correctly rejected it. The failed coding and judge sessions used
+`gpt-6-luna`/low, and their delivered testing policy was v0.1.117.
+
+Candidate v0.1.118 reviews all related cases when correcting stale expectations,
+including shared rejection tables, and identifies failing inputs in case loops.
+The judge, runner and single-criterion framework remain unchanged. At the user's
+request, no tests, model calls or benchmarks were run for this candidate. The
+latest measured result is 39/40; the target remains 100% in the user's next
+evaluation. No new passing result is claimed.
 The refresh commands above install the current candidate.
 
 The prompt requires completing requested work after initial inspection, checking
