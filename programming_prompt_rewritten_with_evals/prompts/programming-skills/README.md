@@ -103,10 +103,11 @@ assesses final ordinary tests and their actual execution; workflow and commits
 remain separately selectable policies. Historical benchmark verdicts stay intact
 when a policy changes, and scores from different rubrics are not directly comparable.
 
-The October 18 ordinary-testing candidate scored 27/32 with no quota or
-infrastructure failures. The subsequent judge correction passed 14/14 focused
-controls; its final full rerun remains pending account availability. The testing
-schema has one criterion. The root README records the revision and evidence limits.
+The October 18 ordinary-testing revision v0.1.110 scored 28/32 (87.5%) on the
+full eight-task, four-attempt sample, with no quota or infrastructure failures.
+Its judge passed 14/14 focused controls. The four retained failures were two
+missing invalid-input checks and two unfinished implementations. The testing
+schema has one criterion. The root README records the archived runs and limits.
 
 ## Prompt engineering
 
@@ -124,3 +125,8 @@ Refresh with `acc pp enable -v2 --skill prompt_engineering`; verify using
 `acc pp status --skill v2:prompt_engineering --check`. Select
 `prompt-create,prompt-repair` for its two Harbor cases; see the
 [case catalog](../../evals/coding-prompts/README.md#prompt-engineering-cases).
+
+Revision v0.0.66 submits the tested prompt text in actual calls and treats ignored
+model settings as unverified. Its two-task Codex evaluation passed 2/2 and its
+judge controls passed 5/5, using `gpt-6-luna`/low on instance 2 with no quota or
+infrastructure exclusions. The root README records the archive and case counts.
