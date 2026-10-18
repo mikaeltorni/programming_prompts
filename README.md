@@ -272,8 +272,13 @@ remaining errors; 100% is required only when the user asked for it.
 Refresh with `acc pp enable -v2 --skill prompt_engineering`; verify with
 `acc pp status -v2 --skill prompt_engineering --check`. Both policies are applied
 to all nine configured harness families. Prompt engineering remains optional in
-fresh-install and benchmark defaults; select its two benchmark cases with
-`--skills prompt_engineering --tasks prompt-create,prompt-repair`.
+fresh-install defaults. The regular benchmark includes `prompt-create` and
+`prompt-repair` alongside coding and debug tasks in one Harbor job per harness.
+Prompt tasks receive only `prompt_engineering` and its judge; coding and debug
+tasks retain their applicable policies and judges. Run only the two prompt cases
+by adding `--skills prompt_engineering`; `--tasks prompt-create,prompt-repair`
+is an optional explicit filter. Default integration was reviewed without tests
+or benchmark execution at the user's request.
 
 Revision v0.0.66 requires a saved evaluation command that submits the tested
 prompt text with each input and verifies actual answers plus fixed wrong judge
@@ -484,9 +489,10 @@ unverified. Scheduling, models, reasoning and immutable behavior checks are unch
 
 ACC's existing default set is `commits`, `worktree`, `workflow`, `docs`, `testing`,
 `srp`, `commenting`, `logging`, `debug`. Benchmark discovery excludes opt-in
-`workflow`, `debug_logs`, and `prompt_engineering`; `logging-vague` remains a control. Dedicated repair
-trials receive `debug`, while other selected policies retain their coding family.
-Defaults and native selections were not changed by this content revision.
+`workflow` and `debug_logs`; `logging-vague` remains a control. Benchmark defaults
+add `prompt_engineering` for its two prompt cases. Dedicated repair trials receive
+`debug`; prompt trials receive only `prompt_engineering`; the remaining selected
+policies apply to coding tasks. Native runtime selections remain unchanged.
 Acceptance uses `gpt-6-luna` with low reasoning for both coding and judging.
 Before any future Codex benchmark command, verify every configured instance's
 current 5-hour and weekly quota and the chosen auth home; old instance examples

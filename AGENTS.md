@@ -63,7 +63,10 @@ When a policy earns its first positive result, update both
 in the sibling `agent_command_center` repository, then record the policy here.
 Apply new defaults to the current harnesses with `acc pp enable -v2 --skill
 <names>` and verify every harness with `acc pp status --skill <v2:names>
---check`. Keep benchmark skill selections aligned with this verified set.
+--check`. Native runtime defaults remain aligned with this verified set. Benchmark
+defaults additionally include `prompt_engineering` for `prompt-create` and
+`prompt-repair`, with prompt-only policies and judges in the same shared job.
+Select `--skills prompt_engineering` to run only these two cases.
 Include `workflow` only when the evaluation needs it, because benchmark default
 discovery excludes opt-in skills. Omit `--skills` when the runner's default
 selection already contains every skill the requested evaluation needs.
@@ -193,10 +196,12 @@ above unless the user explicitly requests an exception.
 
 ## The benchmark testing framework (read before running an eval)
 
-### Coding and debug trials share one schedule
+### Coding, debug and prompt trials share one schedule
 
-A mixed selection containing `debug` and coding skills runs both task families
-in one Harbor job per harness. Do not launch a second wrapper or console to
+The regular default includes coding, debug and prompt-engineering tasks in one
+Harbor job per harness. A mixed selection containing `debug` and coding skills
+runs their applicable families together; `prompt_engineering` adds the two
+prompt cases with only their own policy and judge. Do not launch a second wrapper or console to
 overlap them. `lib/run_jobs.sh` owns the shared job and capacity reservation;
 `lib/prepare_tasks.sh` builds per-task instruction documents, and
 `harbor_agents/clean_skills.py` selects the document using Harbor's trial session
