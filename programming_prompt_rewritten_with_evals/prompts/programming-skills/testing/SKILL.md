@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.116 — Write focused tests for the requested behavior, run them, and fix
+  v0.1.117 — Write focused tests for the requested behavior, run them, and fix
   failures before reporting completion.
 ---
 
@@ -17,17 +17,22 @@ If no test runner exists, use stdlib unittest or a saved plain-assertion script.
 
 Write or update runnable tests through the public interface:
 
-- Cover every requested command or API form with correct expected results derived
-  from known inputs. Do not use unchecked application output as its own expectation.
-  Call the requested entrypoint itself; testing only an internal class or checking
-  only the return type does not verify that entrypoint's behavior.
+- Assert correct independent results for every requested command/API form through
+  the named public entrypoint, including optional forms when implemented and
+  explicitly specified result variants. Internal-class tests, return-type checks
+  or a partial wrapper smoke check do not cover an omitted public form. Do not use
+  unchecked application output as its own expectation.
+- Follow explicit revisions: replace superseded rejection assertions with success
+  checks for newly accepted input. Read the full applicable contract before
+  changing code to satisfy a failing test; the test may enforce an obsolete rule.
 - Cover relevant edge cases and invalid inputs: blank/unknown commands, wrong
   operand counts, invalid numeric text and requested domain/resource failures.
   Typed operands require malformed-input checks even when the task lists only
   successful commands.
   Free-form data is not an unknown selector.
   Preserve optional inputs; do not invent restrictions or test every spelling of
-  the same rule. Assert the specified error return or exception.
+  the same rule. Assert the error return or exception for each invalid case;
+  calling it and checking only unchanged state does not verify rejection.
 - For stateful behavior, test meaningful multi-call sequences and check that
   rejected operations preserve state. Prefer public reads; a copied state
   snapshot or an asserted public result showing the prior state is also valid.
