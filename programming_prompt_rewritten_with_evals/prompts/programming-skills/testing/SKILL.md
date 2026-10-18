@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.112 — Write focused tests for the requested behavior, run them, and fix
+  v0.1.115 — Write focused tests for the requested behavior, run them, and fix
   failures before reporting completion.
 ---
 
@@ -26,8 +26,9 @@ Write or update runnable tests through the public interface:
   Preserve optional inputs; do not invent restrictions or test every spelling of
   the same rule. Assert the specified error return or exception.
 - For stateful behavior, test meaningful multi-call sequences and check that
-  rejected operations preserve state, using public reads when available. Keep
-  independent fixtures isolated and expected values based on their preceding calls.
+  rejected operations preserve state. Prefer public reads; a copied state
+  snapshot or an asserted public result showing the prior state is also valid.
+  Keep independent fixtures isolated and derive expectations from preceding calls.
 - For a reported bug, save and run a regression reproducing it before the fix.
   Keep that regression with the existing tests.
 
