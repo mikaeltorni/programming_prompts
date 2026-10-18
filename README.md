@@ -207,12 +207,25 @@ in the shared rejection table. The final suite still failed and the agent stoppe
 the judge correctly rejected it. The failed coding and judge sessions used
 `gpt-6-luna`/low, and their delivered testing policy was v0.1.117.
 
-Candidate v0.1.118 reviews all related cases when correcting stale expectations,
+Revision v0.1.118 reviews all related cases when correcting stale expectations,
 including shared rejection tables, and identifies failing inputs in case loops.
-The judge, runner and single-criterion framework remain unchanged. At the user's
-request, no tests, model calls or benchmarks were run for this candidate. The
-latest measured result is 39/40; the target remains 100% in the user's next
-evaluation. No new passing result is claimed.
+Its user-run archive `2026-10-18_183646_1834400` recorded **61/64**, with all
+64 trials completed and no terminal trial errors. Both bank NOs lack successful
+whole-number transfers despite explicit preservation of that input class; the
+greeter NO lacks malformed-input assertions. A nearby bank YES was also credited
+for whole-number coverage absent from its saved assertions. The original raw
+score and verdicts remain unchanged; 61/64 is not independently confirmed policy
+compliance, and different sample sizes alone do not demonstrate improvement.
+
+Candidate v0.1.119 makes successful coverage of newly accepted and explicitly
+retained input classes clear, and replaces the final review wording to catch
+missing assertions even in a passing suite. Its paired judge requires actual
+success witnesses for claimed classes. Prompt-fixing revision v0.0.67 was applied
+to this repair: compare recurring failures with prior edits and inspect nearby
+YES witnesses before changing the responsible instructions.
+No tests, model calls or benchmarks were run for these candidates at the user's
+request. Their results are unverified; 100% remains the acceptance target.
+The runner and single-criterion framework are unchanged.
 The refresh commands above install the current candidate.
 
 The prompt requires completing requested work after initial inspection, checking
@@ -241,7 +254,7 @@ must match their expectations. A sampled benchmark reports its pass rate and
 remaining errors; 100% is required only when the user asked for it.
 
 Refresh with `acc pp enable -v2 --skill prompt_engineering`; verify with
-`acc pp status --skill v2:prompt_engineering --check`. Both policies are applied
+`acc pp status -v2 --skill prompt_engineering --check`. Both policies are applied
 to all nine configured harness families. Prompt engineering remains optional in
 fresh-install and benchmark defaults; select its two benchmark cases with
 `--skills prompt_engineering --tasks prompt-create,prompt-repair`.
@@ -257,6 +270,12 @@ passed **5/5**, including rejection of an actual run with an ignored reasoning
 setting. The full run used Codex `gpt-6-luna`/low on instance 2 with zero quota
 or infrastructure failures. Earlier failing runs and their raw verdicts remain
 archived; the rejected settings evidence was not relabeled as a passing run.
+
+Candidate v0.0.67 adds comparison with prior repairs and actual nearby pass
+witnesses, replaces ineffective reminders, and explicitly honors user prohibitions
+on tests or model calls with an unverified handoff. It was used for the testing
+v0.1.119 repair above. No evaluation was executed for v0.0.67; the 2/2 and 5/5
+results belong to v0.0.66.
 
 ### workflow
 

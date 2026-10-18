@@ -122,9 +122,17 @@ unrequested state variants. The existing framework remains unchanged.
 The user's v0.1.117 run `2026-10-18_180956_273001` scored 39/40 with no terminal
 trial errors. The remaining bank trial corrected only part of a shared stale
 rejection table and stopped after another failed run; its NO is justified and
-preserved. Candidate v0.1.118 reviews all affected cases and identifies failing
-loop inputs. No tests or model calls were run for this candidate; the judge and
-framework remain unchanged. The user owns the next evaluation toward 100%.
+preserved. Revision v0.1.118 reviews all affected cases and identifies failing
+loop inputs. Its next user-run archive `2026-10-18_183646_1834400` recorded 61/64
+with no terminal trial errors: two missing whole-transfer success checks and one
+suite without malformed-input assertions. A nearby YES also lacks the claimed
+whole-transfer witness, so the raw score does not independently establish policy
+compliance. All original verdicts remain unchanged.
+
+Candidate v0.1.119 clarifies explicitly retained input classes and reviews missing
+assertions even in green suites. Its judge requires actual class witnesses. The
+revised prompt-fixing policy was applied to these changes; both candidates are
+unverified because the user prohibits testing. No runtime/framework changes.
 
 ## Prompt engineering
 
@@ -139,7 +147,7 @@ must match expectations; sampled benchmark errors are reported, with no unasked
 100% requirement. Report execution blockers honestly.
 
 Refresh with `acc pp enable -v2 --skill prompt_engineering`; verify using
-`acc pp status --skill v2:prompt_engineering --check`. Select
+`acc pp status -v2 --skill prompt_engineering --check`. Select
 `prompt-create,prompt-repair` for its two Harbor cases; see the
 [case catalog](../../evals/coding-prompts/README.md#prompt-engineering-cases).
 
@@ -147,3 +155,8 @@ Revision v0.0.66 submits the tested prompt text in actual calls and treats ignor
 model settings as unverified. Its two-task Codex evaluation passed 2/2 and its
 judge controls passed 5/5, using `gpt-6-luna`/low on instance 2 with no quota or
 infrastructure exclusions. The root README records the archive and case counts.
+
+Candidate v0.0.67 checks recurring failures against prior repairs and nearby YES
+witnesses, replaces ineffective wording and explicitly defers execution when the
+user prohibits it. It was applied to testing v0.1.119. No tests or model calls were
+run for this candidate; the previous v0.0.66 results do not verify it.
