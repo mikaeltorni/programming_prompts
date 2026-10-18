@@ -64,10 +64,14 @@ pre-existing evaluation suite. `prompt-repair` repairs a short translation promp
 and judge using original benchmark failures and independently specified cases.
 Both target `gpt-6-luna` at low reasoning through the available Codex CLI.
 
-Select them with `--skills prompt_engineering --tasks prompt-create,prompt-repair`.
-A task's optional `<name>.opt-in` file names its required policy. Discovery skips
-it when that policy is unselected, and explicit selection rejects it too, keeping
-the existing coding suite unchanged. The policy itself is also opt-in.
+Both cases are included in the regular default benchmark. Select only these
+cases with `--skills prompt_engineering`; `--tasks prompt-create,prompt-repair`
+can additionally name them explicitly. A task's `<name>.opt-in` file names its
+required policy: discovery and explicit selection reject it when that policy is
+unselected. Prompt cases receive only the prompt-engineering policy and judge;
+ordinary coding and debug trials keep their own policies and judges in the same
+Harbor job. This integration was source-reviewed without executing tests or
+benchmarks, as requested.
 
 These tasks declare `oracle: none` in frontmatter: they evaluate prompt-engineering
 behavior through the semantic judge and do not provide Python reference solutions

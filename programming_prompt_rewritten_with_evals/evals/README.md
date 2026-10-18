@@ -51,8 +51,9 @@ solutions cover the final API; they are not staged-history examples.
 ## Programming suite
 
 The suite contains `workflow`, `commits`, `worktree`, `docs`, `srp`,
-`commenting`, `logging`, `debug_logs`, `debug`, and `testing`. Default discovery
-selects `commenting,commits,debug,docs,logging,srp,testing,worktree`. Both
+`commenting`, `logging`, `debug_logs`, `debug`, `testing` and `prompt_engineering`.
+Default discovery selects
+`commenting,commits,debug,docs,logging,prompt_engineering,srp,testing,worktree`. Both
 `workflow` and `debug_logs` require explicit selection. `logging-vague` is an
 opt-in control; shipped presets retain their explicit
 skill lists. Sources live in [../prompts/programming-skills/](../prompts/programming-skills/README.md);
@@ -72,7 +73,14 @@ and automatic launch guard apply across both families. Every trial still
 receives its own applicable instruction document and judges: repair trials
 inject and score only `debug`, plus the functional
 `debug_behavior` verifier. Other skills never run on these dedicated scenarios.
-Both baseline and positive jobs use the same family routing.
+Prompt engineering adds a third family: `prompt-create` and `prompt-repair` run
+in that same default job with only `prompt_engineering` instructions and its
+semantic judge. Coding trials exclude the prompt policy/judge. Selecting only
+`--skills prompt_engineering` discovers only these two prompt cases; explicit
+`--tasks prompt-create,prompt-repair` is also supported. Both baseline and positive
+jobs use the same family routing. Runtime installer defaults are unchanged.
+The integration was reviewed from source; no tests or benchmarks were executed
+at the user's request.
 The existing mixed-skill command needs no extra flag or second console.
 Run baseline and positive wrapper invocations sequentially; a configured
 capacity limit can reduce how many trials overlap.

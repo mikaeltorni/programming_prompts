@@ -19,7 +19,7 @@ Current skills:
 | [`debug_logs`](debug_logs/SKILL.md) | Explicit-only read-logs-first policy, pending numeric positive evidence |
 | [`debug`](debug/SKILL.md) | Diagnose, reproduce, repair and verify logged failures |
 | [`docs`](docs/SKILL.md) | README.md after the code: program, entrypoint, commands |
-| [`prompt_engineering`](prompt_engineering/SKILL.md) | Optional prompt Markdown engineering: simple instructions, paired judge edits and real model evaluations |
+| [`prompt_engineering`](prompt_engineering/SKILL.md) | Prompt Markdown engineering: simple instructions, paired judge edits and real model evaluations |
 | [`workflow`](workflow/SKILL.md) | Explicit-only worktree → plan → per-feature tests/code/commit → docs |
 
 **Logging eval note:** pair `logging` (or `logging-vague`) with `srp` so the
@@ -92,8 +92,9 @@ finishes 3.1 saved checks and baseline, 3.2 implementation and cumulative checks
 then 3.3 working commit and required delivery before the next feature starts.
 Documentation follows all feature cycles. The workflow prompt owns the cycle
 with or without companions; those companions add their detailed requirements.
-Default discovery excludes `workflow`, `debug_logs`, and `prompt_engineering`;
-each remains explicitly selectable with `--skills`.
+Default discovery excludes `workflow` and `debug_logs`; both remain explicitly
+selectable with `--skills`. It includes `prompt_engineering` for the two prompt
+cases only, with separate policy/judge routing inside the same shared job.
 
 ## Policy and judge alignment
 
@@ -145,8 +146,10 @@ no-test instruction leaves this candidate and judge unverified.
 
 ## Prompt engineering
 
-`prompt_engineering` is optional: invoke it by name when creating or editing AI
-instructions, including skills and judges. **Do not overcomplicate.** Keep prompts
+`prompt_engineering` is optional in runtime defaults: invoke it by name when
+creating or editing AI instructions, including skills and judges. Benchmark
+defaults include its two prompt cases; `--skills prompt_engineering` selects only
+those cases. They receive only this policy and its judge. **Do not overcomplicate.** Keep prompts
 short, reuse the simplest existing evaluation, and add machinery only for a
 demonstrated need. Read original failures, make a causal repair and keep prompt
 and judge aligned. Save actual main-model answers and model-judge decisions,

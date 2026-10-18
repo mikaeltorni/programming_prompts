@@ -36,8 +36,11 @@ Skills live under
 Each real skill has a matching judge in
 [`evals/judges/<skill>/`](evals/judges/). Vague controls reuse the base judge.
 `workflow` and `debug_logs` carry `.opt-in` markers. Omitted `--skills` selects
-the verified default policies: commenting, commits, debug, docs, logging, srp,
-testing and worktree. Select workflow explicitly alongside these defaults to
+commenting, commits, debug, docs, logging, prompt_engineering, srp, testing and
+worktree. Prompt engineering applies only to `prompt-create` and `prompt-repair`,
+which share the regular job with coding/debug tasks and receive their own judge.
+Use `--skills prompt_engineering` to select only those two cases. Runtime
+installer defaults are unchanged. Select workflow explicitly alongside these defaults to
 verify the per-feature cycle. `debug_logs` stays available for focused explicit
 evaluation while its numeric positive score is pending.
 Pair `logging` / `logging-vague` with `srp` when benchmarking so there are
