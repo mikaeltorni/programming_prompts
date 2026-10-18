@@ -134,6 +134,15 @@ assertions even in green suites. Its judge requires actual class witnesses. The
 revised prompt-fixing policy was applied to these changes; both candidates are
 unverified because the user prohibits testing. No runtime/framework changes.
 
+The subsequent archive `2026-10-18_184759_2545890` recorded 65/72: four genuine
+coverage failures and three unsupported NOs. Focused v0.1.120 archive
+`2026-10-18_191826_143824` recorded 3/4, still missing whole-transfer success.
+Current v0.1.121 makes whole/fraction success explicit per affected operation.
+The shorter judge follows actual public calls, credits classes within mixed
+sequences and applies final domain rules. An unproven assertion-summary runtime
+experiment was discarded. No runtime/framework change is delivered. The latest
+no-test instruction leaves this candidate and judge unverified.
+
 ## Prompt engineering
 
 `prompt_engineering` is optional: invoke it by name when creating or editing AI
@@ -160,3 +169,10 @@ Candidate v0.0.67 checks recurring failures against prior repairs and nearby YES
 witnesses, replaces ineffective wording and explicitly defers execution when the
 user prohibits it. It was applied to testing v0.1.119. No tests or model calls were
 run for this candidate; the previous v0.0.66 results do not verify it.
+
+Current v0.0.68 and its paired judge add gradual `k` growth only after the current
+sample meets requested criteria and all independent judge controls match. Keep
+the candidate/model/settings/harness fixed during growth, repair failures before
+growing and finish requested coverage. Exact-case/no-test exceptions remain.
+Applied to the repair above: stop growth on failures and discard the unproven
+runtime addition. This revision remains unverified under the no-test instruction.

@@ -223,10 +223,26 @@ missing assertions even in a passing suite. Its paired judge requires actual
 success witnesses for claimed classes. Prompt-fixing revision v0.0.67 was applied
 to this repair: compare recurring failures with prior edits and inspect nearby
 YES witnesses before changing the responsible instructions.
-No tests, model calls or benchmarks were run for these candidates at the user's
-request. Their results are unverified; 100% remains the acceptance target.
+At that handoff, no tests, model calls or benchmarks were run for these candidates
+at the user's request. They had no verified result; 100% remains the acceptance target.
 The runner and single-criterion framework are unchanged.
 The refresh commands above install the current candidate.
+
+The subsequent archive `2026-10-18_184759_2545890` recorded **65/72**. Of its
+seven NOs, three bank suites omit retained whole-number transfer success (one
+also omits malformed numeric text), and one shop suite omits public-wrapper
+`count` coverage. Three other NOs overlook existing assertions or demand extra
+cases. Original verdicts remain unchanged. Focused revision v0.1.120 run
+`2026-10-18_191826_143824` recorded **3/4**; its bank suite still omits whole
+transfer success. These different samples do not establish a rate improvement.
+
+Current candidate v0.1.121 explicitly requires successful whole and fractional
+examples for each affected operation, then locates the actual saved assertions
+before the final run. Its shorter judge distinguishes public-wrapper coverage,
+input classes within mixed sequences, and final domain rules from superseded
+restrictions. An experimental assertion-summary integration did not establish
+reliable improvement and was discarded; no runtime/framework change is delivered.
+The latest instruction prohibits tests: v0.1.121 and its judge are **unverified**.
 
 The prompt requires completing requested work after initial inspection, checking
 relevant malformed inputs, and reviewing saved assertions before the final run.
@@ -276,6 +292,15 @@ witnesses, replaces ineffective reminders, and explicitly honors user prohibitio
 on tests or model calls with an unverified handoff. It was used for the testing
 v0.1.119 repair above. No evaluation was executed for v0.0.67; the 2/2 and 5/5
 results belong to v0.0.66.
+
+Current candidate v0.0.68 adds gradual sample growth for sampled benchmarks:
+start focused, increase `k` only after the current stage meets the requested
+criteria and every independent judge control matches, and diagnose failures
+before increasing the sample. Keep candidate/model/settings/harness fixed during
+growth and finish requested coverage. Exact-case evaluations need no sampling
+stages. This method was applied to the repair above by stopping sample growth
+after failures and removing the unproven runtime addition. The explicit no-test
+override remains in force; v0.0.68 and its paired judge are **unverified**.
 
 ### workflow
 
