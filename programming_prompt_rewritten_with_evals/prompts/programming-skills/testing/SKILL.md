@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.117 — Write focused tests for the requested behavior, run them, and fix
+  v0.1.118 — Write focused tests for the requested behavior, run them, and fix
   failures before reporting completion.
 ---
 
@@ -22,9 +22,10 @@ Write or update runnable tests through the public interface:
   explicitly specified result variants. Internal-class tests, return-type checks
   or a partial wrapper smoke check do not cover an omitted public form. Do not use
   unchecked application output as its own expectation.
-- Follow explicit revisions: replace superseded rejection assertions with success
-  checks for newly accepted input. Read the full applicable contract before
-  changing code to satisfy a failing test; the test may enforce an obsolete rule.
+- Apply explicit revisions across all affected tests, including shared rejection
+  tables. Replace obsolete rejection expectations with success checks for newly
+  accepted input. When correcting a stale expectation, review related cases too;
+  do not stop at the first failing input or change correct code to enforce an old rule.
 - Cover relevant edge cases and invalid inputs: blank/unknown commands, wrong
   operand counts, invalid numeric text and requested domain/resource failures.
   Typed operands require malformed-input checks even when the task lists only
@@ -33,6 +34,7 @@ Write or update runnable tests through the public interface:
   Preserve optional inputs; do not invent restrictions or test every spelling of
   the same rule. Assert the error return or exception for each invalid case;
   calling it and checking only unchanged state does not verify rejection.
+  When iterating cases, include the failing input in assertion output to aid diagnosis.
 - For stateful behavior, test meaningful multi-call sequences and check that
   rejected operations preserve state. Prefer public reads; a copied state
   snapshot or an asserted public result showing the prior state is also valid.
