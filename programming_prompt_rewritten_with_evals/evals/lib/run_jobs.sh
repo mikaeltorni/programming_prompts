@@ -130,15 +130,20 @@ run_jobs_for_harness() {
   # Submit all selected families to one Harbor scheduler and capacity budget.
   # Parameters: $1 - harness identifier.
   # Returns: None after the job finishes; propagates setup failures.
+  printf 'harness=%s\n' "$1" >&2
   local harness="$1"
   local -a SELECTED_SKILLS_FOR_JOB=() family_skills=()
-  local family task skill known_skill selected has_coding=0 has_debug=0
+  local family task skill known_skill selected has_coding=0 has_debug=0 has_prompt=0
   for task in "${SELECTED_TASKS[@]}"; do
     family="$(task_family "$task")" || return 1
-    if [[ "$family" == coding ]]; then has_coding=1; else has_debug=1; fi
+    case "$family" in
+      coding) has_coding=1 ;;
+      debug) has_debug=1 ;;
+      prompt) has_prompt=1 ;;
+    esac
   done
-  for family in coding debug; do
-    if [[ "$family" == coding && "$has_coding" -eq 0 ]] || [[ "$family" == debug && "$has_debug" -eq 0 ]]; then
+  for family in coding debug prompt; do
+    if [[ "$family" == coding && "$has_coding" -eq 0 ]] || [[ "$family" == debug && "$has_debug" -eq 0 ]] || [[ "$family" == prompt && "$has_prompt" -eq 0 ]]; then
       continue
     fi
     mapfile -t family_skills < <(skills_for_task_family "$family" "${SELECTED_SKILLS[@]}")
@@ -158,8 +163,9 @@ run_jobs_for_harness() {
     echo "NOTE: --run-separately scores skills independently on their applicable task family." >&2
   fi
   local suffix='' mode=positive label=skills
-  [[ "$has_coding" -eq 0 ]] && suffix=-debug
+  if [[ "$has_coding" -eq 0 && "$has_prompt" -eq 0 ]]; then suffix=-debug; fi
   if [[ "$BASELINE" -eq 1 ]]; then mode=baseline; label=baseline; fi
-  echo "One Harbor job schedules coding=$has_coding debug=$has_debug together; trial policies and judges stay family-specific." >&2
+  echo "One Harbor job schedules coding=$has_coding debug=$has_debug prompt=$has_prompt together; trial policies and judges stay family-specific." >&2
   run_one_job "$harness" "$(harbor_job_name "${harness}${suffix}-${label}")" "$mode"
+  printf 'return=0\n' >&2
 }

@@ -47,10 +47,10 @@ check "mixed explicit selection preserves order" $'standard\nworkflow' \
 
 SKILLS_ROOT="$(cd "$SCRIPT_DIR/../../prompts/programming-skills" && pwd)"
 JUDGES_ROOT="$(cd "$SCRIPT_DIR/../judges" && pwd)"
-eight=$'commenting\ncommits\ndebug\ndocs\nlogging\nsrp\ntesting\nworktree'
-check "real default discovery is the available companions" "$eight" \
+nine=$'commenting\ncommits\ndebug\ndocs\nlogging\nprompt_engineering\nsrp\ntesting\nworktree'
+check "real default discovery is the available companions" "$nine" \
   "$(list_available_skills)"
-check "omitting --skills resolves the available companions" "$eight" \
+check "omitting --skills resolves the available companions" "$nine" \
   "$(resolve_skills '')"
 check "explicit workflow still resolves" "workflow" \
   "$(resolve_skills workflow)"
@@ -65,6 +65,12 @@ DEBUG_PROMPTS_DIR="$(cd "$SCRIPT_DIR/../debug-prompts" && pwd)"
 SUITE_ARG=''
 SELECTED_SKILLS=(debug)
 check "debug-only default selects repair cases" $'debug-cache\ndebug-catalog\ndebug-clock\ndebug-orders\ndebug-scheduler\ndebug-stock' "$(resolve_tasks '')"
+SELECTED_SKILLS=(prompt_engineering)
+check "prompt-only discovery includes only creation and repair" $'prompt-create\nprompt-repair' "$(resolve_tasks '')"
+check "prompt family excludes coding policies" prompt_engineering "$(skills_for_task_family prompt testing debug prompt_engineering)"
+check "coding family excludes prompt policy" testing "$(skills_for_task_family coding testing debug prompt_engineering)"
+mapfile -t SELECTED_SKILLS < <(resolve_skills '')
+check "regular default includes all three families" 16 "$(resolve_tasks '' | wc -l | tr -d ' ')"
 SELECTED_SKILLS=(testing)
 check "testing-only default keeps coding tasks" 8 "$(resolve_tasks '' | wc -l | tr -d ' ')"
 if resolve_tasks debug-clock >"$fixture/output" 2>"$fixture/error"; then
@@ -88,7 +94,7 @@ check "explicit mixed tasks resolve across families" $'counter\ndebug-clock' "$(
 echo 'ALL TASK FAMILY SELF-TESTS PASSED'
 
 task_scope="$fixture/task-scope"
-mkdir -p "$task_scope/counter/tests" "$task_scope/debug-clock/tests"
+mkdir -p "$task_scope/counter/tests" "$task_scope/debug-clock/tests" "$task_scope/prompt-create/tests"
 : > "$task_scope/counter/task.toml"
 : > "$task_scope/debug-clock/task.toml"
 printf 'Original counter request\n' > "$task_scope/counter/tests/task.md"
@@ -96,9 +102,12 @@ printf 'Original debug request\n' > "$task_scope/debug-clock/tests/task.md"
 cp "$task_scope/counter/tests/task.md" "$task_scope/counter/instruction.md"
 cp "$task_scope/debug-clock/tests/task.md" "$task_scope/debug-clock/instruction.md"
 cp "$SCRIPT_DIR/../debug-cases/debug-clock.json" "$task_scope/debug-clock/tests/debug-cases.json"
+printf 'Original prompt request\n' > "$task_scope/prompt-create/tests/task.md"
 TASKS_DIR="$task_scope" "$SCRIPT_DIR/../sync_judges.sh" > "$fixture/sync.log" 2>&1 || exit 1
 check "default judge sync isolates repair judges" $'debug\ndebug_behavior' \
   "$(find "$task_scope/debug-clock/tests/judges" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)"
+check "prompt tasks receive only their own judge" prompt_engineering \
+  "$(find "$task_scope/prompt-create/tests/judges" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)"
 check "coding tasks never receive debug behavior checker" absent \
   "$(if [[ ! -d "$task_scope/counter/tests/judges/debug_behavior" && ! -d "$task_scope/counter/tests/judges/debug" ]]; then echo absent; fi)"
 TASKS_DIR="$task_scope" "$SCRIPT_DIR/../sync_judges.sh" testing > "$fixture/sync.log" 2>&1 || exit 1
@@ -151,6 +160,12 @@ check "debug-only job keeps debug skills" \
   'codex|codex-debug-skills__fixture|positive|debug-clock|debug' \
   "$(run_jobs_for_harness codex)"
 
+SELECTED_SKILLS=(testing debug prompt_engineering)
+SELECTED_TASKS=(counter debug-clock prompt-create prompt-repair)
+check "all three families share one job" \
+  'codex|codex-skills__fixture|positive|counter debug-clock prompt-create prompt-repair|testing debug prompt_engineering' \
+  "$(run_jobs_for_harness codex)"
+
 SCRIPT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 JOBS="$fixture/jobs"
 TASKS_DIR="$task_scope"
@@ -161,7 +176,9 @@ bundle="$JOBS/instruction-bundles/combined/global-instructions"
 prepare_instruction_bundle "$bundle" testing debug || exit 1
 all_bundle="$JOBS/instruction-bundles/all-policies/global-instructions"
 mapfile -t all_skills < <(resolve_skills '')
+SELECTED_TASKS=(counter debug-clock prompt-create prompt-repair)
 prepare_instruction_bundle "$all_bundle" workflow "${all_skills[@]}" || exit 1
+SELECTED_TASKS=(counter debug-clock)
 check "mixed task tree keeps coding judges" testing \
   "$(find "$task_tree/counter/tests/judges" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)"
 check "mixed task tree keeps repair judges" $'debug\ndebug_behavior' \
@@ -197,7 +214,13 @@ for name in ('workflow','commits','worktree','docs','srp','commenting','logging'
     assert f'## Policy: v2:{name}\n' not in all_debug, name
 assert '## Policy: v2:debug_logs\n' not in all_coding
 assert '## Policy: v2:debug\n' not in all_coding
+assert '## Policy: v2:prompt_engineering\n' not in all_coding
 assert '## Policy: v2:debug\n' in all_debug
+for task in ('prompt-create', 'prompt-repair'):
+    prompt = (all_bundle / f'task-instructions/{task}.md').read_text()
+    assert '## Policy: v2:prompt_engineering\n' in prompt
+    for name in ('workflow','commits','worktree','docs','srp','commenting','logging','testing','debug'):
+        assert f'## Policy: v2:{name}\n' not in prompt, (task, name)
 
 for runtime, builder, native in (
     ('codex', build_clean_skills_register_command, 'codex/AGENTS.md'),
