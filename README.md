@@ -171,16 +171,24 @@ Refresh with `acc pp enable -v2 --skill testing`; check installation with
 `acc pp status --skill v2:testing --check`. Its benchmark selector is
 `--skills testing`; the judge gives one `testing_contract` verdict.
 
-Revision v0.1.110 scored **28/32 (87.5%)** across all eight tasks with four
-attempts each in archived run `2026-10-18_162739_2545515`. Coding and judging
+Revision v0.1.115 scored **32/32 (100%)** across all eight tasks with four
+attempts each in archived run `2026-10-18_173046_2008563`. Coding and judging
 used Codex `gpt-6-luna`/low on instance 2, with zero quota or infrastructure
-failures. All four failed trials were inspected: two omitted relevant invalid
-inputs and two stopped before completing implementation or tests. Their failure
-verdicts remain unchanged. Focused judge controls passed **14/14**, including the
-two successful plain-assertion runners wrongly rejected by the earlier judge.
-The earlier v0.1.109 run `2026-10-18_154515_150834` scored 27/32; these small
-samples do not establish a reliable improvement rate. Scores from the older
-sentence-cycle rubric are not directly comparable.
+failures. The archive confirms all 32 trials actually ran passing test suites,
+collecting 142 test methods. Focused judge controls passed **21/21**; the original
+15 expected verdicts remain unchanged. This result covers one frozen 32-trial sample.
+
+The prompt requires completing requested work after initial inspection, checking
+relevant malformed inputs, and reviewing saved assertions before the final run.
+The judge grades actual assertions against the final revised contract. State
+preservation needs meaningful assertions; public reads are preferred, and copied
+snapshots or public results proving prior state are valid alternatives. Testing
+adds no feature ledger, numeric-category matrix or prescribed read sequence.
+
+The earlier v0.1.110 run `2026-10-18_162739_2545515` scored 28/32, with two
+missing-error-check and two unfinished-work failures. Those raw verdicts remain
+archived. Intermediate experiments that imposed extra test matrices or observer
+methods were discarded. Scores from superseded rubrics are not directly comparable.
 
 ### prompt_engineering
 

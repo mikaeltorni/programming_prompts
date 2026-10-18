@@ -103,11 +103,13 @@ assesses final ordinary tests and their actual execution; workflow and commits
 remain separately selectable policies. Historical benchmark verdicts stay intact
 when a policy changes, and scores from different rubrics are not directly comparable.
 
-The October 18 ordinary-testing revision v0.1.110 scored 28/32 (87.5%) on the
-full eight-task, four-attempt sample, with no quota or infrastructure failures.
-Its judge passed 14/14 focused controls. The four retained failures were two
-missing invalid-input checks and two unfinished implementations. The testing
-schema has one criterion. The root README records the archived runs and limits.
+The October 18 ordinary-testing revision v0.1.115 scored 32/32 on the full
+eight-task, four-attempt sample, with no quota or infrastructure failures.
+Its judge passed 21/21 focused controls, preserving the original 15 expected
+verdicts. It grades actual assertions against the final revised contract and
+accepts equivalent state-preservation evidence, including copied snapshots.
+Testing keeps one criterion and adds no workflow or test matrix. The root README
+records the archive, actual execution evidence and earlier failures.
 
 ## Prompt engineering
 
