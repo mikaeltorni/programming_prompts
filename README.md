@@ -185,13 +185,25 @@ through the requested public function. The fifth verdict claimed a malformed-num
 assertion was absent although it appears in the supplied current test body.
 Original verdicts remain archived unchanged.
 
-Candidate v0.1.116 reinforces finishing repairs, testing the requested entrypoint
+Revision v0.1.116 reinforced finishing repairs, testing the requested entrypoint
 with expected results, and deriving corrected expectations from the contract.
-The paired judge reads complete current test bodies before declaring coverage
-missing. These are prompt-only changes; the runner and single-criterion framework
-are unchanged. At the user's request, no tests, model calls or benchmarks were
-run for this candidate; its next evaluation is user-owned and no improved score
-is claimed. The refresh commands above install the current candidate.
+Its subsequent user-run archive `2026-10-18_175752_3673349` recorded **76/80**,
+with 80 completed trials and no terminal trial errors. All four failed trials'
+coding and judge sessions used `gpt-6-luna`/low. Review of their saved evidence
+found an obsolete decimal-transfer rejection, missing explicitly requested empty
+history, public `count` coverage left at an internal class, and malformed-command
+calls without asserted error returns. The judge also demanded unrequested empty
+query cases and overlooked some actual public-function assertions; those reasons
+do not replace the genuine gaps. Original verdicts remain unchanged.
+
+Candidate v0.1.117 aligns tests with explicit acceptance revisions, covers stated
+result variants and every implemented requested form through the public entrypoint,
+and requires error assertions in addition to state checks. Its paired judge credits
+actual covered forms and requires extra states only when explicitly specified.
+The runner and single-criterion framework are unchanged. At the user's request,
+no tests, model calls or benchmarks were run for this candidate. The target is
+80/80; the measured result remains 76/80 until the user's next evaluation.
+The refresh commands above install the current candidate.
 
 The prompt requires completing requested work after initial inspection, checking
 relevant malformed inputs, and reviewing saved assertions before the final run.
