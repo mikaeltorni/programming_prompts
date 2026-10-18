@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.119 — Write focused tests for the requested behavior, run them, and fix
+  v0.1.121 — Write focused tests for the requested behavior, run them, and fix
   failures before reporting completion.
 ---
 
@@ -22,10 +22,11 @@ Write or update runnable tests through the public interface:
   explicitly specified result variants. Internal-class tests, return-type checks
   or a partial wrapper smoke check do not cover an omitted public form. Do not use
   unchecked application output as its own expectation.
-- For acceptance extensions, assert success for both newly accepted and explicitly
-  retained input classes in each affected command. Replace only superseded
-  rejection expectations; keep other required failures. Review related cases and
-  shared rejection tables before changing code to satisfy an obsolete rule.
+- Cover the stated input variants for each operation. If whole numbers remain
+  accepted when fractions are added, save a successful whole-number assertion
+  and a successful fractional assertion for each operation named by that change.
+  Another operation's examples do not cover it. Replace only obsolete rejection
+  expectations, reviewing related cases and shared rejection tables.
 - Cover relevant edge cases and invalid inputs: blank/unknown commands, wrong
   operand counts, invalid numeric text and requested domain/resource failures.
   Typed operands require malformed-input checks even when the task lists only
@@ -42,10 +43,10 @@ Write or update runnable tests through the public interface:
 - For a reported bug, save and run a regression reproducing it before the fix.
   Keep that regression with the existing tests.
 
-Before the final run, match saved assertions to the full request: successful forms,
-explicit input classes and result variants, relevant invalid inputs and state
-checks. Add missing assertions even when the current suite passes. Run the full
-relevant suite after the last edit. Confirm it collected real tests and passed;
+Before the final run, locate each required command's successful assertion and any
+explicitly required input/result variants in the saved tests. Then locate the
+malformed-input assertions and state checks. Add gaps even if the suite is green.
+Run the full relevant suite after the last edit. Confirm it collected real tests and passed;
 on failure, diagnose the cause and rerun after repair. Derive any corrected
 expectation from the contract and preceding calls. A traceback remains a failure
 even when a later shell command exits zero. Use temporary targets or mocks for
