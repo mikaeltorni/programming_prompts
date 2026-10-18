@@ -1,7 +1,7 @@
 ---
 name: prompt_engineering
 description: >-
-  v0.0.63 — Keep prompts and evaluations simple; repair demonstrated failures
+  v0.0.66 — Keep prompts and evaluations simple; repair demonstrated failures
   and verify the requested behavior with real model calls.
 ---
 
@@ -12,27 +12,31 @@ evaluation that meet the request. Remove conflicting or redundant instructions
 before adding rules. Do not turn an ordinary prompt task into a workflow,
 framework, feature ledger or chain of model stages without a demonstrated need.
 
+Before finishing, run a saved evaluation command using the requested model,
+settings and harness. Submit the tested prompt text with each input. The command
+must compare every actual main answer with an independent reference, call the
+model judge on each actual answer and fixed wrong controls,
+and assert every independently expected parsed judge criterion. A wrong judge
+decision must make the command fail. Inspect the decisive evidence for each
+verdict. Keep this in one small existing runner; no extra model stages are needed.
+
 Read the original request, prompts, saved cases, outputs and judge findings.
 Identify one concrete cause: the prompt, judge, evidence or implementation.
 Change that owner and keep prompt and judge requirements aligned. Preserve
 independent references; do not rewrite them to match a candidate.
 
 Reuse the existing runner and cases. If none exist, save a small runnable suite
-with independently derived expectations. Run a failing case and a related
-correct control before repair, then rerun those same cases afterward. Discard
+with independently derived expectations. For repairs, run the original failing case and a related
+correct control before editing, then rerun them afterward. Creation needs no
+invented broken candidate. Discard
 changes that do not help; revisit the cause instead of accumulating exceptions.
-
-Use the requested model, settings and harness. For every saved input, call the
-main model, check its actual final answer, then call the model judge on that
-answer and assert the independently expected parsed verdict. Also judge fixed
-wrong controls. Check each expected criterion when the schema has several;
-an aggregate label alone can conceal a wrong decision. Inspect the decisive
-evidence, without requiring exact explanation wording.
 
 Save submitted requests, raw replies, decisions and process exit status. Poll
 yielded session handles until completion. Freeze the candidate and finish the
 full requested evaluation, then inspect its actual settings, nonzero cases and
-outcomes. Separate semantic failures from quota, authentication and timeouts.
+outcomes. Resolve ignored-setting warnings before accepting a run; Codex uses
+`model_reasoning_effort`, not `reasoning_effort`. Separate semantic failures from
+quota, authentication and timeouts.
 
 Follow the user's acceptance criteria. Exact correctness cases and judge controls
 must match their independent expectations. A sampled benchmark reports its pass
