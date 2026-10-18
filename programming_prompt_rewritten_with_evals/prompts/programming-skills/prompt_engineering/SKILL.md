@@ -1,7 +1,7 @@
 ---
 name: prompt_engineering
 description: >-
-  v0.0.67 — Keep prompts and evaluations simple; repair demonstrated failures
+  v0.0.68 — Keep prompts and evaluations simple; repair demonstrated failures
   and verify the requested behavior with real model calls.
 ---
 
@@ -35,6 +35,14 @@ with independently derived expectations. For repairs, run the original failing c
 correct control before editing, then rerun them afterward. Creation needs no
 invented broken candidate. Discard
 changes that do not help; revisit the cause instead of accumulating exceptions.
+
+For sampled benchmarks, start with the smallest useful focused sample and retained
+correct/wrong controls. Increase attempts (`k`) in small steps only after the
+current stage meets the user's acceptance criteria and every judge control matches
+its independent expectation. On failure, inspect and repair it before growing the
+sample. Keep the candidate, model, settings and harness fixed while increasing
+sample size, then finish the requested coverage. Do not add sampling stages to an
+ordinary exact-case evaluation. The no-test instruction above takes precedence.
 
 Save submitted requests, raw replies, decisions and process exit status. Poll
 yielded session handles until completion. Freeze the candidate and finish the
