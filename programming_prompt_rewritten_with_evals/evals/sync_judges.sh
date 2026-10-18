@@ -27,6 +27,9 @@ mapfile -t PROGRAMMATIC_CHECKERS < <(find "$SCRIPT_DIR/verifier" -maxdepth 1 -ty
 mapfile -t PROGRAMMATIC_PACKAGES < <(find "$SCRIPT_DIR/verifier" -maxdepth 1 -type d -name '*_check' | sort)
 # Allow callers to target an isolated job copy (see run_benchmark.sh).
 TASKS_DIR="${TASKS_DIR:-$SCRIPT_DIR/.generated/tasks}"
+CODING_PROMPTS_DIR="$SCRIPT_DIR/coding-prompts"
+DEBUG_PROMPTS_DIR="$SCRIPT_DIR/debug-prompts"
+source "$SCRIPT_DIR/lib/skills_tasks.sh"
 
 if [[ ! -d "$TASKS_DIR" ]] || [[ -z "$(find "$TASKS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1)" ]]; then
   echo "No generated tasks yet — running sync_tasks.sh first" >&2
@@ -104,14 +107,8 @@ is_programmatic_judge() {
 copied_tasks=0
 for tests_dir in "$TASKS_DIR"/*/tests; do
   [[ -d "$tests_dir" ]] || continue
-  task_skills=()
-  for skill in "${skills[@]}"; do
-    if [[ -f "$tests_dir/debug-cases.json" ]]; then
-      [[ "$skill" == debug || "$skill" == debug_behavior ]] && task_skills+=("$skill")
-    else
-      [[ "$skill" != debug && "$skill" != debug_behavior ]] && task_skills+=("$skill")
-    fi
-  done
+  family="$(task_family "$(basename "$(dirname "$tests_dir")")")"
+  mapfile -t task_skills < <(skills_for_task_family "$family" "${skills[@]}")
   # A partial sync leaves unrelated task families intact.
   [[ ${#task_skills[@]} -gt 0 ]] || continue
   rm -rf "$tests_dir/judges"

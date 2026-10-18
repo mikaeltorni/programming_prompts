@@ -83,16 +83,21 @@ skill_is_selected() {
 
 skills_for_task_family() {
   # Select policies applicable to a task family in the shared job.
-  # Parameters: $1 - coding or debug; remaining arguments - selected policies.
+  # Parameters: $1 - coding, debug or prompt; remaining arguments - selected policies.
   # Returns: applicable policy names, one per stdout line.
   printf 'family=%s skills=%s\n' "$1" "${*:2}" >&2
   local family="$1" skill
   shift
   for skill in "$@"; do
-    if [[ "$family" == debug && "$skill" == debug ]] || [[ "$family" == coding && "$skill" != debug ]]; then
-      printf '%s\n' "$skill"
-    fi
+    case "$family:$skill" in
+      debug:debug|debug:debug_behavior|prompt:prompt_engineering) printf '%s\n' "$skill" ;;
+      coding:*)
+        [[ "$skill" == debug || "$skill" == debug_behavior || "$skill" == prompt_engineering ]] || printf '%s\n' "$skill"
+        ;;
+    esac
   done
+  printf 'return=0\n' >&2
+  return 0
 }
 
 default_task_suite() {
@@ -110,24 +115,32 @@ default_task_suite() {
 }
 
 task_family() {
+  # Classify a resolved task using its source directory and required policy.
+  # Parameters: $1 - task name from the prompt catalog.
+  # Returns: coding, debug or prompt on stdout; nonzero for an unknown task.
+  printf 'task=%s\n' "$1" >&2
   local path
   path="$(task_prompt_path "$1")" || return 1
   if [[ "$(dirname "$path")" == "${DEBUG_PROMPTS_DIR:-$CODING_PROMPTS_DIR/../debug-prompts}" ]]; then
     printf '%s\n' debug
+  elif [[ -f "${path%.md}.opt-in" ]] && [[ "$(cat "${path%.md}.opt-in")" == prompt_engineering ]]; then
+    printf '%s\n' prompt
   else
     printf '%s\n' coding
   fi
 }
 
 task_policy_is_selected() {
-  # Accept an unrestricted task or one whose declared optional policy is selected.
+  # Accept a task when its required policy and an applicable family policy are selected.
   # Parameters: $1 - resolved task prompt path.
-  # Returns: success for an applicable task, nonzero for an unselected policy.
+  # Returns: success for an applicable task, nonzero for an unselected policy/family.
   printf 'prompt=%s\n' "$1" >&2
-  local prompt="$1" result=0
+  local prompt="$1" result=0 family
   if [[ -f "${prompt%.md}.opt-in" ]] && ! skill_is_selected "$(cat "${prompt%.md}.opt-in")"; then
     result=1
   fi
+  family="$(task_family "$(basename "$prompt" .md)")" || return 1
+  [[ -n "$(skills_for_task_family "$family" "${SELECTED_SKILLS[@]:-}")" ]] || result=1
   printf 'return=%s\n' "$result" >&2
   return "$result"
 }
@@ -180,7 +193,7 @@ resolve_tasks() {
       return 1
     }
     if ! task_policy_is_selected "$path"; then
-      echo "Task '$task' requires its optional policy in --skills" >&2
+      echo "Task '$task' requires its applicable policy in --skills (debug tasks require --skills debug)" >&2
       return 1
     fi
     if [[ "$(task_family "$task")" == debug ]]; then
