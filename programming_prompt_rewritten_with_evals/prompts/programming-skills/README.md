@@ -111,6 +111,12 @@ accepts equivalent state-preservation evidence, including copied snapshots.
 Testing keeps one criterion and adds no workflow or test matrix. The root README
 records the archive, actual execution evidence and earlier failures.
 
+The larger v0.1.115 sample `2026-10-18_174108_2620297` recorded 75/80.
+Candidate v0.1.116 addresses unfinished repairs and tests bypassing the requested
+entrypoint; its paired judge checks complete current test bodies before claiming
+an assertion is absent. No tests or model calls were run for this revision at
+the user's request. It has no new measured score; the framework remains unchanged.
+
 ## Prompt engineering
 
 `prompt_engineering` is optional: invoke it by name when creating or editing AI

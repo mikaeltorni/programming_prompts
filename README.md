@@ -168,7 +168,7 @@ sentence-by-sentence implementation cycles; separately selected workflow and
 commit policies own those requirements.
 
 Refresh with `acc pp enable -v2 --skill testing`; check installation with
-`acc pp status --skill v2:testing --check`. Its benchmark selector is
+`acc pp status -v2 --skill testing --check`. Its benchmark selector is
 `--skills testing`; the judge gives one `testing_contract` verdict.
 
 Revision v0.1.115 scored **32/32 (100%)** across all eight tasks with four
@@ -177,6 +177,21 @@ used Codex `gpt-6-luna`/low on instance 2, with zero quota or infrastructure
 failures. The archive confirms all 32 trials actually ran passing test suites,
 collecting 142 test methods. Focused judge controls passed **21/21**; the original
 15 expected verdicts remain unchanged. This result covers one frozen 32-trial sample.
+
+The larger v0.1.115 sample `2026-10-18_174108_2620297` recorded **75/80**
+with ten attempts per task and no terminal trial errors. Reviewing its five NOs
+found two unfinished repairs and two suites without expected-result coverage
+through the requested public function. The fifth verdict claimed a malformed-number
+assertion was absent although it appears in the supplied current test body.
+Original verdicts remain archived unchanged.
+
+Candidate v0.1.116 reinforces finishing repairs, testing the requested entrypoint
+with expected results, and deriving corrected expectations from the contract.
+The paired judge reads complete current test bodies before declaring coverage
+missing. These are prompt-only changes; the runner and single-criterion framework
+are unchanged. At the user's request, no tests, model calls or benchmarks were
+run for this candidate; its next evaluation is user-owned and no improved score
+is claimed. The refresh commands above install the current candidate.
 
 The prompt requires completing requested work after initial inspection, checking
 relevant malformed inputs, and reviewing saved assertions before the final run.
