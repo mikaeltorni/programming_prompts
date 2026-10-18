@@ -747,6 +747,7 @@ def pin_workspace_python(
     Returns: evidence-enriched template retaining its criteria placeholder;
         testing gets numbered current source, runner documents and compact
         chronology, with optional historical lookup instead of bulk Git/plan data.
+        Current-source testing evidence includes actual function spans.
     """
     print(f"template={template} workspace={workspace} files={files} judge_name={judge_name} evidence_scope={evidence_scope}")
     history_enabled = evidence_scope != "current"
@@ -755,7 +756,7 @@ def pin_workspace_python(
     )
     task_logs_context = original_task_logs_context() if judge_name in {"debug", "debug_logs", "testing", "prompt_engineering"} else ""
     boundaries = []
-    if judge_name in {"logging", "commenting", "srp"}:
+    if judge_name in {"logging", "commenting", "srp"} or (judge_name == "testing" and evidence_scope != "chronology"):
         for path in files:
             try:
                 boundaries.append(python_boundaries(path))
