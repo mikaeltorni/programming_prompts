@@ -80,11 +80,18 @@ _EXPECTED_LITERAL_CLAIM = re.compile(
     r"(?:`(?P<backtick>[^`\n]{1,160})`|[\"“](?P<quoted>[^\"”\n]{1,160})[\"”])",
     re.IGNORECASE,
 )
+_TRACE_PATH = r"[a-zA-Z0-9_./-]+\.(?:txt|jsonl)"
+_TRACE_CITATION = re.compile(
+    r"(?<![a-zA-Z0-9_./-])(?:TraceCitation:\s*)?"
+    rf"(?P<path>{_TRACE_PATH}):(?P<line>[0-9]+)"
+    r"(?:[ \t]*\|[ \t]*(?P<excerpt>[^\n]+))?"
+)
+
 _TESTING_CITATION = re.compile(
     r"\bCitation:\s*(?:(?P<commit>[0-9a-f]{7,40}):)?"
     r"(?P<path>[^\n|:]+?\.py):(?P<line>\d+)\s*\|\s*(?P<source>[^\n]+?)"
     r"(?=[ \t]+(?:Citation:\s*(?:[0-9a-f]{7,40}:)?[^\n|:]+?\.py:\d+\s*\|"
-    r"|TraceCitation:\s*[a-zA-Z0-9_-]+\.txt:\d+)|\n|$)"
+    rf"|TraceCitation:\s*{_TRACE_PATH}:\d+)|\n|$)"
 )
 
 
@@ -258,43 +265,60 @@ def _contradicted_testing_literal(reasoning: str, python_files: list[Path]) -> b
     return False
 
 
-def _trace_citation_issue(reasoning: str, logs_root: Path) -> str | None:
-    """Validate transcript positions and optional exact quotes without judging order.
+def parse_trace_references(reasoning: str) -> tuple[tuple[str, int, str | None], ...]:
+    """Convert supported transcript locators and their optional quoted excerpts.
 
-    Parameters: reasoning - semantic judge finding; logs_root - allowed transcript directory.
-    Returns: missing/unavailable/mismatch/excess issue, or None for valid references.
+    Parameters: reasoning - untrusted finding with text or native-session locators.
+    Returns: converted path, integer line and optional excerpt tuples.
     """
-    print(f"reasoning={reasoning} logs_root={logs_root}")
-    citations = list(re.finditer(
-        r'\b(?:TraceCitation:\s*)?(?P<path>[a-zA-Z0-9_-]+\.txt):(?P<line>[0-9]+)'
-        r'(?:[ \t]*\|[ \t]*(?P<excerpt>[^\n]+))?', reasoning))
-    if not citations:
-        print("missing")
-        return "missing"
-    if len(citations) > 16:
-        print("excess")
-        return "excess"
-    for match in citations:
-        if match.group("path") not in {"codex.txt", "claude-code.txt", "grok-build.txt", "grok.txt"}:
-            print("unavailable")
-            return "unavailable"
+    print(f"reasoning={reasoning}")
+    references = []
+    for match in _TRACE_CITATION.finditer(reasoning):
         token = match.group("line")
         if len(token) > 10:
-            print("mismatch")
-            return "mismatch"
-        number = int(token)
+            raise ValueError("transcript line token is too long")
         excerpt = match.group("excerpt")
-        excerpt = excerpt.strip() if excerpt is not None else None
+        references.append((match.group("path"), int(token),
+                           excerpt.strip() if excerpt is not None else None))
+    result = tuple(references)
+    print(result)
+    return result
+
+
+def validate_trace_references(
+    references: tuple[tuple[str, int, str | None], ...], logs_root: Path,
+) -> str | None:
+    """Validate converted locators against available records inside the log root.
+
+    Parameters: references - converted transcript paths, lines and optional quotes;
+        logs_root - directory containing legacy streams and native sessions.
+    Returns: missing/unavailable/mismatch/excess issue, or None for authentic references.
+    """
+    print(f"references={references} logs_root={logs_root}")
+    if not references:
+        print("missing")
+        return "missing"
+    if len(references) > 16:
+        print("excess")
+        return "excess"
+    for label, number, excerpt in references:
+        legacy = label in {"codex.txt", "claude-code.txt", "grok-build.txt", "grok.txt"}
+        native = label.startswith("sessions/") and label.endswith(".jsonl")
+        if not (legacy or native) or Path(label).is_absolute() or ".." in Path(label).parts:
+            print("unavailable")
+            return "unavailable"
         found = False
         try:
-            with (logs_root / match.group("path")).open("rb") as handle:
+            path = (logs_root / label).resolve()
+            if not path.is_relative_to(logs_root.resolve()):
+                print("unavailable")
+                return "unavailable"
+            with path.open("rb") as handle:
                 for position, line in enumerate(handle, 1):
                     if position == number:
-                        # A locator proves availability, not the semantic allegation.
-                        # Supplied quotations still have to match the actual raw line.
                         found = excerpt is None or (bool(excerpt) and excerpt in line.decode("utf-8", errors="replace"))
                         break
-        except OSError:
+        except (OSError, RuntimeError):
             print("unavailable")
             return "unavailable"
         if not found:
@@ -302,6 +326,23 @@ def _trace_citation_issue(reasoning: str, logs_root: Path) -> str | None:
             return "mismatch"
     print(None)
     return None
+
+
+def _trace_citation_issue(reasoning: str, logs_root: Path) -> str | None:
+    """Parse once and validate transcript positions without judging policy order.
+
+    Parameters: reasoning - semantic judge finding; logs_root - allowed transcript directory.
+    Returns: missing/unavailable/mismatch/excess issue, or None for authentic references.
+    """
+    print(f"reasoning={reasoning} logs_root={logs_root}")
+    try:
+        references = parse_trace_references(reasoning)
+    except ValueError:
+        result = "mismatch"
+    else:
+        result = validate_trace_references(references, logs_root)
+    print(result)
+    return result
 
 
 def _assertion_syntax_present(python_files: list[Path]) -> bool:
@@ -346,7 +387,7 @@ def _testing_citation_issue(
     print(f"reasoning={reasoning} python_files={python_files} logs_root={logs_root}")
     citations = list(_TESTING_CITATION.finditer(reasoning))
     if not citations:
-        trace_reference = re.search(r"\bTraceCitation:|\b[a-zA-Z0-9_-]+\.txt:\d+", reasoning)
+        trace_reference = (_TRACE_CITATION.search(reasoning) or re.search(r"\bTraceCitation:", reasoning))
         if not trace_reference and not _assertion_syntax_present(python_files):
             mentioned = mentioned_python_paths(reasoning)
             result = "path" if any(
@@ -414,8 +455,7 @@ def _testing_citation_issue(
             result = "mismatch"
             print(result)
             return result
-    result = _trace_citation_issue(reasoning, logs_root) if re.search(
-        r"\b(?:TraceCitation:\s*)?(?:codex|claude-code|grok-build|grok)\.txt:\d+", reasoning) else None
+    result = _trace_citation_issue(reasoning, logs_root) if (_TRACE_CITATION.search(reasoning) or re.search(r"\bTraceCitation:", reasoning)) else None
     print(result)
     return result
 
@@ -531,7 +571,7 @@ def retry_prompt(prompt: str, reason: str) -> str:
             + f"\n\nRETRY unresolved criterion: {criterion}. Include a verified reference inside each no criterion's own reasoning; another criterion's citation does not cover it. "
             + "\n\nRETRY: the previous testing no omitted or misstated its exact "
             + "source or chronological trace citation. For a chronology failure use "
-            + "TraceCitation: codex.txt:LINE with the actual line number, without "
+            + "TraceCitation: FILE:LINE with a supplied codex.txt or sessions/...jsonl path, without "
             + "copying or re-escaping the JSON record "
             + "(or the actual claude-code.txt/grok-build.txt/grok.txt). Raw trace "
             + "positions establish availability only; inspect those actual records "
