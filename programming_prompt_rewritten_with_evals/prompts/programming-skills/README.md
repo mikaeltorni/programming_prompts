@@ -112,10 +112,14 @@ Testing keeps one criterion and adds no workflow or test matrix. The root README
 records the archive, actual execution evidence and earlier failures.
 
 The larger v0.1.115 sample `2026-10-18_174108_2620297` recorded 75/80.
-Candidate v0.1.116 addresses unfinished repairs and tests bypassing the requested
-entrypoint; its paired judge checks complete current test bodies before claiming
-an assertion is absent. No tests or model calls were run for this revision at
-the user's request. It has no new measured score; the framework remains unchanged.
+Revision v0.1.116 subsequently scored 76/80 in user-run archive
+`2026-10-18_175752_3673349`, with no terminal trial errors. Its four failures concern
+obsolete rejection expectations, a specified empty result, partial public-entrypoint
+coverage and unasserted malformed-input errors. Candidate v0.1.117 addresses these
+causes with aligned judge guidance that credits actual assertions and avoids
+unrequested state variants. No tests or model calls were run for this candidate
+at the user's request. The target is 80/80; its score is unverified and the existing
+framework remains unchanged.
 
 ## Prompt engineering
 
