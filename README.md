@@ -280,32 +280,60 @@ by adding `--skills prompt_engineering`; `--tasks prompt-create,prompt-repair`
 is an optional explicit filter. Default integration was reviewed without tests
 or benchmark execution at the user's request.
 
-Revision v0.0.66 requires a saved evaluation command that submits the tested
-prompt text with each input and verifies actual answers plus fixed wrong judge
-controls. It also checks for ignored model-setting options; Codex uses
-`model_reasoning_effort`. Creation needs no invented broken baseline.
+Current v0.0.73 delivers the prompt, its judge and one saved runnable evaluation
+script. It makes the core check explicit: generate an answer, compare it with an
+independent reference, judge that answer and fixed wrong controls, and fail the
+script on any mismatch or failed call. Exact-task judges receive independently
+specified reference data. Creation needs no invented broken baseline, but still
+needs wrong-answer controls. Quoted data, separate final replies and correct
+Codex settings keep evaluation calls focused. Repair failures by inspecting their
+actual witnesses and rerunning the same suite; retain the no-test exception.
 
-The final two-task run `2026-10-18_164039_3322724` passed **2/2**, with seven
-main answers and 17 judge decisions independently checked. Focused judge controls
-passed **5/5**, including rejection of an actual run with an ignored reasoning
-setting. The full run used Codex `gpt-6-luna`/low on instance 2 with zero quota
-or infrastructure failures. Earlier failing runs and their raw verdicts remain
-archived; the rejected settings evidence was not relabeled as a passing run.
+The paired judge distinguishes saved script files from terminal-only heredocs,
+checks whether main-answer comparisons actually affect failure status, and credits
+valid creation or scripts saved outside the repository. Original archives remain
+unchanged. The earlier v0.0.68 run `2026-10-18_210502_2119717` scored 4/14;
+inspection found genuine incomplete evaluations as well as incorrect YES/NO
+verdicts, so raw scores alone were insufficient diagnosis.
 
-Candidate v0.0.67 adds comparison with prior repairs and actual nearby pass
-witnesses, replaces ineffective reminders, and explicitly honors user prohibitions
-on tests or model calls with an unverified handoff. It was used for the testing
-v0.1.119 repair above. No evaluation was executed for v0.0.67; the 2/2 and 5/5
-results belong to v0.0.66.
+v0.0.73 verification on **instance 2**, using Codex `gpt-6-luna` at **low**
+reasoning for both coding and judging:
 
-Current candidate v0.0.68 adds gradual sample growth for sampled benchmarks:
-start focused, increase `k` only after the current stage meets the requested
-criteria and every independent judge control matches, and diagnose failures
-before increasing the sample. Keep candidate/model/settings/harness fixed during
-growth and finish requested coverage. Exact-case evaluations need no sampling
-stages. This method was applied to the repair above by stopping sample growth
-after failures and removing the unproven runtime addition. The explicit no-test
-override remains in force; v0.0.68 and its paired judge are **unverified**.
+| Coverage | Result | Archive |
+| --- | --- | --- |
+| Focused k1 | 2/2 | `2026-10-18_213311_3746927` |
+| k3 | 6/6 | `2026-10-18_213835_4052402` |
+| k5 | 10/10 | `2026-10-18_214221_83148` |
+| Final k10 | **18/20 (90%)** | `2026-10-18_214549_295077` |
+
+The final paired judge also rechecked both focused k1 outputs in the retained
+controls; prompt and judge stayed frozen throughout k3, k5 and k10.
+The final run took 4m10s and had zero rate-limited or infrastructure trials.
+Every saved runner and final call record was inspected; 135 archived native
+contexts confirmed the requested model/reasoning. Retained independent judge
+controls passed **25/25**. The final two raw failures remain recorded: one repair
+used only an unsaved heredoc; one creation was incorrectly rejected for WebSocket
+retries despite successful fallback, correct replies and exit-zero calls. The
+minimum 90% target is met; **100% is not established**. Earlier and final rubric
+scores are not directly comparable.
+
+The testing policy v0.1.121 and its judge are unchanged. Existing scheduling and
+instruction-routing self-checks passed; no new framework or runtime was added.
+The updated policy was reapplied and checked across all nine configured harness
+families, and both generated prompt judges were synchronized.
+
+The final prompt-only acceptance command was:
+
+```bash
+cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
+```
+
+```bash
+ACC_CODEX_INSTANCE=2 ./run_benchmark.sh --harness codex --eval-agent codex --skills prompt_engineering -k 10
+```
+
+Check current account quotas before rerunning; this command selects the two
+prompt cases, while omitting `--skills` uses the regular shared default suite.
 
 ### workflow
 

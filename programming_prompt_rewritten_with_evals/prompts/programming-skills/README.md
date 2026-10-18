@@ -163,19 +163,20 @@ Refresh with `acc pp enable -v2 --skill prompt_engineering`; verify using
 `prompt-create,prompt-repair` for its two Harbor cases; see the
 [case catalog](../../evals/coding-prompts/README.md#prompt-engineering-cases).
 
-Revision v0.0.66 submits the tested prompt text in actual calls and treats ignored
-model settings as unverified. Its two-task Codex evaluation passed 2/2 and its
-judge controls passed 5/5, using `gpt-6-luna`/low on instance 2 with no quota or
-infrastructure exclusions. The root README records the archive and case counts.
+Current v0.0.73 requires one saved runnable evaluation script with independent
+main-answer comparisons, real judge calls on each actual answer and fixed wrong
+controls, per-criterion checks and failing exits. Exact-task judges receive
+independent reference data. It preserves simple causal repair, gradual sampled
+coverage and the explicit no-test exception. The paired judge credits valid
+creation and saved scripts at any path while rejecting missing runners and
+unenforced checks.
 
-Candidate v0.0.67 checks recurring failures against prior repairs and nearby YES
-witnesses, replaces ineffective wording and explicitly defers execution when the
-user prohibits it. It was applied to testing v0.1.119. No tests or model calls were
-run for this candidate; the previous v0.0.66 results do not verify it.
-
-Current v0.0.68 and its paired judge add gradual `k` growth only after the current
-sample meets requested criteria and all independent judge controls match. Keep
-the candidate/model/settings/harness fixed during growth, repair failures before
-growing and finish requested coverage. Exact-case/no-test exceptions remain.
-Applied to the repair above: stop growth on failures and discard the unproven
-runtime addition. This revision remains unverified under the no-test instruction.
+The v0.0.73 candidate passed focused k1 **2/2**, k3 **6/6**, k5 **10/10** and final
+k10 **18/20 (90%)**, using Codex `gpt-6-luna`/low on instance 2 with zero quota or
+infrastructure trials. The prompt and judge stayed frozen throughout k3, k5 and
+k10; the final judge also rechecked both focused outputs. Independent judge
+controls passed **25/25**. Final archive:
+`2026-10-18_214549_295077`. One repair omitted the saved script; one creation got
+an incorrect transport-related NO after successful calls. Both raw failures are
+preserved; 100% is not established. The root README records commands and evidence.
+Testing v0.1.121 and its judge are unchanged; existing framework checks passed.
