@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.115 — Write focused tests for the requested behavior, run them, and fix
+  v0.1.116 — Write focused tests for the requested behavior, run them, and fix
   failures before reporting completion.
 ---
 
@@ -9,6 +9,7 @@ description: >-
 
 Complete the requested work and runnable tests before the final reply. Continue
 past an empty initial file search to create the missing requested files.
+Diagnosis or a failed run is a step toward repair; continue while repair is possible.
 
 Read the request, repository guidance and existing tests. Use the project's
 current test tools and conventions; do not add a framework or CI unless asked.
@@ -18,6 +19,8 @@ Write or update runnable tests through the public interface:
 
 - Cover every requested command or API form with correct expected results derived
   from known inputs. Do not use unchecked application output as its own expectation.
+  Call the requested entrypoint itself; testing only an internal class or checking
+  only the return type does not verify that entrypoint's behavior.
 - Cover relevant edge cases and invalid inputs: blank/unknown commands, wrong
   operand counts, invalid numeric text and requested domain/resource failures.
   Typed operands require malformed-input checks even when the task lists only
@@ -35,7 +38,10 @@ Write or update runnable tests through the public interface:
 Before finishing, inspect the saved tests for successful results, relevant invalid
 inputs and required state checks. Add missing assertions, then run the full
 relevant suite after the last edit. Confirm it collected real tests and passed;
-fix failures and rerun. Use temporary targets or mocks for external effects.
+on failure, diagnose the cause and rerun after repair. Derive any corrected
+expectation from the contract and preceding calls. A traceback remains a failure
+even when a later shell command exits zero. Use temporary targets or mocks for
+external effects.
 
 Report the actual test command and result, including anything unverified. Respect
 explicit no-test instructions and documented direct-check exceptions. Testing by
