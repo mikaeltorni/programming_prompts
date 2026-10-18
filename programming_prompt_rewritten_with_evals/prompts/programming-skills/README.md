@@ -115,11 +115,16 @@ The larger v0.1.115 sample `2026-10-18_174108_2620297` recorded 75/80.
 Revision v0.1.116 subsequently scored 76/80 in user-run archive
 `2026-10-18_175752_3673349`, with no terminal trial errors. Its four failures concern
 obsolete rejection expectations, a specified empty result, partial public-entrypoint
-coverage and unasserted malformed-input errors. Candidate v0.1.117 addresses these
+coverage and unasserted malformed-input errors. Revision v0.1.117 addresses these
 causes with aligned judge guidance that credits actual assertions and avoids
-unrequested state variants. No tests or model calls were run for this candidate
-at the user's request. The target is 80/80; its score is unverified and the existing
-framework remains unchanged.
+unrequested state variants. The existing framework remains unchanged.
+
+The user's v0.1.117 run `2026-10-18_180956_273001` scored 39/40 with no terminal
+trial errors. The remaining bank trial corrected only part of a shared stale
+rejection table and stopped after another failed run; its NO is justified and
+preserved. Candidate v0.1.118 reviews all affected cases and identifies failing
+loop inputs. No tests or model calls were run for this candidate; the judge and
+framework remain unchanged. The user owns the next evaluation toward 100%.
 
 ## Prompt engineering
 
