@@ -21,6 +21,12 @@ Check these outcomes:
   candidate. Submitted requests, replies, verdicts, settings, nonzero collection
   and exits are retained. Report execution blockers separately from semantic
   findings; missing execution is not verified completion.
+  For sampled benchmarks, begin with a small focused sample and retained controls;
+  grow attempts gradually only after the current stage meets the user's criteria
+  and all judge controls match independent expectations. A failed stage returns
+  to diagnosis before growth. Candidate, model, settings and harness stay fixed
+  during growth, ending with requested coverage. Exact-case evaluations need no
+  extra sampling stages; explicit no-test instructions override execution.
 - When logs say a requested setting was ignored, require a corrected invocation
   or evidence that the requested setting was already active. The ignored option
   itself does not prove that setting; recognized settings in saved calls suffice
