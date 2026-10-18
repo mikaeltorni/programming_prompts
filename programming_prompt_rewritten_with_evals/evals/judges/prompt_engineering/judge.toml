@@ -7,7 +7,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "prompt_engineering"
-description = "Evidence-grounded repairs keep prompts and judges simple and aligned, assert every independent criterion and inspect its supporting witness, preserve positive/negative controls, and finish the full requested real-model suite; blocked verification remains incomplete."
+description = "Evidence-grounded repairs keep prompts and judges simple and aligned, assert every independent criterion and inspect its supporting witness, preserve positive/negative controls, and complete the full requested real-model evaluation under the user acceptance criteria without unasked perfection gates; blocked verification remains incomplete."
 type = "binary"
 
 [scoring]
