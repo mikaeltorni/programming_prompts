@@ -1,7 +1,7 @@
 ---
 name: ssh-vm
 description: >-
-  v0.0.13 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
+  v0.0.14 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM
@@ -93,6 +93,23 @@ For every relevant local change to a project the user asked to run on the VM,
 update that project's VM copy, apply the change there, and verify it there.
 Local tests alone do not prove a VM deployment. If SSH is unavailable, report
 the exact failure and the VM-console step needed to resume.
+
+For GNOME desktop tests, determine the actual desktop session type rather than
+using the SSH shell's session type. When an X11 extension install or code change
+needs a Shell reload, check that `xdotool` is installed **on the VM**. If it is
+missing, install it using the VM's authorized package access before testing:
+
+```bash
+sudo apt install -y -o Dpkg::Options::="--force-confold" xdotool
+```
+
+Run desktop commands as the desktop user with that live session's `DISPLAY`,
+`XAUTHORITY`, runtime directory, and session bus. Follow `linux-configuration`
+for the sanctioned in-place `Alt+F2 r` reload and its verification. Reload only
+when needed to load newly installed or edited extension code; settings changes
+apply live. On Wayland, follow that policy's manual activation procedure and
+never force a Shell restart. After activation, verify the extension is active
+and recheck the selected bindings before exercising the shortcut.
 
 When a test depends on visible desktop behavior, capture and inspect a VM
 screenshot if a safe, supported capture method is available. SSH access alone
