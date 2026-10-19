@@ -1,7 +1,7 @@
 ---
 name: prompt_engineering
 description: >-
-  v0.0.73 — Keep prompts and evaluations simple; repair demonstrated failures
+  v0.0.74 — Keep prompts and evaluations simple; repair demonstrated failures
   and verify the requested behavior with real model calls.
 ---
 
@@ -18,6 +18,13 @@ reviewable edits as unverified; do not execute an evaluation. Otherwise, reuse
 the existing runner and cases when present. Put all evaluation calls and checks
 in the saved script, then execute it with the requested model/settings. Pasting
 evaluation code only into a terminal heredoc does not deliver that script.
+
+For Harbor verification runs you start as an agent, pass `--agent-run` to
+`run_benchmark.sh`, or `--quiet` to raw `harbor run`. These runs must stay off
+the taskbar and must not trigger completion TTS. Leave these switches off
+commands intended for the user to launch directly: user-initiated runs keep
+their normal taskbar progress and speech. This applies to baseline, positive,
+smoke and repeated verification runs.
 
 Reuse supplied wrong controls; when none exist, including creation, independently
 choose deliberately wrong candidates. That control list must not be empty.
