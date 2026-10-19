@@ -101,6 +101,12 @@ Always pass `--eval-agent codex` — see *Judges: Codex only while testing* belo
 Prompt-only work still uses Harbor when a live check is needed; do not add
 pytest under `programming_prompt_rewritten_with_evals/`.
 
+Agent-executed verification runs must include `--agent-run` on
+`run_benchmark.sh` (`--quiet` on raw `harbor run`). This persists the run's
+quiet setting so neither taskbar entries nor completion TTS appear, including
+baseline, positive, smoke and repeated checks. Commands provided for a human
+to initiate directly omit this switch and retain desktop progress and speech.
+
 ## Judges: Codex only while testing
 
 **Every test run uses `--eval-agent codex` and nothing else.** Do not add `cc`,

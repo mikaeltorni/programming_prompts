@@ -42,6 +42,12 @@ task waives sampling stages only. Assess each requirement separately:
   setting was active. Transport retries followed by successful calls are not
   authentication/quota failures. Codex uses `model_reasoning_effort`.
 
+When the agent executes Harbor verification, require `--agent-run` on
+`run_benchmark.sh` or `--quiet` on raw `harbor run`, keeping its tests off the
+taskbar and silent. Apply this to every agent-executed baseline, positive or
+smoke run. Commands supplied for the user to launch directly keep normal
+desktop tracking and speech; do not require quiet switches on those commands.
+
 For sampled benchmarks, grow a small focused sample gradually only after its
 requested criteria and all independent judge controls pass. Keep candidate,
 model, settings and harness fixed during growth and finish requested coverage.
