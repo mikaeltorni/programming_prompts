@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.2.27 — Establish the task checkout and authoritative plan, then finish
+  v0.2.28 — Establish the task checkout and authoritative plan, then finish
   each feature's tests → code → commit cycle before documentation.
 ---
 
@@ -12,11 +12,20 @@ local commits and selected worktree merges; user prohibitions override them.
 Never push unless asked. Use only selected, available companions.
 
 Keep four outer stages: **Establish worktree → Plan → Write code → Write
-documentation**. Verify selected isolation before detailed planning. Retain
-three absolute values: physical LIVE launch root, task checkout and plan path.
-Use `ACC_WORKFLOW_FILE` only when it is an absolute Markdown path inside
-LIVE's `tmp/workflow/`; otherwise use `LIVE/tmp/workflow.md`. Keep that same
-plan outside the task checkout and uncommitted unless asked otherwise.
+documentation**. Before changing directories or routing work to another
+repository, read the launch directory and `ACC_WORKFLOW_FILE` from the process
+environment. Retain the physical launch-project root separately from each
+implementation repository's LIVE checkout and task worktree. Resolve a launch
+from a linked worktree to its original live checkout.
+
+Use `ACC_WORKFLOW_FILE` when it is an absolute Markdown path inside the
+launch project's `tmp/workflow/`; otherwise use that launch project's
+`tmp/workflow.md`. Routing implementation to a child or sibling repository
+does not invalidate or relocate the assigned plan. Keep this exact plan path
+for the whole task, outside task worktrees and uncommitted unless asked
+otherwise. Verify selected isolation, then save and read back the plan before
+detailed investigation or Feature checks. Update this same file at every
+transition so ACC observes the actual work.
 
 Read the entire request and save the plan before Feature checks. With commits
 selected, its capability-sentence boundaries define the ordered Feature queue;

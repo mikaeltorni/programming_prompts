@@ -20,13 +20,17 @@ prompt; that request names the companions that were actually selected.
 
 ## The plan file
 
-The authoritative plan is supplied as the current plan at the retained LIVE
-launch root. Its path is `ACC_WORKFLOW_FILE` only when that is an absolute
-Markdown path inside LIVE's `tmp/workflow/`; otherwise it is
-`LIVE/tmp/workflow.md`. The task worktree and the worktree store parent are
-not the plan root. The plan stays outside the task checkout and uncommitted
-unless the user asked otherwise. Ignored files do not appear in source
-listings; rely on the supplied plan facts before alleging absence.
+The authoritative plan belongs to the retained physical launch-project root,
+resolved to the original live checkout when launched from a linked worktree.
+Its path is `ACC_WORKFLOW_FILE` when that is an absolute Markdown path inside
+the launch project's `tmp/workflow/`; otherwise it is that launch project's
+`tmp/workflow.md`. Read the launch directory and assigned environment before
+routing work. An implementation repository's LIVE checkout, task worktree or
+worktree store parent does not replace the launch root: routing to a child or
+sibling repository keeps the same authoritative plan. The plan stays outside
+task worktrees and uncommitted unless the user asked otherwise. Ignored files
+do not appear in source listings; rely on the supplied plan facts before
+alleging absence.
 
 Required shape:
 
