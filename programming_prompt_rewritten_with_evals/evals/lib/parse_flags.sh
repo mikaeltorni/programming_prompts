@@ -26,8 +26,9 @@ BENCHMARK_VALUE_FLAGS=(--harness --eval-agent --eval-agent-model \
 # Print the canonical usage on stdout.
 #
 # Parameters: none.
-# Returns 0. Used by --help and by the "unknown flag" hint.
+# Returns: 0 after printing canonical usage for help or error hints.
 benchmark_flag_usage() {
+  printf 'parameters=none\n' >&2
   cat <<'USAGE'
 Usage: ./run_benchmark.sh [--flag value ...] [-- harbor args ...]
 
@@ -42,6 +43,7 @@ Every wrapper parameter is a long, kebab-case flag followed by its value:
   --concurrency <positive integer>    trial ceiling (default: all; launches paced automatically)
 
 Switches:
+  --agent-run          agent verification: suppress taskbar and completion speech (native --quiet)
   --baseline           run without the skill prompt
   --run-separately     one job per skill instead of one combined job
   --install-only       prepare CLIs/images and exit
@@ -50,6 +52,7 @@ Switches:
 
 Anything else (e.g. -k 5) is passed through to Harbor unchanged.
 USAGE
+  printf 'benchmark_flag_usage return=0\n' >&2
 }
 
 # Report a CLI error on stderr.
@@ -101,14 +104,16 @@ benchmark_flag_positive_int() {
 # Sets: INSTALL_ONLY, PIN_REFRESH, BASELINE, RUN_SEPARATELY, SKILLS_ARG,
 # TASKS_ARG, CONCURRENCY_ARG, HARNESS_ARG, EVAL_AGENT_ARG, EVAL_AGENT_MODEL_ARG,
 # EVAL_AGENT_EFFORT_ARG, HARBOR_ARGS.
-# Returns 1 on an unusable or legacy-format argument.
+# Returns: 0 after conversion, 10 for help, or 1 on an unusable argument.
 parse_benchmark_flags() {
+  printf 'argv_count=%s\n' "$#" >&2
   local harness_hint="${BENCHMARK_HARNESS_CHOICES:-codex, cc, grok, both, all}"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --help|-h)
         benchmark_flag_usage
+        printf 'parse_benchmark_flags return=10\n' >&2
         return 10
         ;;
       --install-only)
@@ -121,6 +126,10 @@ parse_benchmark_flags() {
         ;;
       --pin-refresh)
         PIN_REFRESH=1
+        shift
+        ;;
+      --agent-run)
+        HARBOR_ARGS+=(--quiet)
         shift
         ;;
       --baseline)
@@ -235,4 +244,6 @@ parse_benchmark_flags() {
         ;;
     esac
   done
+  printf 'parse_benchmark_flags return=0\n' >&2
+  return 0
 }
