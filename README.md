@@ -280,7 +280,7 @@ by adding `--skills prompt_engineering`; `--tasks prompt-create,prompt-repair`
 is an optional explicit filter. Default integration was reviewed without tests
 or benchmark execution at the user's request.
 
-Current v0.0.73 delivers the prompt, its judge and one saved runnable evaluation
+Current v0.0.74 delivers the prompt, its judge and one saved runnable evaluation
 script. It makes the core check explicit: generate an answer, compare it with an
 independent reference, judge that answer and fixed wrong controls, and fail the
 script on any mismatch or failed call. Exact-task judges receive independently
@@ -288,6 +288,10 @@ specified reference data. Creation needs no invented broken baseline, but still
 needs wrong-answer controls. Quoted data, separate final replies and correct
 Codex settings keep evaluation calls focused. Repair failures by inspecting their
 actual witnesses and rerunning the same suite; retain the no-test exception.
+Agent-executed Harbor checks use `run_benchmark.sh --agent-run` (or raw
+`harbor run --quiet`), suppressing taskbar entries and completion TTS. Commands
+for a human to launch directly omit these switches and keep desktop progress
+and announcements.
 
 The paired judge distinguishes saved script files from terminal-only heredocs,
 checks whether main-answer comparisons actually affect failure status, and credits
@@ -650,10 +654,17 @@ Coding tasks live under
 The runner accepts `--harness`, selects the Codex judge with
 `--eval-agent codex`, selects programming skills with `--skills`, and accepts
 `--tasks`, `--suite coding|debug|all`, `--concurrency`, `--baseline`,
-`--run-separately`, `--install-only`, `--pin-refresh` / `--no-pin-refresh`,
+`--run-separately`, `--agent-run`, `--install-only`, `--pin-refresh` / `--no-pin-refresh`,
 `--eval-agent-model`, `--eval-agent-reasoning-effort`, and Harbor's `-k` attempt
 count. The [parameter table](programming_prompt_rewritten_with_evals/evals/README.md#parameters)
 describes their values and defaults.
+`--agent-run` is for autonomous verification: it forwards Harbor's native
+`--quiet`, which persists in the job config and keeps the desktop tracker and
+completion speech silent through restarts and resume. It also hides Harbor's
+terminal progress display. Direct user launches omit this option. The desktop
+observer additionally suppresses recognized coding-agent descendants when it
+can observe their process ancestry; use the explicit parameter for detached
+verification jobs too.
 Without `--concurrency`, all selected tasks × attempts remain eligible, subject
 to configured LLM caps and available per-trial Docker network slots. The automatic
 [launch guard](programming_prompt_rewritten_with_evals/evals/harbor_agents/launch_guard.py)
