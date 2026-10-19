@@ -163,13 +163,15 @@ Refresh with `acc pp enable -v2 --skill prompt_engineering`; verify using
 `prompt-create,prompt-repair` for its two Harbor cases; see the
 [case catalog](../../evals/coding-prompts/README.md#prompt-engineering-cases).
 
-Current v0.0.73 requires one saved runnable evaluation script with independent
+Current v0.0.74 requires one saved runnable evaluation script with independent
 main-answer comparisons, real judge calls on each actual answer and fixed wrong
 controls, per-criterion checks and failing exits. Exact-task judges receive
 independent reference data. It preserves simple causal repair, gradual sampled
 coverage and the explicit no-test exception. The paired judge credits valid
 creation and saved scripts at any path while rejecting missing runners and
-unenforced checks.
+unenforced checks. Autonomous Harbor verification uses `--agent-run` on the
+benchmark wrapper, or `--quiet` on raw Harbor, to suppress taskbar entries and
+completion speech. Direct-user commands retain their normal desktop behavior.
 
 The v0.0.73 candidate passed focused k1 **2/2**, k3 **6/6**, k5 **10/10** and final
 k10 **18/20 (90%)**, using Codex `gpt-6-luna`/low on instance 2 with zero quota or

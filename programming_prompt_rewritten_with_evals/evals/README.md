@@ -199,6 +199,7 @@ Use long kebab-case flags followed by values. Historical `harness=`,
 | `--tasks greeter` | Named task subset; omission uses the applicable selected suite. |
 | `--suite debug` | Family: `coding`, `debug`, or `all`; omission derives families from selected skills. |
 | `--concurrency N` | Optional lower trial ceiling; omission uses automatic capacity and pacing. |
+| `--agent-run` | Agent-executed verification: forwards native `--quiet`; no taskbar entry or completion TTS, including restart/resume. Direct user launches omit it. |
 | `--baseline` | No skill injection, retaining selected judges. |
 | `--run-separately` | Independent skill scores in the same job and trial count, instead of requiring every judge to pass. |
 | `--install-only` | Prepare and verify CLI installation without an LLM coding run. |
