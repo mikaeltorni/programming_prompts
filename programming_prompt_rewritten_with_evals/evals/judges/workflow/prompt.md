@@ -31,6 +31,11 @@ sibling repository keeps the same authoritative plan. The plan stays outside
 task worktrees and uncommitted unless the user asked otherwise. Ignored files
 do not appear in source listings; rely on the supplied plan facts before
 alleging absence.
+The agent stages code and checks without the plan, then records the actual new
+HEAD in the untracked plan. Amending a commit to include its own hash does not
+produce valid hash evidence; compare the final recorded hash to reachable
+history. An explicit user request to track the plan overrides its untracked
+default.
 
 Required shape:
 

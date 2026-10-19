@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.2.28 — Establish the task checkout and authoritative plan, then finish
+  v0.2.30 — Establish the task checkout and authoritative plan, then finish
   each feature's tests → code → commit cycle before documentation.
 ---
 
@@ -22,8 +22,11 @@ Use `ACC_WORKFLOW_FILE` when it is an absolute Markdown path inside the
 launch project's `tmp/workflow/`; otherwise use that launch project's
 `tmp/workflow.md`. Routing implementation to a child or sibling repository
 does not invalidate or relocate the assigned plan. Keep this exact plan path
-for the whole task, outside task worktrees and uncommitted unless asked
-otherwise. Verify selected isolation, then save and read back the plan before
+for the whole task, outside task worktrees. Unless the user asks to track the
+plan, leave it untracked: stage code and checks by explicit path and inspect
+the staged files to ensure the plan is excluded. After committing, record the
+actual new HEAD in that untracked plan; do not amend the commit to include
+its own hash. Verify selected isolation, then save and read back the plan before
 detailed investigation or Feature checks. Update this same file at every
 transition so ACC observes the actual work.
 
@@ -74,8 +77,10 @@ At each transition, read this saved plan and do its first unfinished microstep:
   selected worktree merge and consumer verification before the next Feature.
   No Git or explicit no-commit instructions justify skipping only this step.
 
-Update the existing rows in place as each step closes; mark outer Write code
-complete only after every cycle is delivered. Documentation follows all cycles,
+Update the existing rows in place as each step closes, then read back the saved
+table cells and confirm the intended statuses actually changed. An edit that
+matched no row does not update progress. Once every code cycle is delivered,
+mark the outer Write code row complete too. Documentation follows all cycles,
 uses the same task checkout and delivery path, and closes outer row 4. Plan two
 separate `Write documentation` microsteps from the start, using `-` for Feature
 and Stage: **Write and verify documentation** names the README and its public
