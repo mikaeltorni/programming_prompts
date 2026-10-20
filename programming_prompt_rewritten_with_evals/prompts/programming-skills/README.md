@@ -163,22 +163,23 @@ Refresh with `acc pp enable -v2 --skill prompt_engineering`; verify using
 `prompt-create,prompt-repair` for its two Harbor cases; see the
 [case catalog](../../evals/coding-prompts/README.md#prompt-engineering-cases).
 
-Current v0.0.74 requires one saved runnable evaluation script with independent
-main-answer comparisons, real judge calls on each actual answer and fixed wrong
-controls, per-criterion checks and failing exits. Exact-task judges receive
-independent reference data. It preserves simple causal repair, gradual sampled
-coverage and the explicit no-test exception. The paired judge credits valid
-creation and saved scripts at any path while rejecting missing runners and
-unenforced checks. Autonomous Harbor verification uses `--agent-run` on the
-benchmark wrapper, or `--quiet` on raw Harbor, to suppress taskbar entries and
-completion speech. Direct-user commands retain their normal desktop behavior.
+Current v0.0.86 requires one saved runnable evaluation with independent main
+comparisons, judge calls on actual answers and wrong controls, and failing exits.
+Repairs merge original logged input/candidate failures into supplied cases;
+creation avoids redundant variants and waits for the saved runner to complete.
+No-test exceptions remain explicit. Autonomous Harbor checks use `--agent-run`
+(raw Harbor: `--quiet`); user-launched runs retain normal desktop behavior.
 
-The v0.0.73 candidate passed focused k1 **2/2**, k3 **6/6**, k5 **10/10** and final
-k10 **18/20 (90%)**, using Codex `gpt-6-luna`/low on instance 2 with zero quota or
-infrastructure trials. The prompt and judge stayed frozen throughout k3, k5 and
-k10; the final judge also rechecked both focused outputs. Independent judge
-controls passed **25/25**. Final archive:
-`2026-10-18_214549_295077`. One repair omitted the saved script; one creation got
-an incorrect transport-related NO after successful calls. Both raw failures are
-preserved; 100% is not established. The root README records commands and evidence.
-Testing v0.1.121 and its judge are unchanged; existing framework checks passed.
+The October 20 focused v0.0.86 run `2026-10-20_215125_548143` passed **2/2**
+with zero quota/infrastructure failures and 13 native Luna/low contexts. Its
+temporary judge revision was discarded after inconsistent calibration, so this
+is not final paired-candidate acceptance. The canonical judge remains the earlier
+delivered revision. Full retained calibration is **36/39**; current final k10 is
+pending. Both authorized accounts were exhausted at the last quota check. The
+historical v0.0.73 k10 **18/20 (90%)** does not verify the current revision.
+
+Framework helper and archive checks passed **98/98** and **39/39**. Recovered
+quota-warning classification and deferred native command evidence were repaired;
+the seed adds a missing original wrong control while retaining prior cases.
+Original archives remain unchanged. The root README records the current limits.
+Testing v0.1.121 and its judge are unchanged.

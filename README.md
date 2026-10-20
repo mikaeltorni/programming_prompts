@@ -284,64 +284,53 @@ by adding `--skills prompt_engineering`; `--tasks prompt-create,prompt-repair`
 is an optional explicit filter. Default integration was reviewed without tests
 or benchmark execution at the user's request.
 
-Current v0.0.74 delivers the prompt, its judge and one saved runnable evaluation
-script. It makes the core check explicit: generate an answer, compare it with an
-independent reference, judge that answer and fixed wrong controls, and fail the
-script on any mismatch or failed call. Exact-task judges receive independently
-specified reference data. Creation needs no invented broken baseline, but still
-needs wrong-answer controls. Quoted data, separate final replies and correct
-Codex settings keep evaluation calls focused. Repair failures by inspecting their
-actual witnesses and rerunning the same suite; retain the no-test exception.
-Agent-executed Harbor checks use `run_benchmark.sh --agent-run` (or raw
-`harbor run --quiet`), suppressing taskbar entries and completion TTS. Commands
-for a human to launch directly omit these switches and keep desktop progress
-and announcements.
+Current v0.0.86 delivers the prompt, its judge and one saved runnable evaluation
+script. The runner checks independent main answers, judges actual answers and
+fixed wrong controls, and exits nonzero on mismatches or failed calls. Repairs
+combine supplied cases with exact logged input/candidate pairs; creation uses
+representative cases and longer polling waits to finish its saved evaluation.
+Independent task-answer references are valid judge data; expected candidate
+verdicts remain in assertions and results. Explicit no-test instructions still
+allow reviewable edits with honest unverified status.
 
-The paired judge distinguishes saved script files from terminal-only heredocs,
-checks whether main-answer comparisons actually affect failure status, and credits
-valid creation or scripts saved outside the repository. Original archives remain
-unchanged. The earlier v0.0.68 run `2026-10-18_210502_2119717` scored 4/14;
-inspection found genuine incomplete evaluations as well as incorrect YES/NO
-verdicts, so raw scores alone were insufficient diagnosis.
+The evaluation framework now preserves deferred command-completion evidence and
+readable source within its evidence budget. A recovered quota warning followed
+by successful completion no longer excludes a genuine scored trial; terminal
+quota errors remain excluded. The repair seed retains its original cases and
+adds the previously omitted logged wrong candidate. Original archived results
+and independent task expectations remain unchanged.
 
-v0.0.73 verification on **instance 2**, using Codex `gpt-6-luna` at **low**
-reasoning for both coding and judging:
+October 20 repair status:
 
-| Coverage | Result | Archive |
+| Check | Result | Evidence |
 | --- | --- | --- |
-| Focused k1 | 2/2 | `2026-10-18_213311_3746927` |
-| k3 | 6/6 | `2026-10-18_213835_4052402` |
-| k5 | 10/10 | `2026-10-18_214221_83148` |
-| Final k10 | **18/20 (90%)** | `2026-10-18_214549_295077` |
+| Latest focused live check of v0.0.86 | **2/2**, no quota/infrastructure failures | `2026-10-20_215125_548143` |
+| Actual main/judge settings | `gpt-6-luna`, low; 13 native contexts | Same archive |
+| Framework helpers / archive checks | **98/98**, **39/39** | Existing standalone self-checks |
+| Full retained judge calibration | **36/39**; unresolved false verdicts | Saved original-source control replay |
+| Current final k10 | **Pending; 90% acceptance not established** | cx2 rate-limited; cx1 credits depleted at last status check |
 
-The final paired judge also rechecked both focused k1 outputs in the retained
-controls; prompt and judge stayed frozen throughout k3, k5 and k10.
-The final run took 4m10s and had zero rate-limited or infrastructure trials.
-Every saved runner and final call record was inspected; 135 archived native
-contexts confirmed the requested model/reasoning. Retained independent judge
-controls passed **25/25**. The final two raw failures remain recorded: one repair
-used only an unsaved heredoc; one creation was incorrectly rejected for WebSocket
-retries despite successful fallback, correct replies and exit-zero calls. The
-minimum 90% target is met; **100% is not established**. Earlier and final rubric
-scores are not directly comparable.
+The focused live check completed three creation main cases with six judge calls,
+and three repair main cases with ten judge calls. It used a temporary judge
+revision; that revision was discarded after inconsistent calibration. The
+canonical judge remains the earlier delivered revision. Consequently the focused
+score does not establish acceptance of the final prompt/judge combination.
+Experimental judge wording was not promoted just to obtain a passing sample.
+The prompt is merged locally and checked across all nine configured harness
+families. The testing policy v0.1.121 and its judge are unchanged.
 
-The testing policy v0.1.121 and its judge are unchanged. Existing scheduling and
-instruction-routing self-checks passed; no new framework or runtime was added.
-The updated policy was reapplied and checked across all nine configured harness
-families, and both generated prompt judges were synchronized.
+The v0.0.73 archive `2026-10-18_214549_295077` recorded 18/20 (90%) with no
+quota/infrastructure failures. This is historical evidence for that candidate,
+not verification of v0.0.86. Current repair runs are retained in the task
+checkout's ignored `programming_prompt_rewritten_with_evals/evals/runs/` archive.
 
-The final prompt-only acceptance command was:
-
-```bash
-cd /home/mk/projects/programming_prompts/programming_prompt_rewritten_with_evals/evals
-```
-
-```bash
-ACC_CODEX_INSTANCE=2 ./run_benchmark.sh --harness codex --eval-agent codex --skills prompt_engineering -k 10
-```
-
-Check current account quotas before rerunning; this command selects the two
-prompt cases, while omitting `--skills` uses the regular shared default suite.
+Use `evals/run_benchmark.sh` as the benchmark entrypoint and
+`--skills prompt_engineering` to select only the two prompt cases. Run one
+benchmark at a time. Check both quota windows and the selected authentication
+home before a new run. Agent verification adds `--agent-run` (raw Harbor:
+`--quiet`) to suppress taskbar entries and completion speech; user-launched
+commands retain normal desktop progress and announcements. Final k10 must follow
+successful calibration and focused coverage on one frozen candidate.
 
 ### workflow
 
