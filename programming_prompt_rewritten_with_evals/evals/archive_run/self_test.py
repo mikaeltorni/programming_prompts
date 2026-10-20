@@ -452,6 +452,17 @@ def _check_results(record) -> None:
     for name, relative, content, limited in (
         ("native_judge_usage", "verifier/test-stdout.txt",
          "ERROR: You’ve hit your usage limit. Try again later.", True),
+        ("recovered_native_retry_with_semantic_no", "agent/codex.txt",
+         "\n".join(json.dumps(event) for event in (
+             {"type": "error", "message": "Reconnecting... last status: 429 Too Many Requests"},
+             {"type": "turn.completed"},
+         )), False),
+        ("terminal_quota_after_prior_success", "agent/codex.txt",
+         "\n".join(json.dumps(event) for event in (
+             {"type": "turn.completed"},
+             {"type": "error", "message": "You've hit your usage limit."},
+             {"type": "turn.failed", "error": {"message": "You've hit your usage limit."}},
+         )), True),
         ("native_coding_usage", "agent/codex.txt",
          json.dumps({"type": "error", "message": "You've hit your usage limit."}), True),
         ("native_failed_turn_usage", "agent/codex.txt",
