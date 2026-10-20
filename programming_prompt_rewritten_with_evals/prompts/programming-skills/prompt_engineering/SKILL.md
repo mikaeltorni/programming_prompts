@@ -1,7 +1,7 @@
 ---
 name: prompt_engineering
 description: >-
-  v0.0.74 — Keep prompts and evaluations simple; repair demonstrated failures
+  v0.0.82 — Keep prompts and evaluations simple; repair demonstrated failures
   and verify the requested behavior with real model calls.
 ---
 
@@ -27,7 +27,11 @@ their normal taskbar progress and speech. This applies to baseline, positive,
 smoke and repeated verification runs.
 
 Reuse supplied wrong controls; when none exist, including creation, independently
-choose deliberately wrong candidates. That control list must not be empty.
+choose deliberately wrong candidates. That control list must not be empty. Keep each control paired with its input
+and independent verdict; a label that is wrong for one input may be correct
+for another. Retain supplied cases/controls and every input that exposed a
+failure, with its independent expected result. Never drop a failing case to make
+the suite pass.
 For an exact case, the runner's loop has this shape (use the actual parsed
 criterion names and independent values required by the judge):
 
@@ -35,7 +39,7 @@ criterion names and independent values required by the judge):
 actual = call(main_prompt, input)
 assert actual == independent_reference
 for candidate, expected_fields in [(actual, correct_fields), *fixed_wrong_controls]:
-    decision = call(judge_prompt, input, candidate)
+    decision = call(judge_prompt, input, candidate, reference=independent_reference)
     assert parsed_fields(decision) == expected_fields
 ```
 
@@ -48,12 +52,36 @@ reference and report main errors under the user's acceptance criteria.
 
 Keep instructions separate from quoted input and candidate-answer data.
 Give the judge an explicit verdict format and tell it to evaluate that candidate,
-not answer the original input. For exact-reference tasks, give the judge the
-independently expected answer as labeled reference data alongside the candidate.
-The reference must not come from the main model's output. With Codex, isolate evaluation calls from project
-instructions using `-c project_doc_max_bytes=0`; use
-`-c model_reasoning_effort="low"` when low reasoning is requested. Save the final
-model reply separately from CLI progress. Do not add extra model stages.
+not answer the original input. When the judge contract uses reference data, send
+the independently expected answer alongside the candidate. For exact-answer tasks,
+prefer this simple comparison judge; a rule-based judge is also valid when its
+real decisions pass the independent controls. The reference must not come from
+the main model's output. Keep expected judge
+verdicts/criterion scores in the runner's assertions and results; never send that
+answer key in the judge request. An expected answer reference is valid judge data.
+
+For Codex calls, submit the saved instructions AND the input through stdin.
+Use `-c project_doc_max_bytes=0` to isolate project instructions and
+`-c model_reasoning_effort="low"` when low reasoning is requested. Give each
+run/call unique evidence paths, including reply and exit status: old baseline
+files must never look like results of a pending rerun. Use `-o <reply-file>`
+with a regular file and read it only after that call finishes; capture
+stdout/stderr separately. Never use `/dev/stdout` as the reply file or combine
+stdout with the saved reply: that can duplicate a correct answer.
+Alternatively parse the last assistant message from `--json` events. Save the
+full submitted request, final reply, parsed decision and actual process exit.
+Do not add extra model stages.
+
+Let the saved runner enforce a bounded timeout for each child call. That clock
+restarts for every invocation; the whole suite normally takes longer than one
+call's limit. Poll the same runner until it exits. Do not interrupt a progressing
+suite because its total runtime exceeds a per-call timeout. Diagnose a stall
+from the current call's elapsed time and actual timeout/exit diagnostic, not the
+suite's age or a yielded tool handle. Retain requests/progress before waiting.
+A terminal timeout, quota rejection or failed call leaves execution unverified;
+it does not justify rewriting the prompt or reference. Report blocked coverage
+honestly. A completed reply with successful checks and exit zero remains valid
+after transport fallback; retry warnings alone do not invalidate it.
 
 Read the original request, prompts, saved cases, outputs and judge findings.
 Check verdicts against actual witnesses, including nearby passes with the same
@@ -63,14 +91,11 @@ evidence or implementation. Replace ineffective or redundant wording rather
 than stacking reminders. Change that owner and keep requirements aligned. Preserve
 independent references; do not rewrite them to match a candidate.
 
-Reuse the existing runner and cases. If none exist, save a small runnable suite
-with independently derived expectations. For repairs, run the original failing case and a related
-correct control before editing, then rerun them afterward. Creation needs no
-prior failure, repair or invented broken candidate. If a required check fails,
-inspect its actual request and reply, repair the responsible prompt, judge or
-runner, then rerun the same full suite. Continue until the requested criteria
-pass; a report of an unresolved judge failure is not finished repair. Discard
-ineffective changes instead of accumulating exceptions.
+For repairs, run the original failing case and a related correct control
+before editing, then rerun them afterward. For creation, save a small suite
+with independently derived expectations. Creation needs no prior failure,
+repair or invented broken candidate. Discard ineffective changes instead of
+accumulating exceptions.
 
 For sampled benchmarks, start with the smallest useful focused sample and retained
 correct/wrong controls. Increase attempts (`k`) in small steps only after the
@@ -81,14 +106,22 @@ sample size, then finish the requested coverage. Do not add sampling stages to a
 ordinary exact-case evaluation. The no-test instruction above takes precedence.
 
 Poll yielded session handles until completion; do not start a replacement while
-the original call is still live. Freeze the candidate and finish the
-full requested evaluation, then inspect its actual settings, nonzero cases and
-outcomes. Resolve ignored-setting warnings before accepting a run; Codex uses
+the original call is still live. A slow pending call is not a failed assertion.
+Freeze the prompt, judge and runner before the final full run. After a material
+change, earlier results do not verify that changed candidate; rerun the suite.
+Inspect final settings, exit status, completed case/control counts and outcomes. Resolve ignored-setting warnings before accepting a run; Codex uses
 `model_reasoning_effort`, not `reasoning_effort`. Separate semantic failures from
 quota, authentication and timeouts.
 
-Follow the user's acceptance criteria. Exact correctness cases and judge controls
-must match their independent expectations. A sampled benchmark reports its pass
-rate and remaining errors; it needs 100% only if the user requested that. Do not
-repeat unchanged calls hoping for a perfect sample. Report focused and full
-results separately, including verification that remains blocked or incomplete.
+**Finish the repair before handing off.** For an exact-case evaluation, every
+main answer and judge control must match its independent expectation. A failed
+assertion, malformed judge verdict or incorrect reply is work to repair, not a
+limitation to list in the final response. Read that call's actual request/reply,
+fix the responsible prompt, judge or runner, and rerun the same full suite.
+Do not stop after merely saving a runner that reports these failures.
+
+For a sampled benchmark, meet the user's requested threshold and coverage;
+100% is required only when requested. Do not retry an unchanged candidate hoping
+for a lucky sample. Report focused and full results separately. Only an explicit
+no-test instruction or a terminal execution block permits an unverified handoff;
+state that limit honestly and never count it as passing verification.
