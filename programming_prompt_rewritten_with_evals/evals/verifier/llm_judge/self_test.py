@@ -579,8 +579,8 @@ def run_self_test() -> int:
             "prompt_artifacts_before_call_records",
             all(source in context for source in sources)
             and "### .log/evidence/results.json\n" in context
-            and max(context.index(source) for source in sources) < context.index("### .log/"),
-            "call records cannot consume the artifact budget before final prompts, cases and runner",
+            and min(context.index(source) for source in sources) > context.index("### .log/evidence/results.json"),
+            "source keeps collection priority and is rendered after call records as authoritative current evidence",
         )
 
     with tempfile.TemporaryDirectory(prefix="llm-judge-") as raw:
@@ -641,6 +641,18 @@ def run_self_test() -> int:
                     (original_log in evidence) == (judge_name in {"debug", "testing"}),
                     "original regression logs reach debug and testing, without unrelated judge context",
                 )
+        with patch("llm_judge.workspace.original_task_logs_context", return_value=original_log):
+            evidence = pin_workspace_python("Score {criteria}", root, listed, "prompt_engineering")
+        check(
+            "prompt_original_logs_after_final_source",
+            evidence.index(original_log) > evidence.index("### temperature.py") and evidence.count(original_log) == 1,
+            "literal original prompt failure logs remain visible after current source without duplication",
+        )
+        check(
+            "prompt_policy_after_quoted_evidence",
+            evidence.endswith("Score {criteria}") and evidence.count("Score {criteria}") == 1,
+            "prompt judge instructions appear once after quoted evidence and original logs",
+        )
         listed_keys = listed_python_keys(listed, root)
         withheld = [
             {
