@@ -8,4 +8,18 @@ expected: thank you
 input: salut
 actual: hi
 expected: unknown
-Judge calibration: the old judge incorrectly accepted all three incorrect outputs above.
+Judge calibration failures (recorded decisions):
+input: bonjour
+candidate: hello (a French greeting)
+actual_result: accepted
+expected_result: rejected
+
+input: merci
+candidate: thanks
+actual_result: accepted
+expected_result: rejected
+
+input: salut
+candidate: hi
+actual_result: accepted
+expected_result: rejected

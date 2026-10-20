@@ -4,7 +4,8 @@
     "expected": "hello",
     "incorrect": [
       "Hello!",
-      "hello means bonjour"
+      "hello means bonjour",
+      "hello (a French greeting)"
     ]
   },
   {

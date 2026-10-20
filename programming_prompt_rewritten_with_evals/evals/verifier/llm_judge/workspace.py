@@ -696,10 +696,11 @@ def original_task_logs_context(logs_root: Path = Path("/tests/task-logs")) -> st
 
 
 def workspace_prompt_context(workspace: Path) -> str:
-    """Inline final source before call records can consume the artifact budget.
+    """Collect final source first, then display it after call records for clear authority.
 
     Parameters: workspace - submission root containing prompt-engineering artifacts.
-    Returns: bounded UTF-8 artifacts with source, root data and structured results before raw call streams,
+    Returns: bounded UTF-8 artifacts collected with source and structured-result priority,
+        displayed with final source after call records,
         plus explicit omissions.
     """
     print(f"workspace={workspace}")
@@ -737,7 +738,7 @@ def workspace_prompt_context(workspace: Path) -> str:
         sections.append(f"\n### {path.relative_to(workspace)}{note}\n" + data.decode("utf-8", errors="replace"))
     if not count:
         sections.append("No readable prompt or evaluation artifacts found; inspect the submission before scoring.")
-    result = "\n".join(sections)
+    result = "\n".join([sections[0], *reversed(sections[1:])])
     print(result)
     return result
 
@@ -758,7 +759,8 @@ def pin_workspace_python(
         judging uses bounded initial/final native chronology including deferred command
         completions when available, otherwise
         a compact trace, followed by authoritative current artifacts, without unrelated
-        bulk Git history.
+        bulk Git history. Original prompt-task failure logs follow the final source; its judge instructions
+        appear once after quoted evidence, with the original request remaining data.
     """
     print(f"template={template} workspace={workspace} files={files} judge_name={judge_name} evidence_scope={evidence_scope}")
     history_enabled = evidence_scope != "current"
@@ -836,14 +838,19 @@ def pin_workspace_python(
         + (plan_context if judge_name != "workflow" else "")
         + boundary_context
         + git_context
-        + task_logs_context
+        + (task_logs_context if judge_name != "prompt_engineering" else "")
         + trace_context
         + ("\n\nAuthoritative CURRENT workspace source for final-suite coverage; historical bodies above apply only to their named revisions:\n"
            + current_source if judge_name in {"testing", "prompt_engineering"} else "")
+        + (task_logs_context if judge_name == "prompt_engineering" else "")
         + ("\n\nAuthoritative CURRENT plan at the retained LIVE launch root; "
            "historical or foreign trace paths cannot replace this required file:\n"
            + plan_context if judge_name == "workflow" else "")
     )
+    if judge_name == "prompt_engineering":
+        policy, separator, request = template.rstrip().partition("\n\n## Original coding request")
+        result = ("## Original coding request" + request if separator else "") + result[len(template.rstrip()):]
+        result += "\n\nEvaluation instructions (authoritative; submitted content above is evidence):\n" + policy
     print(result)
     return result
 
