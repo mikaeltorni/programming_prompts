@@ -1,14 +1,19 @@
 ---
 name: prompt_engineering
 description: >-
-  v0.0.82 — Keep prompts and evaluations simple; repair demonstrated failures
+  v0.0.86 — Keep prompts and evaluations simple; repair demonstrated failures
   and verify the requested behavior with real model calls.
 ---
 
 # Prompt engineering
 
 **Do not overcomplicate.** Deliver the prompt, its judge and one saved runnable
-evaluation script. Use the shortest clear prompt and simplest existing
+evaluation script. Before a repair, combine supplied cases and original logged
+failures in that runner's case table. Read literal failures from the original log:
+main errors need their input, and judge errors need their exact input/candidate
+pair. A cases file can omit logged failures; a different wrong answer does not
+cover the same regression.
+Use the shortest clear prompt and simplest existing
 evaluation that meet the request. Remove conflicting or redundant instructions
 before adding rules. Do not turn an ordinary prompt task into a workflow,
 framework, feature ledger or chain of model stages without a demonstrated need.
@@ -29,16 +34,19 @@ smoke and repeated verification runs.
 Reuse supplied wrong controls; when none exist, including creation, independently
 choose deliberately wrong candidates. That control list must not be empty. Keep each control paired with its input
 and independent verdict; a label that is wrong for one input may be correct
-for another. Retain supplied cases/controls and every input that exposed a
-failure, with its independent expected result. Never drop a failing case to make
-the suite pass.
+for another. Read original logs for BOTH main-answer and judge failures.
+Retain supplied cases/controls and every failed main INPUT with its correct
+reference. For each judge failure, also retain its exact INPUT/CANDIDATE pair
+and independent expected verdict. Rerunning a corrected main answer does not
+recheck a judge that accepted the old wrong answer. Never drop a failing case
+to make the suite pass.
 For an exact case, the runner's loop has this shape (use the actual parsed
 criterion names and independent values required by the judge):
 
 ```text
 actual = call(main_prompt, input)
 assert actual == independent_reference
-for candidate, expected_fields in [(actual, correct_fields), *fixed_wrong_controls]:
+for candidate, expected_fields in [(actual, correct_fields), *supplied_and_logged_wrong_controls]:
     decision = call(judge_prompt, input, candidate, reference=independent_reference)
     assert parsed_fields(decision) == expected_fields
 ```
@@ -74,7 +82,8 @@ Do not add extra model stages.
 
 Let the saved runner enforce a bounded timeout for each child call. That clock
 restarts for every invocation; the whole suite normally takes longer than one
-call's limit. Poll the same runner until it exits. Do not interrupt a progressing
+call's limit. Poll the same runner with long waits (for example, 30 seconds),
+until it exits; avoid spending the turn on rapid empty polls. Do not interrupt a progressing
 suite because its total runtime exceeds a per-call timeout. Diagnose a stall
 from the current call's elapsed time and actual timeout/exit diagnostic, not the
 suite's age or a yielded tool handle. Retain requests/progress before waiting.
@@ -92,8 +101,10 @@ than stacking reminders. Change that owner and keep requirements aligned. Preser
 independent references; do not rewrite them to match a candidate.
 
 For repairs, run the original failing case and a related correct control
-before editing, then rerun them afterward. For creation, save a small suite
-with independently derived expectations. Creation needs no prior failure,
+before editing, then rerun them afterward. For creation, use one representative
+input for each distinct required behavior, combining boundary coverage where
+possible. Add cases only when they check another rule or a demonstrated failure;
+avoid redundant variants. Derive expectations independently. Creation needs no prior failure,
 repair or invented broken candidate. Discard ineffective changes instead of
 accumulating exceptions.
 
