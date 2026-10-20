@@ -153,7 +153,11 @@ commands, including setting the account password, and waits for confirmation
 before any network attempt. Once confirmed, it connects using a key or an
 interactive password prompt, updates the project copy, and installs and checks
 it on the VM. For visual behavior, it captures and inspects a VM screenshot
-when a safe capture path is available. If visual confirmation would help but
+when a safe capture path is available. GNOME X11 tests provision `xdotool` on
+the VM when a code activation needs a reload, use the live desktop session's
+environment, and verify extension state and selected bindings before testing.
+The shared Linux desktop policy owns the reload procedure and Wayland limits.
+If visual confirmation would help but
 no capture path exists, it asks the user for a screenshot. SSH alone does not
 guarantee guest desktop access. Installed as a native skill under each
 harness's skill directory.
