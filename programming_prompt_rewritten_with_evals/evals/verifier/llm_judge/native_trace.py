@@ -153,7 +153,7 @@ def format_native_tool_records(label: str, records: list[tuple[int, dict]], pres
     for block, fields in blocks:
         for key in ("input", "arguments"):
             source = fields.get(key)
-            if preserve_tail or decoded_limit or not isinstance(source, str):
+            if decoded_limit or not isinstance(source, str):
                 continue
             displays = [value.encode("utf-8", errors="backslashreplace").decode("utf-8")
                         for value in decode_native_string_literals(source) if "\n" in value]
