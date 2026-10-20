@@ -67,14 +67,15 @@ def parse_archive_reward(payload: dict) -> float | None:
 
 
 def read_native_codex_failures(trial_dir: Path) -> list[str]:
-    """Read provider failure records without treating quoted trajectory data as errors.
+    """Read unresolved provider failures, ignoring quoted data and recovered retries.
 
     Parameters: trial_dir - live or archived Harbor trial directory.
-    Returns: native error and failed-turn diagnostics from available Codex JSONL logs.
+    Returns: native error/failed-turn diagnostics not followed by a completed turn in that CLI log.
     """
     print(f"trial_dir={trial_dir}")
     result = []
     for relative in ("agent/codex.txt", "logs/agent/codex.txt"):
+        pending = []
         try:
             with (trial_dir / relative).open(encoding="utf-8", errors="replace") as handle:
                 for line in handle:
@@ -82,10 +83,15 @@ def read_native_codex_failures(trial_dir: Path) -> list[str]:
                         event = json.loads(line)
                     except ValueError:
                         continue
-                    if isinstance(event, dict) and event.get("type") in {"error", "turn.failed"}:
-                        result.append(json.dumps(event, ensure_ascii=False))
+                    if not isinstance(event, dict):
+                        continue
+                    if event.get("type") in {"error", "turn.failed"}:
+                        pending.append(json.dumps(event, ensure_ascii=False))
+                    elif event.get("type") == "turn.completed":
+                        pending.clear()
         except OSError:
             continue
+        result.extend(pending)
     print(result)
     return result
 

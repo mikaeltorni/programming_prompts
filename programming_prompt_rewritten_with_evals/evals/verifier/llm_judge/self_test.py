@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
+from .native_trace import format_native_tool_records, parse_native_tool_records
 from .grok import DEFAULT_MAX_TURNS, build_grok_command, score_with_grok
 from .homes import claude_judge_env, claude_wrapper_script, codex_reasoning_on_path
 from .ratelimit import JUDGE_CLI_FAILURES, looks_like_judge_rate_limit
@@ -38,13 +39,14 @@ from .workspace import (
     listed_python_keys,
     pin_workspace_python,
     workspace_python_context,
+    workspace_prompt_context,
 )
 
 
 def run_self_test() -> int:
     """Run fixture-only LLM judge checks without launching agents.
 
-    Parameters: None.
+    Parameters: none.
 
     Returns: zero when every check passes, otherwise one.
     """
@@ -215,95 +217,38 @@ def run_self_test() -> int:
     if srp_prompt.is_file():
         srp_text = srp_prompt.read_text(encoding="utf-8")
         lower = srp_text.lower()
-        no_idx = lower.find("answer no")
-        yes_idx = lower.find("answer yes")
-        yes_block = (
-            srp_text[yes_idx:no_idx]
-            if yes_idx >= 0 and no_idx > yes_idx
-            else srp_text
-        )
-        no_block = srp_text[no_idx:] if no_idx >= 0 else ""
+        parsing = lower.split("## parsing_dispatch", 1)[1].split("## domain_validation", 1)[0]
+        validation = lower.split("## domain_validation", 1)[1].split("## shared_decisions", 1)[0]
+        sharing = lower.split("## shared_decisions", 1)[1].split("## verdict", 1)[0]
         srp_checks = [
-            (
-                "srp_yes_allows_dispatch",
-                "dispatch" in yes_block.lower() and "if/elif" in yes_block.lower(),
-                "yes-path allows a thin if/elif entrypoint",
-            ),
-            (
-                "srp_no_does_not_punish_dispatch",
-                "dispatch" not in no_block.lower(),
-                "no-path does not treat dispatch as an SRP failure",
-            ),
-            (
-                "srp_helpers_may_format",
-                "formatted" in lower,
-                "helpers may return a formatted result string",
-            ),
-            (
-                "srp_logging_not_srp_fail",
-                "logging" in lower and "not an srp failure" in lower,
-                "logging prints are scored separately",
-            ),
-            (
-                "srp_no_rejects_fat_entrypoint",
-                "entrypoint" in no_block.lower()
-                and (
-                    "arithmetic" in no_block.lower()
-                    or "state" in no_block.lower()
-                ),
-                "no-path fails when the entrypoint still does core work",
-            ),
-            (
-                "srp_no_not_only_if",
-                "only if" not in no_block.lower(),
-                "no-path is not limited to one exception (false-positive hole)",
-            ),
-            (
-                "srp_yes_allows_get_format",
-                "already-computed" in yes_block.lower()
-                and "get" in yes_block.lower()
-                and "do not require get" in yes_block.lower(),
-                "thin entrypoint may read existing state on get; helper not required",
-            ),
-            (
-                "srp_yes_allows_int_in_helper",
-                "int()" in yes_block or "already-split" in yes_block.lower(),
-                "int() of a split token in a state helper is core logic",
-            ),
-            (
-                "srp_yes_allows_int_in_entrypoint",
-                "helper(int" in yes_block.lower()
-                and "conversion-only" in yes_block.lower(),
-                "int() of a split token passed into a helper from the entrypoint is thin",
-            ),
-            (
-                "srp_yes_allows_dispatch_raises",
-                "unknown" in yes_block.lower() and "raise" in yes_block.lower(),
-                "thin entrypoint may raise on unknown op or extra args",
-            ),
-            (
-                "srp_yes_allows_missing_required_arg",
-                "required" in yes_block.lower() and "missing" in yes_block.lower(),
-                "thin entrypoint may raise when a required argument is missing",
-            ),
-            (
-                "srp_yes_allows_helper_empty_guard",
-                "if not text" in yes_block.lower()
-                and "validation-only" in yes_block.lower(),
-                "empty already-parsed arg guard in a core helper is yes",
-            ),
-            (
-                "srp_yes_allows_core_helper_dispatch",
-                "core helper" in yes_block.lower()
-                and "dispatch" in yes_block.lower(),
-                "core-helper if/elif dispatch is a yes",
-            ),
-            (
-                "srp_yes_allows_entrypoint_hour_range",
-                "already-parsed" in yes_block.lower()
-                and "out of range" in yes_block.lower(),
-                "already-parsed out-of-range check in the entrypoint is yes",
-            ),
+            ("srp_single_outer_parser", "one outer parsing boundary" in parsing,
+             "public dispatch receives converted values through one outer parser"),
+            ("srp_parser_owns_conversion", "token conversion" in parsing and "convert tokens after routing" in parsing,
+             "token conversion belongs to parsing, never post-routing dispatch"),
+            ("srp_parser_composition", "permitted composition" in parsing and "inside" in parsing,
+             "smaller form parsers compose inside the outer parsing boundary"),
+            ("srp_dispatch_forwards_unchanged", "forwards converted values unchanged" in parsing,
+             "dispatch forwards converted arguments unchanged"),
+            ("srp_operations_own_work", "operations own arithmetic" in parsing and "state changes" in parsing,
+             "separate operations own calculations and mutations"),
+            ("srp_direct_reads_allowed", "reading/formatting existing state needs no pass-through getter" in parsing,
+             "direct reads and formatting require no artificial operation wrapper"),
+            ("srp_prints_separately_scored", "do not grade docstrings, prints" in lower,
+             "commenting and logging are separate policies"),
+            ("srp_domain_owner_called", "called domain" in validation and "operations call applicable validators" in validation,
+             "operations call domain validators before work, even for one caller"),
+            ("srp_conversion_vs_domain", "lexical token grammar" in validation and "after successful conversion remain domain" in validation,
+             "lexical conversion differs from predicates on converted numbers"),
+            ("srp_operation_not_own_validator", "operation that calculates or mutates state is not its own separate validator" in validation,
+             "calculation/mutation helpers call separate rule owners"),
+            ("srp_equivalent_rules_shared", "equivalent decisions have one shared called owner" in sharing,
+             "equivalent related rules share their called owner"),
+            ("srp_classifications_shared", "sharing only the validator does not share the classification" in sharing,
+             "shared acceptance alone does not share equivalent calculations"),
+            ("srp_distinct_work_independent", "opposing updates sharing storage need no common helper" in sharing,
+             "distinct operations need no artificial shared calculation"),
+            ("srp_source_witness_required", "citation: relative/path.py:line" in lower and "missing evidence alone proves no violation" in lower,
+             "NO needs actual source evidence and missing evidence is not a violation"),
         ]
         for item in srp_checks:
             check(*item)
@@ -390,9 +335,9 @@ def run_self_test() -> int:
                 "optional None parameters must still be printed by name",
             ),
             (
-                "logging_one_print_named_params",
-                "same line" in text and "unlabeled tuple" in text,
-                "one print with real names is a yes, not a generic label",
+                "logging_first_statement_named_params",
+                "first statement after the docstring" in text and "every parameter" in text,
+                "the entry print is first and includes every named parameter",
             ),
             (
                 "logging_ignores_lambdas",
@@ -550,6 +495,83 @@ def run_self_test() -> int:
         "prompt accepts complete inlined source and requires tools for gaps",
     )
 
+    with tempfile.TemporaryDirectory(prefix="llm-native-completion-") as raw:
+        trace = Path(raw) / "session.jsonl"
+        trace.write_text("\n".join(json.dumps(event) for event in (
+            {"type": "response_item", "payload": {"type": "function_call", "name": "exec_command",
+                "call_id": "call-1", "arguments": "python3 evaluate.py"}},
+            {"type": "event_msg", "payload": {"type": "item_completed", "item": {
+                "type": "AgentMessage", "content": "invented PASS"}}},
+            {"type": "event_msg", "payload": {"type": "item_completed", "item": {
+                "type": "CommandExecution", "id": "exec-1", "command": ["python3", "evaluate.py"],
+                "status": "completed", "aggregated_output": "all checks completed", "exit_code": 0}}},
+        )) + "\n")
+        native, limit = parse_native_tool_records(trace, include_command_events=True)
+        legacy, legacy_limit = parse_native_tool_records(trace)
+        check(
+            "prompt_native_async_completion",
+            len(native) == 2 and native[-1][0] == 3
+            and native[-1][1].get("aggregated_output") == "all checks completed"
+            and native[-1][1].get("exit_code") == 0
+            and len(legacy) == 1 and limit is None and legacy_limit is None
+            and "Recorded native command completion: status=completed exit_code=0"
+                in format_native_tool_records("sessions/fixture.jsonl", native, preserve_tail=True),
+            "prompt native evidence retains actual deferred command completion, excludes claims, and preserves default parsing",
+        )
+
+    native_records = [(index, {"type": "function_call_output", "call_id": f"call-{index}",
+                               "output": f"record-{index} " + "x" * 15000}) for index in range(30)]
+    context = format_native_tool_records("sessions/fixture.jsonl", native_records, preserve_tail=True)
+    check(
+        "prompt_native_keeps_final_execution",
+        "record-0 " in context and "record-29 " in context
+        and context.index("record-0 ") < context.index("record-29 ")
+        and "omitted" in context.lower() and len(context.encode("utf-8")) < 81000,
+        "bounded prompt chronology retains its beginning and final execution with explicit middle omission",
+    )
+
+    command_records = [(index, {"type": "function_call", "input": f"command-{index} " + "y" * 15000})
+                       for index in range(30)]
+    command_context = format_native_tool_records("sessions/commands.jsonl", command_records, preserve_tail=True)
+    check(
+        "prompt_native_tail_after_long_commands",
+        "command-0 " in command_context and "command-29 " in command_context
+        and command_context.index("command-0 ") < command_context.index("command-29 ")
+        and "Native middle records omitted" in command_context
+        and len(command_context.encode("utf-8")) < 81000,
+        "long original commands retain initial and final execution evidence within the prompt preview budget",
+    )
+
+    prefix_context = format_native_tool_records("sessions/fixture.jsonl", native_records)
+    check(
+        "native_default_prefix_preserved",
+        "record-0 " in prefix_context and "record-29 " not in prefix_context
+        and "Native inline budget reached at sessions/fixture.jsonl:" in prefix_context,
+        "other judges retain the existing prefix-only native preview",
+    )
+
+    with tempfile.TemporaryDirectory(prefix="llm-prompt-artifacts-") as raw:
+        root = Path(raw)
+        records = root / ".log" / "evidence"
+        records.mkdir(parents=True)
+        for index in range(60):
+            (records / f"call-{index:03}.txt").write_text("recorded call reply\n")
+        (records / "results.json").write_text('{"calls": 12, "failures": []}\n')
+        (root / "prompt.md").write_text("Main prompt text\n")
+        (root / "judge.md").write_text("Judge prompt text\n")
+        (root / "cases.json").write_text('[]\n')
+        (root / "eval").mkdir()
+        (root / "eval" / "run_eval.py").write_text("# Saved runnable evaluation\n")
+        context = workspace_prompt_context(root)
+        sources = ["### prompt.md\n", "### judge.md\n", "### cases.json\n", "### eval/run_eval.py\n"]
+        check(
+            "prompt_artifacts_before_call_records",
+            all(source in context for source in sources)
+            and "### .log/evidence/results.json\n" in context
+            and max(context.index(source) for source in sources) < context.index("### .log/"),
+            "call records cannot consume the artifact budget before final prompts, cases and runner",
+        )
+
     with tempfile.TemporaryDirectory(prefix="llm-judge-") as raw:
         root = Path(raw)
         (root / "temperature.py").write_text(
@@ -579,6 +601,25 @@ def run_self_test() -> int:
             "pin_keeps_criteria_token",
             "{criteria}" in pinned and "temperature.py" in pinned,
             "rewardkit prompt still has {criteria} after pinning files",
+        )
+        with patch("llm_judge.workspace.native_tool_context", return_value="Native chronology only"), \
+                patch("llm_judge.workspace.debugging_trace_context", return_value="Duplicate JSON chronology"), \
+                patch("llm_judge.workspace.commit_source_context", return_value="Unrelated Git history") as git_context:
+            prompt_evidence = pin_workspace_python("Score {criteria}", root, listed, "prompt_engineering")
+        check(
+            "prompt_single_native_chronology",
+            "Native chronology only" in prompt_evidence and "Duplicate JSON chronology" not in prompt_evidence
+            and prompt_evidence.index("### temperature.py") > prompt_evidence.index("Native chronology only")
+            and "Unrelated Git history" not in prompt_evidence and not git_context.called,
+            "prompt judging uses one native timeline followed by authoritative current source",
+        )
+        with patch("llm_judge.workspace.native_tool_context", return_value=""), \
+                patch("llm_judge.workspace.debugging_trace_context", return_value="Fallback JSON chronology"):
+            prompt_evidence = pin_workspace_python("Score {criteria}", root, listed, "prompt_engineering")
+        check(
+            "prompt_chronology_fallback",
+            "Fallback JSON chronology" in prompt_evidence,
+            "prompt judging retains observed command evidence when native logs are unavailable",
         )
         original_log = "Original task-log evidence: want: independently expected result"
         with patch("llm_judge.workspace.original_task_logs_context", return_value=original_log):

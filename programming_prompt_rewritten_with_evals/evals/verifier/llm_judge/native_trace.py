@@ -13,13 +13,14 @@ _TOOL_RECORD_TYPES = frozenset({
 _NATIVE_CONTEXT_BYTES = 200_000
 
 
-def parse_native_tool_records(path: Path) -> tuple[list[tuple[int, dict]], str | None]:
+def parse_native_tool_records(path: Path, include_command_events: bool = False) -> tuple[list[tuple[int, dict]], str | None]:
     """Read literal native calls/results while excluding message and instruction records.
 
-    Parameters: path - original persisted native JSONL session file.
-    Returns: original line positions and tool fields, plus any unreadable/truncated-input limit.
+    Parameters: path - original persisted native JSONL session file;
+        include_command_events - include deferred native command completions alongside tool records.
+    Returns: original line positions and tool/command fields, plus any unreadable/truncated-input limit.
     """
-    print(f"path={path}")
+    print(f"path={path} include_command_events={include_command_events}")
     records = []
     used = 0
     limit = None
@@ -34,9 +35,22 @@ def parse_native_tool_records(path: Path) -> tuple[list[tuple[int, dict]], str |
                     event = json.loads(line)
                 except (ValueError, UnicodeError):
                     continue
-                if not isinstance(event, dict) or event.get("type") != "response_item":
+                if not isinstance(event, dict):
                     continue
                 payload = event.get("payload")
+                if include_command_events and event.get("type") == "event_msg" and isinstance(payload, dict):
+                    item = payload.get("item")
+                    if payload.get("type") == "item_completed" and isinstance(item, dict) and item.get("type") == "CommandExecution":
+                        fields = {key: item[key] for key in (
+                            "id", "command", "cwd", "status", "aggregated_output", "exit_code",
+                        ) if key in item}
+                        fields["type"] = payload["type"]
+                        fields["item_type"] = item["type"]
+                        fields.update({key: payload[key] for key in ("started_at_ms", "completed_at_ms") if key in payload})
+                        records.append((number, fields))
+                    continue
+                if event.get("type") != "response_item":
+                    continue
                 if not isinstance(payload, dict) or payload.get("type") not in _TOOL_RECORD_TYPES:
                     continue
                 fields = {key: payload[key] for key in (
@@ -76,35 +90,70 @@ def decode_native_string_literals(source: str) -> tuple[str, ...]:
     return result
 
 
-def format_native_tool_records(label: str, records: list[tuple[int, dict]]) -> str:
+def format_native_tool_records(label: str, records: list[tuple[int, dict]], preserve_tail: bool = False) -> str:
     """Render original native inputs and results on their own chronological line axis.
 
-    Parameters: label - session path relative to the agent log root; records - converted native records.
-    Returns: the bounded original record prefix plus decoded displays using leftover space;
+    Parameters: label - session path relative to the agent log root; records - converted native records;
+        preserve_tail - compact output previews and retain initial/final records within the inline budget.
+    Returns: bounded chronological original records plus decoded displays using leftover space;
         original citations/results survive display limits, with explicit omission notices.
     """
-    print(f"label={label} records={records}")
+    print(f"label={label} records={records} preserve_tail={preserve_tail}")
+    budget = 80000 if preserve_tail else _NATIVE_CONTEXT_BYTES
     blocks = []
     used = 0
     raw_limit = None
+    rendered = []
     for number, fields in records:
-        block = f"TraceCitation: {label}:{number}\n" + "\n".join(
+        displayed_fields = dict(fields)
+        if preserve_tail:
+            for key in ("output", "aggregated_output"):
+                if key not in displayed_fields:
+                    continue
+                output = displayed_fields[key]
+                rendered_output = output if isinstance(output, str) else json.dumps(output, ensure_ascii=False)
+                if len(rendered_output.encode("utf-8")) > 1000:
+                    displayed_fields[key] = (rendered_output[:450]
+                        + "\n[Native output middle omitted; inspect original record.]\n" + rendered_output[-450:])
+        completion = (f"Recorded native command completion: status={fields.get('status')} "
+                      f"exit_code={fields.get('exit_code')} (actual runtime event)\n"
+                      if fields.get("item_type") == "CommandExecution" else "")
+        block = f"TraceCitation: {label}:{number}\n" + completion + "\n".join(
             f"{key}: {value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)}"
-            for key, value in fields.items()
+            for key, value in displayed_fields.items()
         )
+        rendered.append((block, fields))
+    tail = []
+    if preserve_tail and sum(len(block.encode("utf-8")) for block, _ in rendered) > budget:
+        tail_size = 0
+        for block, fields in reversed(rendered):
+            size = len(block.encode("utf-8"))
+            if tail_size + size > budget // 2:
+                break
+            tail.insert(0, (block, fields))
+            tail_size += size
+    prefix_budget = budget - sum(len(block.encode("utf-8")) for block, _ in tail)
+    for block, fields in rendered:
         size = len(block.encode("utf-8"))
-        if used + size > _NATIVE_CONTEXT_BYTES:
-            raw_limit = f"[Native inline budget reached at {label}:{number}; inspect original records.]"
+        if used + size > prefix_budget:
+            raw_limit = "[Native middle records omitted within inline budget; inspect original records.]" if tail else (
+                f"[Native inline budget reached at {block.splitlines()[0].removeprefix('TraceCitation: ')}; inspect original records.]"
+            )
             break
         used += size
         blocks.append((block, fields))
-    remaining = _NATIVE_CONTEXT_BYTES - used
+    if tail:
+        blocks.append((raw_limit, {}))
+        raw_limit = None
+        blocks.extend(tail)
+        used += sum(len(block.encode("utf-8")) for block, _ in tail)
+    remaining = budget - used
     lines = []
     decoded_limit = False
     for block, fields in blocks:
         for key in ("input", "arguments"):
             source = fields.get(key)
-            if decoded_limit or not isinstance(source, str):
+            if preserve_tail or decoded_limit or not isinstance(source, str):
                 continue
             displays = [value.encode("utf-8", errors="backslashreplace").decode("utf-8")
                         for value in decode_native_string_literals(source) if "\n" in value]
@@ -126,18 +175,19 @@ def format_native_tool_records(label: str, records: list[tuple[int, dict]]) -> s
     return result
 
 
-def native_tool_context(logs_root: Path) -> str:
+def native_tool_context(logs_root: Path, preserve_tail: bool = False) -> str:
     """Supply original native tool evidence when the JSON stream omits patch contents.
 
-    Parameters: logs_root - coding-agent log directory containing persisted sessions.
-    Returns: native calls/results with provenance, or empty text when no session evidence exists.
+    Parameters: logs_root - coding-agent log directory containing persisted sessions;
+        preserve_tail - include deferred command completions, compact outputs and retain initial/final context.
+    Returns: native calls/results with provenance and explicit omissions, or empty text without sessions.
     """
-    print(f"logs_root={logs_root}")
+    print(f"logs_root={logs_root} preserve_tail={preserve_tail}")
     sections = []
     for path in sorted((logs_root / "sessions").rglob("*.jsonl")):
-        records, limit = parse_native_tool_records(path)
+        records, limit = parse_native_tool_records(path, include_command_events=preserve_tail)
         label = path.relative_to(logs_root).as_posix()
-        text = format_native_tool_records(label, records)
+        text = format_native_tool_records(label, records, preserve_tail=preserve_tail)
         if text or limit:
             sections.append(f"Native session: {path}\n{text}")
             if limit:
