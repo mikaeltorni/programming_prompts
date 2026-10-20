@@ -530,6 +530,17 @@ def run_self_test() -> int:
         "bounded prompt chronology retains its beginning and final execution with explicit middle omission",
     )
 
+    multiline_input = 'const patch = ' + json.dumps("*** Update File: eval.py\n-old input\n+new input\n") + ';'
+    decoded_context = format_native_tool_records("sessions/patch.jsonl", [
+        (1, {"type": "custom_tool_call", "input": multiline_input})], preserve_tail=True)
+    check(
+        "prompt_native_multiline_source_readable",
+        "Decoded multiline string literals" in decoded_context
+        and "*** Update File: eval.py\n-old input\n+new input\n" in decoded_context
+        and multiline_input in decoded_context,
+        "prompt patch previews preserve raw evidence and readable decoded source within the existing budget",
+    )
+
     command_records = [(index, {"type": "function_call", "input": f"command-{index} " + "y" * 15000})
                        for index in range(30)]
     command_context = format_native_tool_records("sessions/commands.jsonl", command_records, preserve_tail=True)
