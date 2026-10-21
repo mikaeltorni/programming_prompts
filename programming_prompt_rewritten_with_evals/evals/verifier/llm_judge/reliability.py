@@ -375,6 +375,34 @@ def _assertion_syntax_present(python_files: list[Path]) -> bool:
     return False
 
 
+def _testing_quote_matches(quoted: str, source: str) -> bool:
+    """Match a complete source line before optional citation punctuation and prose.
+
+    Parameters: quoted - stripped citation excerpt; source - stripped actual source line.
+    Returns: whether the exact line is quoted without a different Python continuation.
+    """
+    print(f"quoted={quoted} source={source}")
+    if quoted == source:
+        result = True
+    elif source and quoted.startswith(source):
+        suffix = quoted[len(source):].lstrip("`").lstrip()
+        result = bool(re.match(r"^(?:\)\s*[.,;]|[.,;])(?:\s|$)", suffix))
+        if result:
+            try:
+                ast.parse(quoted)
+            except SyntaxError:
+                pass
+            except (ValueError, RecursionError):
+                result = False
+            else:
+                # A valid extension is additional Python, not surrounding prose.
+                result = False
+    else:
+        result = False
+    print(result)
+    return result
+
+
 def _testing_citation_issue(
     reasoning: str, python_files: list[Path], *, logs_root: Path = Path("/logs/agent")
 ) -> str | None:
@@ -451,7 +479,8 @@ def _testing_citation_issue(
             return result
         number = int(line_number)
         quoted = match.group("source").strip().strip("`")
-        if number < 1 or number > len(lines) or lines[number - 1].strip() != quoted:
+        if (number < 1 or number > len(lines)
+                or not _testing_quote_matches(quoted, lines[number - 1].strip())):
             result = "mismatch"
             print(result)
             return result

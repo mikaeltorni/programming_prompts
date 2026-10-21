@@ -710,6 +710,27 @@ def run_self_test() -> int:
             evidence.endswith("Score {criteria}") and evidence.count("Score {criteria}") == 1,
             "prompt judge instructions appear once after quoted evidence and original logs",
         )
+        citation_source = root / "citation_fixture.py"
+        citation_source.write_text("value = compute()\n", encoding="utf-8")
+        for label, excerpt, line, expected in (
+            ("exact", "value = compute()", 1, None),
+            ("parenthetical", "value = compute()). More evidence follows.", 1, None),
+            ("comma_prose", "value = compute(), but tests are absent.", 1, None),
+            ("sentence_prose", "value = compute(). Tests are absent.", 1, None),
+            ("fabricated", "value = invented()).", 1, "testing_citation_mismatch:testing_contract"),
+            ("wrong_line", "value = compute()).", 2, "testing_citation_mismatch:testing_contract"),
+            ("extra_statement", "value = compute(); other()", 1, "testing_citation_mismatch:testing_contract"),
+            ("python_continuation", "value = compute(). other()", 1, "testing_citation_mismatch:testing_contract"),
+        ):
+            finding = [{"name": "testing_contract", "reward": 0.0, "raw": "no",
+                        "reasoning": f"Missing tests. Citation: citation_fixture.py:{line} | {excerpt}"}]
+            check(
+                "testing_quote_" + label,
+                unreliable_score_reason(finding, {citation_source.name}, judge_name="testing",
+                                        python_files=[citation_source]) == expected,
+                "complete source quotes allow surrounding prose while fabricated quotes and Python extensions still retry",
+            )
+        citation_source.unlink()
         listed_keys = listed_python_keys(listed, root)
         withheld = [
             {
