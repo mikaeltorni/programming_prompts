@@ -195,6 +195,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tomllib
 
 from harbor_agents.clean_skills import (
     build_clean_skills_register_command,
@@ -236,11 +237,21 @@ for runtime, builder, native in (
         command = builder(str(bundle.parent), f'{task}__trial__agent')
         # Wipe commands must stay inside fixture homes; /etc is never touched.
         command = command.replace('/Projects/app', str(repo)).replace('/etc/codex/skills', str(home / 'etc/skills'))
+        if runtime == 'codex':
+            catalog = home / 'models_cache.json'
+            catalog.write_text('{"models": []}')
+            command = command.replace('/root/.codex/models_cache.json', str(catalog))
         env = dict(os.environ, HOME=str(home), CODEX_HOME=str(home/'codex'), CLAUDE_CONFIG_DIR=str(home/'claude'))
         result = subprocess.run(['bash', '-c', command], env=env, text=True, capture_output=True)
         assert result.returncode == 0, result.stderr
         target = home / native
         assert target.read_text() == expected, (runtime, task)
+        if runtime == 'codex':
+            settings = tomllib.loads((home/'codex/config.toml').read_text())
+            assert settings['model_catalog_json'] == str(catalog)
+            assert settings['model_provider'] == 'benchmark_openai'
+            assert settings['model_providers']['benchmark_openai']['supports_websockets'] is False
+            assert catalog.read_text() == '{"models": []}'
         assert subprocess.run(['bash', '-c', builder(None).replace('/Projects/app',str(repo)).replace('/etc/codex/skills',str(home/'etc/skills'))], env=env, capture_output=True).returncode == 0
         assert not target.exists(), runtime
         for bad_trial in (None, 'unknown__trial__agent'):

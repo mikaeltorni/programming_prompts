@@ -7,7 +7,10 @@ without loading the Harbor tool environment.
 from __future__ import annotations
 
 import shlex
+import sys
 from pathlib import Path
+
+from verifier.llm_judge.transport import CODEX_HTTP_PROVIDER_ID, CODEX_HTTP_PROVIDER_TOML
 
 # Fallback when pin files and the instance-start cache are missing.
 # Keep in sync with evals/*-version.txt.
@@ -253,12 +256,29 @@ def _build_global_register_command(
 
 
 def build_clean_skills_register_command(skills_dir: str | None, trial_id: str | None = None) -> str:
-    """Install the Codex trial document or clear policies for baseline.
+    """Prepare isolated Codex policies, HTTP transport and available account metadata.
 
     Parameters: skills_dir - optional transport directory; trial_id - Harbor session identity.
     Returns: the Codex registration shell command.
     """
+    print(f"skills_dir={skills_dir} trial_id={trial_id}", file=sys.stderr)
     command = _build_global_register_command(skills_dir, "codex", trial_id)
+    # The read-only catalogue comes from the same account as auth. Pinning its
+    # existing metadata avoids a catalogue HTTP refresh in every cold CLI home.
+    native_setup = shlex.quote(
+        'import json,os,tomllib\nfrom pathlib import Path\n'
+        'source=Path("/root/.codex/models_cache.json")\n'
+        'target=Path(os.environ["CODEX_HOME"])/"config.toml"\n'
+        'text=target.read_text() if target.exists() else ""\n'
+        'settings=tomllib.loads(text)\n'
+        'if source.is_file() and "model_catalog_json" not in settings:\n'
+        '    text="model_catalog_json = "+json.dumps(str(source))+"\\n"+text\n'
+        'if "model_provider" not in settings:\n'
+        f'    text="model_provider = "+json.dumps({CODEX_HTTP_PROVIDER_ID!r})+"\\n"+text+{CODEX_HTTP_PROVIDER_TOML!r}\n'
+        'target.write_text(text)\n'
+    )
+    command += f" && python3 -c {native_setup}"
+    print(command, file=sys.stderr)
     return command
 
 

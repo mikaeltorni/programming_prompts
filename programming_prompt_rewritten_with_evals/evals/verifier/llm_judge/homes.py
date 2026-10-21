@@ -18,6 +18,7 @@ from pathlib import Path
 
 from llm_judge.log import log
 from llm_judge.scores import reasoning_first_schema
+from llm_judge.transport import CODEX_HTTP_PROVIDER_ID, CODEX_HTTP_PROVIDER_TOML
 
 
 def _copy_auth(source: Path, dest: Path) -> None:
@@ -61,7 +62,7 @@ def _acc_selected_codex_auth() -> Path | None:
 
 
 def setup_codex_home(effort: str, developer_instructions: str | None = None) -> Path:
-    """Create an isolated Codex home with optional trusted judge instructions.
+    """Create an isolated HTTP judge home reusing account model metadata.
 
     Parameters: effort - requested reasoning effort; developer_instructions -
         canonical judge policy, or None to keep the default instruction roles.
@@ -76,9 +77,18 @@ def setup_codex_home(effort: str, developer_instructions: str | None = None) -> 
     config = (
         f'model_reasoning_effort = "{effort}"\n'
         'sandbox_mode = "danger-full-access"\n'
+        f'model_provider = "{CODEX_HTTP_PROVIDER_ID}"\n'
     )
     if developer_instructions is not None:
         config += "developer_instructions = " + json.dumps(developer_instructions) + "\n"
+    if auth is not None:
+        catalog = auth.with_name("models_cache.json")
+        if catalog.is_file():
+            config += "model_catalog_json = " + json.dumps(str(catalog)) + "\n"
+    # Judges make one response per CLI; repeated forbidden WebSocket
+    # handshakes only add load. Native's default 300s idle wait also exceeds
+    # our unchanged 180/240s call budgets, so reconnect idle HTTP streams sooner.
+    config += CODEX_HTTP_PROVIDER_TOML + 'stream_idle_timeout_ms = 45000\n'
     (judge_home / "config.toml").write_text(config, encoding="utf-8")
     print(judge_home)
     return judge_home
@@ -253,25 +263,31 @@ def rewrite_codex_output_schema(arguments: list[str]) -> None:
 
 
 def codex_wrapper_script(real: str) -> str:
-    """Return a schema-ordering shim that forwards argv to the real Codex CLI.
+    """Return a stdin/schema shim retaining native stderr even on timeout.
 
-    Args:
-        real: Absolute executable path resolved before installing the shim.
-
-    Returns:
-        Python source; probes and calls without schemas pass through unchanged.
+    Parameters: real - absolute executable resolved before wrapping.
+    Returns: Python source forwarding unchanged native stdout and exit status.
     """
+    print(f"real={real}")
     module_root = str(Path(__file__).resolve().parent.parent)
-    return (
+    result = (
         f"#!{sys.executable}\n"
-        "import os, sys\n"
+        "import os, sys, subprocess, tempfile\n"
+        "from pathlib import Path\n"
         f"sys.path.insert(0, {module_root!r})\n"
         "from llm_judge.homes import rewrite_codex_output_schema\n"
         "from llm_judge.transport import codex_prompt_stdin\n"
         "arguments = codex_prompt_stdin(sys.argv[1:])\n"
         "rewrite_codex_output_schema(arguments)\n"
-        f"os.execv({real!r}, [{real!r}, *arguments])\n"
+        "if not arguments or arguments[0] != 'exec':\n"
+        f"    os.execv({real!r}, [{real!r}, *arguments])\n"
+        "with tempfile.NamedTemporaryFile(dir=os.environ.get('CODEX_HOME'), prefix='native-stderr-', suffix='.txt', delete=not bool(os.environ.get('CODEX_HOME'))) as evidence:\n"
+        f"    completed = subprocess.run([{real!r}, *arguments], stderr=evidence)\n"
+        "    sys.stderr.write(Path(evidence.name).read_text(errors='replace'))\n"
+        "raise SystemExit(completed.returncode)\n"
     )
+    print(result)
+    return result
 
 
 @contextmanager

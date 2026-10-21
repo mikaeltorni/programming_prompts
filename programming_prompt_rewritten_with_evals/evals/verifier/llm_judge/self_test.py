@@ -6,6 +6,8 @@ import hashlib
 import json
 import os
 import shutil
+import signal
+import time
 import subprocess
 import tempfile
 import sys
@@ -165,11 +167,47 @@ def run_self_test() -> int:
             check("codex_judge_policy_role", configured.get("developer_instructions") == trusted
                   and configured.get("model_reasoning_effort") == "low",
                   "trusted policy uses the developer role with the requested reasoning effort")
+            transport = configured.get("model_providers", {}).get("benchmark_openai", {})
+            check("codex_judge_http_endpoint", configured.get("model_provider") == "benchmark_openai"
+                  and transport.get("supports_websockets") is False
+                  and transport.get("requires_openai_auth") is True
+                  and transport.get("base_url") == "https://chatgpt.com/backend-api/codex",
+                  "one-response judges avoid rejected WebSockets using the same authenticated provider")
+            check("codex_judge_idle_budget", transport.get("stream_idle_timeout_ms") == 45000,
+                  "idle streams reconnect within the shortest unchanged judge deadline")
             check("codex_judge_policy_scope", "developer_instructions" not in default_configured,
                   "unrelated judges retain their original isolated configuration")
         finally:
             shutil.rmtree(role_home)
             shutil.rmtree(default_home)
+
+    with tempfile.TemporaryDirectory() as directory:
+        account = Path(directory)
+        auth = account / "auth.json"
+        auth.write_text("{}")
+        catalog = account / "models_cache.json"
+        catalog.write_text('{"models": [{"slug": "fixture-model"}]}')
+        with patch("llm_judge.homes.find_codex_auth", return_value=auth):
+            catalog_home = setup_codex_home("low", developer_instructions="trusted policy")
+        try:
+            configured = tomllib.loads((catalog_home / "config.toml").read_text())
+            check("codex_judge_shared_catalogue", configured.get("model_catalog_json") == str(catalog)
+                  and configured["model_reasoning_effort"] == "low"
+                  and configured.get("developer_instructions") == "trusted policy",
+                  "isolated judges reuse selected-account metadata without changing reasoning")
+            check("codex_judge_catalogue_unchanged", json.loads(catalog.read_text()) == {"models": [{"slug": "fixture-model"}]},
+                  "catalogue reuse never rewrites model metadata")
+        finally:
+            shutil.rmtree(catalog_home)
+        catalog.unlink()
+        with patch("llm_judge.homes.find_codex_auth", return_value=auth):
+            catalog_home = setup_codex_home("low")
+        try:
+            configured = tomllib.loads((catalog_home / "config.toml").read_text())
+            check("codex_judge_catalogue_optional", "model_catalog_json" not in configured,
+                  "a clean account without cached metadata keeps native discovery")
+        finally:
+            shutil.rmtree(catalog_home)
 
     backend_schema = {
         "type": "object",
@@ -934,6 +972,7 @@ def run_self_test() -> int:
         with patch.dict(os.environ, {
             "PATH": f"{root}{os.pathsep}{os.environ.get('PATH', '')}",
             "PYTHONPATH": str(root),
+            "CODEX_HOME": str(root),
         }), patch("llm_judge.rewardkit.rewardkit_command", return_value=[str(runner)]), \
                 patch("llm_judge.rewardkit.ensure_rewardkit_cli"):
             try:
@@ -952,6 +991,7 @@ def run_self_test() -> int:
         with patch.dict(os.environ, {
             "PATH": f"{root}{os.pathsep}{os.environ.get('PATH', '')}",
             "PYTHONPATH": str(root),
+            "CODEX_HOME": str(root),
         }), patch("llm_judge.rewardkit.rewardkit_command", return_value=[str(runner)]), \
                 patch("llm_judge.rewardkit.ensure_rewardkit_cli"):
             run_rewardkit(work=work, output=output, backend="claude-code",
@@ -961,6 +1001,65 @@ def run_self_test() -> int:
               result['argv'] == ['exec', 'small prompt with spaces', '--model', 'fixture model']
               and result['transport_dir'] is None,
               "the Codex transport adapter does not change other backend launches")
+
+        # Reproduce a silent native descendant through the same public runner.
+        runner.write_text(
+            f"#!{sys.executable}\n"
+            "import os, subprocess, sys, time\nfrom pathlib import Path\n"
+            "state = Path(os.environ['FIXTURE_STATE'])\n"
+            "count = int(state.read_text()) + 1 if state.exists() else 1\n"
+            "state.write_text(str(count))\n"
+            "if count == 1:\n"
+            "    child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(20)'])\n"
+            "    state.with_suffix('.pid').write_text(str(child.pid))\n"
+            "    time.sleep(20)\n"
+            "Path(sys.argv[sys.argv.index('--output') + 1]).write_text('recovered')\n",
+            encoding="utf-8",
+        )
+        state = root / "attempt-count"
+        started = time.monotonic()
+        expired = False
+        with patch.dict(os.environ, {"FIXTURE_STATE": str(state), "PYTHONPATH": str(root)}), \
+                patch("llm_judge.rewardkit.rewardkit_command", return_value=[str(runner)]), \
+                patch("llm_judge.rewardkit.ensure_rewardkit_cli"):
+            try:
+                run_rewardkit(work=work, output=output, backend="codex",
+                              model="fixture model", workspace=root, timeout=2)
+            except subprocess.TimeoutExpired:
+                expired = True
+        child_pid = int(state.with_suffix('.pid').read_text())
+        child_status = Path(f"/proc/{child_pid}/status")
+        alive = child_status.exists() and "State:\tZ" not in child_status.read_text()
+        if alive:
+            os.kill(child_pid, signal.SIGKILL)
+        check("codex_timeout_deadline", expired and state.read_text() == "1",
+              "a transport timeout preserves its original deadline without adding model calls")
+        check("codex_timeout_descendants", not alive,
+              "timed-out rewardkit and native descendants stop together")
+        check("codex_timeout_wall_budget", time.monotonic() - started < 3,
+              "process cleanup does not extend the original two-second wall budget")
+
+        runner.write_text(
+            f"#!{sys.executable}\n"
+            "import sys\nfrom pathlib import Path\n"
+            f"state=Path({str(state)!r})\n"
+            "state.write_text(str(int(state.read_text())+1))\n"
+            "sys.stderr.write('explicit provider failure')\n"
+            "raise SystemExit(7)\n",
+            encoding="utf-8",
+        )
+        state.write_text("0")
+        actual_code = None
+        with patch.dict(os.environ, {"PYTHONPATH": str(root)}), \
+                patch("llm_judge.rewardkit.rewardkit_command", return_value=[str(runner)]), \
+                patch("llm_judge.rewardkit.ensure_rewardkit_cli"):
+            try:
+                run_rewardkit(work=work, output=output, backend="codex",
+                              model="fixture model", workspace=root, timeout=2)
+            except subprocess.CalledProcessError as exc:
+                actual_code = exc.returncode
+        check("codex_terminal_failure_unchanged", actual_code == 7 and state.read_text() == "1",
+              "a terminal provider/process failure is preserved and never transport-retried")
 
     failed = [name for name, ok, _ in cases if not ok]
     if failed:

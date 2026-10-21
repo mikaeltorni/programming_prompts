@@ -12,6 +12,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import tempfile
 import time
@@ -278,16 +279,14 @@ def _retain_judge_artifact(source: Path, prefix: Path | None, suffix: str) -> No
 
 
 def _retain_codex_sessions(home: Path, prefix: Path | None) -> None:
-    """Retain judge session JSONL before cleanup, excluding credentials/config.
+    """Retain native sessions and stderr before isolated-home cleanup.
 
-    Args:
-        home: Temporary Codex judge home, shared by its bounded attempts.
-        prefix: Optional verifier artifact prefix; None disables retention.
-
-    Returns:
-        None; retention failures are logged without replacing the verdict.
+    Parameters: home - isolated Codex home; prefix - optional verifier prefix.
+    Returns: None; storage failures do not replace the actual judge result.
     """
+    print(f"home={home} prefix={prefix}")
     if prefix is None:
+        print(None)
         return
     root = home / "sessions"
     destination = prefix.with_name(prefix.name + "-sessions")
@@ -295,6 +294,7 @@ def _retain_codex_sessions(home: Path, prefix: Path | None) -> None:
         sources = sorted(root.rglob("*.jsonl"))
     except OSError as exc:
         log(f"could not list judge session artifacts: {exc}")
+        print(None)
         return
     for source in sources:
         try:
@@ -304,6 +304,9 @@ def _retain_codex_sessions(home: Path, prefix: Path | None) -> None:
             shutil.copyfile(source, target)
         except (OSError, ValueError) as exc:
             log(f"could not retain judge session artifact: {exc}")
+    for source in sorted(home.glob("native-stderr-*.txt")):
+        _retain_judge_artifact(source, prefix, "-" + source.name)
+    print(None)
 
 
 def run_rewardkit(
@@ -316,22 +319,15 @@ def run_rewardkit(
     timeout: int,
     env: dict[str, str] | None = None,
 ) -> None:
-    """Shell out to preinstalled ``rewardkit`` or pinned ``uvx``.
+    """Run rewardkit with its original deadline and complete child cleanup.
 
-    Args:
-        work: Temp judge directory with pinned ``prompt.md``.
-        output: Reward JSON path (details written beside it).
-        backend: ``codex`` or ``claude-code``.
-        model: Model id for ``--model``.
-        workspace: Coding-agent workspace.
-        timeout: Subprocess timeout in seconds.
-        env: Optional environment overlay (homes, tokens). Values are not logged.
-
-    Raises:
-        FileNotFoundError: When neither ``rewardkit`` nor ``uvx`` is on PATH.
-        subprocess.CalledProcessError: When rewardkit exits non-zero.
-        subprocess.TimeoutExpired: When the CLI exceeds *timeout*.
+    Parameters: work - pinned judge directory; output - reward destination;
+        backend - Codex or Claude backend; model - exact model ID;
+        workspace - submitted project; timeout - shared wall budget in seconds;
+        env - optional environment overlay, with secrets excluded from prints.
+    Returns: None; raises the original process/deadline failure if unrecovered.
     """
+    print(f"work={work} output={output} backend={backend} model={model} workspace={workspace} timeout={timeout} env={None if env is None else {key: value if key in ('CODEX_HOME', 'CLAUDE_CONFIG_DIR') else '[REDACTED]' for key, value in env.items()}}")
     output.parent.mkdir(parents=True, exist_ok=True)
     ensure_rewardkit_cli(env)
     cmd = [
@@ -372,20 +368,29 @@ def run_rewardkit(
                 directory, str(Path(__file__).resolve().parent.parent),
                 merged.get("PYTHONPATH", ""),
             ]))
-        proc = subprocess.run(
-            cmd,
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            env=merged,
+        process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            text=True, env=merged, start_new_session=True,
         )
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            # Stop the native CLI too; killing only rewardkit left its
+            # descendants retrying and adding load after the call was void.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            stdout, stderr = process.communicate()
+            raise subprocess.TimeoutExpired(cmd, timeout, output=stdout, stderr=stderr)
+        proc = subprocess.CompletedProcess(cmd, process.returncode, stdout, stderr)
     if proc.returncode != 0:
         err = _rewardkit_error_excerpt(proc.stderr or proc.stdout or "")
         log(f"rewardkit judge failed rc={proc.returncode}: {err}")
         raise subprocess.CalledProcessError(
             proc.returncode, cmd, output=proc.stdout, stderr=proc.stderr
         )
+    print(None)
 
 
 def expand_testing_criteria(judge_name: str, criteria: list[dict[str, str]],
