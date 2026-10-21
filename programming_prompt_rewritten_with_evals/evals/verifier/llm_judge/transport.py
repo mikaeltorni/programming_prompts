@@ -7,6 +7,19 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+# Keep coding and judging on the same authenticated provider. This benchmark
+# environment rejects WebSocket handshakes; repeated fallback attempts flood
+# the endpoint before useful inference starts.
+CODEX_HTTP_PROVIDER_ID = "benchmark_openai"
+CODEX_HTTP_PROVIDER_TOML = (
+    '\n[model_providers.benchmark_openai]\n'
+    'name = "OpenAI"\n'
+    'base_url = "https://chatgpt.com/backend-api/codex"\n'
+    'wire_api = "responses"\n'
+    'requires_openai_auth = true\n'
+    'supports_websockets = false\n'
+)
+
 PROMPT_FILE_PREFIX = "acc-judge-prompt-file:"
 
 

@@ -46,6 +46,7 @@ def _self_test() -> int:
 
     Returns: Zero when all checks pass, otherwise one.
     """
+    print("parameters=none")
     cases: list[tuple[str, bool, str]] = []
 
     def check(name: str, ok: bool, detail: str) -> None:
@@ -158,6 +159,14 @@ def _self_test() -> int:
                 encoding="utf-8",
             )
             os.environ["CODEX_AGENT_TRACKER_STATE_DIR"] = str(state)
+            (extra / "models_cache.json").write_text('{"models": []}')
+            serialized = json.loads(mounts_json("codex", home=extra.parent))
+            catalog_mount = next((item for item in serialized
+                                  if item["target"] == "/root/.codex/models_cache.json"), None)
+            check("codex_catalogue_selected_account", catalog_mount is not None
+                  and catalog_mount["source"] == str(extra / "models_cache.json")
+                  and catalog_mount["read_only"] is True,
+                  "model metadata follows the selected auth account and stays read-only")
             env_lines = static_env_lines("codex")
             joined = "\n".join(env_lines)
             check(
@@ -180,11 +189,13 @@ def _self_test() -> int:
             f"{len(failed)}/{len(cases)} harness_spec self-test(s) failed",
             file=sys.stderr,
         )
+        print(1)
         return 1
     print(
         f"{len(cases)}/{len(cases)} harness_spec self-tests passed",
         file=sys.stderr,
     )
+    print(0)
     return 0
 
 
