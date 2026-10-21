@@ -169,15 +169,25 @@ unless requested. If the user names a harness/model or comparison, give only
 that requested selection. Runtime smoke checks above are agent verification
 requirements, not extra commands to append to every handoff.
 
-Before sharing any Codex harness/evaluator command, check every configured
-instance's current 5-hour and weekly quota using `/status`, Settings → Usage,
-or fresh shared-status observations sourced from `/status`. Choose an instance
-with both windows available and the most headroom in its more constrained
+Switch freely among configured Codex accounts whenever useful, including quota,
+credit or authentication failures and available headroom, without asking for confirmation.
+A named instance is a starting preference, not a restriction on later switching.
+This authorization applies even when the user previously named a specific `cxN`
+account. Continue the authorized work on an available account; keep the prompt,
+model, reasoning, harness and evaluation requirements unchanged.
+
+Before launching or sharing any Codex harness/evaluator command, check every
+configured instance's current 5-hour and weekly quota using `/status`, Settings →
+Usage, or fresh shared-status observations sourced from `/status`. Choose an
+instance with both windows available and the most headroom in its more constrained
 window. Never infer quota from account IDs, plans, aliases or old runs. Verify
 its auth home from `evals/` with
 `ACC_CODEX_INSTANCE=<selected-id> python3 harbor_agents/codex_account.py --auth`,
-then replace `<selected-id>` with the checked ID. If live quota is unavailable or exhausted, ask for current
-quota information before giving a runnable command.
+then replace `<selected-id>` with the checked ID and set it for the whole run.
+Finish the active benchmark before switching accounts or starting its replacement.
+Quota-blocked trials remain excluded; a replacement run must complete the requested
+coverage. If every configured instance is unavailable, report the execution block
+and obtain fresh quota/auth information before giving a runnable command.
 
 Put setup and each benchmark invocation in separate fenced `bash` blocks.
 Run **one benchmark at a time on this machine**; finish one before starting
