@@ -513,6 +513,11 @@ def score_with_rewardkit(
         print(result)
         return result
     template, _, _ = load_judge_dir(judge_dir)
+    trusted_policy = None
+    if judge_dir.name == "prompt_engineering":
+        trusted_policy = template.partition("\n\n## Original coding request")[0].replace(
+            "{criteria}", criteria_block(criteria, flat_single=len(criteria) == 1),
+        )
     backend = rewardkit_backend(agent)
     runner = invoke or run_rewardkit
     listed_keys = listed_python_keys(files, workspace)
@@ -555,7 +560,7 @@ def score_with_rewardkit(
             shutil.rmtree(work, ignore_errors=True)
 
     def with_homes() -> tuple[str, list[dict[str, Any]]]:
-        """Invoke the judge with its isolated authenticated runtime home.
+        """Invoke an isolated judge with canonical prompt policy when applicable.
 
         Parameters: none.
         Returns: reliable backend evidence and parsed criterion rows.
@@ -576,7 +581,7 @@ def score_with_rewardkit(
                     return result
             finally:
                 shutil.rmtree(home, ignore_errors=True)
-        home = setup_codex_home(effort)
+        home = setup_codex_home(effort, developer_instructions=trusted_policy)
         overlay["CODEX_HOME"] = str(home)
         try:
             with overlay_environ(overlay), codex_reasoning_on_path():

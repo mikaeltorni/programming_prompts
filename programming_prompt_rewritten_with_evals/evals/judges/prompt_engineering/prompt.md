@@ -16,13 +16,23 @@ Check these requirements in order; every applicable one must pass:
    PATH and the command executing that FILE. A script outside the workspace
    counts when its write and execution are recorded. `python -` and heredocs
    alone are not saved scripts; printed source and saved results are not files.
-3. The script independently checks each real main answer against a task-derived
-   reference. It also makes real judge calls on each actual answer and nonempty
-   fixed wrong controls, checking every parsed criterion independently. Wrong
-   controls must exist in the suite; require one for every input only if requested. A literal
-   case table or task-rule calculation is an independent reference; no extra
-   oracle file is needed. Main mismatches, wrong judge fields and failed calls
-   must affect a nonzero exit, not just print a mismatch.
+3. Verify the final script implements this reference behavior, using task-derived
+   values rather than the main reply as its own reference:
+   ```text
+   for input, correct_answer, fixed_wrong_candidates in cases:
+       actual = real_main_call(saved_prompt, input)
+       assert actual == correct_answer
+       for candidate in [actual, *fixed_wrong_candidates]:
+           decision = real_judge_call(saved_judge, input, candidate)
+           assert decision == independent_decision(input, candidate, correct_answer)
+   ```
+   Equivalent code is valid. Every required comparison and failed call must affect
+   a nonzero exit. Independence applies to correct_answer, not to the candidate:
+   `expected_verdict = (candidate == correct_answer)` is independent even when
+   candidate is the main reply. Storing that comparison in a boolean does not
+   make it circular. A literal table or task rule supplies correct_answer; no
+   separate oracle file is needed. Wrong controls
+   must be nonempty, but require one per input only when requested.
 4. When source/request construction is provided, read the ENTIRE final judge
    request, including all appended context, and list EVERY expected-data field
    in your reasoning. Otherwise accept the explicit independent-evaluation facts
@@ -35,18 +45,21 @@ Check these requirements in order; every applicable one must pass:
    of that candidate (pass/fail, true/false or criterion scores) IS leakage: NO.
    Expected judgments kept only in runner assertions/results are valid metadata.
    A calibrated rule-based judge and a reference-comparison judge both qualify.
-5. Retain the suite supplied before this task and genuine discovered failures.
-   Trace each real mismatch back to its literal input/candidate, then compare
-   against the FINAL loop's cases. A MAIN failure requires the same INPUT to be
-   rerun; a JUDGE failure requires the same INPUT/CANDIDATE pair. Name any missing
-   input/pair. Replacing a failing input with an easier same-label input is NO,
-   even when all remaining cases pass. Framing confusion does not excuse dropping
-   a valid input: repair the framing and rerun that input.
-   Supplied means given by the original task/user, not invented during creation.
-   Optional exploratory cases without genuine failures need not remain. Correct
-   invalid expectations from the task contract; they are not model defects.
-   Creation needs independent cases and wrong controls, not an invented baseline
-   or fixed case count.
+5. Retain supplied cases and genuine observed failures. Rerun the same input
+   for a main error. For a judge error, retain the exact input I and candidate C,
+   using independently correct task answer R:
+   - If C == R, judging the checked main reply `actual` covers that positive pair.
+     A wrong main reply already fails the suite; no duplicate fixed positive
+     candidate is necessary to guarantee that pair on a successful run.
+   - If C != R, the final loop must also submit literal wrong candidate C for I.
+     Judging the corrected main answer R does not cover that pair.
+   With source/records available, quote the old candidate and its matching FINAL
+   case/request candidate, or state MISSING. Compare strings exactly: the same
+   input or label with different wording is not the same candidate.
+   A retained regression expects its corrected result, not the old wrong verdict.
+   Supplied means given by the original user, not invented during creation.
+   Keep new cases after genuine observed failures, correcting invalid expectations
+   from the task contract. Creation needs no broken baseline or fixed case count.
 6. Verify a completed full run after material edits. Follow the saved loop and its
    actual final process result. If that enforced loop completes with exit zero,
    its internal calls count. An earlier partial file listing, omitted preview or
