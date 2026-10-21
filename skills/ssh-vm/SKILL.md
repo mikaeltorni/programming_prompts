@@ -1,7 +1,7 @@
 ---
 name: ssh-vm
 description: >-
-  v0.0.15 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
+  v0.0.16 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM
@@ -31,8 +31,18 @@ the VM over the network.
 
 ## Fresh Ubuntu VM setup
 
-For a fresh Ubuntu Desktop VM, ask the user to open Terminal on the VM itself
-(and finish the welcome screen first if this is a live USB), then run:
+Give the complete setup bundle in the same response: the VM-console block
+below, the agent-side connection command, and the details the user must report.
+Do not make the user request the remaining commands one at a time. Substitute
+known connection details in that response; label any remaining placeholders.
+Show the connection command now, but wait for setup confirmation before running
+it or any network probe.
+
+For a fresh Ubuntu Desktop VM with GNOME and the default SSH port 22, ask the
+user to open Terminal on the VM itself (and finish the welcome screen first if
+this is a live USB), then run this entire block. Run the `gsettings` commands
+as the logged-in desktop user, without sudo; they prevent idle screen blanking
+and automatic suspend on both AC and battery power:
 
 ```bash
 sudo apt update
@@ -40,10 +50,31 @@ sudo env DEBIAN_FRONTEND=noninteractive UCF_FORCE_CONFFOLD=1 \
   apt install -y -o Dpkg::Options::="--force-confold" openssh-server
 sudo systemctl enable --now ssh
 sudo passwd "$(id -un)"
+sudo install -d -m 755 /etc/ssh/sshd_config.d
+printf '%s\n' 'PasswordAuthentication yes' | sudo tee /etc/ssh/sshd_config.d/00-agent-vm-access.conf >/dev/null
+sudo sshd -t && sudo systemctl reload ssh
+if command -v ufw >/dev/null && sudo ufw status | grep -q '^Status: active'; then
+  sudo ufw allow 22/tcp
+fi
+gsettings set org.gnome.desktop.session idle-delay uint32 0
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing'
+gsettings get org.gnome.desktop.session idle-delay
+gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type
+gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type
+id -un
 sudo sshd -T | grep -i '^passwordauthentication'
 sudo ss -lntp | grep ':22'
 hostname -I
 ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
+```
+
+In that same response, label this command **Agent machine — after setup is
+confirmed**, replacing `ubuntu` and `VM_IP` with the reported username and
+reachable VM address when known:
+
+```bash
+ssh -tt -o ConnectTimeout=5 ubuntu@VM_IP
 ```
 
 `sudo passwd "$(id -un)"` sets the password for the current account; if the SSH
@@ -54,9 +85,19 @@ covers dpkg-managed files, while `UCF_FORCE_CONFFOLD=1` covers the ucf-managed
 `sshd_config`. Keep the password prompt interactive. If an earlier install is
 already showing the `sshd_config` dialog, select **keep the local version
 currently installed** and press Enter; these variables apply to new commands.
-Ask them to report whether `passwordauthentication` is `yes` and whether SSH
-is listening, but not to share the password. A live USB loses this setup on
-reboot.
+The SSH drop-in enables the interactive password login used here without
+replacing the existing `sshd_config`; validate before reloading. The firewall
+step opens port 22 only if UFW is already active. For a supplied custom port,
+adapt the listening check, firewall rule and connection command together.
+If the effective authentication check still says `no` or the listener is
+missing, resolve that console-side failure before connecting.
+
+Ask the user to confirm completion and report the username, reachable IP,
+host-key fingerprint, whether `passwordauthentication` is `yes`, and whether
+SSH is listening; never request the password. The GNOME readbacks should be
+`uint32 0`, `'nothing'`, and `'nothing'`. These settings apply immediately
+without a Shell reload. On another desktop, use its idle-display controls
+instead of GNOME commands. A live USB loses this setup on reboot.
 
 ## Connect after setup is confirmed
 
