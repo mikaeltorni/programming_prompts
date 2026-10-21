@@ -149,7 +149,8 @@ codex plugin list
 Use `$ssh-vm`, or let it apply automatically, for tasks that deploy or test
 software on a VM over SSH. On first contact, if the user provides an IP or
 hostname without confirming SSH setup, it gives Ubuntu VM-console setup
-commands, including setting the account password, and waits for confirmation
+commands that preserve the existing `sshd_config` without package dialogs,
+including setting the account password interactively, and waits for confirmation
 before any network attempt. Once confirmed, it connects using a key or an
 interactive password prompt, updates the project copy, and installs and checks
 it on the VM. For visual behavior, it captures and inspects a VM screenshot
