@@ -1,7 +1,7 @@
 ---
 name: ssh-vm
 description: >-
-  v0.0.16 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
+  v0.0.17 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM
@@ -134,6 +134,28 @@ Inspect the destination before copying. Transfer the needed files with `scp`
 or `rsync` without a delete option, run the project's installer or activation
 on the VM, then check its behavior, status, and logs **on the VM**. Respect the
 project's desktop and service rules.
+
+After installing or updating CLI launchers, refresh the target user's PATH and
+command cache yourself before testing. Use the installer's command directory;
+for `~/.local/bin` in Bash, run:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+hash -r
+```
+
+In that same remote shell, resolve each requested CLI and configured alias with
+`command -v`, confirm it points to the intended installation, and run its
+supported version or health check. Require successful exit statuses before
+reporting success. Ensure the installer persists the command directory for new
+shells, then repeat the command-name checks in a fresh login shell. A PATH export
+in one SSH process does not affect later SSH processes.
+
+When the reported failure is in an already-open VM terminal, refresh and test
+that terminal too if console control is available. An SSH child process cannot
+change that terminal's environment. If only SSH access is available, state which
+shells were verified and that the existing terminal still needs a refresh.
+Complete all accessible refreshes and checks before handing the task back.
 
 For every relevant local change to a project the user asked to run on the VM,
 update that project's VM copy, apply the change there, and verify it there.
