@@ -730,9 +730,9 @@ include trials that failed before verification and show both `trials` and
 Summary and archive helpers do not print raw trial paths, returned values or
 `None` traces while classifying trials and rebuilding the results index. The
 formatted results, failure details and archive destination messages remain.
-The launch guard prints its capacity configuration once at startup; polling,
-per-trial admission and instruction-registration helpers run without verbose
-traces or shell-command dumps. Running jobs keep their already-loaded code;
+The launch guard prints its capacity configuration once at startup; polling
+and per-trial admission stay quiet. Codex registration also reports its isolated
+native configuration. Running jobs keep their already-loaded code;
 these console changes take effect on the next benchmark invocation.
 A subsequent user-run k5 archive, `2026-10-11_014743_461020`, completed in
 6m23s with 13 quota-affected trials excluded. It confirms faster observed
@@ -743,6 +743,49 @@ command surface and [AGENTS.md's benchmark guidance](AGENTS.md#benchmark-command
 for the simple default command: one positive Codex run with three attempts per
 task. Extra harnesses, baselines and comparison runs are supplied only when
 requested; each Codex command requires a current quota and auth-home check.
+
+The October 21 infrastructure investigation is **partially verified**. The
+baseline archive `2026-10-21_175359_2580354` used **k5, 80 trials**, and excluded
+57 trials for judge timeouts; the preceding positive run used k10, 160 trials.
+The original timed-out calls did not retain native stderr, so their precise
+provider errors cannot be recovered. Later diagnostics found repeated model
+catalogue refreshes returning HTTP 429, rejected WebSocket handshakes, and native
+descendants continuing after their rewardkit parent timed out.
+
+The runtime now shares an unchanged, read-only snapshot of the selected account's
+cached model catalogue between coding agents and judges. Accounts without a cache
+retain native discovery. Both use authenticated HTTP at the same OpenAI endpoint,
+avoiding rejected WebSocket handshakes. Judges reconnect idle streams after
+45 seconds within their existing 180/240-second call deadlines. A timed-out call
+stops its complete process group, and native stderr is retained beside the judge
+session evidence. No extra outer attempts, concurrency cap, model/reasoning
+increase, prompt edits or scoring changes were introduced.
+
+Quota windows and native turn capacity are separate. A controlled native-turn
+probe on cx2 admitted 10 requests and rejected the remaining 70 with
+`turn_rate_limit_exceeded` and `Retry-After: 60`, despite available 5-hour and
+weekly allowances. cx1 admitted all 20 probe turns, but subsequently exhausted
+its workspace credits during the full benchmark. These are observations from
+that session, not permanent account limits. Follow the current account evidence
+in [AGENTS.md](AGENTS.md#benchmark-commands-give-the-simple-default). Set
+`ACC_CODEX_INSTANCE` to the checked account ID for the whole job; preserve the
+default parallelism and finish a benchmark before switching accounts.
+
+| Verification archive | Coverage | Outcome | Runtime |
+| --- | --- | --- | --- |
+| `2026-10-21_175359_2580354` | Original baseline, k5 / 80 | 23 scored; 57 infrastructure exclusions | 26m41s |
+| `2026-10-21_200946_3818060` | Revised baseline, k1 / 2 | Both scored; zero rate-limit or infrastructure exclusions | 1m01s |
+| `2026-10-21_201323_4061358` | Revised positive, k1 / 4, coding/debug/prompt families | 4/4 pass; zero exclusions | 4m58s |
+| `2026-10-21_204826_2364218` | Revised full baseline, k5 / 80 | 40 scored; 39 rate-limited; one infrastructure timeout; stopped after workspace-credit depletion | 4m57s |
+
+All revised runs used Codex for coding and judging with `gpt-6-luna` at low
+reasoning. The full baseline retained 80 concurrent trial slots. Standalone
+checks passed: 109 judge, 15 harness, 39 archive, instruction-routing checks,
+and saved public normal/timeout/catalogue regressions. Archives and the existing
+results index remain under `evals/runs/`; earlier results were preserved.
+Full-load acceptance and the requested speed guarantee remain **unverified**
+until a funded account completes the same workload without exclusions. The
+small smoke timings and the credit-blocked run do not establish a speedup.
 
 `--skills` selects the Harbor skills and corresponding verifier judges;
 positive jobs install the selected skill bodies, while baseline jobs omit them.
