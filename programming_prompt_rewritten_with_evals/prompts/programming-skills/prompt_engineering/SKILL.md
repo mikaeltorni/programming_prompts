@@ -1,7 +1,7 @@
 ---
 name: prompt_engineering
 description: >-
-  v0.0.86 — Keep prompts and evaluations simple; repair demonstrated failures
+  v0.0.87 — Keep prompts and evaluations simple; repair demonstrated failures
   and verify the requested behavior with real model calls.
 ---
 
@@ -51,9 +51,10 @@ for candidate, expected_fields in [(actual, correct_fields), *supplied_and_logge
     assert parsed_fields(decision) == expected_fields
 ```
 
-All calls use the saved prompt text. The actual answer must be judged as well as
-the wrong controls. Save requests, raw replies, parsed fields and call exit codes
-as calls finish. Failed calls or assertions must make the runner exit nonzero;
+All calls use the saved prompt text. Compare and judge the actual reply without
+repairing its case, punctuation or formatting; trim only transport whitespace.
+Save requests, raw replies, parsed fields and call exit codes as calls finish.
+Failed calls or assertions must make the runner exit nonzero;
 printing a mismatch or storing `match: false` is not an enforced check. In a
 sampled benchmark, derive each actual-answer judge expectation from its independent
 reference and report main errors under the user's acceptance criteria.

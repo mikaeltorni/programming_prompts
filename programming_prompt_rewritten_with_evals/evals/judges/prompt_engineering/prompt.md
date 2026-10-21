@@ -13,7 +13,9 @@ Check these requirements in order; every applicable one must pass:
 1. The prompt and judge are simple and preserve the requested behavior.
 2. Require a saved runnable script that reads the saved prompts and uses the
    requested model/settings. With source/trace evidence, name its actual saved
-   PATH and the command executing that FILE. A script outside the workspace
+   PATH and the command executing that FILE. Resolve a relative filename against
+   its recorded working directory; a separately printed absolute path is not
+   required. A script outside the workspace
    counts when its write and execution are recorded. `python -` and heredocs
    alone are not saved scripts; printed source and saved results are not files.
 3. Verify the final script implements this reference behavior, using task-derived
@@ -26,8 +28,12 @@ Check these requirements in order; every applicable one must pass:
            decision = real_judge_call(saved_judge, input, candidate)
            assert decision == independent_decision(input, candidate, correct_answer)
    ```
-   Equivalent code is valid. Every required comparison and failed call must affect
-   a nonzero exit. Independence applies to correct_answer, not to the candidate:
+   Equivalent code is valid. For an exact-answer contract, compare and judge the
+   actual reply, allowing only transport whitespace trimming. Changing its case
+   or removing answer formatting before these checks accepts invalid answers: NO,
+   even when sampled replies were valid. A controlled replay can demonstrate an
+   unenforced check without establishing live model quality.
+   Every required comparison and failed call must affect a nonzero exit. Independence applies to correct_answer, not to the candidate:
    `expected_verdict = (candidate == correct_answer)` is independent even when
    candidate is the main reply. Storing that comparison in a boolean does not
    make it circular. A literal table or task rule supplies correct_answer; no
@@ -35,7 +41,9 @@ Check these requirements in order; every applicable one must pass:
    must be nonempty, but require one per input only when requested.
 4. When source/request construction is provided, read the ENTIRE final judge
    request, including all appended context, and list EVERY expected-data field
-   in your reasoning. Otherwise accept the explicit independent-evaluation facts
+   in your reasoning. Expand appended context too: a field carrying the candidate
+   verdict invalidates the judge even if its other fields are legitimate.
+   Otherwise accept the explicit independent-evaluation facts
    in a recorded summary; missing builder text alone is not a failed check.
    When reading the request, finding an allowed
    answer reference does not excuse another field leaking the verdict. Distinguish
@@ -53,9 +61,12 @@ Check these requirements in order; every applicable one must pass:
      candidate is necessary to guarantee that pair on a successful run.
    - If C != R, the final loop must also submit literal wrong candidate C for I.
      Judging the corrected main answer R does not cover that pair.
-   With source/records available, quote the old candidate and its matching FINAL
-   case/request candidate, or state MISSING. Compare strings exactly: the same
-   input or label with different wording is not the same candidate.
+   With source/records available, begin your reasoning with one row for EACH
+   original wrong pair: original input; original candidate; final submitted
+   candidate quoted from the final runner/request, or MISSING. Look up each
+   candidate separately; never infer all pairs from a successful run or matching
+   main inputs. MISSING means NO. Text only in an old log or prompt is not a
+   final judge submission. Compare strings exactly, not equivalent meanings.
    A retained regression expects its corrected result, not the old wrong verdict.
    Supplied means given by the original user, not invented during creation.
    Keep new cases after genuine observed failures, correcting invalid expectations
@@ -84,7 +95,8 @@ unverified result; no pass rate is established. Agent Harbor checks use --agent-
 (or raw Harbor --quiet); commands for the user retain normal desktop behavior.
 
 Explain the checked evidence and any concrete failure, then give its matching
-score. Do not invent requirements from absent detail.
+score. A successful sampled run cannot waive an invalid judge request or a missing
+required wrong pair. Do not invent requirements from absent detail.
 
 Criteria to score:
 {criteria}
