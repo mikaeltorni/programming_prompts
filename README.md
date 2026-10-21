@@ -796,6 +796,34 @@ account with current native turn capacity remains necessary; the runtime cannot
 increase provider capacity or restore depleted credits. Earlier blocked runs and
 small smoke timings are not counted as full-load acceptance.
 
+The later baseline `2026-10-21_233411_1542345` exposed a separate citation
+validation defect: 78 trials scored and two were excluded as
+`judge_inconsistent`. The calculator and greeter testing judges correctly
+reported missing tests, but the validator treated a citation's closing
+parenthesis or following explanation as Python source. Both attempts were
+rejected despite their genuine NO verdicts. The validator now requires the
+complete actual source line before accepting surrounding citation punctuation
+and prose. Fabricated lines, wrong line numbers and additional valid Python
+statements still request reinspection; semantic judging is unchanged.
+
+Saved public replays of both original source/reply pairs now retain the same NO
+on the first backend invocation. The standalone judge checks pass **117/117**,
+including prose-boundary and fabricated-quote controls. The real focused
+baseline `2026-10-21_234610_2416492` scored both tasks without exclusions in
+1m06s. Positive smoke `2026-10-21_234743_2522585` also scored both without
+exclusions in 2m26s: calculator passed, while greeter retained a genuine SRP NO
+for converting arguments after parsing. These outcomes are not relabeled.
+
+The full repaired baseline `2026-10-21_235042_2725514` scored **80/80 trials,
+zero rate-limit and infrastructure exclusions, in 4m28s**, compared with 5m10s
+for the two-exclusion run. Both used cx1, Codex 0.163.0, `gpt-6-luna` with low
+reasoning and 80 concurrent trial slots. The audit checked all 16 tasks with
+five attempts each, all 240 Codex judge decisions and required programmatic
+results, frozen runtime copies, and byte-identical judge prompts/configuration.
+Observed elapsed times include model sampling variance; no deadline, concurrency
+or additional model stage was introduced. Original archives and index values
+remain unchanged, and the repaired archives are retained in `evals/runs/`.
+
 `--skills` selects the Harbor skills and corresponding verifier judges;
 positive jobs install the selected skill bodies, while baseline jobs omit them.
 `workflow` requires explicit selection. Generated task instructions explain
