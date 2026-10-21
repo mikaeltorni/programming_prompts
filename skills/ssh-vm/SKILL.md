@@ -1,7 +1,7 @@
 ---
 name: ssh-vm
 description: >-
-  v0.0.14 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
+  v0.0.15 — Use when a task requires SSH access to a VM to deploy software or test it there. Skip local-only tests and SSH discussion without a remote VM action.
 ---
 
 # SSH VM
@@ -36,7 +36,8 @@ For a fresh Ubuntu Desktop VM, ask the user to open Terminal on the VM itself
 
 ```bash
 sudo apt update
-sudo apt install -y -o Dpkg::Options::="--force-confold" openssh-server
+sudo env DEBIAN_FRONTEND=noninteractive UCF_FORCE_CONFFOLD=1 \
+  apt install -y -o Dpkg::Options::="--force-confold" openssh-server
 sudo systemctl enable --now ssh
 sudo passwd "$(id -un)"
 sudo sshd -T | grep -i '^passwordauthentication'
@@ -47,8 +48,12 @@ ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 
 `sudo passwd "$(id -un)"` sets the password for the current account; if the SSH
 username is different, use `sudo passwd <ssh_username>` for that account. The
-user enters the new password at the VM's local `passwd` prompt. The apt option
-keeps existing package configuration files if dpkg asks which version to use.
+user enters the new password at the VM's local `passwd` prompt. The apt command
+preserves existing configuration files without package dialogs: the dpkg option
+covers dpkg-managed files, while `UCF_FORCE_CONFFOLD=1` covers the ucf-managed
+`sshd_config`. Keep the password prompt interactive. If an earlier install is
+already showing the `sshd_config` dialog, select **keep the local version
+currently installed** and press Enter; these variables apply to new commands.
 Ask them to report whether `passwordauthentication` is `yes` and whether SSH
 is listening, but not to share the password. A live USB loses this setup on
 reboot.
