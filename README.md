@@ -744,7 +744,7 @@ for the simple default command: one positive Codex run with three attempts per
 task. Extra harnesses, baselines and comparison runs are supplied only when
 requested; each Codex command requires a current quota and auth-home check.
 
-The October 21 infrastructure investigation is **partially verified**. The
+The October 21 infrastructure repair passed the complete baseline workload. The
 baseline archive `2026-10-21_175359_2580354` used **k5, 80 trials**, and excluded
 57 trials for judge timeouts; the preceding positive run used k10, 160 trials.
 The original timed-out calls did not retain native stderr, so their precise
@@ -777,15 +777,24 @@ default parallelism and finish a benchmark before switching accounts.
 | `2026-10-21_200946_3818060` | Revised baseline, k1 / 2 | Both scored; zero rate-limit or infrastructure exclusions | 1m01s |
 | `2026-10-21_201323_4061358` | Revised positive, k1 / 4, coding/debug/prompt families | 4/4 pass; zero exclusions | 4m58s |
 | `2026-10-21_204826_2364218` | Revised full baseline, k5 / 80 | 40 scored; 39 rate-limited; one infrastructure timeout; stopped after workspace-credit depletion | 4m57s |
+| `2026-10-21_224913_2480764` | Final baseline after cx1 capacity reset, k5 / 80 | All 80 scored; zero rate-limit or infrastructure exclusions | 4m35s |
 
 All revised runs used Codex for coding and judging with `gpt-6-luna` at low
-reasoning. The full baseline retained 80 concurrent trial slots. Standalone
+reasoning. The final baseline retained 80 concurrent trial slots. Its archive
+contains all five attempts for each of the 16 tasks, all 240 expected Codex judge
+decisions, the programmatic checks, and 326 native low-reasoning contexts. Judge
+prompts and configurations are byte-identical to the original baseline; the
+runtime matches the frozen candidate used for the positive smoke. Standalone
 checks passed: 109 judge, 15 harness, 39 archive, instruction-routing checks,
 and saved public normal/timeout/catalogue regressions. Archives and the existing
 results index remain under `evals/runs/`; earlier results were preserved.
-Full-load acceptance and the requested speed guarantee remain **unverified**
-until a funded account completes the same workload without exclusions. The
-small smoke timings and the credit-blocked run do not establish a speedup.
+The full workload completed without exclusions in 275.4 seconds, compared with
+1600.9 seconds for the original timeout-heavy baseline. This verifies observed
+runtime without reducing parallelism. The accounts differed, so the comparison
+does not isolate the speed contribution of the runtime changes. Selecting an
+account with current native turn capacity remains necessary; the runtime cannot
+increase provider capacity or restore depleted credits. Earlier blocked runs and
+small smoke timings are not counted as full-load acceptance.
 
 `--skills` selects the Harbor skills and corresponding verifier judges;
 positive jobs install the selected skill bodies, while baseline jobs omit them.
