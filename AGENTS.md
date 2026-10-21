@@ -178,9 +178,10 @@ model, reasoning, harness and evaluation requirements unchanged.
 
 Before launching or sharing any Codex harness/evaluator command, check every
 configured instance's current 5-hour and weekly quota using `/status`, Settings →
-Usage, or fresh shared-status observations sourced from `/status`. Choose an
-instance with both windows available and the most headroom in its more constrained
-window. Never infer quota from account IDs, plans, aliases or old runs. Verify
+Usage, or fresh shared-status observations sourced from `/status`. Use an
+instance with both windows available. Prefer more headroom in its more constrained
+window; observed latency or authentication failures may favor another available
+instance. Never infer quota from account IDs, plans, aliases or old runs. Verify
 its auth home from `evals/` with
 `ACC_CODEX_INSTANCE=<selected-id> python3 harbor_agents/codex_account.py --auth`,
 then replace `<selected-id>` with the checked ID and set it for the whole run.

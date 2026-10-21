@@ -285,69 +285,74 @@ is an optional explicit filter. Default integration was reviewed without tests
 or benchmark execution at the user's request.
 
 Current v0.0.87 delivers the prompt, its judge and one saved runnable evaluation
-script. The runner checks independent main answers, judges actual answers and
-fixed wrong controls, and exits nonzero on mismatches or failed calls. It compares
-and judges the actual reply without repairing its case, punctuation or formatting;
-only transport whitespace is trimmed. Repairs retain exact logged input/candidate
-pairs. Creation uses representative cases and waits for its saved evaluation to
-finish. Independent task-answer references are valid judge data; expected candidate
-verdicts remain in assertions and results. No-test requests permit reviewable edits
+script. The runner compares independent main answers, judges actual replies and
+fixed wrong controls, and exits nonzero on mismatches or failed calls. Compare
+and judge the actual reply without repairing its case, punctuation or formatting;
+trim only transport whitespace. Repairs retain exact logged input/candidate pairs.
+Creation uses representative cases and waits for the saved evaluation to finish.
+Independent task-answer references are valid judge data; expected candidate
+verdicts stay in assertions and results. No-test requests permit reviewable edits
 with an honest unverified result.
 
 The semantic judge distinguishes independent references from leaked verdicts,
 checks each original wrong candidate against the final runner or request, and
-accepts a saved relative script path resolved against its recorded working
-directory. A successful sample does not excuse an unenforced exact-answer check.
-Its canonical policy is bound as developer instructions in an isolated judge
+resolves saved relative script paths against their recorded working directory.
+A successful sample does not excuse an unenforced exact-answer comparison.
+Canonical policy is bound as developer instructions in an isolated judge
 configuration; original tasks, candidate files and logs remain evidence. Coding
 agents and other judges do not receive that extra policy.
 
 The framework preserves deferred command-completion evidence and readable source
 within its evidence budget. Recovered quota warnings followed by successful
-completion remain scored; terminal quota errors remain excluded. The repair seed
+completion remain scored; terminal quota errors stay excluded. The repair seed
 retains its original cases and includes the previously omitted logged wrong
-candidate. Original archived results and independent expectations are unchanged.
+candidate. Independent expectations and original archived results are preserved.
 
-October 21 repair status, using cx1 and `gpt-6-luna` with low reasoning for both
-Codex coding and judging:
+October 21 acceptance uses one frozen prompt/judge/runtime candidate, Codex for
+both coding and semantic judging, and `gpt-6-luna` with low reasoning throughout:
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Current v0.0.87 focused k1 | **2/2**, no quota/infrastructure failures; 2m41s | `2026-10-21_075003_80549` |
-| Actual main/judge settings | Luna/low in four native contexts and 28 retained nested CLI headers | Same archive and saved settings audits |
-| Retained judge calibration | **41/41**, all calls completed; actual native Luna/low verified | Original 40 controls plus the malformed-answer regression |
-| Framework helpers / archive checks | **100/100**, **39/39** | Existing standalone self-checks; runtime hashes unchanged |
-| Current k3 | **Incomplete:** two scored trials passed; four quota-blocked trials | `2026-10-21_075429_378713` |
-| Final k10 | **Pending; minimum 90% acceptance not established** | cx1 terminal execution block |
+| Focused k1 | **2/2**, 2m41s | `2026-10-21_075003_80549` |
+| k3 | **6/6**, 10m32s | `2026-10-21_134205_1770874` |
+| k5 | **10/10**, 4m05s | `2026-10-21_135431_2583938` |
+| Final k10 | **20/20 (100%)**, 4m52s | `2026-10-21_140245_3135198` |
+| Retained judge calibration | **41/41**, all independent expectations matched | Saved real-model control replay and native-settings audit |
+| Framework helpers / archive checks | **100/100**, **39/39** | Existing standalone self-checks; tested runtime hashes unchanged |
 
-The k1 source review confirmed three creation main cases with six judge calls,
-and three repair main cases with ten judge calls, retaining all seven supplied
-wrong controls. All nine configured harness families received v0.0.87 and passed
-the native status check. Testing v0.1.121 and its judge are unchanged.
+Every accepted stage has zero quota and infrastructure failures. Final k10
+completed ten creation and ten repair trials, meeting the minimum 90% target and
+the 100% aim. Native records confirm Luna/low in 174 contexts, with another 274
+retained nested CLI headers. All twenty judges received only trusted policy in
+the developer role. Each repair trial retained the three independent references
+and all seven supplied wrong controls. All nine configured harness families
+received v0.0.87 and passed the native status check. Testing v0.1.121 and its
+judge are unchanged.
 
-The k3 archive contains four native `usage_limit_exceeded` errors reporting that
-the workspace is out of credits. These are execution blockers, not semantic
-failures or passing trials. Its partial two-trial score cannot establish k3
-coverage. Final k10 must follow completed focused coverage on the frozen
-candidate once the requested account can run, or an alternative is authorized.
+[AGENTS.md](AGENTS.md) authorizes switching freely among configured Codex accounts
+without confirmation, even when an earlier instruction named an initial account.
+Check both quota windows and the authentication home, use an available account,
+and finish one benchmark before switching. The accepted k3 used cx2; k5 and final
+k10 used replenished cx1 after cx2 showed higher latency. Account selection did
+not change the candidate, model, reasoning or harness.
 
-Earlier v0.0.86 stages recorded k1 2/2, k3 6/6 and a raw k5 10/10. Review of
-that k5 found one evaluator that normalized malformed answers before comparing
-and judging them; a saved public replay reproduced the gap. That finding caused
-the v0.0.87 repair and became the 41st calibration control. Those earlier stages
-do not verify the changed candidate. The historical v0.0.73 k10 18/20 is also
-separate from current acceptance.
+Superseded and quota-blocked archives remain separate from accepted results.
+Earlier cx1 run `2026-10-21_075429_378713` scored two trials and blocked four with
+native `usage_limit_exceeded` errors; it does not establish k3 coverage. Review
+of the earlier v0.0.86 k5 found an evaluator that normalized malformed answers
+before checking them. Its saved public replay became the 41st calibration control
+and drove v0.0.87's exact-reply clarification.
 
-Completed and blocked runs are retained in the live ignored
-`programming_prompt_rewritten_with_evals/evals/runs/` archive and its
-`RESULTS.txt` index. Saved calibration requests, replies, independent verdicts,
-source audits and the malformed-answer replay remain in the retained task
-checkout's ignored `tmp/repair/` directory.
+Completed runs are retained in the live ignored
+`programming_prompt_rewritten_with_evals/evals/runs/` archive and `RESULTS.txt`
+index. Calibration requests, replies, independent verdicts, source audits and
+the malformed-answer replay remain in the retained task checkout's ignored
+`tmp/repair/` directory.
 
-Use `evals/run_benchmark.sh` as the benchmark entrypoint and
+The public benchmark entrypoint is
+`programming_prompt_rewritten_with_evals/evals/run_benchmark.sh`; add
 `--skills prompt_engineering` to select only the two prompt cases. Run one
-benchmark at a time. Check both quota windows and the selected authentication
-home before a new run. Agent verification adds `--agent-run` (raw Harbor:
+benchmark at a time. Agent verification adds `--agent-run` (raw Harbor:
 `--quiet`) to suppress taskbar entries and completion speech; user-launched
 commands retain normal desktop progress and announcements.
 
