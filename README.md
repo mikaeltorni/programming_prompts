@@ -148,10 +148,18 @@ codex plugin list
 
 Use `$ssh-vm`, or let it apply automatically, for tasks that deploy or test
 software on a VM over SSH. On first contact, if the user provides an IP or
-hostname without confirming SSH setup, it gives Ubuntu VM-console setup
-commands that preserve the existing `sshd_config` without package dialogs,
-including setting the account password interactively, and waits for confirmation
-before any network attempt. Once confirmed, it connects using a key or an
+hostname without confirming SSH setup, it gives all Ubuntu VM-console setup
+commands and the agent-side login command together in the first response.
+The [setup bundle](skills/ssh-vm/SKILL.md#fresh-ubuntu-vm-setup) preserves the
+existing `sshd_config` without package dialogs, sets the account password
+interactively, enables password authentication, opens the SSH port if UFW is
+active, and prints the connection details. Inside the VM's GNOME desktop
+terminal, `gsettings set org.gnome.desktop.session idle-delay uint32 0` prevents
+idle screen blanking; the bundle also disables automatic suspension on AC and
+battery power and reads back all three settings. Run these desktop settings
+as the logged-in user without sudo; they apply immediately without a reload.
+The agent waits for setup confirmation before any network attempt.
+Once confirmed, it connects using a key or an
 interactive password prompt, updates the project copy, and installs and checks
 it on the VM. For visual behavior, it captures and inspects a VM screenshot
 when a safe capture path is available. GNOME X11 tests provision `xdotool` on
