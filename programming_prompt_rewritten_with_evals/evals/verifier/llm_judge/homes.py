@@ -60,25 +60,27 @@ def _acc_selected_codex_auth() -> Path | None:
     return path if path.is_file() else None
 
 
-def setup_codex_home(effort: str) -> Path:
-    """Create a writable ``CODEX_HOME`` with reasoning effort and a copied auth.
+def setup_codex_home(effort: str, developer_instructions: str | None = None) -> Path:
+    """Create an isolated Codex home with optional trusted judge instructions.
 
-    Args:
-        effort: ``low``, ``medium``, or ``high``.
-
-    Returns:
-        Temporary directory to export as ``CODEX_HOME``.
+    Parameters: effort - requested reasoning effort; developer_instructions -
+        canonical judge policy, or None to keep the default instruction roles.
+    Returns: temporary directory to export as CODEX_HOME.
     """
+    print(f"effort={effort!r} developer_instructions={developer_instructions!r}")
     judge_home = Path(tempfile.mkdtemp(prefix="codex-judge-"))
     auth = find_codex_auth()
     if auth is not None:
         _copy_auth(auth, judge_home / "auth.json")
         log("codex eval agent: copied auth.json into writable CODEX_HOME")
-    (judge_home / "config.toml").write_text(
+    config = (
         f'model_reasoning_effort = "{effort}"\n'
-        'sandbox_mode = "danger-full-access"\n',
-        encoding="utf-8",
+        'sandbox_mode = "danger-full-access"\n'
     )
+    if developer_instructions is not None:
+        config += "developer_instructions = " + json.dumps(developer_instructions) + "\n"
+    (judge_home / "config.toml").write_text(config, encoding="utf-8")
+    print(judge_home)
     return judge_home
 
 
