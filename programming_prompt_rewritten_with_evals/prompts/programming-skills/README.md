@@ -167,26 +167,27 @@ Current v0.0.87 requires one saved runnable evaluation with independent main
 comparisons, judge calls on actual replies and wrong controls, and failing exits.
 Compare and judge actual replies without repairing case, punctuation or formatting;
 trim only transport whitespace. Repairs retain exact original logged pairs;
-creation avoids redundant variants and waits for the saved runner to complete.
+creation avoids redundant variants and waits for its saved runner to complete.
 No-test exceptions remain explicit. Autonomous Harbor checks use `--agent-run`
 (raw Harbor: `--quiet`); user-launched runs retain normal desktop behavior.
 
-The October 21 current-candidate k1 `2026-10-21_075003_80549` passed **2/2**,
-with no quota/infrastructure failures. Actual settings were Luna/low in four
-native contexts and 28 retained nested CLI headers. Judge calibration passed
-**41/41**, including a new malformed-answer regression and the original 40
-independent controls. Framework helpers and archive checks passed **100/100**
-and **39/39**. The judge keeps trusted policy separate from task/candidate data,
-checks complete payloads for verdict leakage, and retains exact original wrong
-pairs. All nine configured harness families received the updated policy.
+The October 21 frozen candidate passed k1 **2/2**, k3 **6/6**, k5 **10/10**,
+and final k10 **20/20 (100%)**. Final archive `2026-10-21_140245_3135198`
+completed in 4m52s with zero quota/infrastructure failures. Actual settings were
+`gpt-6-luna` / low in 174 native contexts and 274 retained nested CLI headers.
+Judge calibration passed **41/41** independent controls. Framework helpers and
+archive checks passed **100/100** and **39/39**. The minimum 90% target and
+100% aim are satisfied for this final run.
 
-Current k3 `2026-10-21_075429_378713` is **incomplete**: two trials passed and
-four were quota-blocked by native `usage_limit_exceeded` / out-of-credits errors
-on cx1. This is not full k3 acceptance. Final k10 and the minimum 90% target
-remain pending; no blocked trial counts as passing. Earlier v0.0.86 k1/k3/k5
-scores and the historical v0.0.73 k10 do not verify this changed candidate.
+The judge keeps trusted policy separate from task/candidate data, checks complete
+payloads for verdict leakage, and retains exact original wrong pairs. All ten
+repair trials kept the three independent references and all seven supplied wrong
+controls. All nine configured harness families received the updated policy.
+Account switching is authorized without confirmation by the root AGENTS.md;
+quota/auth checks and sequential benchmark runs still apply. Superseded and
+quota-blocked archives are retained separately and never counted as passes.
 
 Recovered quota-warning classification and deferred native command evidence were
-repaired, and the repair seed retains the missing original wrong control.
-Original archives remain unchanged. The root README records the current evidence
-and execution limit. Testing v0.1.121 and its judge are unchanged.
+repaired, and the seed retains the missing original wrong control. The root
+README records staged acceptance and its evidence. Testing v0.1.121 and its
+judge are unchanged.
