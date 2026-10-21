@@ -161,7 +161,13 @@ as the logged-in user without sudo; they apply immediately without a reload.
 The agent waits for setup confirmation before any network attempt.
 Once confirmed, it connects using a key or an
 interactive password prompt, updates the project copy, and installs and checks
-it on the VM. For visual behavior, it captures and inspects a VM screenshot
+it on the VM. After CLI installation, the agent refreshes the target shell's
+PATH and command cache, checks each requested command and configured alias by
+name, and requires successful version or health checks. It repeats the checks
+in a fresh login shell and also refreshes an affected already-open VM terminal
+when console control is available. An SSH-only check cannot update that
+terminal's environment; the agent reports that limit explicitly.
+For visual behavior, it captures and inspects a VM screenshot
 when a safe capture path is available. GNOME X11 tests provision `xdotool` on
 the VM when a code activation needs a reload, use the live desktop session's
 environment, and verify extension state and selected bindings before testing.
