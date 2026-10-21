@@ -163,23 +163,30 @@ Refresh with `acc pp enable -v2 --skill prompt_engineering`; verify using
 `prompt-create,prompt-repair` for its two Harbor cases; see the
 [case catalog](../../evals/coding-prompts/README.md#prompt-engineering-cases).
 
-Current v0.0.86 requires one saved runnable evaluation with independent main
-comparisons, judge calls on actual answers and wrong controls, and failing exits.
-Repairs merge original logged input/candidate failures into supplied cases;
+Current v0.0.87 requires one saved runnable evaluation with independent main
+comparisons, judge calls on actual replies and wrong controls, and failing exits.
+Compare and judge actual replies without repairing case, punctuation or formatting;
+trim only transport whitespace. Repairs retain exact original logged pairs;
 creation avoids redundant variants and waits for the saved runner to complete.
 No-test exceptions remain explicit. Autonomous Harbor checks use `--agent-run`
 (raw Harbor: `--quiet`); user-launched runs retain normal desktop behavior.
 
-The October 20 focused v0.0.86 run `2026-10-20_215125_548143` passed **2/2**
-with zero quota/infrastructure failures and 13 native Luna/low contexts. Its
-temporary judge revision was discarded after inconsistent calibration, so this
-is not final paired-candidate acceptance. The canonical judge remains the earlier
-delivered revision. Full retained calibration is **36/39**; current final k10 is
-pending. Both authorized accounts were exhausted at the last quota check. The
-historical v0.0.73 k10 **18/20 (90%)** does not verify the current revision.
+The October 21 current-candidate k1 `2026-10-21_075003_80549` passed **2/2**,
+with no quota/infrastructure failures. Actual settings were Luna/low in four
+native contexts and 28 retained nested CLI headers. Judge calibration passed
+**41/41**, including a new malformed-answer regression and the original 40
+independent controls. Framework helpers and archive checks passed **100/100**
+and **39/39**. The judge keeps trusted policy separate from task/candidate data,
+checks complete payloads for verdict leakage, and retains exact original wrong
+pairs. All nine configured harness families received the updated policy.
 
-Framework helper and archive checks passed **98/98** and **39/39**. Recovered
-quota-warning classification and deferred native command evidence were repaired;
-the seed adds a missing original wrong control while retaining prior cases.
-Original archives remain unchanged. The root README records the current limits.
-Testing v0.1.121 and its judge are unchanged.
+Current k3 `2026-10-21_075429_378713` is **incomplete**: two trials passed and
+four were quota-blocked by native `usage_limit_exceeded` / out-of-credits errors
+on cx1. This is not full k3 acceptance. Final k10 and the minimum 90% target
+remain pending; no blocked trial counts as passing. Earlier v0.0.86 k1/k3/k5
+scores and the historical v0.0.73 k10 do not verify this changed candidate.
+
+Recovered quota-warning classification and deferred native command evidence were
+repaired, and the repair seed retains the missing original wrong control.
+Original archives remain unchanged. The root README records the current evidence
+and execution limit. Testing v0.1.121 and its judge are unchanged.

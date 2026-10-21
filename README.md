@@ -284,53 +284,72 @@ by adding `--skills prompt_engineering`; `--tasks prompt-create,prompt-repair`
 is an optional explicit filter. Default integration was reviewed without tests
 or benchmark execution at the user's request.
 
-Current v0.0.86 delivers the prompt, its judge and one saved runnable evaluation
+Current v0.0.87 delivers the prompt, its judge and one saved runnable evaluation
 script. The runner checks independent main answers, judges actual answers and
-fixed wrong controls, and exits nonzero on mismatches or failed calls. Repairs
-combine supplied cases with exact logged input/candidate pairs; creation uses
-representative cases and longer polling waits to finish its saved evaluation.
-Independent task-answer references are valid judge data; expected candidate
-verdicts remain in assertions and results. Explicit no-test instructions still
-allow reviewable edits with honest unverified status.
+fixed wrong controls, and exits nonzero on mismatches or failed calls. It compares
+and judges the actual reply without repairing its case, punctuation or formatting;
+only transport whitespace is trimmed. Repairs retain exact logged input/candidate
+pairs. Creation uses representative cases and waits for its saved evaluation to
+finish. Independent task-answer references are valid judge data; expected candidate
+verdicts remain in assertions and results. No-test requests permit reviewable edits
+with an honest unverified result.
 
-The evaluation framework now preserves deferred command-completion evidence and
-readable source within its evidence budget. A recovered quota warning followed
-by successful completion no longer excludes a genuine scored trial; terminal
-quota errors remain excluded. The repair seed retains its original cases and
-adds the previously omitted logged wrong candidate. Original archived results
-and independent task expectations remain unchanged.
+The semantic judge distinguishes independent references from leaked verdicts,
+checks each original wrong candidate against the final runner or request, and
+accepts a saved relative script path resolved against its recorded working
+directory. A successful sample does not excuse an unenforced exact-answer check.
+Its canonical policy is bound as developer instructions in an isolated judge
+configuration; original tasks, candidate files and logs remain evidence. Coding
+agents and other judges do not receive that extra policy.
 
-October 20 repair status:
+The framework preserves deferred command-completion evidence and readable source
+within its evidence budget. Recovered quota warnings followed by successful
+completion remain scored; terminal quota errors remain excluded. The repair seed
+retains its original cases and includes the previously omitted logged wrong
+candidate. Original archived results and independent expectations are unchanged.
+
+October 21 repair status, using cx1 and `gpt-6-luna` with low reasoning for both
+Codex coding and judging:
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Latest focused live check of v0.0.86 | **2/2**, no quota/infrastructure failures | `2026-10-20_215125_548143` |
-| Actual main/judge settings | `gpt-6-luna`, low; 13 native contexts | Same archive |
-| Framework helpers / archive checks | **98/98**, **39/39** | Existing standalone self-checks |
-| Full retained judge calibration | **36/39**; unresolved false verdicts | Saved original-source control replay |
-| Current final k10 | **Pending; 90% acceptance not established** | cx2 rate-limited; cx1 credits depleted at last status check |
+| Current v0.0.87 focused k1 | **2/2**, no quota/infrastructure failures; 2m41s | `2026-10-21_075003_80549` |
+| Actual main/judge settings | Luna/low in four native contexts and 28 retained nested CLI headers | Same archive and saved settings audits |
+| Retained judge calibration | **41/41**, all calls completed; actual native Luna/low verified | Original 40 controls plus the malformed-answer regression |
+| Framework helpers / archive checks | **100/100**, **39/39** | Existing standalone self-checks; runtime hashes unchanged |
+| Current k3 | **Incomplete:** two scored trials passed; four quota-blocked trials | `2026-10-21_075429_378713` |
+| Final k10 | **Pending; minimum 90% acceptance not established** | cx1 terminal execution block |
 
-The focused live check completed three creation main cases with six judge calls,
-and three repair main cases with ten judge calls. It used a temporary judge
-revision; that revision was discarded after inconsistent calibration. The
-canonical judge remains the earlier delivered revision. Consequently the focused
-score does not establish acceptance of the final prompt/judge combination.
-Experimental judge wording was not promoted just to obtain a passing sample.
-The prompt is merged locally and checked across all nine configured harness
-families. The testing policy v0.1.121 and its judge are unchanged.
+The k1 source review confirmed three creation main cases with six judge calls,
+and three repair main cases with ten judge calls, retaining all seven supplied
+wrong controls. All nine configured harness families received v0.0.87 and passed
+the native status check. Testing v0.1.121 and its judge are unchanged.
 
-The v0.0.73 archive `2026-10-18_214549_295077` recorded 18/20 (90%) with no
-quota/infrastructure failures. This is historical evidence for that candidate,
-not verification of v0.0.86. Current repair runs are retained in the task
-checkout's ignored `programming_prompt_rewritten_with_evals/evals/runs/` archive.
+The k3 archive contains four native `usage_limit_exceeded` errors reporting that
+the workspace is out of credits. These are execution blockers, not semantic
+failures or passing trials. Its partial two-trial score cannot establish k3
+coverage. Final k10 must follow completed focused coverage on the frozen
+candidate once the requested account can run, or an alternative is authorized.
+
+Earlier v0.0.86 stages recorded k1 2/2, k3 6/6 and a raw k5 10/10. Review of
+that k5 found one evaluator that normalized malformed answers before comparing
+and judging them; a saved public replay reproduced the gap. That finding caused
+the v0.0.87 repair and became the 41st calibration control. Those earlier stages
+do not verify the changed candidate. The historical v0.0.73 k10 18/20 is also
+separate from current acceptance.
+
+Completed and blocked runs are retained in the live ignored
+`programming_prompt_rewritten_with_evals/evals/runs/` archive and its
+`RESULTS.txt` index. Saved calibration requests, replies, independent verdicts,
+source audits and the malformed-answer replay remain in the retained task
+checkout's ignored `tmp/repair/` directory.
 
 Use `evals/run_benchmark.sh` as the benchmark entrypoint and
 `--skills prompt_engineering` to select only the two prompt cases. Run one
 benchmark at a time. Check both quota windows and the selected authentication
 home before a new run. Agent verification adds `--agent-run` (raw Harbor:
 `--quiet`) to suppress taskbar entries and completion speech; user-launched
-commands retain normal desktop progress and announcements. Final k10 must follow
-successful calibration and focused coverage on one frozen candidate.
+commands retain normal desktop progress and announcements.
 
 ### workflow
 
