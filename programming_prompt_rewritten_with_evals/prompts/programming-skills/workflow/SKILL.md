@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.2.30 — Establish the task checkout and authoritative plan, then finish
+  v0.2.35 — Read the authoritative plan every turn, resume unfinished work, then finish
   each feature's tests → code → commit cycle before documentation.
 ---
 
@@ -10,6 +10,24 @@ description: >-
 Run only when explicitly invoked or selected. Selection authorizes required
 local commits and selected worktree merges; user prohibitions override them.
 Never push unless asked. Use only selected, available companions.
+
+At the start of every turn, read the authoritative saved plan at the assigned
+`ACC_WORKFLOW_FILE` (or launch-project fallback below), including questions,
+status replies, automatic goal continuation, explicit continue/resume and
+reboot/context recovery. Establish the plan first if absent. Use the actual
+checkout and files to verify its evidence; a summary cannot replace the plan.
+
+Continue/resume picks up its first unfinished microstep in the same checkout,
+preserving the queue, completed evidence and hashes. Never archive or restart
+unfinished work because a process restarted or a response ended. Keep only one
+microstep `in_progress`; close a verified earlier step before advancing, or
+restore an unstarted later step to `pending`.
+
+Questions and status requests use that same plan as evidence. Answer them
+without changing task progress, skipping unfinished work, or starting a new
+implementation plan. Completing a response does not complete the task. ACC
+records question/continuation activity separately from the task's plan; do not
+invent task completion to make the indicator finish.
 
 Keep four outer stages: **Establish worktree → Plan → Write code → Write
 documentation**. Before changing directories or routing work to another
@@ -92,8 +110,9 @@ or commits are explicitly forbidden, mark the commit row skipped with that
 reason. Unselected docs skip both rows and outer row 4. Before handoff, verify actual statuses, hashes and delivered
 files; finish the remaining queue rather than stopping after a passing Feature.
 
-An implementation follow-up needs an updated plan before checks/edits. Reuse
-verified checkout and plan path. After completion, archive the old plan beside
-it and start fresh; during unfinished work preserve completed evidence and the
-queue, finishing the active cycle first. Status/explanation-only messages need
-no new plan.
+A new implementation request updates the existing plan before checks/edits.
+Reuse the verified checkout and assigned plan path. Archive a completed plan
+beside it only when starting a distinct implementation task; a continuation or
+question keeps the current plan. During unfinished work preserve completed
+evidence and the queue, finishing the active cycle first. Questions and status
+replies consult that same plan, never a replacement plan.

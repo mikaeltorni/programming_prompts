@@ -343,7 +343,8 @@ def workflow_plan_structure(workspace: Path) -> dict:
     """Expose plan table syntax without assigning a semantic feature score.
 
     Parameters: workspace - physical launch-project directory containing the plan.
-    Returns: parsed Tasks, microsteps and ledger rows with structural contradictions.
+    Returns: parsed Tasks, microsteps and ledger rows with structural contradictions;
+        valid pending progress remains available for semantic request-specific judging.
     """
     print(f"workspace={workspace}")
     path = workflow_plan_path(workspace)
@@ -380,8 +381,8 @@ def workflow_plan_structure(workspace: Path) -> dict:
     for row in tasks:
         if len(row) != 4:
             continue
-        if row[2] not in {"complete", "skipped"}:
-            issues.append(f"handoff phase {row[1]} has status {row[2]}")
+        if row[2] not in {"pending", "in_progress", "complete", "skipped"}:
+            issues.append(f"phase {row[1]} has invalid status {row[2]}")
         if ledger:
             for match in re.finditer(r"\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:(?:distinct|original|requested|source|complete|sentence-level)\s+)*(?:capability sentences|features|feature commits|capability boundaries)\b", row[3], re.I):
                 token = match.group(1).lower()
@@ -405,8 +406,8 @@ def workflow_plan_structure(workspace: Path) -> dict:
             issues.append("Microsteps Steps are not in execution order")
         seen_steps.add(normalized)
         previous_step = step_key
-        if row[1] not in names or not row[4] or row[5] not in {"complete", "skipped"}:
-            issues.append("Microsteps phase/action/status is malformed or unfinished at handoff")
+        if row[1] not in names or not row[4] or row[5] not in {"pending", "in_progress", "complete", "skipped"}:
+            issues.append("Microsteps phase/action/status is malformed")
         if row[1] == "Write code":
             code_rows.append(row)
             if not row[2] or row[2] == "-" or row[3] not in {"3.1", "3.2", "3.3"}:

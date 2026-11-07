@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.2.2 — Plan programming work, then repeat tests → code → commit for each
+  v0.2.7 — Read the saved plan every turn, then repeat tests → code → commit for each
   planned feature before writing documentation. Activated by explicit selection.
 ---
 
@@ -9,6 +9,24 @@ description: >-
 
 Run when `$workflow` is invoked or workflow is selected in native global
 instructions. Merely appearing in an installed catalog does not activate it.
+
+At the start of every turn, read the authoritative saved plan at the assigned
+`ACC_WORKFLOW_FILE` (or launch-project fallback below), including questions,
+status replies, automatic goal continuation, explicit continue/resume and
+reboot/context recovery. Establish the plan first if absent. Use the actual
+checkout and files to verify its evidence; a summary cannot replace the plan.
+
+Continue/resume picks up its first unfinished microstep in the same checkout,
+preserving the queue, completed evidence and hashes. Never archive or restart
+unfinished work because a process restarted or a response ended. Keep only one
+microstep `in_progress`; close a verified earlier step before advancing, or
+restore an unstarted later step to `pending`.
+
+Questions and status requests use that same plan as evidence. Answer them
+without changing task progress, skipping unfinished work, or starting a new
+implementation plan. Completing a response does not complete the task. ACC
+records question/continuation activity separately from the task's plan; do not
+invent task completion to make the indicator finish.
 
 Keep these four outer stages in order:
 
