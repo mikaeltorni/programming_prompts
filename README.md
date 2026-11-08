@@ -406,6 +406,17 @@ worktree delivery before the documentation phase can complete. Explicit no-commi
 instructions or absent Git skip that action with a reason; unselected docs skip
 both actions. ACC shows these actions in Todo/Completed and the active docs
 caption, so the docs commit remains visible while pending and running.
+Read the authoritative saved plan at the start of **every turn**, including
+explicit continue/resume, automatic goal continuation, reboot or context recovery,
+questions, status requests and approval replies. A continuation resumes the
+first unfinished microstep in the retained checkout and preserves completed
+evidence and hashes. Keep only one microstep active. Questions answer from the
+plan without changing task progress or authorizing implementation; a completed
+response does not complete an unfinished task. ACC owns a separate indicator for
+question/continuation activity, so no extra agent-authored question table is
+required. A distinct implementation task after completion archives the old plan;
+questions and continuations retain it.
+
 Implementation follow-ups update this plan, preserving unfinished work or
 archiving a completed plan beside it. Reuse the verified task checkout.
 
@@ -416,7 +427,19 @@ After editing the policy, apply it with `acc pp enable -v2 --skill workflow`
 and verify `acc pp status --skill v2:workflow --check`; new agent contexts load
 the refreshed native instructions. The opt-in Harbor `workflow-routing` task
 exercises an implementation routed from a bundle into a sibling repository;
-`counter` remains the ordinary single-repository control.
+`counter` remains the ordinary single-repository control. The opt-in
+`workflow-resume` and `workflow-question` fixtures retain an interrupted plan.
+Run their focused positive evaluation from the evals directory with:
+
+```bash
+./run_benchmark.sh --harness codex --eval-agent codex --skills workflow --tasks workflow-question,workflow-resume -k 1
+```
+
+The final focused run `2026-11-07_234206_1599853` passed 2/2 with GPT-6 Luna at
+low reasoning for coding and judging, with no quota or infrastructure errors.
+`python3 scripts/check_workflow_plan_structure.py` checks that valid pending
+progress remains structural evidence rather than a forced failure for a
+question. The semantic judge still rejects unfinished implementation handoff.
 
 ### docs
 
