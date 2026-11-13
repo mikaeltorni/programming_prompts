@@ -378,7 +378,23 @@ one Feature's checks → code → commit/delivery, then write documentation.
 The [policy](programming_prompt_rewritten_with_evals/prompts/programming-skills/workflow/SKILL.md)
 owns this cycle even without companions; selected companions add their contracts.
 With `commits`, each complete capability sentence defines one Feature, keeping
-its commands and optional clauses together. Finish the entire queue.
+its commands and optional clauses together. Findings discovered during an audit
+belong to that requested Feature: they do not each start another cycle. Finish
+the entire queue.
+
+For a whole-project audit, identify the relevant files, handlers or public forms
+once and track reviewed and remaining items. Collect related omissions, repair
+them together, then check and deliver the batch. Use smaller checkpoints only
+for an actual dependency, risk or requested delivery. Close the audit when its
+inventory and requested behavior have evidence; reopen reviewed items only when
+changed dependencies, failed checks or new evidence justify it.
+
+Run focused checks while editing and cumulative relevant checks when the batch
+is ready. Read-only review, plan updates, commits and delivery of identical files
+do not invalidate a passing run. Apply an installer or runtime reload only when
+the consumer's inputs changed; documentation-only and test-only changes need no
+app reload. Explicit no-test instructions skip tests and model evaluations and
+leave prompt behavior unverified.
 
 Read the launch directory and `ACC_WORKFLOW_FILE` before routing work or
 changing directories. Retain the physical launch-project root separately from
@@ -396,24 +412,28 @@ unfinished step, record actual results/hashes and close selected delivery before
 advancing; both outer rows and microsteps must be complete at handoff.
 Keep the plan untracked unless the user requests otherwise. Stage code and
 checks by explicit path, then record the actual new HEAD in the plan after
-committing; never amend a commit to include its own hash. After updating progress,
-read the saved table cells to confirm the statuses changed, including the outer
-Write code row when all feature cycles are delivered.
+committing; never amend a commit to include its own hash. At meaningful stage
+transitions, update and read back the affected cells, including the outer Write
+code row when all feature cycles are delivered. Keep findings in that Feature's
+inventory/evidence rather than adding a new triplet per omission. Large plans
+need only their active rows and relevant inventory during updates.
 Plan separate documentation actions from the start: write and verify the root
 README, then **Commit documentation**. Both use `Write documentation` as Phase
 and `-` for Feature/Stage. The commit action records its actual hash and selected
 worktree delivery before the documentation phase can complete. Explicit no-commit
 instructions or absent Git skip that action with a reason; unselected docs skip
-both actions. ACC shows these actions in Todo/Completed and the active docs
-caption, so the docs commit remains visible while pending and running.
+both actions. An already accurate README needs no cosmetic edit or empty commit;
+record its inspection and skip the unnecessary commit. ACC shows these actions
+in Todo/Completed and the active docs caption, so the docs commit remains visible
+while pending and running.
 Read the authoritative saved plan at the start of **every turn**, including
 explicit continue/resume, automatic goal continuation, reboot or context recovery,
 questions, status requests and approval replies. A continuation resumes the
 first unfinished microstep in the retained checkout and preserves completed
-evidence and hashes. Keep only one microstep active. Questions answer from the
-plan without changing task progress or authorizing implementation; a completed
-response does not complete an unfinished task. ACC owns a separate indicator for
-question/continuation activity, so no extra agent-authored question table is
+evidence and hashes. Keep only one microstep active. A status question adds no
+implementation authorization and does not cancel an already active goal; a
+completed response does not complete an unfinished task. ACC owns a separate
+indicator for question/continuation activity, so no extra agent-authored question table is
 required. A distinct implementation task after completion archives the old plan;
 questions and continuations retain it.
 
@@ -423,9 +443,14 @@ archiving a completed plan beside it. Reuse the verified task checkout.
 Agent Command Center consumes this schema for its progress display. Policy
 source edits do not activate native harness instructions by themselves;
 selection/deployment stays with ACC and the external installer.
-After editing the policy, apply it with `acc pp enable -v2 --skill workflow`
-and verify `acc pp status --skill v2:workflow --check`; new agent contexts load
-the refreshed native instructions. The opt-in Harbor `workflow-routing` task
+Apply the coordinated workflow policies with
+`acc pp enable -v2 --skill workflow,commits,testing,worktree` and inspect installation
+with `acc pp status --skill v2:workflow,v2:commits,v2:testing,v2:worktree --check`.
+This updates managed harness instructions without stopping running sessions;
+refreshed instruction contexts load the new text. Installation status does not
+establish model behavior or measured speed. The November 14 batching revision
+was applied without tests or model evaluations at the user's request.
+The opt-in Harbor `workflow-routing` task
 exercises an implementation routed from a bundle into a sibling repository;
 `counter` remains the ordinary single-repository control. The opt-in
 `workflow-resume` and `workflow-question` fixtures retain an interrupted plan.
@@ -435,8 +460,9 @@ Run their focused positive evaluation from the evals directory with:
 ./run_benchmark.sh --harness codex --eval-agent codex --skills workflow --tasks workflow-question,workflow-resume -k 1
 ```
 
-The final focused run `2026-11-07_234206_1599853` passed 2/2 with GPT-6 Luna at
+The earlier focused run `2026-11-07_234206_1599853` passed 2/2 with GPT-6 Luna at
 low reasoning for coding and judging, with no quota or infrastructure errors.
+It predates the batching revision and does not verify that revision.
 `python3 scripts/check_workflow_plan_structure.py` checks that valid pending
 progress remains structural evidence rather than a forced failure for a
 question. The semantic judge still rejects unfinished implementation handoff.
