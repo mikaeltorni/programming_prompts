@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.121 — Write focused tests for the requested behavior, run them, and fix
+  v0.1.122 — Write focused tests for the requested behavior, run them, and fix
   failures before reporting completion.
 ---
 
@@ -14,6 +14,21 @@ is possible.
 Read the request, repository guidance and existing tests. Use the project's
 current test tools and conventions; do not add a framework or CI unless asked.
 If no test runner exists, use stdlib unittest or a saved plain-assertion script.
+
+Respect explicit no-test instructions: do not create or run tests, benchmarks or
+model evaluations when prohibited; inspect available evidence and state the
+unverified limit. Existing accurate coverage needs no duplicate test.
+
+For an audit, collect related findings and coverage gaps before writing checks.
+Use a compact case table for equivalent cases rather than a test function and a
+full suite per item. Keep distinct required behavior covered. Run focused checks
+while changing the responsible owner, then the cumulative relevant suite at the
+Feature/batch checkpoint. Rerun only after a relevant edit, failure or new evidence;
+a passing result survives read-only review, plan updates, commits and merges.
+Do not repeat the same suite in the live checkout when delivered source and test
+contents are identical; inspect those contents and perform only any necessary
+installation-specific check. Broaden coverage only for affected dependencies or
+an actual unresolved concern.
 
 Write or update runnable tests through the public interface:
 
