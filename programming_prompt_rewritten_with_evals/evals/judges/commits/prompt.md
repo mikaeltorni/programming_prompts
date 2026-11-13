@@ -31,6 +31,12 @@ a Feature count. Artifact or signature setup (file name, function name,
 import path) and execution policies are not capabilities; a behavioral repair
 is.
 
+An audit/repair/refactor sentence is one requested outcome. Findings discovered
+by the agent, plan bullets, files, helpers and continuation messages do not each
+create a new Feature. Related findings may share that Feature's introducing or
+repair commit; do not demand a separate commit/delivery cycle per finding.
+Distinct original capability sentences still need distinct introducing commits.
+
 ## Step 2: map each Feature to its introducing commit
 
 Exclude the supplied seed, the initial empty commit and merge commits from
@@ -64,8 +70,8 @@ fix bundling. Tests and code committed together are expected.
 ## Step 3: verify the cycle where chronology exists
 
 The coding-agent trace, when supplied, must show for each Feature: its public
-checks saved and run before its application code, a passing cumulative run
-after implementation, and its commit created and recorded before the next
+checks saved and run before its application code, a passing cumulative relevant run
+after the batch implementation, and its commit created and recorded before the next
 Feature's checks are written. A baseline may fail because the Feature is
 missing; a correct-path missing-file or import failure for a new entrypoint is
 a valid creation baseline and must not be "fixed" by rewriting the import
@@ -74,6 +80,10 @@ Read-only review, syntax compilation and a modified Git status are not source
 edits; identify the actual write before alleging an edit after a pass. A
 missing commit boundary in the trace does not imply the checks came after the
 code. Static content and project test prohibitions use direct checks instead.
+Explicit user no-test instructions skip execution with an honest limit. Read-only
+review, staging and plan updates may occur between the passing run and commit;
+the commit need not be the literal next command. Do not require repeated passing
+runs on unchanged code or duplicate runs after delivery of identical contents.
 
 ## Step 4: check the recorded queue
 

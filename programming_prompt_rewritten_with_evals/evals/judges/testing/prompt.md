@@ -28,7 +28,11 @@ Use these four requirements:
    state all count. A successful read after rejection can also cover that form's
    successful result. Independent fixtures start fresh; a single fixture in a
    fresh process already qualifies.
-4. A real nonzero relevant suite passes after the last relevant edit. Plain
+4. A real nonzero relevant suite passes after the last relevant edit. Related
+   audit findings may share one batch run. Focused checks during edits and one
+   cumulative relevant run at the checkpoint suffice. Read-only review, plan
+   updates, commits and delivery of identical source/test contents do not require
+   another run. No duplicate test is needed for already-covered behavior. Plain
    assertion scripts and equivalent fallback runners count. For a reported bug,
    a saved regression fails before repair and passes afterward. Respect explicit
    no-test and direct-check exceptions; report missing verification honestly.

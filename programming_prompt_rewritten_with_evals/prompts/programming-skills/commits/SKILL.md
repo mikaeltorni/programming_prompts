@@ -1,87 +1,59 @@
 ---
 name: commits
 description: >-
-  v0.3.0 — Give each complete capability sentence its own Feature and finish
-  tests → code → commit before starting the next sentence.
+  v0.3.1 — Commit each requested capability separately; batch related findings
+  within an audit instead of creating a delivery cycle per finding.
 ---
 
-# Complete one capability per commit
+# Complete one requested capability per commit
 
-Explicit selection authorizes the required local Git commits and selected
-worktree delivery. Honor a user prohibition on commits; never push unless asked.
+Selection authorizes local commits and selected worktree delivery. Honor user
+no-commit and no-test instructions. Never push unless asked.
 
-The loop is: one sentence → one queue row → checks → baseline → code → pass →
-commit → deliver → next row. Two things break it most often: counting the
-whole request as one capability, and moving on after a passing run without
-committing. Both rules below are absolute.
+Read the whole request. One complete user sentence stating a new capability is
+one Feature, including each separate `It should also` sentence and sentences
+revising earlier commands. Keep all commands, cases and optional clauses within
+a sentence together. Artifact/signature setup and execution policies are not
+capabilities. Do not anchor on a fixed Feature count.
 
-## One behavior sentence is one Feature
+An audit, repair or refactor sentence describes its requested outcome, not one
+Feature per discovered omission, file, handler, assertion or helper. Collect and
+fix related findings within that Feature. Do not reinterpret agent-authored
+findings, plan bullets or continuation messages as new user capability sentences.
+Distinct original capability sentences still get distinct introducing commits.
 
-Read the entire request before editing and split it into sentences. Every
-sentence that states behavior — a command, a result or a rule — is one
-Feature, including each sentence that starts `It should also` and each
-sentence that extends or revises a command an earlier sentence introduced.
-Sentences describing related conversions, arithmetic variants or commands of
-the same program are separate Features; one small program, one entrypoint or
-one artifact never merges them. Artifact/signature setup (file name, function
-name, import path) and execution policies are not capabilities; a behavioral
-repair is. Do not choose a fixed Feature count: the number of Features equals
-the number of behavior sentences.
+Before implementation record the ordered queue in the selected workflow plan,
+or brief task evidence otherwise: original sentence, allowed behavior and a
+unique conventional subject for each Feature. Record actual introducing hashes
+as they happen; Git output is sufficient evidence. Work on the first unfinished
+Feature and complete the whole queue.
 
-Within one sentence, keep its commands, cases and optional `and may` clauses
-together: all of its required commands work in its introducing commit, and the
-sentence is not split into per-command cycles.
+For each Feature:
 
-Before saving any check, write the queue in the selected workflow plan, or in
-other task evidence when workflow is unselected: one row per sentence, quoting
-the sentence in full, with its allowed commands and a planned conventional
-subject that differs from every other row's. A row holding two sentences, or
-a queue with fewer rows than behavior sentences, is wrong; fix it before
-continuing. Record each introducing hash in the queue or in other task
-evidence; recorded `git commit` output is sufficient without a duplicate queue
-entry. Cosmetic Markdown punctuation is not a separate deliverable. Work only
-on the first unfinished row.
+1. Save/run its missing public checks before application edits and record the
+   baseline. Existing checks may protect a refactor; correct-path missing imports
+   are valid creation baselines. Static content and project test prohibitions
+   use direct checks; explicit no-test instructions skip execution honestly.
+2. Implement this Feature and its necessary integrations. Batch related findings
+   before the cumulative relevant run, fix failures and review the diff. Every
+   required form in this sentence must work; earlier behavior remains unless
+   intentionally revised. Later Features must not become executable yet, even
+   as test observers. Inspect pending forms; use a focused public probe only
+   where source review leaves their availability uncertain and tests are allowed.
+3. Commit the ready Feature before starting the next Feature's checks or code.
+   Do not interleave another Feature or postpone all commits until the end.
+   Stage this code and its checks by explicit path. Run `git commit` as its own
+   command with `type: summary` or `type(scope): summary`, using `feat`, `fix`,
+   `refactor`, `chore`, `docs`, `style`, `test` or `perf`. Confirm HEAD advanced,
+   inspect its contents, record the hash, and finish selected local delivery.
 
-## The cycle for the current row
+A passing run remains valid through read-only review, staging and plan updates.
+Rerun affected checks if relevant code changes, not because a status was read or
+a commit was about to happen. Do not create empty or cosmetic commits. A later
+concrete defect can justify a repair commit recorded against its original Feature;
+this is not a requirement to commit every finding separately.
 
-1. Save and run this row's public checks before editing application code.
-   Save checks for this row only; later rows' checks wait for their own cycle.
-   Existing passing checks may protect a refactor. A correct-path
-   missing-file/import failure for a new entrypoint completes the creation
-   baseline: record it and implement this Feature next, rather than rewriting
-   the valid import path. Static content and project test prohibitions use
-   direct checks. Follow selected testing for detailed coverage, including its
-   upgrade of earlier rejection checks when this row adds a read-only query.
-2. Implement only this row and necessary integration. Later selectors and
-   later changes to existing forms or results remain unsupported until their
-   own cycle; do not scaffold working future branches, and a later command
-   must not execute through the public interface yet, even as a test observer.
-   A sentence that revises an earlier command keeps the earlier acceptance and
-   results until its own cycle. Run this row's checks with all retained
-   earlier checks, fix failures and review the actual diff.
-3. Commit the moment the cumulative run passes, in the very next command.
-   Nothing fits between the passing run and the commit: not the next row's
-   checks, not the next row's code, not the README. Never postpone commits to
-   the end of the task; a commit created after later rows' code exists carries
-   that code and bundles those Features, whatever its subject says. Before
-   staging, run every later row's commands through the public interface and
-   confirm each is still rejected; one that already works means this cycle
-   bundled it, so take that behavior out of the change first. Stage this row's
-   working code and checks together. Run `git commit` as its own command with
-   `type: summary` or `type(scope): summary`, using `feat`, `fix`, `refactor`,
-   `chore`, `docs`, `style`, `test` or `perf`. Confirm HEAD advanced, inspect
-   the commit's contents and record the actual hash now. Complete selected
-   worktree merge and consumer verification before the next row.
-
-Each sentence first becomes executable in its own introducing commit; a queue,
-a later split or several commits made in a row at the end cannot make a bundled
-implementation compliant. Do not pad history with empty commits. Focused
-repairs and optional follow-ups may close before the next Feature; record them
-with their original row without rewriting history. Commit the final Feature's
-source and checks before starting README work when docs is selected.
-
-At handoff, reconcile the full queue with actual commit trees and delivered
-behavior: every row has its own hash, in order. Finish every requested
-capability, not only the first passing cycle. If no Git repository exists or
-commits are forbidden, record that exception and finish permitted
-implementation and checks.
+At handoff map every requested Feature to its distinct introducing hash in order
+and delivered behavior. Later splits cannot repair a bundled implementation.
+With docs selected, complete code cycles before final README work. If Git is
+absent or commits are forbidden, record that exception and finish permitted work.

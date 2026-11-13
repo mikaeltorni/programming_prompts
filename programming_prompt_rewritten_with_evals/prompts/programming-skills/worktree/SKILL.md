@@ -1,9 +1,9 @@
 ---
 name: worktree
 description: >-
-  v0.0.20 — Edit Git projects in a sibling .worktrees project/task checkout,
-  commit there, merge each Feature into the live default branch, and reapply
-  its consumers. Never push unless requested.
+  v0.0.21 — Edit Git projects in a sibling .worktrees project/task checkout,
+  commit there, deliver each requested Feature to the live default branch, and apply
+  affected consumers at meaningful checkpoints. Never push unless requested.
 ---
 
 # Isolate edits and deliver locally
@@ -55,7 +55,13 @@ repair and documentation commit. The store holds registered worktrees only;
 scratch/recovery files belong inside `WT/tmp/`, never `PARENT/.worktrees/PROJECT/tmp/`.
 Every write and tool working directory uses the full retained task checkout path.
 
-After each completed Feature or focused repair:
+For an audit or repair Feature, collect related findings and finish its coherent
+batch in WT before delivery. Individual findings do not each require a commit,
+merge, installer run or app reload. Keep the requested Feature boundaries from
+selected commits; a genuine dependency or user-requested checkpoint can justify
+earlier delivery. Preserve another agent's active sessions and working files.
+
+After each completed requested Feature (or necessary delivery checkpoint):
 
 1. Commit its working code and checks in WT. Confirm HEAD advanced and source
    changes are committed; incidental caches may stay unstaged.
@@ -64,14 +70,18 @@ After each completed Feature or focused repair:
    metadata or project guidance. Preserve unrelated live changes and merge
    with `git merge --no-ff BRANCH`; resolve conflicts without discarding work.
 3. Confirm task HEAD is an ancestor of live HEAD and inspect live status.
-4. Reapply the affected consumer through its installer, selector or narrow
-   reload, and verify installed content and relevant logs. Follow selected
-   Linux desktop rules. For static content with no installed consumer, inspect
-   the merged files.
+4. Apply consumers only when their installed/runtime inputs changed. Use the
+   installer, selector or narrow reload once for the delivered batch and inspect
+   installed content and relevant logs. Documentation-only or test-only changes
+   need no runtime reload. Read-only checks or unchanged files need no redeploy.
+   Follow selected Linux desktop rules; preserve active work. Static content
+   without an installed consumer needs only merged-file inspection. Identical
+   delivered code does not require repeating a passing application suite.
 
 Finish this delivery before the next Feature. Documentation follows the same
-checkout, commit and merge path. Repeat delivery after every later task commit,
-including ledger/doc follow-ups; a previous merge does not deliver a new HEAD.
+checkout, commit and merge path. Merge later task commits before handoff too;
+a previous merge does not deliver a new HEAD. Apply consumers again only if
+their actual inputs changed.
 At handoff, the current task tip must be an ancestor of live HEAD.
 Recover only this task's misplaced drafts,
 without overwriting user work. If WT's location was wrong, use `git worktree move`
