@@ -32,14 +32,43 @@ its assigned path; continuation must not restart an unfinished plan.
 ## Features and audit scope
 
 Selected commits owns original user capability-sentence boundaries. Execution
-rules and agent-discovered findings are not separate Features. An audit should
-identify a finite relevant inventory, track reviewed/remaining items and collect
-related findings into coherent repairs. Do not demand one triplet, test run,
-commit, merge or reload per finding. Additional checkpoints are allowed for a
-real dependency, risk or requested delivery. Batching must preserve full scope;
-an incomplete inventory cannot establish a completed whole-project audit.
-Do not require repeated full-history plan dumps or reopening reviewed items
-without changed dependencies, failures or new evidence.
+rules and agent-discovered findings are not separate user Features. Before
+detailed investigation, require an initial plan grounded in the request and
+current inventory, with repository owners, outcomes, candidate paths, review
+order and completion evidence. Unknowns may be investigation actions.
+
+Multi-repository work keeps an ordered repository queue in the same plan, with
+scoped tasks, LIVE/worktree/branch, review inventory, checks or exceptions,
+delivery and documentation status per repository. Repository-qualified Feature
+keys identify each repository's consecutive 3.1/3.2/3.3 slice of the original
+capability. Do not require another plan file or a new user capability per repo.
+A single active "inspect all repositories" row is insufficient. Explicitly
+single-repository work must not expand to other repositories unasked.
+
+For each repository, plan, investigate actual files/callers, then record findings
+and concrete execution actions before edits. Single-repository cleanup follows
+the same sequence. Investigation closes with evidence for the named inventory
+and findings classified as repair, reasoned retention or unresolved with the
+missing evidence identified. A no-change review may skip code/commit with reason.
+Complete the repository's planned batch, permitted checks, selected delivery and
+affected README review before moving on, unless an actual dependency is recorded
+with a return point. Final docs commits retain the selected docs ordering.
+
+Large audits partition inventory into named subsystems with review checkpoints.
+Collect related findings into coherent repairs; do not demand one triplet, test
+run, commit, merge or reload per finding. Independent subsystems may have delivery
+checkpoints within the original Feature. After at most 15 minutes of active work
+without completing a planned action, record evidence, remaining paths and the
+next action and split an oversized action by repo/subsystem before continuing.
+A live long-running command is recorded separately; elapsed time requires
+replanning, not abandonment. Missing timing evidence alone proves no violation.
+Reflect completed checks, code and delivery in their rows rather than leaving
+them pending under an ongoing investigation.
+
+Track reviewed/remaining inventory without repeated full-history dumps or
+reopening reviewed items absent changed dependencies, failures or new evidence.
+An incomplete inventory cannot establish a completed audit; all requested work
+remains in scope across bounded batches.
 
 ## Ordered work and completion
 
@@ -62,7 +91,8 @@ the plan before checks/implementation. For each requested Feature:
   repair commits per finding or a commit as the literal next shell command.
 
 Keep progress in the responsible rows, updated at meaningful stage transitions;
-inventory entries or findings need no new triplet. Source, tests, worktree naming,
+inventory entries or individual findings need no new triplet; repository slices
+do, with their original capability identity preserved. Source, tests, worktree naming,
 installation and detailed commit boundaries belong to selected companions.
 
 After all Feature cycles, mark Write code complete and finish selected docs.
