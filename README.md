@@ -382,12 +382,31 @@ its commands and optional clauses together. Findings discovered during an audit
 belong to that requested Feature: they do not each start another cycle. Finish
 the entire queue.
 
-For a whole-project audit, identify the relevant files, handlers or public forms
-once and track reviewed and remaining items. Collect related omissions, repair
-them together, then check and deliver the batch. Use smaller checkpoints only
-for an actual dependency, risk or requested delivery. Close the audit when its
-inventory and requested behavior have evidence; reopen reviewed items only when
-changed dependencies, failed checks or new evidence justify it.
+Save an initial plan from the request and current file inventory before detailed
+investigation. Name repository owners, outcomes, paths, review order and completion
+evidence. For each repository: plan its bounded work, investigate actual files and
+callers, then record findings and execution actions before editing. The same
+sequence applies to single-repository cleanup; explicitly single-repository work
+stays within that scope.
+
+Multi-repository work keeps one ordered repository queue in the launch plan,
+with separate scoped tasks, retained checkouts, review inventory, checks or
+exceptions, delivery and documentation status per repository. Use repository-qualified
+Feature keys for each owner's 3.1/3.2/3.3 slice of the original capability. Finish
+the planned repository batch and affected README review before moving on; a real
+cross-repository dependency records a return point. Final documentation commits
+still follow the selected docs policy.
+
+Large audits partition inventory into named subsystems with review checkpoints.
+Collect related findings and deliver coherent batches. Investigation ends with
+evidence for the named inventory and findings classified as repair, reasoned
+retention or unresolved with the missing evidence stated. A no-change review can
+skip code/commit actions with evidence. After at most 15 minutes of active work
+without a completed planned action, record progress and split an oversized action
+by repository or subsystem before continuing. A live long-running command is
+tracked separately. This checkpoint does not discard remaining scope or establish
+completion. Update action statuses as checks, edits and deliveries actually finish;
+reopen reviewed items only for changed dependencies, failed checks or new evidence.
 
 Run focused checks while editing and cumulative relevant checks when the batch
 is ready. Read-only review, plan updates, commits and delivery of identical files
@@ -443,13 +462,17 @@ archiving a completed plan beside it. Reuse the verified task checkout.
 Agent Command Center consumes this schema for its progress display. Policy
 source edits do not activate native harness instructions by themselves;
 selection/deployment stays with ACC and the external installer.
-Apply the coordinated workflow policies with
+Reload only the workflow policy with `acc pp enable -v2 --skill workflow` and
+inspect installation with `acc pp status --skill v2:workflow --check`. Apply the
+coordinated workflow policies with
 `acc pp enable -v2 --skill workflow,commits,testing,worktree` and inspect installation
 with `acc pp status --skill v2:workflow,v2:commits,v2:testing,v2:worktree --check`.
 This updates managed harness instructions without stopping running sessions;
 refreshed instruction contexts load the new text. Installation status does not
-establish model behavior or measured speed. The November 14 batching revision
-was applied without tests or model evaluations at the user's request.
+establish model behavior or measured speed. The November 14 repository-planning
+revision (V2 v0.2.37; ORIGINAL v0.2.9)
+was applied without tests or model evaluations at the user's request. Deployment
+status confirms installed instructions; behavioral improvement remains unverified.
 The opt-in Harbor `workflow-routing` task
 exercises an implementation routed from a bundle into a sibling repository;
 `counter` remains the ordinary single-repository control. The opt-in
