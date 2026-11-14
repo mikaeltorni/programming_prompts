@@ -1,8 +1,8 @@
 ---
 name: workflow
 description: >-
-  v0.2.36 — Resume one saved plan, batch related audit findings, and finish each
-  requested feature through checks, implementation and local delivery.
+  v0.2.37 — Plan and investigate each repository before execution; retain scoped
+  tasks and finish requested features through local delivery.
 ---
 
 # Programming workflow
@@ -41,15 +41,51 @@ documentation**. Selected commits owns feature boundaries: one original user
 capability sentence per Feature, keeping its clauses together. Execution rules
 and discoveries inside an audit are not new capabilities.
 
-For an audit or "check everything" request, first identify a finite inventory
-of the relevant files, handlers or public forms and the evidence needed to
-review them. Track reviewed and remaining items once in the plan. Read related
-sources together, collect findings, then repair them as a coherent batch within
-the current Feature. Do not start a fresh tests/commit/merge/reload cycle for
-every finding. Use a smaller checkpoint only for an actual dependency, risk or
-user-requested delivery. Do not reopen reviewed items without a changed dependency,
-failed check or new evidence. Finish the whole inventory and requested result;
-batching is not permission to omit cases or narrow the user's scope.
+### Plan, investigate, then execute per repository
+
+Before detailed investigation, save an initial plan from the request and current
+file inventory: repository owners, requested outcomes, candidate paths, review
+order and evidence needed for completion. Unknowns become explicit investigation
+actions. Do not mark Plan complete with only a generic "inspect everything" row.
+
+For work spanning repositories, keep an ordered repository queue in this same
+plan. Give each repository its own scoped tasks, retained LIVE/worktree/branch,
+review inventory, checks or exceptions, delivery and documentation status. Use a
+repository-qualified Feature key for its 3.1/3.2/3.3 slice while retaining the
+original capability sentence; routing does not invent new user capabilities.
+Never put the entire repository queue inside one active code/checks row. A task
+explicitly limited to one repository stays there; record an outside dependency
+without expanding the requested scope.
+
+For each repository, plan its bounded work, investigate its actual files and
+callers, then update the plan with findings and concrete execution actions
+before editing. End investigation when the named inventory has evidence and
+findings are classified as repair, retain with reason, or unresolved with the
+specific missing evidence. A no-change review can finish with evidence and
+skipped code/commit actions. Finish that repository's planned batch, permitted
+checks, local delivery and affected README review before moving to the next.
+Only an actual cross-repository dependency justifies leaving a slice pending;
+record the dependency and return point. Final documentation commits still follow
+the selected docs policy.
+
+Apply the same sequence to single-repository cleanup: inventory the current
+files and public forms, plan the review, investigate, then save the proposed
+repair batch and completion evidence before implementation. For a large audit,
+partition the inventory into named subsystems with review checkpoints in advance.
+Batch related findings; do not create a delivery cycle per omission. Independent
+subsystems may have separate delivery checkpoints within the original Feature.
+
+After at most 15 minutes of active investigation or implementation without a
+completed planned action, checkpoint: record evidence, remaining paths and the
+next concrete action; split an oversized action along repository or subsystem
+boundaries before continuing. Record a live long-running command separately;
+waiting is not implementation progress. Elapsed time triggers replanning, not
+abandoning scope or claiming success. Reflect actual completed checks, code and
+delivery in their rows promptly, even while the broader audit remains open.
+
+Track reviewed and remaining inventory once. Reopen reviewed items only for a
+changed dependency, failed check or new evidence. Finish the full requested
+queue; bounded batches must not silently discard unresolved or remaining work.
 
 Use this ACC schema:
 
