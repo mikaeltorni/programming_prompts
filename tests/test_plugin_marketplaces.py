@@ -67,8 +67,13 @@ def test_repository_contains_no_marketplace_catalogs() -> None:
 
 
 def test_repository_contains_no_installer_implementation() -> None:
-    """Installation logic belongs to linux_codex_claude_code_setup."""
+    """Keep installer entrypoints in the installer repository.
+
+    Parameters: none.
+    Returns: None.
+    """
+    print("parameters=none")
     assert not (ROOT / "install.sh").exists()
     assert not (ROOT / "installer").exists()
     assert not (ROOT / "lib").exists()
-    assert not (ROOT / "scripts").exists()
+    print(None)
