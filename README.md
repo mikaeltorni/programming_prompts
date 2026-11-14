@@ -27,12 +27,15 @@ for 22 skills and four plugin manifests, preserving their minor/patch numbers.
 - [Troubleshooting and FAQ](#troubleshooting-and-faq)
 - [Contributing](#contributing)
 
-The install catalog intentionally distinguishes plugins from direct skills:
+The source tree distinguishes these kinds of content:
 
 - Plugins: Commit Guidelines and Linux Desktop Configuration.
-- Direct skills: Docs, Init Project,
-  Refactoring, Setup Repository Guidelines, and Workflow.
-- Python Logging is retired and has been removed from this repository.
+- Direct skills: Docs, Init Project, Refactoring, Setup Repository Guidelines,
+  SSH VM, and Workflow.
+- Dispatch skills: GitHub SEO, GitHub Portfolio Scan, and Worktree Cleanup.
+
+The separate installer chooses its own catalog and defaults. Python Logging is
+retired and has been removed from this repository.
 
 ## Repository dependencies
 
@@ -725,8 +728,7 @@ published, renamed, or posted on the user's behalf.
 
 Per the programming guidelines, any repository-generated log files must be
 written under the repository-root `.log/` directory (created on demand) and are
-gitignored to keep the working tree clean. No runtime utilities currently ship
-in this repository, but the convention is reserved for any that are added later:
+gitignored to keep the working tree clean:
 
 ```bash
 # Repository-generated logs live here (gitignored)
