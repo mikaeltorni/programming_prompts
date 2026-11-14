@@ -2,8 +2,8 @@
 
 Injectable agent skills live under [programming-skills/](programming-skills/README.md).
 The suite contains `workflow`, `commits`, `worktree`, `docs`, `srp`, `commenting`,
-`logging`, `debug_logs`, `debug`, and `testing`. Each has a `SKILL.md` and a corresponding
-judge under [../evals/judges/](../evals/judges/). `logging-vague` is an optional
+`logging`, `debug_logs`, `debug`, `testing`, and `prompt_engineering`. Each has a
+`SKILL.md` and a corresponding judge under [../evals/judges/](../evals/judges/). `logging-vague` is an optional
 control scored by the logging judge.
 
 Coding-task requests live under [../evals/coding-prompts/](../evals/coding-prompts/).
