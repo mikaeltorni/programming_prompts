@@ -461,6 +461,11 @@ questions and continuations retain it.
 
 Implementation follow-ups update this plan, preserving unfinished work or
 archiving a completed plan beside it. Reuse the verified task checkout.
+During an active turn, reread the assigned plan when a user message arrives.
+Add new evidence about the current task to its active row and preserve earlier
+evidence, the current status, and the checkout. Answer a status-only question
+without editing the plan. Add implementation work to the existing queue at the
+assigned path.
 
 Agent Command Center consumes this schema for its progress display. Policy
 source edits do not activate native harness instructions by themselves;
