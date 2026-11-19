@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.2.37 — Plan and investigate each repository before execution; retain scoped
+  v0.2.38 — Plan and investigate each repository before execution; retain scoped
   tasks and finish requested features through local delivery.
 ---
 
@@ -33,6 +33,12 @@ Establish selected worktree isolation before detailed investigation. Save the
 plan before feature checks or implementation. Reuse it on continuation. Update
 it for new implementation requests, preserving unfinished work; archive it beside
 the same path only when a distinct task starts after completion.
+
+When a message arrives during an active turn, reread the assigned plan before
+taking the next action. Append new evidence or a clarification about the
+current task to the active row, preserving its existing evidence, status and
+checkout. A status-only question leaves the plan as it is. If the user adds
+implementation work, update the existing queue at the assigned path.
 
 ## Plan the requested outcome
 
