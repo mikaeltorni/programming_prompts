@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.2.39 — Plan and investigate each repository before execution; retain scoped
+  v0.2.40 — Plan and investigate each repository before execution; retain scoped
   tasks and finish requested features through local delivery.
 ---
 
@@ -48,6 +48,25 @@ Keep four outer stages: **Establish worktree → Plan → Write code → Write
 documentation**. Selected commits owns feature boundaries: one original user
 capability sentence per Feature, keeping its clauses together. Execution rules
 and discoveries inside an audit are not new capabilities.
+
+### Schedule pre-existing policy gaps as Write code tasks
+
+When inspection finds an independently fixable gap in an active policy within
+the task's scope, add a named **Write code** maintenance task immediately. For
+example, record missing function comments or console diagnostics in existing
+code. Put it ahead of the affected Feature's pending implementation and
+complete it at the earliest safe point, normally before the Feature's checks
+and edits. If discovered during implementation, preserve in-progress changes
+and separate the maintenance before committing the Feature.
+
+Give each coherent maintenance task its own 3.1/3.2/3.3 rows with a unique
+maintenance key and the affected files. Record the direct review or applicable
+local checks, then record the maintenance commit hash in 3.3. Keep each
+maintenance task in its own commit, including when the changes share a file
+with the Feature. Related gaps may be handled in one maintenance task. Keep
+policy compliance for newly authored code and updates required by the new
+behavior in the Feature's own commit. Limit inspection and maintenance to the
+authorized scope.
 
 ### Plan, investigate, then execute per repository
 
@@ -122,8 +141,9 @@ Selected companions, or none.
 Tasks has exactly those four rows and columns. Microsteps has those seven columns,
 unique positive Step numbers, and `pending`, `in_progress`, `complete` or `skipped`
 statuses. Keep at most one microstep in_progress. Each Feature has consecutive
-Stage `3.1`, `3.2`, `3.3` rows; other phases use `-` for Feature/Stage. Name actual
-files/checks in Action and observed results in Evidence. Escape literal pipes.
+Stage `3.1`, `3.2`, `3.3` rows, as does each scheduled maintenance task. Other
+phases use `-` for Feature/Stage. Name actual files/checks in Action and
+observed results in Evidence. Escape literal pipes.
 
 ## Complete each feature
 

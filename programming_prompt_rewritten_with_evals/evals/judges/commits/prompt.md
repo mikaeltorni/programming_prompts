@@ -37,6 +37,13 @@ create a new Feature. Related findings may share that Feature's introducing or
 repair commit; do not demand a separate commit/delivery cycle per finding.
 Distinct original capability sentences still need distinct introducing commits.
 
+When an active policy gap in existing, in-scope code is independently fixable
+and evidenced, look for a prioritized maintenance task and its standalone
+commit. It may group related gaps. Inspect the diff for requested behavior or
+its tests mixed with the backfill, even in shared files. Required policy work
+for new code or a newly changed contract belongs in the Feature commit. Judge
+the commit boundary without grading the contents of comments or diagnostics.
+
 ## Step 2: map each Feature to its introducing commit
 
 Exclude the supplied seed, the initial empty commit and merge commits from
@@ -109,10 +116,12 @@ Do not treat the absence of commits as a failure in that case.
 
 ## Verdict
 
-For `yes`, give the Feature-to-hash mapping and the verification limits. For
-`no`, quote the disputed capability sentence and identify the first concrete
+For `yes`, give the Feature-to-hash mapping, any standalone maintenance
+hashes and the verification limits. For `no`, identify the affected
+capability or maintenance task and the first concrete
 defect: a missing or incomplete Feature, a bundled or early capability, a
-nonconventional introducing subject, a queue that drops required behavior
+nonconventional introducing subject, a bundled maintenance backfill, a queue
+that drops required behavior
 together with history that omits it, or an evidenced cycle violation. Judge the whole request; a correct first Feature does not excuse
 missing later ones.
 

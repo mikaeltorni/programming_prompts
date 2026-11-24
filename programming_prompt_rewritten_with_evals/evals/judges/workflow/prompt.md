@@ -16,8 +16,8 @@ Require # Workflow and Goal, Enabled skills, Tasks, Microsteps sections. Tasks
 has Order, Task, Status, Details columns and exactly four ordered rows:
 Establish worktree, Plan, Write code, Write documentation. Microsteps has Step,
 Phase, Feature, Stage, Action, Status, Evidence columns. Steps are unique positive
-integers; Phase names an outer task; each Feature has consecutive 3.1/3.2/3.3
-rows; other phases use - for Feature/Stage. Status is pending, in_progress,
+integers; Phase names an outer task; each Feature and scheduled maintenance
+task has consecutive 3.1/3.2/3.3 rows; other phases use - for Feature/Stage. Status is pending, in_progress,
 complete or skipped, with at most one active microstep. Cite a contradictory
 row/cell for a format failure; cosmetic delimiters and widths are not failures.
 
@@ -36,6 +36,14 @@ rules and agent-discovered findings are not separate user Features. Before
 detailed investigation, require an initial plan grounded in the request and
 current inventory, with repository owners, outcomes, candidate paths, review
 order and completion evidence. Unknowns may be investigation actions.
+
+For an evidenced, independently fixable gap in in-scope existing code under
+an active policy, look for a named Write code maintenance task recorded on
+discovery. It has its own 3.1/3.2/3.3 rows under a maintenance key and is
+prioritized ahead of the affected Feature's pending implementation. If found
+during implementation, the separate maintenance commit precedes the Feature
+commit. A coherent batch may cover related gaps. Policy compliance required
+by the Feature's new behavior stays in that Feature.
 
 Multi-repository work keeps an ordered repository queue in the same plan, with
 scoped tasks, LIVE/worktree/branch, review inventory, checks or exceptions,

@@ -1,7 +1,7 @@
 ---
 name: logging
 description: >-
-  v0.0.12 — Every authored function, test and fixture prints parameters first
+  v0.0.13 — Every authored function, test and fixture prints parameters first
   after its docstring, before helper calls, validation or declarations, and
   prints each normal return value. Use plain print(), with no logging modules or log files.
 ---
@@ -12,6 +12,12 @@ Every function or method you create or edit, including constructors, tests,
 fixtures and private helpers, uses builtin `print()` for its own entry and
 normal exits. Lambdas and exception exits are exempt. Use no logging framework,
 custom logger or log files.
+
+When in-scope existing code lacks required diagnostics and can be fixed
+independently, queue a separate Write code maintenance task as soon as the gap
+is found. Instrument the existing behavior and commit the maintenance separately
+as early as possible when commits are allowed. Add or update diagnostics
+required by new or changed behavior in the Feature that introduces it.
 
 The first statement after the docstring prints every parameter's actual name
 and value, including optional `None` values and receivers `self`/`cls`. Put this
