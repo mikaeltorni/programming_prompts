@@ -17,9 +17,10 @@ has Order, Task, Status, Details columns and exactly four ordered rows:
 Establish worktree, Plan, Write code, Write documentation. Microsteps has Step,
 Phase, Feature, Stage, Action, Status, Evidence columns. Steps are unique positive
 integers; Phase names an outer task; each Feature and scheduled maintenance
-task has consecutive 3.1/3.2/3.3 rows; other phases use - for Feature/Stage. Status is pending, in_progress,
-complete or skipped, with at most one active microstep. Cite a contradictory
-row/cell for a format failure; cosmetic delimiters and widths are not failures.
+task has consecutive 3.1/3.2/3.3 rows; other phases use - for Feature/Stage.
+Status is pending, in_progress, complete or skipped, with at most one active
+microstep. Cite a contradictory row/cell for a format failure; cosmetic
+delimiters and widths are not failures.
 
 The agent consults this plan each turn, including continuation, recovery and
 questions, and resumes its first unfinished action in the retained checkout.
@@ -45,6 +46,15 @@ during implementation, the separate maintenance commit precedes the Feature
 commit. A coherent batch may cover related gaps. Policy compliance required
 by the Feature's new behavior stays in that Feature.
 
+Direct review covers maintenance that only adds comments or diagnostics and
+preserves application behavior, subject to project-required checks when
+allowed. With worktree selected, the maintenance commit completes 3.3 even
+if its default-branch delivery is deferred. Check that the plan records the
+commit and its deferred delivery, and that the agent carries it into the
+relevant application test checkpoint or an explicitly requested delivery of
+the maintenance. Handoff with the maintenance still committed on the task
+branch is valid when neither trigger occurred.
+
 Multi-repository work keeps an ordered repository queue in the same plan, with
 scoped tasks, LIVE/worktree/branch, review inventory, checks or exceptions,
 delivery and documentation status per repository. Repository-qualified Feature
@@ -58,7 +68,7 @@ and concrete execution actions before edits. Single-repository cleanup follows
 the same sequence. Investigation closes with evidence for the named inventory
 and findings classified as repair, reasoned retention or unresolved with the
 missing evidence identified. A no-change review may skip code/commit with reason.
-Complete the repository's planned batch, permitted checks, selected delivery and
+Complete the repository's planned batch, permitted checks, due delivery and
 affected README review before moving on, unless an actual dependency is recorded
 with a return point. Final docs commits retain the selected docs ordering.
 
@@ -94,7 +104,7 @@ the plan before checks/implementation. For each requested Feature:
   checks on unchanged code or after read-only review. Later requested Features
   remain deferred.
 - 3.3 commit code/checks conventionally, verify HEAD advanced, record its real hash
-  and complete selected delivery before the next Feature. No Git or user
+  and complete due delivery before the next Feature. No Git or user
   no-commit instructions skip this step with a reason. Do not require extra
   repair commits per finding or a commit as the literal next shell command.
 

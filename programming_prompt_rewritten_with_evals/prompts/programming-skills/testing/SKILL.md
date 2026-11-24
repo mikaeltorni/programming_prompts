@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  v0.1.122 — Write focused tests for the requested behavior, run them, and fix
+  v0.1.123 — Write focused tests for the requested behavior, run them, and fix
   failures before reporting completion.
 ---
 
@@ -18,6 +18,12 @@ If no test runner exists, use stdlib unittest or a saved plain-assertion script.
 Respect explicit no-test instructions: do not create or run tests, benchmarks or
 model evaluations when prohibited; inspect available evidence and state the
 unverified limit. Existing accurate coverage needs no duplicate test.
+
+Review the diff directly for separate comment-only or diagnostic-only
+maintenance that preserves application behavior. Run project-required checks
+when allowed. This maintenance has no application testing requirement of its
+own. Test any requested changes to application behavior through their normal
+cycle.
 
 For an audit, collect related findings and coverage gaps before writing checks.
 Use a compact case table for equivalent cases rather than a test function and a

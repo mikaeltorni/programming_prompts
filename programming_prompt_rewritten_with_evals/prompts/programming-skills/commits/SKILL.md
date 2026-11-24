@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v0.3.2 — Commit each requested capability separately; batch related findings
+  v0.3.3 — Commit each requested capability separately; batch related findings
   within an audit instead of creating a delivery cycle per finding.
 ---
 
@@ -31,6 +31,8 @@ Even in a shared file, keep requested behavior and its tests out of that
 commit. If discovered late, isolate the maintenance against the existing
 behavior and commit it before the affected Feature. Policy compliance for new
 code and policy updates required by changed behavior belong with that code.
+Record the maintenance commit immediately and follow selected worktree rules
+for its later delivery. Committing maintenance does not trigger a merge.
 
 Before implementation record the ordered queue in the selected workflow plan,
 or brief task evidence otherwise: original sentence, allowed behavior and a
@@ -55,7 +57,7 @@ For each Feature:
    Stage this code and its checks by explicit path. Run `git commit` as its own
    command with `type: summary` or `type(scope): summary`, using `feat`, `fix`,
    `refactor`, `chore`, `docs`, `style`, `test` or `perf`. Confirm HEAD advanced,
-   inspect its contents, record the hash, and finish selected local delivery.
+   inspect its contents, record the hash, and finish any due local delivery.
 
 A passing run remains valid through read-only review, staging and plan updates.
 Rerun affected checks if relevant code changes, not because a status was read or

@@ -1,9 +1,9 @@
 ---
 name: worktree
 description: >-
-  v0.0.21 — Edit Git projects in a sibling .worktrees project/task checkout,
-  commit there, deliver each requested Feature to the live default branch, and apply
-  affected consumers at meaningful checkpoints. Never push unless requested.
+  v0.0.22 — Edit Git projects in a sibling .worktrees project/task checkout,
+  commit there, and deliver to the live default branch at the applicable
+  checkpoint. Never push unless requested.
 ---
 
 # Isolate edits and deliver locally
@@ -61,15 +61,34 @@ merge, installer run or app reload. Keep the requested Feature boundaries from
 selected commits; a genuine dependency or user-requested checkpoint can justify
 earlier delivery. Preserve another agent's active sessions and working files.
 
-After each completed requested Feature (or necessary delivery checkpoint):
+Commit each independently fixable policy backfill in WT as soon as it is
+ready. For maintenance that only adds comments or diagnostics and preserves
+application behavior, reviewing the diff is sufficient unless project guidance
+requires additional checks. Keep the commit on the task branch until a
+delivery checkpoint tied to relevant application testing or explicitly
+requested delivery of that maintenance.
+
+If relevant application tests need the live checkout, merge the ready batch
+before running those tests. If the tests run in WT, include the pending
+maintenance in the normal delivery of the tested application change. A
+maintenance commit, static review, README update or handoff does not trigger
+a merge of pending maintenance. An independently due delivery without an
+application test checkpoint should carry only its own deliverables. Preserve
+the task branch and record any delivery dependency if the commits cannot be
+delivered independently.
+
+At an applicable delivery checkpoint:
 
 1. Commit its working code and checks in WT. Confirm HEAD advanced and source
    changes are committed; incidental caches may stay unstaged.
    A README-only commit cannot deliver uncommitted source or checks.
 2. Verify the live checkout is on its actual default branch using repository
-   metadata or project guidance. Preserve unrelated live changes and merge
-   with `git merge --no-ff BRANCH`; resolve conflicts without discarding work.
-3. Confirm task HEAD is an ancestor of live HEAD and inspect live status.
+   metadata or project guidance. Preserve unrelated live changes. When the
+   full task branch is due, use `git merge --no-ff BRANCH`. If delivery must
+   exclude pending maintenance, use a delivery branch based on live and carry
+   only the independent commits due. Resolve conflicts without discarding work.
+3. Confirm the merge delivered the due changes and inspect live status. For
+   a full task-branch merge, confirm task HEAD is an ancestor of live HEAD.
 4. Apply consumers only when their installed/runtime inputs changed. Use the
    installer, selector or narrow reload once for the delivered batch and inspect
    installed content and relevant logs. Documentation-only or test-only changes
@@ -78,14 +97,15 @@ After each completed requested Feature (or necessary delivery checkpoint):
    without an installed consumer needs only merged-file inspection. Identical
    delivered code does not require repeating a passing application suite.
 
-Finish this delivery before the next Feature. Documentation follows the same
-checkout, commit and merge path. Merge later task commits before handoff too;
-a previous merge does not deliver a new HEAD. Apply consumers again only if
-their actual inputs changed.
-At handoff, the current task tip must be an ancestor of live HEAD.
+Finish due delivery before the next Feature. Documentation follows the same
+checkout and commit path. At handoff, verify that commits due for delivery
+are in live history. If only deferred delivery remains, retain the worktree
+and branch and report the pending maintenance hashes and checkpoint. Apply
+consumers again only if their actual inputs changed.
 Recover only this task's misplaced drafts,
 without overwriting user work. If WT's location was wrong, use `git worktree move`
 to the unused correctly derived path while preserving branch and contents.
 
-Report completion only after local default-branch delivery and consumer checks.
+Report completion after verifying due live delivery and consumer checks.
+Report deferred maintenance as committed in the task branch.
 Never push, publish, add remotes or rewrite history unless explicitly requested.
