@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.2.12 — Plan and investigate each repository before execution; retain scoped
+  v0.2.13 — Plan and investigate each repository before execution; retain scoped
   tasks and finish requested features through local delivery.
 ---
 
@@ -68,6 +68,13 @@ policy compliance for newly authored code and updates required by the new
 behavior in the Feature's own commit. Limit inspection and maintenance to the
 authorized scope.
 
+For comment-only or diagnostic-only maintenance that preserves application
+behavior, review the diff directly. Run project-required checks when allowed.
+Commit and record the hash promptly. With worktree selected, commit in the
+task worktree, mark 3.3 complete for the commit and record the worktree
+delivery checkpoint. Continue the queue. If delivery is still deferred at
+handoff, report the retained branch, hash and delivery checkpoint.
+
 ### Plan, investigate, then execute per repository
 
 Before detailed investigation, save an initial plan from the request and current
@@ -90,8 +97,9 @@ before editing. End investigation when the named inventory has evidence and
 findings are classified as repair, retain with reason, or unresolved with the
 specific missing evidence. A no-change review can finish with evidence and
 skipped code/commit actions. Finish that repository's planned batch, permitted
-checks, local delivery and affected README review before moving to the next.
-Only an actual cross-repository dependency justifies leaving a slice pending;
+checks, due local delivery and affected README review before moving to the next.
+Record maintenance delivery deferred under the worktree policy. Otherwise,
+only an actual cross-repository dependency justifies leaving a slice pending;
 record the dependency and return point. Final documentation commits still follow
 the selected docs policy.
 
@@ -160,7 +168,7 @@ observed results in Evidence. Escape literal pipes.
   requested capabilities remain deferred to their own cycles.
 - **3.3 Commit:** stage this Feature's code and checks, excluding the plan, and
   create a conventional commit. Confirm HEAD advanced and record its actual hash.
-  Complete selected worktree delivery before the next Feature. No Git or a user
+  Complete any due worktree delivery before the next Feature. No Git or a user
   no-commit instruction skips this step with its reason. Related findings need
   no extra commit boundary; a later discovered defect may justify a repair commit.
 
