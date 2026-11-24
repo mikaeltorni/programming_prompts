@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.2.10 — Plan and investigate each repository before execution; retain scoped
+  v0.2.11 — Plan and investigate each repository before execution; retain scoped
   tasks and finish requested features through local delivery.
 ---
 
@@ -23,11 +23,13 @@ cancel an already active goal. Finishing a response does not finish the task.
 Read the launch directory and `ACC_WORKFLOW_FILE` before routing to another
 repository. Retain the physical launch-project root separately from each
 implementation repository's LIVE checkout and task worktree. Resolve a linked
-launch checkout to its original live root. Use `ACC_WORKFLOW_FILE` when it is an
-absolute Markdown path inside that launch project's `tmp/workflow/`; otherwise
-use `<launch-project>/tmp/workflow.md`. Keep that exact path throughout routing.
-Leave it untracked unless asked to track it. Record hashes after committing;
-never amend a commit to include its own hash.
+launch checkout to its original live root. Use the launcher's absolute Markdown
+`ACC_WORKFLOW_FILE` assignment. ACC stores new assignments in its external
+tracker state. Without an assignment, use `workflow.md` in a private task
+directory created with `mktemp -d /tmp/acc-workflow.XXXXXXXX`. Create the plan's
+parent if needed. Keep that exact path throughout routing and continuation.
+Keep plans, archives and request artifacts outside source checkouts. Record
+hashes after committing; never amend a commit to include its own hash.
 
 Establish selected worktree isolation before detailed investigation. Save the
 plan before feature checks or implementation. Reuse it on continuation. Update
