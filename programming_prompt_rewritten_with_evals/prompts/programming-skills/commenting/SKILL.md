@@ -1,7 +1,7 @@
 ---
 name: commenting
 description: >-
-  v0.0.10 — Use whenever writing or editing Python (or other) functions: every
+  v0.0.11 — Use whenever writing or editing Python (or other) functions: every
   function, including authored tests and fixtures, needs a description and
   same-line Parameters and Returns labels. Apply on every coding task.
 ---
@@ -20,6 +20,12 @@ A long parameter list may continue after that first line has content. Blank
 lines between sections and a trailing period are fine. `Args:` and labels
 whose content starts on the next line do not satisfy this format. Lambdas are
 exempt.
+
+When in-scope existing code lacks required documentation and can be fixed
+independently, queue a separate Write code maintenance task as soon as the gap
+is found. Document the existing contract and commit the maintenance separately
+as early as possible when commits are allowed. Document new functions and
+changes to a function's contract in the Feature that makes those changes.
 
 Write the complete docstring with the function's first saved draft. Before
 committing, review the functions in every changed source and test file;

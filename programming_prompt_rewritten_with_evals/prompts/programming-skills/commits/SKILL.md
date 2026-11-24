@@ -1,7 +1,7 @@
 ---
 name: commits
 description: >-
-  v0.3.1 — Commit each requested capability separately; batch related findings
+  v0.3.2 — Commit each requested capability separately; batch related findings
   within an audit instead of creating a delivery cycle per finding.
 ---
 
@@ -21,6 +21,16 @@ Feature per discovered omission, file, handler, assertion or helper. Collect and
 fix related findings within that Feature. Do not reinterpret agent-authored
 findings, plan bullets or continuation messages as new user capability sentences.
 Distinct original capability sentences still get distinct introducing commits.
+
+Pre-existing gaps in active policies that can be fixed independently within
+the task's scope get their own maintenance task and commit. Record and
+prioritize them as soon as discovered. Fix and commit a coherent maintenance
+batch as early as possible, preferably before the affected Feature's checks
+and edits. Stage only maintenance paths or hunks and inspect the staged diff.
+Even in a shared file, keep requested behavior and its tests out of that
+commit. If discovered late, isolate the maintenance against the existing
+behavior and commit it before the affected Feature. Policy compliance for new
+code and policy updates required by changed behavior belong with that code.
 
 Before implementation record the ordered queue in the selected workflow plan,
 or brief task evidence otherwise: original sentence, allowed behavior and a
@@ -54,6 +64,7 @@ concrete defect can justify a repair commit recorded against its original Featur
 this is not a requirement to commit every finding separately.
 
 At handoff map every requested Feature to its distinct introducing hash in order
-and delivered behavior. Later splits cannot repair a bundled implementation.
+and delivered behavior. Include each maintenance task's separate hash.
+Later splits cannot repair a bundled implementation.
 With docs selected, complete code cycles before final README work. If Git is
 absent or commits are forbidden, record that exception and finish permitted work.
