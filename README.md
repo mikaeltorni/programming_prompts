@@ -385,6 +385,19 @@ its commands and optional clauses together. Findings discovered during an audit
 belong to that requested Feature: they do not each start another cycle. Finish
 the entire queue.
 
+When an active policy exposes an independently fixable gap in existing code,
+add a Write code maintenance task and commit it early. Missing comments and
+console diagnostics are common examples. Keep the maintenance commit separate
+from the requested behavior, even when both touch the same file. Include
+documentation and diagnostics for new or changed behavior in the Feature commit.
+
+Comment-only and diagnostic-only maintenance that preserves application
+behavior can use direct diff review, with any checks the project requires.
+Keep its commit on the task branch until relevant application testing calls
+for live delivery or the user explicitly requests delivery of the maintenance.
+When tests run in the worktree, deliver the maintenance with the tested change.
+If delivery is still deferred at handoff, record the branch, hash and checkpoint.
+
 Save an initial plan from the request and current file inventory before detailed
 investigation. Name repository owners, outcomes, paths, review order and completion
 evidence. For each repository: plan its bounded work, investigate actual files and
@@ -430,22 +443,22 @@ launches from linked worktrees to their original live checkout. Save and read
 back the plan after establishing the task checkout and before investigation
 or Feature checks. The external plan has four `Tasks` rows
 and seven `Microsteps` columns: Step, Phase, Feature, Stage, Action, Status,
-Evidence. Each code Feature has consecutive 3.1, 3.2, 3.3 rows. Read the first
-unfinished step, record actual results/hashes and close selected delivery before
-advancing; both outer rows and microsteps must be complete at handoff.
+Evidence. Each Feature or maintenance task has consecutive 3.1, 3.2, 3.3
+rows. Read the first unfinished step and record actual results and hashes.
+Complete due delivery before advancing. Record deferred maintenance delivery
+with the completed commit step.
 Keep the plan and its archives outside the source checkout. Stage code and
 checks by explicit path, then record the actual new HEAD in the plan after
 committing; never amend a commit to include its own hash. At meaningful stage
 transitions, update and read back the affected cells, including the outer Write
-code row when all feature cycles are delivered. Keep findings in that Feature's
-inventory/evidence rather than adding a new triplet per omission. Large plans
-need only their active rows and relevant inventory during updates.
+code row when all code cycles and due deliveries are complete. Keep ordinary
+findings in that Feature's inventory or evidence. When updating large plans,
+read only the active rows and relevant inventory.
 Plan separate documentation actions from the start: write and verify the root
 README, then **Commit documentation**. Both use `Write documentation` as Phase
 and `-` for Feature/Stage. The commit action records its actual hash and selected
-worktree delivery before the documentation phase can complete. Explicit no-commit
-instructions or absent Git skip that action with a reason; unselected docs skip
-both actions. An already accurate README needs no cosmetic edit or empty commit;
+worktree delivery when due. Explicit no-commit instructions or absent Git skip
+that action with a reason. Skip both actions when docs is unselected. An already accurate README needs no cosmetic edit or empty commit;
 record its inspection and skip the unnecessary commit. ACC shows these actions
 in Todo/Completed and the active docs caption, so the docs commit remains visible
 while pending and running.
@@ -473,9 +486,21 @@ source edits do not activate native harness instructions by themselves;
 selection/deployment stays with ACC and the external installer.
 Reload only the workflow policy with `acc pp enable -v2 --skill workflow` and
 inspect installation with `acc pp status --skill v2:workflow --check`. Apply the
-coordinated workflow policies with
-`acc pp enable -v2 --skill workflow,commits,testing,worktree` and inspect installation
-with `acc pp status --skill v2:workflow,v2:commits,v2:testing,v2:worktree --check`.
+coordinated V2 policies in the configured harnesses with these commands.
+
+```bash
+acc pp enable -v2 --skill commenting,commits,docs,logging,testing,workflow,worktree
+acc pp status -v2 --skill commenting,commits,docs,logging,testing,workflow,worktree --check
+```
+
+For Vibe installations with ORIGINAL workflow enabled, refresh and inspect
+that copy too.
+
+```bash
+acc pp enable --skill original:workflow -va
+acc pp status --skill original:workflow --check -va
+```
+
 This updates managed harness instructions without stopping running sessions;
 refreshed instruction contexts load the new text. Installation status does not
 establish model behavior or measured speed. The November 14 repository-planning
