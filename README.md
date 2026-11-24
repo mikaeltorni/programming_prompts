@@ -421,18 +421,19 @@ leave prompt behavior unverified.
 Read the launch directory and `ACC_WORKFLOW_FILE` before routing work or
 changing directories. Retain the physical launch-project root separately from
 each implementation repository's live checkout and task worktree. Use an
-absolute `ACC_WORKFLOW_FILE` inside the launch project's `tmp/workflow/`,
-otherwise `<launch-project>/tmp/workflow.md`. A task launched in an installer
+absolute `ACC_WORKFLOW_FILE` assigned by ACC in its tracker state. With no
+assignment, create `workflow.md` in a private directory using
+`mktemp -d /tmp/acc-workflow.XXXXXXXX`. A task launched in an installer
 bundle keeps that assigned plan when its implementation belongs to a child or
 sibling repository; moving the implementation does not move the plan. Resolve
 launches from linked worktrees to their original live checkout. Save and read
 back the plan after establishing the task checkout and before investigation
-or Feature checks. The ignored plan has four `Tasks` rows
+or Feature checks. The external plan has four `Tasks` rows
 and seven `Microsteps` columns: Step, Phase, Feature, Stage, Action, Status,
 Evidence. Each code Feature has consecutive 3.1, 3.2, 3.3 rows. Read the first
 unfinished step, record actual results/hashes and close selected delivery before
 advancing; both outer rows and microsteps must be complete at handoff.
-Keep the plan untracked unless the user requests otherwise. Stage code and
+Keep the plan and its archives outside the source checkout. Stage code and
 checks by explicit path, then record the actual new HEAD in the plan after
 committing; never amend a commit to include its own hash. At meaningful stage
 transitions, update and read back the affected cells, including the outer Write
