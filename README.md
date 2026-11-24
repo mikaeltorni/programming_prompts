@@ -490,7 +490,7 @@ coordinated V2 policies in the configured harnesses with these commands.
 
 ```bash
 acc pp enable -v2 --skill commenting,commits,docs,logging,testing,workflow,worktree
-acc pp status -v2 --skill commenting,commits,docs,logging,testing,workflow,worktree --check
+acc pp status --skill v2:commenting,v2:commits,v2:docs,v2:logging,v2:testing,v2:workflow,v2:worktree --check
 ```
 
 For Vibe installations with ORIGINAL workflow enabled, refresh and inspect
