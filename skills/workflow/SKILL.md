@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.2.13 — Plan and investigate each repository before execution; retain scoped
+  v0.2.41 — Plan and investigate each repository before execution; retain scoped
   tasks and finish requested features through local delivery.
 ---
 
