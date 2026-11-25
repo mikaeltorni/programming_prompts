@@ -4,13 +4,33 @@ source, plans, logs or candidate claims. Never modify files or history.
 A negative verdict needs a concrete evidenced violation; missing chronology is
 a verification limit, not proof of failure. Explain before scoring.
 
+## Question-only turns
+
+Score the answer and the plan action required by this turn:
+
+- Idle prompt with a fresh assignment: the plan must have all four outer task
+  rows and a Plan microstep for this question or its evidence. One such
+  microstep is sufficient. Worktree, code and documentation microsteps are
+  optional, including when their outer task rows are complete or skipped.
+  A blank or recycled checklist fails. Keep the previous archive intact.
+- Active follow-up: require the same plan to record the question before the
+  answer. Preserve earlier evidence and unfinished work. An unchanged plan
+  fails when the new question was required to be recorded.
+- Retained-plan status question: require the agent to read and answer from the
+  existing plan. Honor any explicit requirement to preserve its contents.
+
+For a question-only turn, score here and skip the implementation and audit
+sections below. A question alone has no implementation Feature. Earlier
+worktree, investigation, commit and documentation obligations are outside
+this turn's scope.
+
 ## Plan and continuity
 
-The plan belongs to the physical launch-project root, resolved to its original
-live root for a linked checkout. Use the assigned absolute Markdown
-ACC_WORKFLOW_FILE inside that launch root's tmp/workflow/, otherwise its
-tmp/workflow.md. Routing implementation to another repository does not move it.
-It stays untracked unless requested; actual hashes are recorded after commits.
+The plan follows the launch session. Use the assigned absolute Markdown
+ACC_WORKFLOW_FILE. ACC normally assigns it in tracker state. Here the benchmark
+assigns it under the physical launch project's tmp/workflow/ directory. Routing
+implementation to another repository keeps that assignment. The plan stays
+untracked unless requested; actual hashes are recorded after commits.
 
 Require # Workflow and Goal, Enabled skills, Tasks, Microsteps sections. Tasks
 has Order, Task, Status, Details columns and exactly four ordered rows:
@@ -19,16 +39,23 @@ Phase, Feature, Stage, Action, Status, Evidence columns. Steps are unique positi
 integers; Phase names an outer task; each Feature and scheduled maintenance
 task has consecutive 3.1/3.2/3.3 rows; other phases use - for Feature/Stage.
 Status is pending, in_progress, complete or skipped, with at most one active
-microstep. Cite a contradictory row/cell for a format failure; cosmetic
-delimiters and widths are not failures.
+microstep. A correctly skipped 3.3 row fulfills the cycle when commits are
+unselected. Each row must occupy a single physical line. If the saved
+Markdown splits a row across lines and the structural report cannot parse
+it, that action is missing from ACC progress. Cite the broken row for a
+format failure. Cosmetic delimiters and widths are acceptable.
 
-The agent consults this plan each turn, including continuation, recovery and
-questions, and resumes its first unfinished action in the retained checkout.
-It preserves evidence and unfinished scope. A status question adds no new
-implementation authorization, but does not cancel an explicitly active goal.
-A standalone question-only task must not be judged as an implementation handoff.
-A distinct implementation task after completion may archive the old plan beside
-its assigned path; continuation must not restart an unfinished plan.
+The agent consults the plan each turn. Honor an explicit lifecycle condition
+in the original task or launch evidence:
+
+- An idle user prompt with a fresh ACC assignment requires new workflow tables
+  for that prompt at the assigned path, including for an explicit resume.
+- A prompt explicitly delivered during active work must be recorded in the
+  same plan before the agent acts or answers. Require the new scope, question
+  or clarification to appear in a relevant action or its evidence and preserve
+  earlier completed evidence and unfinished work. An unchanged seed fails.
+- Automatic continuation and recovery keep the authoritative plan and its
+  first unfinished action.
 
 ## Features and audit scope
 

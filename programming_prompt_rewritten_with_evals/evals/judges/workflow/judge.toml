@@ -9,7 +9,7 @@ prompt_template = "prompt.md"
 
 [[criterion]]
 name = "workflow_sequence"
-description = "the authoritative ACC-compatible plan follows four outer stages and per-feature checks/code/conventional-commit cycles, records actual progress/hashes, completes selected delivery and documents afterward; companion obligations apply only when selected"
+description = "the agent performs the required plan action for this turn and preserves prior evidence; implementation and delivery requirements apply when authorized and selected"
 type = "binary"
 
 [scoring]
