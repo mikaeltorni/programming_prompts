@@ -473,7 +473,10 @@ evidence, the current status, and the checkout. Answer a status-only question
 without editing the plan. Add implementation work to the existing queue at the
 assigned path.
 
-Agent Command Center consumes this schema for its progress display. Policy
+Agent Command Center consumes this schema for its progress display. For
+multi-repository work, use `repository/feature` as the Feature key and list
+the files or components in the `3.2` Action. Keep that action current through
+completion so the outline shows the actual edit targets. Policy
 source edits do not activate native harness instructions by themselves;
 selection/deployment stays with ACC and the external installer.
 Reload only the workflow policy with `acc pp enable -v2 --skill workflow` and
