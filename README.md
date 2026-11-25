@@ -439,6 +439,13 @@ Evidence. Each Feature or maintenance task has consecutive 3.1, 3.2, 3.3
 rows. Read the first unfinished step and record actual results and hashes.
 Complete due delivery before advancing. Record deferred maintenance delivery
 with the completed commit step.
+
+When an idle prompt starts an ACC turn, the agent fills the newly assigned
+file and consults the adjacent `*.previous.md` archive when earlier context
+is needed. During active work, the agent incorporates follow-ups in the
+current plan and preserves its progress. Automatic continuation and recovery
+reuse the current plan and resume its first unfinished action.
+
 Keep the plan and its archives outside the source checkout. Stage code and
 checks by explicit path, then record the actual new HEAD in the plan after
 committing; never amend a commit to include its own hash. At meaningful stage
@@ -505,11 +512,13 @@ status confirms installed instructions; behavioral improvement remains unverifie
 The opt-in Harbor `workflow-routing` task
 exercises an implementation routed from a bundle into a sibling repository;
 `counter` remains the ordinary single-repository control. The opt-in
-`workflow-resume` and `workflow-question` fixtures retain an interrupted plan.
-Run their focused positive evaluation from the evals directory with:
+`workflow-idle-prompt` and `workflow-active-prompt` fixtures cover new plan
+creation and updates during active work. The `workflow-resume` and
+`workflow-question` controls retain an interrupted plan.
+Run the focused positive evaluation from the evals directory.
 
 ```bash
-./run_benchmark.sh --harness codex --eval-agent codex --skills workflow --tasks workflow-question,workflow-resume -k 1
+./run_benchmark.sh --harness codex --eval-agent codex --skills workflow --tasks workflow-idle-prompt,workflow-active-prompt,workflow-question,workflow-resume -k 1
 ```
 
 The earlier focused run `2026-11-07_234206_1599853` passed 2/2 with GPT-6 Luna at
