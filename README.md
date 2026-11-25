@@ -8,14 +8,20 @@ Programming Prompts is a prompt library that provides reusable AI coding-agent p
 
 ![Diagram showing Programming Prompts flowing into plugin prompts, direct skills, and dispatch skills for agents and installers](docs/content-flow.svg)
 
-This repository is the canonical content source for the engineering standards
-used across this workspace's projects. It contains installable plugins, direct
-skills, and dispatch skills; the separate installer repository owns marketplace
-generation and deployment.
+## Quickstart
 
-All prompt and plugin releases use 0.x versions while this library remains a
-work in progress. The October 11 reset in `35702ba` changed only release metadata
-for 22 skills and four plugin manifests, preserving their minor/patch numbers.
+Clone the content source and read the testing skill:
+
+```bash
+git clone https://github.com/mikaeltorni/programming_prompts.git
+cd programming_prompts
+sed -n '1,120p' programming_prompt_rewritten_with_evals/prompts/programming-skills/testing/SKILL.md
+```
+
+For native Codex and Claude Code setup on Linux, see the
+[Linux CLI installer's Programming Prompts guide](https://github.com/mikaeltorni/linux_codex_claude_code_setup/blob/main/README.md#installing-and-verifying-programming-prompts-components).
+See the [skill catalog](programming_prompt_rewritten_with_evals/prompts/programming-skills/README.md)
+for workflow, commit, and verification guidance.
 
 ## Contents
 
@@ -49,20 +55,6 @@ and challenge generation is covered by the
 For local conventional commit suggestions from Git diffs, see the
 [coding_tools local AI commit message generator](https://github.com/mikaeltorni/coding_tools).
 
-## Quickstart
-
-Clone the content source and inspect a skill directly:
-
-```bash
-git clone https://github.com/mikaeltorni/programming_prompts.git
-cd programming_prompts
-sed -n '1,120p' programming_prompt_rewritten_with_evals/prompts/programming-skills/testing/SKILL.md
-```
-
-The command prints the independent testing skill. The programming suite
-contains workflow, commits, worktree, docs, srp, commenting, logging, debug_logs,
-debug, testing, and prompt_engineering; see its [skill catalog](programming_prompt_rewritten_with_evals/prompts/programming-skills/README.md).
-
 ## AI coding-agent prompt features
 
 This repository maintains the canonical engineering standards used across all
@@ -82,7 +74,7 @@ and carry manifests for both Codex and Claude Code; direct skills carry only
 
 ## Repository Structure
 
-```
+```text
 programming_prompts/
 ├── AGENTS.md                               # Rule: no marketplace files in this repo
 ├── plugins/                                # One directory per plugin; each has
