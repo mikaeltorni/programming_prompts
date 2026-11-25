@@ -1,7 +1,7 @@
 ---
 name: workflow
 description: >-
-  v0.2.41 — Plan and investigate each repository before execution; retain scoped
+  v0.2.42 — Plan and investigate each repository before execution; retain scoped
   tasks and finish requested features through local delivery.
 ---
 
@@ -85,8 +85,12 @@ actions. Do not mark Plan complete with only a generic "inspect everything" row.
 For work spanning repositories, keep an ordered repository queue in this same
 plan. Give each repository its own scoped tasks, retained LIVE/worktree/branch,
 review inventory, checks or exceptions, delivery and documentation status. Use a
-repository-qualified Feature key for its 3.1/3.2/3.3 slice while retaining the
-original capability sentence; routing does not invent new user capabilities.
+`repository/feature` key for its 3.1/3.2/3.3 slice, using the actual repository
+name and retaining the original capability sentence; routing does not invent
+new user capabilities. In each 3.2 Action, name the files or components the
+feature will edit. Keep those targets in the Action after completion and update
+them if the delivered scope differs. Qualify documentation Actions with the
+repository and affected document paths when the plan spans repositories.
 Never put the entire repository queue inside one active code/checks row. A task
 explicitly limited to one repository stays there; record an outside dependency
 without expanding the requested scope.
