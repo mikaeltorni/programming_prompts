@@ -1,46 +1,59 @@
 ---
 name: workflow
 description: >-
-  v0.2.42 — Plan and investigate each repository before execution; retain scoped
+  v0.2.43 — Plan and investigate each repository before execution; retain scoped
   tasks and finish requested features through local delivery.
 ---
 
 # Programming workflow
 
-Run only when explicitly invoked or selected. Selection authorizes local commits
-and selected worktree delivery. User constraints override this workflow: a
-no-test instruction skips tests and model evaluations, with an honest unverified
-handoff. Never push unless requested. Use only selected, available companions.
+This policy is active when supplied as a selected skill or invoked explicitly.
+The workflow file is a required deliverable even if the requested response
+is a single sentence. User constraints override this policy. Use selected
+companions only, honor no-test requests, and push only if asked.
 
-## Retain one plan and checkout
+## Start with the assigned workflow file
 
-At the start of every turn, read the authoritative plan, including questions,
-status replies, automatic continuations and context recovery. Resume its first
-unfinished action in the same checkout; preserve completed evidence and hashes.
-A status question alone adds no implementation authorization; it also does not
-cancel an already active goal. Finishing a response does not finish the task.
+Use a file tool first. Read `ACC_WORKFLOW_FILE` from disk and check the plan
+before composing a response. In a shell, run `cat -- "$ACC_WORKFLOW_FILE"`.
+If the file is empty and the user refers to earlier work, find and read the
+archive before asking for any missing context. In a shell, list it with
+`ls -t -- "${ACC_WORKFLOW_FILE%.md}".*.previous.md` and read the relevant result.
 
-Read the launch directory and `ACC_WORKFLOW_FILE` before routing to another
-repository. Retain the physical launch-project root separately from each
-implementation repository's LIVE checkout and task worktree. Resolve a linked
-launch checkout to its original live root. Use the launcher's absolute Markdown
-`ACC_WORKFLOW_FILE` assignment. ACC stores new assignments in its external
-tracker state. Without an assignment, use `workflow.md` in a private task
-directory created with `mktemp -d /tmp/acc-workflow.XXXXXXXX`. Create the plan's
-parent if needed. Keep that exact path throughout routing and continuation.
-Keep plans, archives and request artifacts outside source checkouts. Record
-hashes after committing; never amend a commit to include its own hash.
+- **Active follow-up.** When the message is delivered during an ongoing turn,
+  immediately edit the same file. Append a short description of the message
+  to the active action's Evidence cell. Use a relevant action if none is
+  active. Extend the queue for changed requirements. Keep earlier work and
+  the current checkout. A question during work still requires this edit
+  before you answer. The latest sibling `.request.json` can confirm steering
+  when its `steering` field is true.
+- **New prompt from idle.** ACC opens an empty file and archives the previous
+  plan beside it as `*.previous.md`. Write a fresh plan at the assigned path,
+  including for a question or an explicit resume. For a brief question, one
+  Plan action is enough and phases that do not apply can be skipped. Carry
+  forward unfinished actions and evidence when the request is to resume.
+- **Automatic continuation, recovery or approval reply.** Read the retained
+  plan and continue its first unfinished action in the same checkout. When a
+  retained-plan question asks only for status, read it and answer that question.
+
+Use a file tool to save and read back the required edit before the final
+answer. An answer-only request still uses the tracker file. Follow an explicit
+instruction to leave that file unchanged.
+
+Keep the absolute Markdown path throughout the session, including when routing
+work to another repository. ACC stores it in external tracker state. Read the
+launch directory, resolve a linked checkout to its original live root, and
+track each implementation repository's live checkout and task worktree.
 
 Establish selected worktree isolation before detailed investigation. Save the
-plan before feature checks or implementation. Reuse it on continuation. Update
-it for new implementation requests, preserving unfinished work; archive it beside
-the same path only when a distinct task starts after completion.
+plan before checks or edits. Use the actual plan to answer questions about it.
+A question adds no implementation authorization.
 
-When a message arrives during an active turn, reread the assigned plan before
-taking the next action. Append new evidence or a clarification about the
-current task to the active row, preserving its existing evidence, status and
-checkout. A status-only question leaves the plan as it is. If the user adds
-implementation work, update the existing queue at the assigned path.
+Without an ACC assignment, use `workflow.md` in a private directory created
+with `mktemp -d /tmp/acc-workflow.XXXXXXXX` for a new task and retain it for
+continuations. Create the parent directory if needed and keep plans and archives
+outside source checkouts. Record hashes after committing and keep them out of
+the commits they identify.
 
 ## Plan the requested outcome
 
@@ -155,7 +168,8 @@ unique positive Step numbers, and `pending`, `in_progress`, `complete` or `skipp
 statuses. Keep at most one microstep in_progress. Each Feature has consecutive
 Stage `3.1`, `3.2`, `3.3` rows, as does each scheduled maintenance task. Other
 phases use `-` for Feature/Stage. Name actual files/checks in Action and
-observed results in Evidence. Escape literal pipes.
+observed results in Evidence. Keep each table row on one physical line and
+escape literal pipes.
 
 ## Complete each feature
 
